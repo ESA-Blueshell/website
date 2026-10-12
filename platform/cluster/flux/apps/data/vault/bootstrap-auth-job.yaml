@@ -50,11 +50,6 @@ spec:
           env:
             - name: VAULT_ADDR
               value: http://vault-v2.data-system.svc.cluster.local:8200
-            - name: VAULT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-v2-bootstrap-token
-                  key: token
           volumeMounts:
             - name: bootstrap
               mountPath: /bootstrap

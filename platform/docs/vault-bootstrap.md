@@ -27,21 +27,21 @@ reboot) — three of the five shares are required each time. Automate with
 [vault-unseal](https://github.com/lrstanley/vault-unseal) or store the
 unseal keys in a cloud KMS later.
 
-## 2. Seed the bootstrap token
+## 2. Bootstrap once with the root token
 
-The bootstrap Job reads its Vault root token from `vault-bootstrap-token`.
-Create that secret before applying the Job (or Flux will stall on the Job
-with a missing secret error):
+The bootstrap Job signs in through the `bootstrap` Kubernetes auth role, which
+`bootstrap-auth.sh` itself makes, so a fresh Vault needs one run by hand with
+the root token first. The token goes in on stdin, never as an argument:
 
 ```bash
-kubectl create secret generic vault-bootstrap-token \
-  -n data-system \
-  --from-literal=token="$ROOT_TOKEN"
+{ printf '%s\n' "$ROOT_TOKEN"; cat platform/cluster/flux/apps/data/vault/bootstrap-auth.sh; } |
+  kubectl -n data-system exec -i vault-v2-0 -c vault -- \
+  sh -c 'IFS= read -r VAULT_TOKEN; export VAULT_TOKEN VAULT_ADDR=http://127.0.0.1:8200; exec sh -s'
 ```
 
 ## 3. Run the bootstrap Job
 
-Flux applies the Job automatically once `apps-data` reconciles. If it has
+From then on the Job runs on every Flux apply that changes it. If it has
 not run yet, trigger it manually:
 
 ```bash
@@ -387,15 +387,14 @@ kubectl get secret -n mail-system  stalwart-secrets
 
 ## 6. Rotate the root token
 
-The `vault-bootstrap-token` secret holds the root token. Revoke the root
-token once initial setup is complete and store the unseal key offline:
+Revoke the root token once initial setup is complete; nothing needs it, and
+no copy of it is kept anywhere:
 
 ```bash
 vault token revoke "$ROOT_TOKEN"
-kubectl delete secret -n data-system vault-bootstrap-token
 ```
 
-You can regenerate a new root token at any time from the unseal key:
+Three share holders can make a new root token at any time:
 
 ```bash
 vault operator generate-root -init

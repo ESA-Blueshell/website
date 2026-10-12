@@ -5,6 +5,16 @@ set -eu
 # re-running against an already-configured Vault mutates the narrow set
 # of resources below without disturbing sealed state or data.
 
+# The Job signs in as its own service account through the bootstrap role below, so no token sits
+# in a Secret. Only a fresh Vault, which has no Kubernetes auth yet, needs a root token passed in.
+signed_in=false
+if [ -z "${VAULT_TOKEN:-}" ]; then
+  VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login role=bootstrap \
+    jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token)
+  export VAULT_TOKEN
+  signed_in=true
+fi
+
 # --- Auth + KV engine ----------------------------------------------------
 
 if ! vault auth list -format=json | grep -q '"kubernetes/"'; then
@@ -233,6 +243,28 @@ vault policy write backup /tmp/backup.hcl
 vault policy write backup-mail /tmp/backup-mail.hcl
 vault policy write backup-gatus /tmp/backup-gatus.hcl
 
+# What this script itself writes. Writing policies can grant any access, so only the bootstrap
+# Job's service account may hold it.
+cat <<'EOF' >/tmp/bootstrap.hcl
+path "sys/auth"            { capabilities = ["read", "sudo"] }
+path "sys/auth/*"          { capabilities = ["create", "update", "sudo"] }
+path "sys/mounts"          { capabilities = ["read"] }
+path "sys/mounts/*"        { capabilities = ["create", "update", "sudo"] }
+path "sys/policies/acl/*"  { capabilities = ["create", "update"] }
+path "auth/kubernetes/config" { capabilities = ["create", "update"] }
+path "auth/kubernetes/role/*" { capabilities = ["create", "update"] }
+path "auth/oidc/config"    { capabilities = ["create", "update"] }
+path "auth/oidc/role/*"    { capabilities = ["create", "update"] }
+path "transit/keys/*"      { capabilities = ["read", "create", "update"] }
+path "database/config/mariadb" { capabilities = ["create", "update"] }
+path "database/roles/*"    { capabilities = ["create", "update"] }
+path "secret/data/api"     { capabilities = ["read"] }
+path "secret/data/platform/mariadb" { capabilities = ["read"] }
+path "secret/data/platform/mail" { capabilities = ["read", "create", "update", "patch"] }
+path "secret/data/platform/backup-report/*" { capabilities = ["read", "create", "update"] }
+EOF
+vault policy write bootstrap /tmp/bootstrap.hcl
+
 # --- Kubernetes auth roles ---------------------------------------------
 
 vault write auth/kubernetes/role/api \
@@ -270,6 +302,12 @@ vault write auth/kubernetes/role/backup-gatus \
   bound_service_account_namespaces="utility-system" \
   policies="backup-gatus" \
   ttl="1h"
+
+vault write auth/kubernetes/role/bootstrap \
+  bound_service_account_names="vault-bootstrap-auth" \
+  bound_service_account_namespaces="data-system" \
+  policies="bootstrap" \
+  ttl="15m"
 
 vault write auth/kubernetes/role/vso \
   bound_service_account_names="vault-secrets-operator" \
@@ -415,4 +453,8 @@ JSON
 else
   echo "secret/api:auth.clients.vault.secret not seeded yet; skipping OIDC auth method."
   echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
+fi
+
+if [ "$signed_in" = true ]; then
+  vault token revoke -self >/dev/null
 fi

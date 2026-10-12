@@ -34,16 +34,17 @@ It signs you in to the old Vault through the site, as `seed-backup-credentials.s
 2. **Initialises `vault-v2` 5-of-3.** It shows each share once; store each one as "Blueshell
    Vault v2, unseal share N" before pressing Enter. It then asks for shares 2, 4 and 5 back from the
    password manager, so a share copied wrong is caught while the old Vault still works. The root
-   token goes into the Secret `vault-v2-bootstrap-token`, which the bootstrap Job reads after the
-   switch.
+   token waits in the Secret `vault-v2-bootstrap-token`, so a later run can pick up again, until
+   `--finish` revokes it after the switch.
 3. **Copies everything:** every KV secret under `secret/` with its metadata, the KV and audit
    settings, every policy, and the transit keys by `transit/backup` and `transit/restore`. That
    last step makes the old keys exportable, which cannot be undone, and the restored keys carry the
    same flag. The switch adds an explicit deny on `transit/export/*` and `transit/backup/*` to the
    `admin` policy, so no token but root can use it.
 4. **Runs `bootstrap-auth.sh` in `vault-v2-0`**, which builds the Kubernetes and OIDC auth
-   methods, the roles and the database engine, as on any fresh Vault.
-5. **Checks** that every secret and policy is equal, that every transit key version seals on the
+   methods, the roles and the database engine, as on any fresh Vault. That includes the `bootstrap`
+   role the bootstrap Job signs in with, so the Job needs no token in a Secret.
+5. **Checks** that every secret and copied policy is equal, that every transit key version seals on the
    old Vault and opens on `vault-v2`, that `api-jwt` signs the same, that each Kubernetes role logs
    in, and that `vault-v2` can issue a database login, which it revokes at once.
 
@@ -67,10 +68,18 @@ $K scale statefulset vault-v2 --replicas=1
 
 ## 3. Switch
 
-Run `scripts/migrate-vault.sh` once more, then merge the switch PR. It points VSO, the api and its
-migrate job, the three backup CronJobs, the bootstrap Job, Gatus, the ingress and the scripts at
-`vault-v2`. Flux applies it. The api's canary rolls the new address out; restart VSO so it signs in
-again at once:
+Run the script once more from the switch PR's branch. That last sync also writes that branch's
+`bootstrap-auth.sh` into `vault-v2`: the `bootstrap` role the Job will sign in with, and the deny on
+transit export in `admin`. Without the role, the bootstrap Job fails once the switch lands.
+
+```bash
+git fetch origin && git checkout feat/2392-vault-v2-switch
+scripts/migrate-vault.sh
+```
+
+Then merge the switch PR. It points VSO, the api and its migrate job, the three backup CronJobs,
+the bootstrap Job, Gatus, the ingress and the scripts at `vault-v2`. Flux applies it. The api's
+canary rolls the new address out; restart VSO so it signs in again at once:
 
 ```bash
 kubectl --context blueshell -n vso-system rollout restart deployment
@@ -80,7 +89,20 @@ Then check:
 
 - the `vault` endpoint on the status page is green;
 - a member's address opens under Management, and you are still signed in;
-- `kubectl --context blueshell get vaultstaticsecrets -A` shows every secret synced.
+- `kubectl --context blueshell get vaultstaticsecrets -A` shows every secret synced;
+- the `vault-bootstrap-auth` Job in `data-system` completed.
+
+Then take the root token away. `--finish` checks that the bootstrap Job can sign in and write
+policies without it, revokes it and deletes `vault-v2-bootstrap-token`:
+
+```bash
+git checkout main && git pull
+scripts/migrate-vault.sh --finish
+```
+
+From then on no root token exists. When one is needed, three share holders make a short-lived one
+with `vault operator generate-root`, as step 7c of `platform/recovery/README.md` shows, and revoke it
+afterwards.
 
 **Rollback**, while the old release still exists: revert the switch PR. The old Vault still holds
 everything as it was at the last sync.

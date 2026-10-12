@@ -13,6 +13,7 @@ import CountBadge from "@/components/island/CountBadge.vue"
 import CountryFlag from "@/components/island/CountryFlag.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import CutRow from "@/components/island/CutRow.vue"
+import DoneTick from "@/components/island/DoneTick.vue"
 import DriftRow, {type DriftItem} from "@/components/island/DriftRow.vue"
 import FactList from "@/components/island/FactList.vue"
 import FlickReel, {type ReelItem} from "@/components/island/FlickReel.vue"
@@ -247,6 +248,7 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
             label="Fetching your details"
             :size="28"
           />
+          <done-tick />
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 package net.blueshell.api.jobs.web
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
@@ -8,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ResponseStatusException
 import tools.jackson.databind.ObjectMapper
+import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 /**
@@ -69,13 +71,25 @@ class JobCatalogService(
             .map { field ->
                 val kind = classifyKind(field.type)
                 JobPayloadFieldDTO(
-                    name = field.name,
+                    name = wireName(payloadType, field),
                     type = normalizeType(field.type),
                     kind = kind,
                     required = field.type.isPrimitive,
                     enumValues = if (kind == JobPayloadFieldKind.ENUM) enumConstantNames(field.type) else null,
                 )
             }
+
+    /** The key the payload is written and read with, which a renamed property keeps on its getter. */
+    private fun wireName(
+        payloadType: Class<*>,
+        field: Field,
+    ): String =
+        payloadType.methods
+            .firstOrNull { it.name == "get" + field.name.replaceFirstChar(Char::uppercaseChar) }
+            ?.getAnnotation(JsonProperty::class.java)
+            ?.value
+            ?.takeIf { it.isNotEmpty() }
+            ?: field.name
 
     private fun classifyKind(type: Class<*>): JobPayloadFieldKind =
         when {

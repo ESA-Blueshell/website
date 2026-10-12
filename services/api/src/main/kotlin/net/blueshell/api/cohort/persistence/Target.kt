@@ -39,12 +39,12 @@ class Target(
     @Column(name = "label", nullable = false)
     var label: String,
     /**
-     * Optional folder name used to group cohorts in the admin UI. Mirrors
+     * Optional folder name used to group targets in the admin UI. Mirrors
      * the folder concept on Brevo (and later Discord category / Google
-     * group org-unit) — the column carries the canonical display name and
+     * group org-unit): the column carries the canonical display name and
      * explicit target creation is responsible for translating that into the
      * vendor's folder id.
-     * `null` means the cohort sits at the top level / "Other" group.
+     * `null` means the target sits at the top level / "Other" group.
      */
     @Column(name = "folder", nullable = true, length = 64)
     var folder: String? = null,
@@ -52,7 +52,7 @@ class Target(
     @Column(name = "subject_id", nullable = true)
     var cohortId: Long? = null,
     /**
-     * Native id of this cohort's target on [system] (e.g. a Brevo list id).
+     * Native id of this target on [system] (e.g. a Brevo list id).
      * `null` until explicitly created or linked. Written only through `CohortTargetIds`;
      * `1024` matches the widened `external_id_mapping.external_id` (V61).
      */

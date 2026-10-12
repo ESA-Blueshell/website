@@ -36,7 +36,7 @@ interface TargetMemberRepository : BaseRepository<TargetMember, Long> {
         externalUserIds: Collection<String>,
     ): List<TargetMember>
 
-    /** All active rows — use sparingly; prefer desired-only or stranger-only. */
+    /** All active rows; use sparingly, and prefer desired-only or stranger-only. */
     fun findAllByTargetId(targetId: Long): List<TargetMember>
 
     fun findByTargetIdAndExternalUserIdAndUserIdIsNotNull(

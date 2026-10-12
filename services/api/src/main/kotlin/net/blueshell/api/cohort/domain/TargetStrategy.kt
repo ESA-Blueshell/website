@@ -3,7 +3,7 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.shared.enums.TargetSystem
 
-/** Which system a strategy speaks for and the kind of cohort it holds there. The words are the screens'. */
+/** Which system a strategy speaks for and the kind of target it holds there. The words are the screens'. */
 data class TargetDescriptor(
     val system: TargetSystem,
     val kind: TargetKind,

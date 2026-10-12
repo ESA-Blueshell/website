@@ -36,7 +36,7 @@ interface CohortTargeting {
     ): CohortTargetRow
 
     /**
-     * Repoints [cohortId]'s external target at [externalId], keeping the same
+     * Repoints [targetId] at [externalId] on its system, keeping the same
      * local `Target` row. [cohortId] is the cohort the target must belong to
      * (the route carries it); a mismatch is rejected so a wrong-path admin call
      * cannot repoint another cohort's target. Optionally enqueues

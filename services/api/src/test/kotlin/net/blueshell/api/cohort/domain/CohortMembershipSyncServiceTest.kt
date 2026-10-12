@@ -68,7 +68,7 @@ class CohortMembershipSyncServiceTest {
         assertThatThrownBy {
             service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD)
         }.isInstanceOf(NonRetryableJobException::class.java)
-            .hasMessageContaining("cohort 10 has no BREVO target")
+            .hasMessageContaining("target 10 has no BREVO id")
 
         verify(exactly = 0) {
             jobs.runAsync(CohortJobs.MaterializeCohortTarget, any<CohortJobs.MaterializeCohortTargetPayload>(), any())

@@ -25,20 +25,20 @@ class CohortTargetIds(
         find(target) ?: throw NonRetryableJobException("Target ${target.id} has no external id on ${target.system}")
 
     /**
-     * Records [externalId] as this cohort's target. Rejects blanks and refuses
-     * to point a second active cohort at an id already in use.
+     * Records [externalId] as this target's id on its system. Rejects blanks and refuses
+     * to point a second active target at an id already in use.
      */
     @Transactional
     fun record(
         target: Target,
         externalId: String,
     ): Target {
-        require(externalId.isNotBlank()) { "Cohort external id must not be blank" }
+        require(externalId.isNotBlank()) { "Target external id must not be blank" }
         val owner = targets.findFirstBySystemAndExternalId(target.system, externalId)
         if (owner != null && owner.id != target.id) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "${target.system} target $externalId is already linked to cohort ${owner.id}",
+                "${target.system} target $externalId is already linked to target ${owner.id}",
             )
         }
         target.externalId = externalId

@@ -3,7 +3,7 @@ package net.blueshell.api.cohort.persistence
 import io.swagger.v3.oas.annotations.media.Schema
 
 /**
- * Native-side shape of a cohort on its external system. The adapter for each
+ * Native-side shape of a target on its external system. The adapter for each
  * [net.blueshell.api.shared.enums.TargetSystem] knows which kinds it supports.
  */
 @Schema(enumAsRef = true)

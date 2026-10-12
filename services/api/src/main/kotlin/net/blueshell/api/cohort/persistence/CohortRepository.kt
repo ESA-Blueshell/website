@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository
 interface CohortRepository : BaseRepository<Cohort, Long> {
     fun findAllByType(type: CohortType): List<Cohort>
 
-    /** The cohort produced by one definition — unique key uk_cohort_subject_definition. */
+    /** The cohort produced by one definition: unique key uk_cohort_subject_definition. */
     fun findByDefinitionKey(definitionKey: String): Cohort?
 }

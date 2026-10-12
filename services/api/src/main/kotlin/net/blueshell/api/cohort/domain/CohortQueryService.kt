@@ -108,9 +108,9 @@ class CohortQueryService(
             targets
                 .findAllByCohortId(cohortId)
                 .mapNotNull { target ->
-                    // A cohort can outlive the system it points at. Nothing on its row would work
-                    // without that system — reconciling, switching and importing all need its
-                    // strategy — so the row is left out and said out loud rather than taking the
+                    // A target can outlive the system it points at. Nothing on its row would work
+                    // without that system (reconciling, switching and importing all need its
+                    // strategy), so the row is left out and said out loud rather than taking the
                     // whole page down with it.
                     val system = targetSystemOrNull(target.system)
                     if (system == null) {
@@ -125,7 +125,7 @@ class CohortQueryService(
                     CohortTargetRow(
                         target = target,
                         externalId = targetExternalIds.find(target),
-                        // The newest confirmation across this cohort's rows is when it was last seen
+                        // The newest confirmation across this target's rows is when it was last seen
                         // to agree with the external system.
                         lastReconciledAt =
                             targetMembers
@@ -224,7 +224,7 @@ data class CohortDetail(
     val members: List<TargetMemberRow>,
     /** Which definition in code produces this cohort; null once nothing does. */
     val definitionKey: String?,
-    /** True when no definition produces this cohort any more — a disbanded committee, say. */
+    /** True when no definition produces this cohort any more: a disbanded committee, say. */
     val orphaned: Boolean,
 )
 
@@ -232,7 +232,7 @@ data class CohortDetail(
 data class CohortTargetRow(
     val target: Target,
     val externalId: String?,
-    /** Newest confirmation across the cohort's rows; null when it has never been confirmed. */
+    /** Newest confirmation across the target's rows; null when it has never been confirmed. */
     val lastReconciledAt: Instant? = null,
     /** The target's place on its system, outside in: the system, then any folder holding it. */
     val path: List<String> = emptyList(),
@@ -250,15 +250,11 @@ data class TargetMemberRow(
     val user: User?,
     val isUserDeleted: Boolean = false,
     /**
-     * Which system's ledger this row belongs to. A row is per (cohort, user), and a cohort is
+     * Which system's ledger this row belongs to. A row is per (target, user), and a target is
      * per system, so a cohort with two targets holds two rows for the same person.
      */
     val system: TargetSystem? = null,
-    /**
-     * The state the row is in. Defaulted so the older per-cohort projection, which does not
-     * report it, is unaffected.
-     */
-    val state: TargetMemberState? = null,
+    val state: TargetMemberState?,
     /**
      * For a row present externally but not desired locally: the account behind that external
      * id, once resolved. Null when nothing local matches it.

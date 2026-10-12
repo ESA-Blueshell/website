@@ -37,7 +37,7 @@ const rawCohort = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-describe("a cohort cohort arrives with its absences already decided", () => {
+describe("a cohort arrives with its absences already decided", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })

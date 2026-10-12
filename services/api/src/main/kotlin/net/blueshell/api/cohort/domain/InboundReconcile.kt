@@ -92,7 +92,7 @@ class InboundReconcile(
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target $targetId is not a target of cohort $cohortId")
         }
         val definition = cohort.definitionKey?.let { definitions.byKey(it) }
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cohort $cohortId names no cohort in code any more")
+            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cohort $cohortId has no definition in code any more")
         val system = TargetSystem.valueOf(target.system)
         val externalId = target.externalId.required("Target $targetId has no external target")
         return InboundTarget(

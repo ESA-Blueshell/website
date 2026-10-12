@@ -19,8 +19,8 @@ object CohortJobs {
 
     /**
      * Walks every active contribution period and ensures its three period
-     * cohorts — contribution-paid, members and active-members — and their
-     * cohorts exist. Idempotent.
+     * cohorts (contribution-paid, members and active-members) and their
+     * targets exist. Idempotent.
      */
     object ReconcileAllContributionPeriodCohorts : JobDefinition<ReconcileAllContributionPeriodCohortsPayload> {
         override val type: String = "cohort.reconcile-contribution-periods"

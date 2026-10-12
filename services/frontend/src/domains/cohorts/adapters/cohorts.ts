@@ -152,7 +152,7 @@ function asConflict(err: unknown): AddTargetResult | null {
   return status === 409 ? { type: "conflict" } : null
 }
 
-/** Maps the cohort's per-system cohort to an external target that already exists. */
+/** Maps the cohort's target on one system to an external target that already exists. */
 export async function linkExistingTargetForCohort(
   cohortId: number,
   system: TargetSystem,
@@ -170,7 +170,7 @@ export async function linkExistingTargetForCohort(
   }
 }
 
-/** Creates a fresh external target and maps the cohort's per-system cohort to it. */
+/** Creates a fresh external target and maps the cohort's target on that system to it. */
 export async function createTargetForCohort(
   cohortId: number,
   system: TargetSystem,
@@ -332,7 +332,7 @@ export async function applyInboundReconcileSelection(
 /*
  * The cohort reads.
  *
- * A cohort cohort arrives as a transport record with half its fields optional; what a page
+ * A cohort arrives as a transport record with half its fields optional; what a page
  * draws is the shape below, with every absence already decided. Unlike the target reads above
  * these answer with nothing rather than throwing, because that is what their pages have always
  * shown for a cohort the api would not give.
@@ -384,7 +384,7 @@ export type CohortSummary = {
   mappingCount: number
 }
 
-/** One cohort a picker offers, named by where it lives as much as by what it is called. */
+/** One target a picker offers, named by where it lives as much as by what it is called. */
 export type TargetOption = {
   id: number
   label: string
@@ -466,7 +466,7 @@ export async function fetchCohort(id: number): Promise<Cohort | null> {
 }
 
 /**
- * The cohorts a picker offers, by system and then by name.
+ * The targets a picker offers, by system and then by name.
  *
  * Sorted here because the order is the same wherever one is picked, and a picker that sorts for
  * itself is a picker that can sort differently from the next one.

@@ -26,7 +26,7 @@ class CohortVerificationScheduler(
             targets.findAll().filter { target ->
                 targetExternalIds.find(target) != null
             }
-        log.info("Scheduling reconcile for {} externally-mapped cohorts", mapped.size)
+        log.info("Scheduling reconcile for {} externally-mapped targets", mapped.size)
         mapped.forEach { jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(it.id!!), JobTrigger.SCHEDULED_RUN) }
     }
 

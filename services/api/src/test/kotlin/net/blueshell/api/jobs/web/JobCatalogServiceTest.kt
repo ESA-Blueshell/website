@@ -1,5 +1,6 @@
 package net.blueshell.api.jobs.web
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
@@ -38,6 +39,21 @@ class JobCatalogServiceTest {
         assertThat(field.name).isEqualTo("userId")
         assertThat(field.type).isEqualTo("Long")
         assertThat(field.required).isTrue()
+    }
+
+    @Test
+    fun `describe names a field by the key its payload is written with`() {
+        whenever(registry.jobTypes()).thenReturn(setOf("renamed"))
+        whenever(registry.payloadType("renamed")).thenReturn(RenamedPayload::class.java)
+
+        val names =
+            service
+                .describe()
+                .single()
+                .payloadFields
+                .map { it.name }
+
+        assertThat(names).containsExactly("cohortId", "note")
     }
 
     @Test
@@ -86,4 +102,11 @@ class JobCatalogServiceTest {
             .isInstanceOf(ResponseStatusException::class.java)
             .hasMessageContaining("Invalid payload")
     }
+
+    private data class RenamedPayload(
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
+        val note: String?,
+    )
 }

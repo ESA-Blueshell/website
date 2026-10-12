@@ -15,10 +15,12 @@ import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.AbstractPlatformTransactionManager
 import org.springframework.transaction.support.DefaultTransactionStatus
@@ -52,7 +54,7 @@ class CohortRemediationServiceTest {
     }
 
     @Test
-    fun `verifyCohort fetches remote members outside a transaction and applies ledger changes`() {
+    fun `verifyTarget fetches remote members outside a transaction and applies ledger changes`() {
         val cohort = cohort(7L)
         val target = target(99L, cohort.id!!)
         val confirmed = member(target, cohort, userId = 1L)
@@ -203,6 +205,72 @@ class CohortRemediationServiceTest {
         assertThat(desired.label).isEqualTo("Linked Remote")
         verify { members.save(desired) }
         verify { members.delete(stranger) }
+    }
+
+    @Test
+    fun `a job for a target that is gone, or whose cohort is, fails terminally and says which`() {
+        val loose = target(5L, 7L).apply { cohortId = null }
+        every { targets.findById(4L) } returns Optional.empty()
+        every { targets.findById(5L) } returns Optional.of(loose)
+        every { targets.findById(6L) } returns Optional.of(target(6L, 70L))
+        every { cohorts.findById(70L) } returns Optional.empty()
+
+        val refusals =
+            listOf<() -> Unit>(
+                { service.verifyTarget(4L) },
+                { service.removeExternalMember(4L, "ext-1") },
+                { service.verifyTarget(5L) },
+                { service.verifyTarget(6L) },
+            ).map { assertThrows<NonRetryableJobException>(it).message }
+
+        assertThat(refusals).containsExactly(
+            "Target 4 not found",
+            "Target 4 not found",
+            "Target 5 has no cohort",
+            "Target 6 references missing cohort 70",
+        )
+    }
+
+    @Test
+    fun `a target or cohort deleted while its members were being read stops the reconcile`() {
+        val cohort = cohort(7L)
+        val target = target(99L, 7L)
+        every { targetExternalIds.require(any()) } returns "list-99"
+        every { cohorts.findById(7L) } returns Optional.of(cohort)
+        every { targets.findById(99L) } returnsMany listOf(Optional.of(target), Optional.empty())
+
+        val targetGone = assertThrows<NonRetryableJobException> { service.verifyTarget(99L) }
+
+        every { targets.findById(99L) } returns Optional.of(target)
+        every { cohorts.findById(7L) } returnsMany listOf(Optional.of(cohort), Optional.empty())
+        val cohortGone = assertThrows<NonRetryableJobException> { service.verifyTarget(99L) }
+
+        assertThat(targetGone.message).isEqualTo("Target 99 not found")
+        assertThat(cohortGone.message).isEqualTo("Target 99 references missing cohort 7")
+    }
+
+    @Test
+    fun `an external id two users both claim confirms neither of them`() {
+        val cohort = cohort(7L)
+        val target = target(99L, 7L)
+        val first = member(target, cohort, userId = 1L)
+        val second = member(target, cohort, userId = 2L)
+        every { targets.findById(99L) } returns Optional.of(target)
+        every { cohorts.findById(7L) } returns Optional.of(cohort)
+        every { targetExternalIds.require(any()) } returns "list-99"
+        every { externalIds.findBatch("USER", setOf(1L, 2L), TargetSystem.BREVO.name) } returns
+            listOf(
+                ExternalIdMapping("USER", 1L, TargetSystem.BREVO.name, "ext-1"),
+                ExternalIdMapping("USER", 2L, TargetSystem.BREVO.name, "ext-1"),
+            )
+        every { members.findAllByTargetIdAndUserIdIsNotNull(99L) } returns listOf(first, second)
+        every { members.findAllByTargetIdAndUserIdIsNull(99L) } returns emptyList()
+        every { members.save(any<TargetMember>()) } answers { firstArg() }
+
+        service.verifyTarget(99L)
+
+        assertThat(listOf(first.externalUserId, second.externalUserId)).containsOnlyNulls()
+        assertThat(listOf(first.verifiedAt, second.verifiedAt)).containsOnlyNulls()
     }
 
     private fun cohort(id: Long): Cohort = Cohort(CohortType.NEWSLETTER_SUBSCRIBERS, "Members").apply { this.id = id }

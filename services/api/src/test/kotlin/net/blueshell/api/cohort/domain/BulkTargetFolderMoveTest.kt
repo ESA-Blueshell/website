@@ -7,6 +7,7 @@ import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -44,6 +45,23 @@ class BulkTargetFolderMoveTest {
                 kind = TargetKind.LIST,
             )
         return TargetCatalog(TargetStrategies(listOf(strategy)), targets)
+    }
+
+    @Test
+    fun `one target is filed under a folder and says which of our targets it is`() {
+        val web = external("7", "Web Cmte")
+        every { strategy.resolve("7") } returns web
+        every { strategy.resolve("8") } returns null
+        every { strategy.move(web, "Committees") } returns web.copy(folderLabel = "Committees")
+        every { targets.findAllBySystem("BREVO") } returns listOf(Entities.target(id = 42L, externalId = "7"))
+
+        val moved = catalog().move(TargetSystem.BREVO, "7", "Committees")
+
+        assertThat(moved.folderLabel).isEqualTo("Committees")
+        assertThat(moved.linkedTargetId).isEqualTo(42L)
+        assertThatThrownBy { catalog().move(TargetSystem.BREVO, "8", "Committees") }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("No target 8 in BREVO")
     }
 
     @Test

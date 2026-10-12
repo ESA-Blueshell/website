@@ -22,7 +22,7 @@ enum class MembershipWriteStatus {
 /**
  * Makes somebody a member of a cohort by changing what the cohort is about.
  *
- * Target membership is derived, so it cannot be granted directly: somebody found on a Brevo
+ * Cohort membership is derived, so it cannot be granted directly: somebody found on a Brevo
  * list who is not in the cohort is not made a member by writing a row, but by making the
  * thing true that the cohort is defined by — recording the contribution they evidently paid.
  * Only some cohorts can be written into at all; the rest report that they cannot.

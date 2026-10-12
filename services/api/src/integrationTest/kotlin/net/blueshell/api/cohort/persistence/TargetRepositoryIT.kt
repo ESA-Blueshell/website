@@ -29,7 +29,7 @@ class TargetRepositoryIT : UserTestSupport() {
     private lateinit var cohorts: CohortRepository
 
     @Test
-    fun `cohort persists and reloads with all configured fields`() {
+    fun `target persists and reloads with all configured fields`() {
         val target =
             Target(
                 system = TargetSystem.BREVO.name,
@@ -47,7 +47,7 @@ class TargetRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `cohort filters by system and kind`() {
+    fun `target filters by system and kind`() {
         targets.save(Target(TargetSystem.BREVO.name, TargetKind.LIST, "brevo-list"))
         targets.save(Target(TargetSystem.GOOGLE_CALENDAR.name, TargetKind.GROUP, "g-group"))
 
@@ -59,7 +59,7 @@ class TargetRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `cohort member round-trips with FK to cohort and user_id`() {
+    fun `target member round-trips with FK to target and user_id`() {
         val user = createUserWithRole(Role.MEMBER)
         val cohort =
             cohorts.save(
@@ -141,7 +141,7 @@ class TargetRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `multiple desired rows with null external_user_id coexist in one cohort`() {
+    fun `multiple desired rows with null external_user_id coexist in one target`() {
         val cohort = newCohort()
         val target = newTarget(cohort)
         val a = createUserWithRole(Role.MEMBER)
@@ -156,7 +156,7 @@ class TargetRepositoryIT : UserTestSupport() {
     }
 
     @Test
-    fun `multiple stranger rows with distinct external ids coexist in one cohort`() {
+    fun `multiple stranger rows with distinct external ids coexist in one target`() {
         val cohort = newCohort()
         val target = newTarget(cohort)
         val now = LocalDateTime.now()

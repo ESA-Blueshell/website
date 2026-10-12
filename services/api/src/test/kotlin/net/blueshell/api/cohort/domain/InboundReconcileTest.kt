@@ -266,7 +266,7 @@ class InboundReconcileTest {
         val orphaned = assertThrows<ResponseStatusException> { service.preview(12L, 22L) }
 
         assertThat(stranger.reason).isEqualTo("Target 21 is not a target of cohort 10")
-        assertThat(orphaned.reason).isEqualTo("Cohort 12 names no cohort in code any more")
+        assertThat(orphaned.reason).isEqualTo("Cohort 12 has no definition in code any more")
     }
 
     private fun givenContributionTarget() = givenTarget(CohortType.PERIOD_PAYERS, "PERIOD_PAYERS:12", scope = 12L)

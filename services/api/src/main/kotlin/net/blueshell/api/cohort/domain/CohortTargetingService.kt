@@ -143,7 +143,7 @@ class CohortTargetingService(
         prep.existingExternalId?.let { return CohortTargetRef(targetId, it) }
 
         throw NonRetryableJobException(
-            "Target $targetId has no ${prep.system} target; materialize-target no longer creates targets. " +
+            "Target $targetId has no ${prep.system} id; materialize-target no longer creates targets. " +
                 "Create or link an external target manually.",
         )
     }

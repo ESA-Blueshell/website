@@ -123,7 +123,7 @@ describe("linkUserToExternal", () => {
   })
 })
 
-describe("giving a cohort's cohort a target", () => {
+describe("giving a cohort a target", () => {
   it("maps the cohort to a target that already exists", async () => {
     vi.mocked(linkExistingTarget).mockResolvedValue(answer(linkExistingTarget, {
         targetId: 4,

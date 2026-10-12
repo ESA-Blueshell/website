@@ -139,7 +139,7 @@ class CohortQueryServiceTest {
 
     //
     // The page reads membership and its agreement with the external system from one payload,
-    // so every row comes back — including the ones with no local account — carrying the state
+    // so every row comes back, including the ones with no local account, carrying the state
     // it is in.
 
     @Test
@@ -179,8 +179,7 @@ class CohortQueryServiceTest {
 
         val rows = service.detail(24L).members
 
-        // The old member query filtered these out for having no user, which is the one thing
-        // that makes them worth showing.
+        // A row with no user is kept: having none is what makes it worth showing.
         assertThat(rows).hasSize(2)
         val strangerRow = rows.single { it.member.userId == null }
         assertThat(strangerRow.state).isEqualTo(TargetMemberState.STRANGER)

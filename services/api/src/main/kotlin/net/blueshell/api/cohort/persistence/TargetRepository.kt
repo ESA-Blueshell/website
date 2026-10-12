@@ -26,7 +26,7 @@ interface TargetRepository : BaseRepository<Target, Long> {
         system: String,
     ): Target?
 
-    /** Active cohort already owning [externalId] on [system], if any (CohortTargetIds uniqueness guard). */
+    /** Active target already owning [externalId] on [system], if any (CohortTargetIds uniqueness guard). */
     fun findFirstBySystemAndExternalId(
         system: String,
         externalId: String,

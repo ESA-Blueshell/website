@@ -78,7 +78,7 @@ class CohortLedgerTest {
 
         assertThatThrownBy { ledger.markPushed(99L, 1L, "ext-1", now) }
             .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
-            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("target 99")
             .hasMessageContaining("ext-1")
             .hasMessageContaining("user 2")
 
@@ -210,7 +210,7 @@ class CohortLedgerTest {
 
         assertThatThrownBy { ledger.foldStrangerIntoDesired(desired, stranger) }
             .isInstanceOf(ExternalIdAlreadyOwnedException::class.java)
-            .hasMessageContaining("cohort 99")
+            .hasMessageContaining("target 99")
             .hasMessageContaining("ext-7")
             .hasMessageContaining("user 8")
 

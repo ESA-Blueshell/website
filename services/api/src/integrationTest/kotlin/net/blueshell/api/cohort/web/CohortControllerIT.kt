@@ -33,8 +33,7 @@ class CohortControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
 
-    // The drift report is gone: the cohort's own read carries the states and the strangers,
-    // so these two cases follow it there rather than being deleted with the endpoint.
+    // The cohort's own read carries the states and the strangers; no separate drift report does.
 
     @Test
     fun `non-admin is forbidden from reading a cohort`() {
@@ -202,7 +201,7 @@ class CohortControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `switching a cohort that belongs to another cohort returns 404`() {
+    fun `switching a target that belongs to another cohort returns 404`() {
         val admin = createUserWithRole(Role.ADMIN)
         val ownerCohort = newCohort()
         val otherCohort = newCohort()

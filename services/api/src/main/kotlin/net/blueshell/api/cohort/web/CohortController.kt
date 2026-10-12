@@ -151,7 +151,7 @@ data class CohortTargetResponse(
     val system: TargetSystem,
     val kind: TargetKind,
     val label: String,
-    /** Native id on the external system; null until the cohort has been materialised. */
+    /** Native id on the external system; null until the target has been created or linked. */
     val externalId: String?,
     @param:Schema(description = "When this cohort was last confirmed to agree with its target")
     val lastReconciledAt: Instant?,

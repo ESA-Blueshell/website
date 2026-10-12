@@ -110,7 +110,7 @@ class CohortLedger(
     ) {
         // A blank external id would produce an INVALID stranger row (see
         // TargetMemberState); reject it at the edge so the ledger never holds one.
-        require(externalUserId.isNotBlank()) { "Stranger external id must not be blank for cohort ${target.id}" }
+        require(externalUserId.isNotBlank()) { "Stranger external id must not be blank for target ${target.id}" }
         val existing = members.findByTargetIdAndExternalUserIdAndUserIdIsNull(target.id!!, externalUserId)
         if (existing != null) {
             existing.verifiedAt = at
@@ -212,6 +212,6 @@ class ExternalIdAlreadyOwnedException(
     ownerUserId: Long?,
     requestedUserId: Long?,
 ) : NonRetryableJobException(
-        "Cannot assign external user id '$externalUserId' in cohort $targetId to user $requestedUserId; " +
-            "it is already owned by user $ownerUserId in the same cohort.",
+        "Cannot assign external user id '$externalUserId' in target $targetId to user $requestedUserId; " +
+            "it is already owned by user $ownerUserId in the same target.",
     )

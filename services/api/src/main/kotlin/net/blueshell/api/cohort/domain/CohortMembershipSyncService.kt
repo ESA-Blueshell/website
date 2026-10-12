@@ -99,9 +99,9 @@ class CohortMembershipSyncService(
         // Stamp the ledger so the desired row reads as synced. This is the
         // primary path to healthy; reconcile only verifies afterwards.
         if (!ledger.markPushed(targetId, userId, externalUserId, LocalDateTime.now())) {
-            log.warn("Pushed user {} to {} cohort {} but its desired row is gone — not stamping", userId, system, targetId)
+            log.warn("Pushed user {} to {} target {} but its desired row is gone; not stamping", userId, system, targetId)
         }
-        log.debug("Added user {} to {} cohort {} (ext={})", userId, system, targetId, externalTargetId)
+        log.debug("Added user {} to {} target {} (ext={})", userId, system, targetId, externalTargetId)
     }
 
     private fun remove(
@@ -116,7 +116,7 @@ class CohortMembershipSyncService(
                 ?: return "The user has no $system contact, so is on no $system list."
         val externalTargetId = targetExternalIds.find(target) ?: return "The cohort has no $system list linked."
         outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalTargetId), externalUserId) }
-        log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, targetId, externalTargetId)
+        log.debug("Removed user {} from {} target {} (ext={})", userId, system, targetId, externalTargetId)
         return null
     }
 
@@ -140,5 +140,5 @@ class CohortTargetNotLinkedException(
     targetId: Long,
     system: String,
 ) : NonRetryableJobException(
-        "cohort $targetId has no $system target — create or link an external target, then retry the membership job",
+        "target $targetId has no $system id; create or link an external target, then retry the membership job",
     )

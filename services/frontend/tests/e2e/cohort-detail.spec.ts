@@ -9,7 +9,7 @@ const COMMITTEE_COHORT = "/management/cohort/102"
 /** The number a box wears on its heading. */
 const badgeOf = (box: Locator) => box.getByTestId("info-box-count").locator(".v-badge__badge")
 
-test.describe("cohort cohort detail", () => {
+test.describe("cohort detail", () => {
   test("renders every section as a manager card", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
@@ -181,7 +181,7 @@ test.describe("cohort cohort detail", () => {
  * Drift is not a panel any more. A cohort's members and the rows only its target knows about
  * are one table, and each row says which of the two it is.
  */
-test.describe("cohort cohort detail — drift in the members table", () => {
+test.describe("cohort detail: drift in the members table", () => {
   const COHORT = "/management/cohort/101"
 
   const openMembers = async (page: import("./test").Page) => {
@@ -330,7 +330,7 @@ test.describe("cohort cohort detail — drift in the members table", () => {
   })
 })
 
-test.describe("cohort cohort detail — where a target lives", () => {
+test.describe("cohort detail: where a target lives", () => {
   test("says which folder a target sits in, not only what it is called", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())

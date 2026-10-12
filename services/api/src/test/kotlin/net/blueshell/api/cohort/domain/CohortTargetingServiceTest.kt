@@ -103,6 +103,15 @@ class CohortTargetingServiceTest {
     }
 
     @Test
+    fun `materialize fails terminally for a target that is gone`() {
+        whenever(targetRepo.findById(8L)).thenReturn(Optional.empty())
+
+        val refused = assertThrows<NonRetryableJobException> { service.materialize(8L) }
+
+        assert(refused.message == "Target 8 not found")
+    }
+
+    @Test
     fun `materialize is a no-op when the target already exists`() {
         val target =
             Entities.target(id = 7L, system = "BREVO", label = "Members")
@@ -187,7 +196,7 @@ class CohortTargetingServiceTest {
     }
 
     @Test
-    fun `switch rejects a cohort that is not a target of the path cohort`() {
+    fun `switch rejects a target that is not a target of the path cohort`() {
         val target = Entities.target(cohortId = 99L)
         whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
 

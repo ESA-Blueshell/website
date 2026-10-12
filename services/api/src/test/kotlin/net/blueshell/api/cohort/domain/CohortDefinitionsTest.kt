@@ -2,8 +2,12 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -91,5 +95,39 @@ class CohortDefinitionsTest {
 
         assertThat(definition.members()).containsExactly(7L)
         assertThat(definition.contains(7L)).isTrue()
+    }
+
+    @Test
+    fun `each provider produces definitions of its own type, keyed by that type and what they are about`() {
+        val periods: ContributionPeriodService = mockk()
+        val committees: CommitteeService = mockk()
+        every { periods.findAll() } returns listOf(year)
+        every { committees.findAll() } returns listOf(Entities.committee(id = 7L, name = "Sitecie"))
+        val providers =
+            listOf(
+                PeriodMembersProvider(periods, mockk()),
+                PeriodPayersProvider(periods, mockk()),
+                PeriodActiveMembersProvider(periods, emptyList()),
+                CommitteeMembersProvider(committees, mockk()),
+                NewsletterSubscribersProvider(mockk()),
+            )
+
+        val produced = providers.map { it.type to it.definitions().single() }
+
+        assertThat(produced.map { (_, definition) -> definition.key }).containsExactly(
+            "PERIOD_MEMBERS:14",
+            "PERIOD_PAYERS:14",
+            "PERIOD_ACTIVE_MEMBERS:14",
+            "COMMITTEE_MEMBERS:7",
+            "NEWSLETTER_SUBSCRIBERS",
+        )
+        assertThat(produced).allSatisfy { (type, definition) -> assertThat(definition.type).isEqualTo(type) }
+        assertThat(produced.map { (type, _) -> type.category() }).containsExactly(
+            CohortCategory.PERIODS,
+            CohortCategory.PERIODS,
+            CohortCategory.PERIODS,
+            CohortCategory.COMMITTEES,
+            CohortCategory.MEMBERS,
+        )
     }
 }

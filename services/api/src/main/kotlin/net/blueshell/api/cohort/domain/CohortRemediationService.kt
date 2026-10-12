@@ -83,7 +83,7 @@ class CohortRemediationService(
     }
 
     /**
-     * Fetches the full external member list for [cohortId] and reconciles
+     * Fetches the full external member list for [targetId] and reconciles
      * the ledger against it. One network call per run; runs the fetch
      * outside any DB transaction.
      */
@@ -147,7 +147,7 @@ class CohortRemediationService(
             .also { grouped ->
                 grouped.filterValues { it.size > 1 }.forEach { (externalId, mappings) ->
                     log.warn(
-                        "Ignoring duplicate external id mapping for cohort {} and external id {} across user ids {}",
+                        "Ignoring duplicate external id mapping for target {} and external id {} across user ids {}",
                         targetId,
                         externalId,
                         mappings.map { it.aggregateId },

@@ -40,9 +40,10 @@ at every width, because the artwork carries the name, the time and the place and
 them unreadable. The cut stays on buttons, segmented choices and slices.
 
 Corners are never rounded to soften a box. `--radius-*` is cleared in `island.css`, so
-`rounded-md` and its siblings generate nothing. Four things are round on purpose and nothing
-else is: a monogram or avatar, a count badge, the loading spinner and third-party chrome that
-has its own house style, which the Discord widget does.
+`rounded-md` and its siblings generate nothing. Six things are round on purpose and nothing
+else is: a monogram or avatar, a count badge, the loading spinner, the ring that marks a state
+as unreachable, a role written as Discord writes a mention and third-party chrome that has its
+own house style, which the Discord widget does.
 
 ## Grounds
 

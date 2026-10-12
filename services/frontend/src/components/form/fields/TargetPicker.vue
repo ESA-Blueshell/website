@@ -6,7 +6,7 @@ import {firstSaid} from "@/components/form/fields/saidWrong"
 import FormField from "@/components/island/FormField.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {fetchCohortOptions, type CohortOption} from "@/domains/cohorts"
+import {fetchCohortTargets, type TargetOption} from "@/domains/cohorts"
 
 const {
   modelValue = undefined,
@@ -30,12 +30,12 @@ const named = useFieldName(testid)
 
 const emit = defineEmits<{"update:modelValue": [value: number | undefined]}>()
 
-const held = ref<CohortOption[]>([])
+const held = ref<TargetOption[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   try {
-    held.value = await fetchCohortOptions()
+    held.value = await fetchCohortTargets()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -70,7 +70,7 @@ const options = computed(() => held.value.map(one => ({
         :loading="loading"
         :options="options"
         :selected-key="modelValue == null ? null : String(modelValue)"
-        :testid-prefix="named ?? 'cohort-picker'"
+        :testid-prefix="named ?? 'target-picker'"
         @pick="emit('update:modelValue', Number($event))"
       />
     </template>

@@ -1,11 +1,14 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.contact.api.ContactListAdapter
+import net.blueshell.api.contact.api.ContactListMember
 import net.blueshell.api.contact.api.ContactListRef
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class BrevoTargetStrategyTest {
@@ -48,6 +51,21 @@ class BrevoTargetStrategyTest {
         val targets = strategy.catalog("paid")
 
         assertThat(targets).extracting<String> { it.externalId }.containsExactly("11")
+    }
+
+    @Test
+    fun `reads, adds to, removes from and deletes a list by its Brevo id`() {
+        val paid = ExternalTarget(TargetSystem.BREVO, "99", TargetKind.LIST, "Paid")
+        whenever(lists.listMembers(99L)).thenReturn(listOf(ContactListMember(7L, "ada@example.com")))
+
+        assertThat(strategy.members(paid)).containsExactly(ExternalMember("7", "ada@example.com"))
+        strategy.add(paid, "7")
+        strategy.remove(paid, "7")
+        strategy.delete(paid)
+
+        verify(lists).addToList(7L, 99L)
+        verify(lists).removeFromList(7L, 99L)
+        verify(lists).deleteList(99L)
     }
 
     private fun list(

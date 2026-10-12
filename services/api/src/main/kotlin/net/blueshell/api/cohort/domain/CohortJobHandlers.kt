@@ -26,7 +26,7 @@ class CohortJobHandlers(
     @Bean
     fun syncCohortMembershipHandler() =
         bindSkipping(CohortJobs.SyncCohortMembership) {
-            membership.sync(it.userId, it.cohortId, it.intent)
+            membership.sync(it.userId, it.targetId, it.intent)
         }
 
     @Bean
@@ -50,13 +50,13 @@ class CohortJobHandlers(
     @Bean
     fun reconcileListHandler() =
         bind(CohortJobs.ReconcileList) {
-            remediation.verifyCohort(it.cohortId)
+            remediation.verifyTarget(it.targetId)
         }
 
     @Bean
     fun removeExternalMemberHandler() =
         bind(CohortJobs.RemoveExternalMember) {
-            remediation.removeExternalMember(it.cohortId, it.externalUserId)
+            remediation.removeExternalMember(it.targetId, it.externalUserId)
         }
 
     @Bean
@@ -68,7 +68,7 @@ class CohortJobHandlers(
     @Bean
     fun materializeCohortTargetHandler() =
         bind(CohortJobs.MaterializeCohortTarget) {
-            targeting.materialize(it.cohortId)
+            targeting.materialize(it.targetId)
         }
 
     @Bean

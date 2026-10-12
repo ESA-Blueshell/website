@@ -2,7 +2,7 @@
  * How the cohort pages count what they list.
  *
  * One place, so a template cannot put `1 cohort · 1 members` on a row beside a correctly
- * pluralised one. Pure functions over the numbers rather than computeds over a subject, so they
+ * pluralised one. Pure functions over the numbers rather than computeds over a cohort, so they
  * are worth a test.
  */
 

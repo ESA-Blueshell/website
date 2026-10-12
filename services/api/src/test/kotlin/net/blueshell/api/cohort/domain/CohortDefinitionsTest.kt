@@ -2,7 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
 import org.assertj.core.api.Assertions.assertThat
@@ -26,7 +26,7 @@ class CohortDefinitionsTest {
         val definition = PeriodMembersDefinition(year, memberships)
 
         assertThat(definition.key).isEqualTo("PERIOD_MEMBERS:14")
-        assertThat(definition.type).isEqualTo(CohortSubjectType.PERIOD_MEMBERS)
+        assertThat(definition.type).isEqualTo(CohortType.PERIOD_MEMBERS)
         assertThat(definition.scope).isEqualTo(14L)
         assertThat(definition.label).isEqualTo("Members 2026 - 2026")
     }

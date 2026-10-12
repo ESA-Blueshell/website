@@ -1,27 +1,27 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import CohortPicker from "@/components/form/fields/CohortPicker.vue"
+import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 
-const {mockFetchCohortOptions, mockHandleNetworkError} = vi.hoisted(() => ({
-  mockFetchCohortOptions: vi.fn(),
+const {mockFetchCohortTargets, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockFetchCohortTargets: vi.fn(),
   mockHandleNetworkError: vi.fn(),
 }))
 
-vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockFetchCohortOptions}))
+vi.mock("@/domains/cohorts", () => ({fetchCohortTargets: mockFetchCohortTargets}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
 
 const cohort = {id: 1, label: "Members", system: "BREVO", kind: "LIST", memberCount: 12}
 const stubs = {FormField: {template: "<div><slot /></div>"}}
 const picker = (wrapper: ReturnType<typeof mount>) => wrapper.findComponent({name: "SearchPicker"})
 
-describe("CohortPicker", () => {
+describe("TargetPicker", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetchCohortOptions.mockResolvedValue([cohort])
+    mockFetchCohortTargets.mockResolvedValue([cohort])
   })
 
   it("names a cohort by its label, where it lives and how many it holds", async () => {
-    const wrapper = mount(CohortPicker, {global: {stubs}})
+    const wrapper = mount(TargetPicker, {global: {stubs}})
     await flushPromises()
 
     expect(picker(wrapper).props("options")).toEqual([
@@ -30,15 +30,15 @@ describe("CohortPicker", () => {
   })
 
   it("stops saying it is looking once the list is in", async () => {
-    const wrapper = mount(CohortPicker, {global: {stubs}})
+    const wrapper = mount(TargetPicker, {global: {stubs}})
     await flushPromises()
 
     expect(picker(wrapper).props("loading")).toBe(false)
   })
 
   it("reports a list it could not read", async () => {
-    mockFetchCohortOptions.mockRejectedValue(new Error("500"))
-    const wrapper = mount(CohortPicker, {global: {stubs}})
+    mockFetchCohortTargets.mockRejectedValue(new Error("500"))
+    const wrapper = mount(TargetPicker, {global: {stubs}})
     await flushPromises()
 
     expect(mockHandleNetworkError).toHaveBeenCalled()

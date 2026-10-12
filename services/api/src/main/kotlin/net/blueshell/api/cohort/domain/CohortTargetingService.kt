@@ -1,8 +1,8 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
-import net.blueshell.api.cohort.persistence.CohortSubjectRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
@@ -16,15 +16,15 @@ import org.springframework.web.server.ResponseStatusException
 
 /**
  * External target creation
- * runs outside any DB transaction; the local `Cohort` row and its external id
+ * runs outside any DB transaction; the local `Target` row and its external id
  * are persisted in a short write transaction afterwards so a provider failure
  * leaves no half-written row. [CohortTargetIds] owns every write of the id.
  */
 @Service
 class CohortTargetingService(
+    private val targetRepo: TargetRepository,
     private val cohortRepo: CohortRepository,
-    private val subjectRepo: CohortSubjectRepository,
-    private val targetIds: CohortTargetIds,
+    private val targetExternalIds: CohortTargetIds,
     private val strategies: TargetStrategies,
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
@@ -41,79 +41,79 @@ class CohortTargetingService(
         }
 
     override fun linkExisting(
-        subjectId: Long,
+        cohortId: Long,
         system: TargetSystem,
         externalId: String,
-    ): CohortMappingRow {
+    ): CohortTargetRow {
         resolveTarget(system, externalId)
         val linked =
             writeTransaction.execute {
-                val subject = requireSubject(subjectId)
-                val existing = cohortRepo.findBySubjectIdAndSystem(subjectId, system.name)
-                val cohort =
+                val cohort = requireCohort(cohortId)
+                val existing = targetRepo.findByCohortIdAndSystem(cohortId, system.name)
+                val target =
                     if (existing == null) {
-                        cohortRepo.save(newCohort(system, subject.label, folder = null, subjectId = subjectId))
+                        targetRepo.save(newTarget(system, cohort.label, folder = null, cohortId = cohortId))
                     } else {
-                        val currentExternalId = targetIds.find(existing)
+                        val currentExternalId = targetExternalIds.find(existing)
                         if (currentExternalId != null) {
                             throw ResponseStatusException(
                                 HttpStatus.CONFLICT,
-                                "Subject $subjectId already has a $system target",
+                                "Cohort $cohortId already has a $system target",
                             )
                         }
                         existing
                     }
-                targetIds.record(cohort, externalId)
-                CohortMappingRow(cohort, externalId)
+                targetExternalIds.record(target, externalId)
+                CohortTargetRow(target, externalId)
             }
 
-        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.cohort.id!!), JobTrigger.SITE_ACTION)
+        jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.target.id!!), JobTrigger.SITE_ACTION)
         return linked
     }
 
     override fun create(
-        subjectId: Long,
+        cohortId: Long,
         system: TargetSystem,
         label: String,
         folderHint: String?,
-    ): CohortMappingRow {
-        // Validate before touching the provider so a duplicate/missing subject
+    ): CohortTargetRow {
+        // Validate before touching the provider so a duplicate/missing cohort
         // never creates an external target.
         writeTransaction.execute {
-            requireSubject(subjectId)
-            requireNoExistingMapping(subjectId, system)
+            requireCohort(cohortId)
+            requireNoExistingMapping(cohortId, system)
         }
 
-        val target = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }
+        val external = outsideTransaction.execute { strategies.require(system).create(label, folderHint) }
 
         return writeTransaction.execute {
-            val cohort = cohortRepo.save(newCohort(system, label, folder = folderHint, subjectId = subjectId))
-            targetIds.record(cohort, target.externalId)
-            CohortMappingRow(cohort, target.externalId)
+            val target = targetRepo.save(newTarget(system, label, folder = folderHint, cohortId = cohortId))
+            targetExternalIds.record(target, external.externalId)
+            CohortTargetRow(target, external.externalId)
         }
     }
 
     override fun switchTarget(
-        subjectId: Long,
         cohortId: Long,
+        targetId: Long,
         externalId: String,
         deletePrevious: Boolean,
         reconcileNow: Boolean,
-    ): CohortMappingRow {
+    ): CohortTargetRow {
         val prep =
             writeTransaction.execute {
-                val cohort = requireOwnedCohort(subjectId, cohortId)
-                TargetSystem.valueOf(cohort.system)
+                val target = requireOwnedTarget(cohortId, targetId)
+                TargetSystem.valueOf(target.system)
             }
         resolveTarget(prep, externalId)
 
         val switched =
             writeTransaction.execute {
-                val cohort = requireOwnedCohort(subjectId, cohortId)
-                val system = TargetSystem.valueOf(cohort.system)
-                val previousExternalId = targetIds.find(cohort)
-                targetIds.record(cohort, externalId)
-                Switched(cohort, system, previousExternalId)
+                val target = requireOwnedTarget(cohortId, targetId)
+                val system = TargetSystem.valueOf(target.system)
+                val previousExternalId = targetExternalIds.find(target)
+                targetExternalIds.record(target, externalId)
+                Switched(target, system, previousExternalId)
             }
 
         if (deletePrevious && switched.previousExternalId != null && switched.previousExternalId != externalId) {
@@ -124,26 +124,26 @@ class CohortTargetingService(
             )
         }
         if (reconcileNow) {
-            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(cohortId), JobTrigger.SITE_ACTION)
+            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(targetId), JobTrigger.SITE_ACTION)
         }
-        return CohortMappingRow(switched.cohort, externalId)
+        return CohortTargetRow(switched.target, externalId)
     }
 
-    override fun materialize(cohortId: Long): CohortTargetRef {
-        // Re-check the id first: the job is cohort-deduped, but a target may have
+    override fun materialize(targetId: Long): CohortTargetRef {
+        // Re-check the id first: the job is deduped per target, but an external id may have
         // been recorded (admin link, an earlier run) since this job was enqueued.
         val prep =
             readOnlyTransaction.execute {
-                val cohort =
-                    cohortRepo.findById(cohortId).orElseThrow {
-                        NonRetryableJobException("Cohort $cohortId not found")
+                val target =
+                    targetRepo.findById(targetId).orElseThrow {
+                        NonRetryableJobException("Target $targetId not found")
                     }
-                MaterializePrep(TargetSystem.valueOf(cohort.system), cohort.label, cohort.folder, targetIds.find(cohort))
+                MaterializePrep(TargetSystem.valueOf(target.system), target.label, target.folder, targetExternalIds.find(target))
             }
-        prep.existingExternalId?.let { return CohortTargetRef(cohortId, it) }
+        prep.existingExternalId?.let { return CohortTargetRef(targetId, it) }
 
         throw NonRetryableJobException(
-            "Cohort $cohortId has no ${prep.system} target; materialize-target no longer creates targets. " +
+            "Target $targetId has no ${prep.system} target; materialize-target no longer creates targets. " +
                 "Create or link an external target manually.",
         )
     }
@@ -152,52 +152,52 @@ class CohortTargetingService(
         system: TargetSystem,
         externalTargetId: String,
     ) {
-        val target = ExternalTarget(system, externalTargetId, strategies.descriptor(system).kind, externalTargetId)
-        outsideTransaction.executeWithoutResult { strategies.require(system).delete(target) }
+        val external = ExternalTarget(system, externalTargetId, strategies.descriptor(system).kind, externalTargetId)
+        outsideTransaction.executeWithoutResult { strategies.require(system).delete(external) }
     }
 
-    private fun requireSubject(subjectId: Long) =
-        subjectRepo.findById(subjectId).orElseThrow {
-            ResponseStatusException(HttpStatus.NOT_FOUND, "Subject $subjectId not found")
+    private fun requireCohort(cohortId: Long) =
+        cohortRepo.findById(cohortId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
         }
 
     private fun requireNoExistingMapping(
-        subjectId: Long,
+        cohortId: Long,
         system: TargetSystem,
     ) {
-        if (cohortRepo.findBySubjectIdAndSystem(subjectId, system.name) != null) {
+        if (targetRepo.findByCohortIdAndSystem(cohortId, system.name) != null) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "Subject $subjectId already has a $system target",
+                "Cohort $cohortId already has a $system target",
             )
         }
     }
 
-    private fun newCohort(
+    private fun newTarget(
         system: TargetSystem,
         label: String,
         folder: String?,
-        subjectId: Long,
-    ) = Cohort(
+        cohortId: Long,
+    ) = Target(
         system = system.name,
         kind = strategies.descriptor(system).kind,
         label = label,
         folder = folder,
-        subjectId = subjectId,
+        cohortId = cohortId,
     )
 
-    private fun requireOwnedCohort(
-        subjectId: Long,
+    private fun requireOwnedTarget(
         cohortId: Long,
-    ): Cohort {
-        val cohort =
-            cohortRepo.findById(cohortId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId not found")
+        targetId: Long,
+    ): Target {
+        val target =
+            targetRepo.findById(targetId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "Target $targetId not found")
             }
-        if (cohort.subjectId != subjectId) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Cohort $cohortId is not a target of subject $subjectId")
+        if (target.cohortId != cohortId) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "Target $targetId is not a target of cohort $cohortId")
         }
-        return cohort
+        return target
     }
 
     private fun resolveTarget(
@@ -208,7 +208,7 @@ class CohortTargetingService(
     }
 
     private data class Switched(
-        val cohort: Cohort,
+        val target: Target,
         val system: TargetSystem,
         val previousExternalId: String?,
     )

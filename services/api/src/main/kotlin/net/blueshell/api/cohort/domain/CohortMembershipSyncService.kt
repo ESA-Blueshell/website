@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
@@ -27,11 +27,11 @@ import java.time.LocalDateTime
  */
 @Service
 class CohortMembershipSyncService(
-    private val cohorts: CohortRepository,
+    private val targets: TargetRepository,
     private val ledger: CohortLedger,
     private val strategies: TargetStrategies,
     private val externalIds: ExternalIdMappingService,
-    private val targetIds: CohortTargetIds,
+    private val targetExternalIds: CohortTargetIds,
     private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) {
@@ -54,35 +54,35 @@ class CohortMembershipSyncService(
     @Transactional
     fun sync(
         userId: Long,
-        cohortId: Long,
+        targetId: Long,
         intent: SyncCohortMembershipIntent,
     ): String? {
-        val cohort =
-            cohorts.findById(cohortId).orElseThrow {
-                NonRetryableJobException("Cohort $cohortId not found")
+        val target =
+            targets.findById(targetId).orElseThrow {
+                NonRetryableJobException("Target $targetId not found")
             }
         val system =
-            runCatching { TargetSystem.valueOf(cohort.system) }.getOrElse {
-                throw NonRetryableJobException("Cohort $cohortId has unknown system '${cohort.system}'")
+            runCatching { TargetSystem.valueOf(target.system) }.getOrElse {
+                throw NonRetryableJobException("Target $targetId has unknown system '${target.system}'")
             }
         val strategy = strategies.requireForJob(system)
 
         return when (intent) {
             SyncCohortMembershipIntent.ADD -> {
-                add(userId, cohort, strategy)
+                add(userId, target, strategy)
                 null
             }
-            SyncCohortMembershipIntent.REMOVE -> remove(userId, cohort, strategy)
+            SyncCohortMembershipIntent.REMOVE -> remove(userId, target, strategy)
         }
     }
 
     private fun add(
         userId: Long,
-        cohort: Cohort,
+        target: Target,
         strategy: TargetStrategy,
     ) {
-        val cohortId = cohort.id!!
-        val system = cohort.system
+        val targetId = target.id!!
+        val system = target.system
         val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
         if (externalUserId == null) {
             jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
@@ -90,33 +90,33 @@ class CohortMembershipSyncService(
                 "user $userId has no $system external id — enqueued SyncContact, will retry",
             )
         }
-        val externalCohortId = targetIds.find(cohort)
-        if (externalCohortId == null) {
-            throw CohortTargetNotLinkedException(cohortId, system)
+        val externalTargetId = targetExternalIds.find(target)
+        if (externalTargetId == null) {
+            throw CohortTargetNotLinkedException(targetId, system)
         }
-        outsideTransaction.executeWithoutResult { strategy.add(strategy.handle(externalCohortId), externalUserId) }
+        outsideTransaction.executeWithoutResult { strategy.add(strategy.handle(externalTargetId), externalUserId) }
 
         // Stamp the ledger so the desired row reads as synced. This is the
         // primary path to healthy; reconcile only verifies afterwards.
-        if (!ledger.markPushed(cohortId, userId, externalUserId, LocalDateTime.now())) {
-            log.warn("Pushed user {} to {} cohort {} but its desired row is gone — not stamping", userId, system, cohortId)
+        if (!ledger.markPushed(targetId, userId, externalUserId, LocalDateTime.now())) {
+            log.warn("Pushed user {} to {} cohort {} but its desired row is gone — not stamping", userId, system, targetId)
         }
-        log.debug("Added user {} to {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
+        log.debug("Added user {} to {} cohort {} (ext={})", userId, system, targetId, externalTargetId)
     }
 
     private fun remove(
         userId: Long,
-        cohort: Cohort,
+        target: Target,
         strategy: TargetStrategy,
     ): String? {
-        val cohortId = cohort.id!!
-        val system = cohort.system
+        val targetId = target.id!!
+        val system = target.system
         val externalUserId =
             externalIds.find(USER_AGGREGATE, userId, system)?.externalId
                 ?: return "The user has no $system contact, so is on no $system list."
-        val externalCohortId = targetIds.find(cohort) ?: return "The cohort has no $system list linked."
-        outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalCohortId), externalUserId) }
-        log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, cohortId, externalCohortId)
+        val externalTargetId = targetExternalIds.find(target) ?: return "The cohort has no $system list linked."
+        outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalTargetId), externalUserId) }
+        log.debug("Removed user {} from {} cohort {} (ext={})", userId, system, targetId, externalTargetId)
         return null
     }
 
@@ -137,8 +137,8 @@ class CohortMembershipNotReadyException(
 ) : RuntimeException(message)
 
 class CohortTargetNotLinkedException(
-    cohortId: Long,
+    targetId: Long,
     system: String,
 ) : NonRetryableJobException(
-        "cohort $cohortId has no $system target — create or link an external target, then retry the membership job",
+        "cohort $targetId has no $system target — create or link an external target, then retry the membership job",
     )

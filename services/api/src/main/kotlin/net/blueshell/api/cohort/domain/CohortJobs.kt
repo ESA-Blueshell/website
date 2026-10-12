@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.domain
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import net.blueshell.api.shared.job.JobDefinition
 
 /**
@@ -19,7 +20,7 @@ object CohortJobs {
     /**
      * Walks every active contribution period and ensures its three period
      * cohorts — contribution-paid, members and active-members — and their
-     * subjects exist. Idempotent.
+     * cohorts exist. Idempotent.
      */
     object ReconcileAllContributionPeriodCohorts : JobDefinition<ReconcileAllContributionPeriodCohortsPayload> {
         override val type: String = "cohort.reconcile-contribution-periods"
@@ -78,7 +79,7 @@ object CohortJobs {
         override val payloadType: Class<ReconcileListPayload> =
             ReconcileListPayload::class.java
 
-        override fun dedupKey(payload: ReconcileListPayload): String = "cohort=${payload.cohortId}"
+        override fun dedupKey(payload: ReconcileListPayload): String = "cohort=${payload.targetId}"
     }
 
     /**
@@ -108,12 +109,14 @@ object CohortJobs {
         override val payloadType: Class<MaterializeCohortTargetPayload> =
             MaterializeCohortTargetPayload::class.java
 
-        override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.cohortId}"
+        override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.targetId}"
     }
 
     data class SyncCohortMembershipPayload(
         val userId: Long,
-        val cohortId: Long,
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
         val intent: SyncCohortMembershipIntent,
     )
 
@@ -130,12 +133,16 @@ object CohortJobs {
     )
 
     data class RemoveExternalMemberPayload(
-        val cohortId: Long,
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
         val externalUserId: String,
     )
 
     data class ReconcileListPayload(
-        val cohortId: Long,
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
     )
 
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
@@ -145,12 +152,18 @@ object CohortJobs {
     )
 
     data class MaterializeCohortTargetPayload(
-        val cohortId: Long,
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
     )
 
     data class ApplyInboundReconcilePayload(
-        val subjectId: Long,
+        @param:JsonProperty("subjectId")
+        @get:JsonProperty("subjectId")
         val cohortId: Long,
+        @param:JsonProperty("cohortId")
+        @get:JsonProperty("cohortId")
+        val targetId: Long,
         val system: String,
         val externalTargetId: String,
         /** Which cohort this is reconciling into, by the key of the definition behind it. */

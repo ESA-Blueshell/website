@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * [net.blueshell.api.shared.enums.TargetSystem] knows which kinds it supports.
  */
 @Schema(enumAsRef = true)
-enum class CohortKind {
+enum class TargetKind {
     /** A Brevo mailing list. */
     LIST,
 

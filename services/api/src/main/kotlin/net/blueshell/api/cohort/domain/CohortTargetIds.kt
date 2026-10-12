@@ -1,7 +1,7 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.Cohort
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -9,20 +9,20 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * Sole owner of a cohort's external target id, which lives in [Cohort.externalId].
+ * Sole owner of a cohort's external target id, which lives in [Target.externalId].
  *
  * Every cohort path resolves the target id here, and [record] is the column's only writer.
  */
 @Component
 class CohortTargetIds(
-    private val cohorts: CohortRepository,
+    private val targets: TargetRepository,
 ) {
     /** The cohort's target id, or null when it has not been materialised. */
-    fun find(cohort: Cohort): String? = cohort.externalId?.takeIf { it.isNotBlank() }
+    fun find(target: Target): String? = target.externalId?.takeIf { it.isNotBlank() }
 
     /** The target id, or a terminal failure when the cohort is not materialised. */
-    fun require(cohort: Cohort): String =
-        find(cohort) ?: throw NonRetryableJobException("Cohort ${cohort.id} has no external id on ${cohort.system}")
+    fun require(target: Target): String =
+        find(target) ?: throw NonRetryableJobException("Target ${target.id} has no external id on ${target.system}")
 
     /**
      * Records [externalId] as this cohort's target. Rejects blanks and refuses
@@ -30,18 +30,18 @@ class CohortTargetIds(
      */
     @Transactional
     fun record(
-        cohort: Cohort,
+        target: Target,
         externalId: String,
-    ): Cohort {
+    ): Target {
         require(externalId.isNotBlank()) { "Cohort external id must not be blank" }
-        val owner = cohorts.findFirstBySystemAndExternalId(cohort.system, externalId)
-        if (owner != null && owner.id != cohort.id) {
+        val owner = targets.findFirstBySystemAndExternalId(target.system, externalId)
+        if (owner != null && owner.id != target.id) {
             throw ResponseStatusException(
                 HttpStatus.CONFLICT,
-                "${cohort.system} target $externalId is already linked to cohort ${owner.id}",
+                "${target.system} target $externalId is already linked to cohort ${owner.id}",
             )
         }
-        cohort.externalId = externalId
-        return cohorts.save(cohort)
+        target.externalId = externalId
+        return targets.save(target)
     }
 }

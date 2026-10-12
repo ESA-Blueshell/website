@@ -568,68 +568,14 @@ export type CodeRequest = {
     code: string;
 };
 
-export type CohortDetail = {
-    /**
-     * Which definition in code decides who belongs to this cohort
-     */
-    definitionKey?: string | null;
-    externalId?: string | null;
-    folder?: string | null;
-    id: number;
-    kind: CohortKind;
-    label: string;
-    memberCount: number;
-    members: Array<CohortMemberRow>;
-    system: string;
-};
-
-export enum CohortKind {
-    LIST = 'LIST',
-    ROLE = 'ROLE',
-    GROUP = 'GROUP'
-}
-
-export type CohortMapping = {
-    cohortId: number;
-    externalId?: string | null;
-    kind: CohortKind;
-    label: string;
-    /**
-     * When this cohort was last confirmed to agree with its target
-     */
-    lastReconciledAt?: string | null;
-    /**
-     * Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.
-     */
-    path: Array<string>;
-    /**
-     * External system this mapping targets
-     */
-    system: TargetSystem;
-};
-
-export type CohortMemberRow = {
-    cohortMemberId: number;
-    isUserDeleted: boolean;
-    joinedAt: string;
-    userEmail?: string | null;
-    userFullName?: string | null;
-    userId: number;
-};
-
-export type CohortRepair = {
-    cohortId: number;
-    enqueuedAdds: number;
-};
-
-export enum CohortSubjectCategory {
+export enum CohortCategory {
     COMMITTEES = 'COMMITTEES',
     PERIODS = 'PERIODS',
     MEMBERS = 'MEMBERS'
 }
 
-export type CohortSubjectDetail = {
-    category: CohortSubjectCategory;
+export type CohortDetail = {
+    category: CohortCategory;
     /**
      * Which definition in code decides who belongs here
      */
@@ -637,17 +583,16 @@ export type CohortSubjectDetail = {
     description?: string | null;
     id: number;
     label: string;
-    mappings: Array<CohortMapping>;
-    members: Array<CohortSubjectMember>;
+    mappings: Array<CohortTarget>;
+    members: Array<CohortMember>;
     /**
      * True when no definition produces this cohort any more
      */
     orphaned: boolean;
-    type: CohortSubjectType;
+    type: CohortType;
 };
 
-export type CohortSubjectMember = {
-    cohortMemberId: number;
+export type CohortMember = {
     /**
      * What the external system calls this row
      */
@@ -666,6 +611,7 @@ export type CohortSubjectMember = {
      * Which system's ledger this row belongs to
      */
     system?: TargetSystem | null;
+    targetMemberId: number;
     userEmail?: string | null;
     userFullName?: string | null;
     /**
@@ -674,32 +620,41 @@ export type CohortSubjectMember = {
     userId?: number | null;
 };
 
-export type CohortSubjectSummary = {
-    category: CohortSubjectCategory;
+export type CohortSummary = {
+    category: CohortCategory;
     id: number;
     label: string;
     mappingCount: number;
     memberCount: number;
-    type: CohortSubjectType;
+    type: CohortType;
 };
 
-export enum CohortSubjectType {
+export type CohortTarget = {
+    externalId?: string | null;
+    kind: TargetKind;
+    label: string;
+    /**
+     * When this cohort was last confirmed to agree with its target
+     */
+    lastReconciledAt?: string | null;
+    /**
+     * Where the target sits on its system, outside in: the system, then any folder holding it. Read from what was recorded when the target was linked or moved, so a page costs no call to the system.
+     */
+    path: Array<string>;
+    /**
+     * External system this mapping targets
+     */
+    system: TargetSystem;
+    targetId: number;
+};
+
+export enum CohortType {
     COMMITTEE_MEMBERS = 'COMMITTEE_MEMBERS',
     PERIOD_PAYERS = 'PERIOD_PAYERS',
     PERIOD_MEMBERS = 'PERIOD_MEMBERS',
     PERIOD_ACTIVE_MEMBERS = 'PERIOD_ACTIVE_MEMBERS',
     NEWSLETTER_SUBSCRIBERS = 'NEWSLETTER_SUBSCRIBERS'
 }
-
-export type CohortSummary = {
-    externalId?: string | null;
-    folder?: string | null;
-    id: number;
-    kind: CohortKind;
-    label: string;
-    memberCount: number;
-    system: string;
-};
 
 /**
  * What deleting a committee hands over to the committee that takes over
@@ -1459,9 +1414,9 @@ export type EventSignUpResponse = {
 export type ExternalTarget = {
     externalId: string;
     folderLabel?: string | null;
-    kind: CohortKind;
+    kind: TargetKind;
     label: string;
-    linkedCohortId?: number | null;
+    linkedTargetId?: number | null;
     memberCount?: number | null;
     path: Array<string>;
     system: TargetSystem;
@@ -2767,8 +2722,28 @@ export type SwitchTarget = {
 };
 
 export type TargetDescriptor = {
-    kind: CohortKind;
+    kind: TargetKind;
     system: TargetSystem;
+};
+
+export enum TargetKind {
+    LIST = 'LIST',
+    ROLE = 'ROLE',
+    GROUP = 'GROUP'
+}
+
+/**
+ * A target as a picker offers it.
+ */
+export type TargetOption = {
+    id: number;
+    kind: TargetKind;
+    label: string;
+    /**
+     * How many of our people the target holds
+     */
+    memberCount: number;
+    system: string;
 };
 
 export enum TargetSystem {
@@ -8048,351 +8023,6 @@ export type HealthCheckResponses = {
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
 
-export type FindCohortSubjectsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/management/cohort-subjects';
-};
-
-export type FindCohortSubjectsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCohortSubjectsError = FindCohortSubjectsErrors[keyof FindCohortSubjectsErrors];
-
-export type FindCohortSubjectsResponses = {
-    /**
-     * OK
-     */
-    200: Array<CohortSubjectSummary>;
-};
-
-export type FindCohortSubjectsResponse = FindCohortSubjectsResponses[keyof FindCohortSubjectsResponses];
-
-export type FindCohortSubjectByIdData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}';
-};
-
-export type FindCohortSubjectByIdErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type FindCohortSubjectByIdError = FindCohortSubjectByIdErrors[keyof FindCohortSubjectByIdErrors];
-
-export type FindCohortSubjectByIdResponses = {
-    /**
-     * OK
-     */
-    200: CohortSubjectDetail;
-};
-
-export type FindCohortSubjectByIdResponse = FindCohortSubjectByIdResponses[keyof FindCohortSubjectByIdResponses];
-
-export type LinkUserData = {
-    body: LinkUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/drift/link-user';
-};
-
-export type LinkUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
-
-export type LinkUserResponses = {
-    /**
-     * OK
-     */
-    200: LinkedUser;
-};
-
-export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
-
-export type LinkExistingTargetData = {
-    body: LinkExistingTarget;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/targets/existing';
-};
-
-export type LinkExistingTargetErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type LinkExistingTargetError = LinkExistingTargetErrors[keyof LinkExistingTargetErrors];
-
-export type LinkExistingTargetResponses = {
-    /**
-     * OK
-     */
-    200: CohortMapping;
-};
-
-export type LinkExistingTargetResponse = LinkExistingTargetResponses[keyof LinkExistingTargetResponses];
-
-export type CreateTargetData = {
-    body: CreateTarget;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/targets/new';
-};
-
-export type CreateTargetErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CreateTargetError = CreateTargetErrors[keyof CreateTargetErrors];
-
-export type CreateTargetResponses = {
-    /**
-     * OK
-     */
-    200: CohortMapping;
-};
-
-export type CreateTargetResponse = CreateTargetResponses[keyof CreateTargetResponses];
-
-export type SwitchTargetData = {
-    body: SwitchTarget;
-    path: {
-        id: number;
-        cohortId: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/targets/{cohortId}';
-};
-
-export type SwitchTargetErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SwitchTargetError = SwitchTargetErrors[keyof SwitchTargetErrors];
-
-export type SwitchTargetResponses = {
-    /**
-     * OK
-     */
-    200: CohortMapping;
-};
-
-export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
-
-export type ApplyInboundReconcileData = {
-    body: InboundReconcileApplyRequest;
-    path: {
-        id: number;
-        cohortId: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/targets/{cohortId}/inbound-reconcile/apply';
-};
-
-export type ApplyInboundReconcileErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ApplyInboundReconcileError = ApplyInboundReconcileErrors[keyof ApplyInboundReconcileErrors];
-
-export type ApplyInboundReconcileResponses = {
-    /**
-     * OK
-     */
-    200: InboundReconcileApplyResponse;
-};
-
-export type ApplyInboundReconcileResponse = ApplyInboundReconcileResponses[keyof ApplyInboundReconcileResponses];
-
-export type PreviewInboundReconcileData = {
-    body?: never;
-    path: {
-        id: number;
-        cohortId: number;
-    };
-    query?: never;
-    url: '/management/cohort-subjects/{id}/targets/{cohortId}/inbound-reconcile/preview';
-};
-
-export type PreviewInboundReconcileErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PreviewInboundReconcileError = PreviewInboundReconcileErrors[keyof PreviewInboundReconcileErrors];
-
-export type PreviewInboundReconcileResponses = {
-    /**
-     * OK
-     */
-    200: InboundReconcilePreview;
-};
-
-export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
-
 export type ListCohortTargetSystemsData = {
     body?: never;
     path?: never;
@@ -8650,6 +8280,47 @@ export type FindCohortsResponses = {
 
 export type FindCohortsResponse = FindCohortsResponses[keyof FindCohortsResponses];
 
+export type ListTargetOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/cohorts/targets';
+};
+
+export type ListTargetOptionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListTargetOptionsError = ListTargetOptionsErrors[keyof ListTargetOptionsErrors];
+
+export type ListTargetOptionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TargetOption>;
+};
+
+export type ListTargetOptionsResponse = ListTargetOptionsResponses[keyof ListTargetOptionsResponses];
+
 export type FindCohortByIdData = {
     body?: never;
     path: {
@@ -8693,16 +8364,16 @@ export type FindCohortByIdResponses = {
 
 export type FindCohortByIdResponse = FindCohortByIdResponses[keyof FindCohortByIdResponses];
 
-export type RepairMissingAddsData = {
-    body?: never;
+export type LinkUserData = {
+    body: LinkUser;
     path: {
         id: number;
     };
     query?: never;
-    url: '/management/cohorts/{id}/repair-missing-adds';
+    url: '/management/cohorts/{id}/drift/link-user';
 };
 
-export type RepairMissingAddsErrors = {
+export type LinkUserErrors = {
     /**
      * Validation error
      */
@@ -8725,16 +8396,234 @@ export type RepairMissingAddsErrors = {
     500: ApiError;
 };
 
-export type RepairMissingAddsError = RepairMissingAddsErrors[keyof RepairMissingAddsErrors];
+export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
 
-export type RepairMissingAddsResponses = {
+export type LinkUserResponses = {
     /**
      * OK
      */
-    200: CohortRepair;
+    200: LinkedUser;
 };
 
-export type RepairMissingAddsResponse = RepairMissingAddsResponses[keyof RepairMissingAddsResponses];
+export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
+
+export type LinkExistingTargetData = {
+    body: LinkExistingTarget;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/existing';
+};
+
+export type LinkExistingTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkExistingTargetError = LinkExistingTargetErrors[keyof LinkExistingTargetErrors];
+
+export type LinkExistingTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortTarget;
+};
+
+export type LinkExistingTargetResponse = LinkExistingTargetResponses[keyof LinkExistingTargetResponses];
+
+export type CreateTargetData = {
+    body: CreateTarget;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/new';
+};
+
+export type CreateTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateTargetError = CreateTargetErrors[keyof CreateTargetErrors];
+
+export type CreateTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortTarget;
+};
+
+export type CreateTargetResponse = CreateTargetResponses[keyof CreateTargetResponses];
+
+export type SwitchTargetData = {
+    body: SwitchTarget;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}';
+};
+
+export type SwitchTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SwitchTargetError = SwitchTargetErrors[keyof SwitchTargetErrors];
+
+export type SwitchTargetResponses = {
+    /**
+     * OK
+     */
+    200: CohortTarget;
+};
+
+export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
+
+export type ApplyInboundReconcileData = {
+    body: InboundReconcileApplyRequest;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/inbound-reconcile/apply';
+};
+
+export type ApplyInboundReconcileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyInboundReconcileError = ApplyInboundReconcileErrors[keyof ApplyInboundReconcileErrors];
+
+export type ApplyInboundReconcileResponses = {
+    /**
+     * OK
+     */
+    200: InboundReconcileApplyResponse;
+};
+
+export type ApplyInboundReconcileResponse = ApplyInboundReconcileResponses[keyof ApplyInboundReconcileResponses];
+
+export type PreviewInboundReconcileData = {
+    body?: never;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/inbound-reconcile/preview';
+};
+
+export type PreviewInboundReconcileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewInboundReconcileError = PreviewInboundReconcileErrors[keyof PreviewInboundReconcileErrors];
+
+export type PreviewInboundReconcileResponses = {
+    /**
+     * OK
+     */
+    200: InboundReconcilePreview;
+};
+
+export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
 
 export type List1Data = {
     body?: never;

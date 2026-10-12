@@ -14,37 +14,37 @@ import org.springframework.jdbc.core.JdbcTemplate
  * two records, and no fact columns remain on the table.
  */
 @SpringBootTest
-class CohortSubjectDefinitionKeyIT : UserTestSupport() {
+class CohortDefinitionKeyIT : UserTestSupport() {
     @Autowired
-    private lateinit var subjects: CohortSubjectRepository
+    private lateinit var cohorts: CohortRepository
 
     @Autowired
     private lateinit var jdbc: JdbcTemplate
 
-    private fun subject(key: String?) =
-        CohortSubject(
-            type = CohortSubjectType.NEWSLETTER_SUBSCRIBERS,
-            label = "Subject ${System.nanoTime()}",
+    private fun cohort(key: String?) =
+        Cohort(
+            type = CohortType.NEWSLETTER_SUBSCRIBERS,
+            label = "Cohort ${System.nanoTime()}",
             definitionKey = key,
         )
 
     @Test
     fun `the key naming the definition round-trips`() {
         val key = "PERIOD_MEMBERS:${System.nanoTime()}"
-        val saved = subjects.save(subject(key))
+        val saved = cohorts.save(cohort(key))
 
-        val reloaded = subjects.findById(saved.id!!).orElseThrow()
+        val reloaded = cohorts.findById(saved.id!!).orElseThrow()
 
         assertThat(reloaded.definitionKey).isEqualTo(key)
-        assertThat(subjects.findByDefinitionKey(key)?.id).isEqualTo(saved.id)
+        assertThat(cohorts.findByDefinitionKey(key)?.id).isEqualTo(saved.id)
     }
 
     @Test
     fun `two records cannot claim the same definition`() {
         val key = "PERIOD_MEMBERS:${System.nanoTime()}"
-        subjects.save(subject(key))
+        cohorts.save(cohort(key))
 
-        assertThatThrownBy { subjects.saveAndFlush(subject(key)) }
+        assertThatThrownBy { cohorts.saveAndFlush(cohort(key)) }
             .isInstanceOf(DataIntegrityViolationException::class.java)
     }
 
@@ -52,10 +52,10 @@ class CohortSubjectDefinitionKeyIT : UserTestSupport() {
     fun `records that name no definition do not collide with each other`() {
         // Rows soft-deleted before the key existed carry none, and MariaDB lets a unique
         // index hold any number of nulls.
-        subjects.save(subject(null))
-        subjects.saveAndFlush(subject(null))
+        cohorts.save(cohort(null))
+        cohorts.saveAndFlush(cohort(null))
 
-        assertThat(subjects.findAll()).isNotEmpty
+        assertThat(cohorts.findAll()).isNotEmpty
     }
 
     @Test

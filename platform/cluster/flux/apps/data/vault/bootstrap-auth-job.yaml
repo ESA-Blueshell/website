@@ -60,7 +60,14 @@ spec:
             - name: vault-token
               mountPath: /var/run/secrets/vault
               readOnly: true
+            # The Kubernetes auth config names the cluster's CA by this path.
+            - name: cluster-ca
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
       volumes:
+        - name: cluster-ca
+          configMap:
+            name: kube-root-ca.crt
         - name: vault-token
           projected:
             sources:

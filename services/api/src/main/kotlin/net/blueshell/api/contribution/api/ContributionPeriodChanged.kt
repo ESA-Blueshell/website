@@ -1,4 +1,4 @@
-package net.blueshell.api.contribution.domain
+package net.blueshell.api.contribution.api
 
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorTracked

@@ -5,6 +5,8 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -24,6 +26,7 @@ class CohortRegistrar(
     private val cohorts: CohortRepository,
     private val targets: TargetRepository,
     private val strategies: TargetStrategies,
+    private val jobs: JobQueue,
 ) {
     @Transactional
     fun register(): RegistrationReport {
@@ -66,19 +69,21 @@ class CohortRegistrar(
                     definitionKey = definition.key,
                 ),
             )
-        // One target per system the association syncs to. Only the target's id is missing,
-        // and an operator supplies that by creating or linking the list itself.
+        // One target per system the association syncs to, created by its own job (api ADR-035),
+        // which the queue runs once this transaction commits.
         val system = TargetSystem.BREVO
         if (targets.findByCohortIdAndSystem(cohort.id!!, system.name) == null) {
-            targets.save(
-                Target(
-                    system = system.name,
-                    kind = strategies.descriptor(system).kind,
-                    label = definition.label,
-                    folder = definition.folder,
-                    cohortId = cohort.id,
-                ),
-            )
+            val target =
+                targets.save(
+                    Target(
+                        system = system.name,
+                        kind = strategies.descriptor(system).kind,
+                        label = definition.label,
+                        folder = definition.folder,
+                        cohortId = cohort.id,
+                    ),
+                )
+            jobs.runAsync(CohortJobs.CreateCohortTarget, CohortJobs.CreateCohortTargetPayload(target.id!!), JobTrigger.SITE_ACTION)
         }
     }
 

@@ -5,6 +5,7 @@ import io.mockk.mockk
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.committee.api.CommitteeService
+import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.testsupport.Entities
@@ -129,5 +130,16 @@ class CohortDefinitionsTest {
             CohortCategory.COMMITTEES,
             CohortCategory.MEMBERS,
         )
+    }
+
+    @Test
+    fun `each cohort type names its own Brevo folder`() {
+        val committee = Committee(name = "Sitecie", description = "Builds the site").apply { id = 3L }
+
+        assertThat(PeriodMembersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.MEMBERS)
+        assertThat(PeriodPayersDefinition(year, mockk()).folder).isEqualTo(CohortFolders.CONTRIBUTION_PAID)
+        assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
+        assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
+        assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
     }
 }

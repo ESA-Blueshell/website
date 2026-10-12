@@ -46,6 +46,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [027](ADR-027-joining-asks-for-the-contribution.md) | Joining Asks For The Contribution | Accepted | A membership starting through signup asks the new member to pay, records the ask, and leaves the deadline to the board |
 | [029](ADR-029-animated-gif-banners-convert-to-animated-webp.md) | Animated GIF Banners Convert To Animated WebP | Accepted | A GIF banner is stored and served as an animated WebP at every width, decoded per frame and resized off the startup path |
 | [032](ADR-032-an-edit-awaiting-re-approval-freezes-discord.md) | An Edit Awaiting Re-Approval Freezes What the Bot Has Out | Accepted | A non-board edit sends the event back without taking its Discord posts down; they stay as last approved until the board decides |
+| [035](ADR-035-a-cohorts-target-is-created-when-the-cohort-is-registered.md) | A Cohort's Target Is Created When the Cohort Is Registered | Accepted | Registration queues a claimed create per mirrored system; reverses #369's manual step; unlinked cohorts backfilled |
 
 ### Security and API
 

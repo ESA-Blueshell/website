@@ -2,7 +2,6 @@ package net.blueshell.api.contribution.api
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import net.blueshell.api.contribution.domain.ContributionPeriodChanged
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher

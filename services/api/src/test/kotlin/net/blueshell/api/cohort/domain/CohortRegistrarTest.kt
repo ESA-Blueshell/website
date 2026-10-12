@@ -10,6 +10,8 @@ import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,7 +21,8 @@ class CohortRegistrarTest {
     private val cohorts: CohortRepository = mockk()
     private val targets: TargetRepository = mockk()
     private val strategies: TargetStrategies = mockk()
-    private val registrar = CohortRegistrar(definitions, cohorts, targets, strategies)
+    private val jobs: JobQueue = mockk(relaxed = true)
+    private val registrar = CohortRegistrar(definitions, cohorts, targets, strategies, jobs)
 
     private val definition =
         object : CohortDefinition {
@@ -42,18 +45,16 @@ class CohortRegistrarTest {
     }
 
     @Test
-    fun `a new definition gets its cohort and a target row in its folder`() {
+    fun `a new definition gets its cohort, a target row in its folder and a job that creates the list`() {
         every { cohorts.findAll() } returns emptyList()
         every { targets.findByCohortIdAndSystem(3L, "BREVO") } returns null
 
         val report = registrar.register()
 
         assertThat(report.created).isEqualTo(1)
-        verify { cohorts.save(match { it.definitionKey == "COMMITTEE_MEMBERS:7" && it.type == CohortType.COMMITTEE_MEMBERS }) }
         verify {
-            targets.save(
-                match { it.folder == "Committees" && it.label == "Sitecie" && it.cohortId == 3L && it.kind == TargetKind.LIST },
-            )
+            targets.save(match { it.folder == "Committees" && it.label == "Sitecie" && it.cohortId == 3L })
+            jobs.runAsync(CohortJobs.CreateCohortTarget, CohortJobs.CreateCohortTargetPayload(30L), JobTrigger.SITE_ACTION)
         }
     }
 
@@ -65,6 +66,7 @@ class CohortRegistrarTest {
         registrar.register()
 
         verify(exactly = 0) { targets.save(any()) }
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.CreateCohortTarget, any(), any()) }
     }
 
     @Test

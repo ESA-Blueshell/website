@@ -10,7 +10,7 @@ Authoritative zone files, one per domain. Imported into Cloudflare via
 - Apex `esa-blueshell.nl` serves the NixOS + k3s stack at
   `157.173.115.164` / `2a02:c207:2316:2642::1`. Every service hostname
   the platform advertises (`api` lives at apex `/api`, plus admin hosts
-  `kube`, `vault`, `mail-admin`, `status`, `traefik`) resolves through
+  `kube`, `vault`, `stalwart`, `status`, `traefik`) resolves through
   that node — admin records are external-dns managed off each
   IngressRoute.
 - `v2.esa-blueshell.nl` has been retired — both the DNS records and
@@ -82,8 +82,3 @@ intentionally only adds mail records:
   apex was retired (see header note in this README) but the zone
   file still carries the records and their external-dns ownership
   markers.
-- `listmonk.esa-blueshell.nl.` A/AAAA + `mail-admin.esa-blueshell.nl.`
-  A/AAAA + the matching `a-listmonk.*` / `aaaa-listmonk.*` and
-  `a-mail-admin.*` / `aaaa-mail-admin.*` TXT markers — Listmonk has
-  been retired in favour of Stalwart relay (#260+). Drop after the
-  Listmonk teardown PR lands cluster-side.

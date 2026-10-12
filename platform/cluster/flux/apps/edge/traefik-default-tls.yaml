@@ -9,7 +9,7 @@ spec:
   # One cert covers:
   #   - apex `esa-blueshell.nl`               (main site)
   #   - `*.esa-blueshell.nl`                  (admin hosts: auth, kube,
-  #                                            mail-admin, status,
+  #                                            status,
   #                                            vault, traefik —
   #                                            wildcard matches one
   #                                            label deep)

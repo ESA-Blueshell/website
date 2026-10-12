@@ -60,7 +60,7 @@ configurations.configureEach {
 // nightly spec sync in each client repository is what decides whether a bump
 // is a patch, a minor or a major.
 val brevoClientVersion = "1.1.1"
-val discordClientVersion = "1.5.0"
+val discordClientVersion = "1.6.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")

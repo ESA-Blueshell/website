@@ -115,11 +115,23 @@ export function usePagedTable<T extends Expandable>(
       : [...expanded.value, row.id]
   }
 
-  const refresh = async (): Promise<void> => {
+  // Only the newest read is kept: a slow answer must not land on rows a later read replaced.
+  let asked = 0
+
+  const read = async (index: number, take: (answered: PageOf<T>) => void): Promise<void> => {
+    const mine = ++asked
     loading.value = true
     try {
       const typed = (search.value ?? "").trim()
-      const answered = await load({page: Math.max(0, page.value - 1), size, search: typed || undefined, ...sorted()})
+      const answered = await load({page: index, size, search: typed || undefined, ...sorted()})
+      if (mine === asked) take(answered)
+    } finally {
+      if (mine === asked) loading.value = false
+    }
+  }
+
+  const refresh = (): Promise<void> =>
+    read(Math.max(0, page.value - 1), (answered) => {
       totalElements.value = answered.totalElements
       totalPages.value = Math.max(1, answered.totalPages)
       // A page past the end reads the last one instead: the watch below re-reads, so the rows
@@ -130,25 +142,19 @@ export function usePagedTable<T extends Expandable>(
       }
       rows.value = answered.rows
       held.value = 1
-    } finally {
-      loading.value = false
-    }
-  }
+    })
 
   const more = async (): Promise<void> => {
     const next = page.value - 1 + held.value
     if (loading.value || next >= totalPages.value) return
-    loading.value = true
-    try {
-      const typed = (search.value ?? "").trim()
-      const answered = await load({page: next, size, search: typed || undefined, ...sorted()})
+    await read(next, (answered) => {
+      // A read that failed answers as an empty page, whose count of nothing is not the list's.
+      if (answered.rows.length === 0) return
       totalElements.value = answered.totalElements
       totalPages.value = Math.max(1, answered.totalPages)
       rows.value = [...rows.value, ...answered.rows]
       held.value += 1
-    } finally {
-      loading.value = false
-    }
+    })
   }
 
   const resetToFirstPage = () => {

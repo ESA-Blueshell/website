@@ -251,6 +251,59 @@ describe("usePagedTable", () => {
     expect(table.rows.value.map((row) => row.id)).toEqual([1, 2, 3, 4])
   })
 
+  it("drops a read-on that answers after the rows were read afresh", async () => {
+    const answers: Array<(page: PageOf<Row>) => void> = []
+    const load = vi.fn((): Promise<PageOf<Row>> => new Promise((resolve) => answers.push(resolve)))
+    const table = host(load)
+    const first = table.refresh()
+    answers[0]({rows: rowsNumbered(1, 2), totalElements: 6, totalPages: 3})
+    await first
+
+    const readOn = table.more()
+    const afresh = table.refresh()
+    answers[2]({rows: rowsNumbered(11, 2), totalElements: 4, totalPages: 2})
+    await afresh
+    answers[1]({rows: rowsNumbered(3, 2), totalElements: 6, totalPages: 3})
+    await readOn
+
+    expect(table.rows.value.map((row) => row.id)).toEqual([11, 12])
+    expect(table.totalElements.value).toBe(4)
+    expect(table.loading.value).toBe(false)
+  })
+
+  it("keeps loading until the newest of two reads answers, and keeps only its rows", async () => {
+    const answers: Array<(page: PageOf<Row>) => void> = []
+    const load = vi.fn((): Promise<PageOf<Row>> => new Promise((resolve) => answers.push(resolve)))
+    const table = host(load)
+
+    const older = table.refresh()
+    const newer = table.refresh()
+    answers[0]({rows: rowsNumbered(1, 2), totalElements: 2, totalPages: 1})
+    await older
+
+    expect(table.loading.value).toBe(true)
+    expect(table.rows.value).toEqual([])
+
+    answers[1]({rows: rowsNumbered(5, 2), totalElements: 2, totalPages: 1})
+    await newer
+
+    expect(table.loading.value).toBe(false)
+    expect(table.rows.value.map((row) => row.id)).toEqual([5, 6])
+  })
+
+  it("keeps the rows and their count when a read-on comes back empty", async () => {
+    const load = vi.fn()
+      .mockResolvedValueOnce({rows: rowsNumbered(1, 2), totalElements: 4, totalPages: 2})
+      .mockResolvedValueOnce({rows: [], totalElements: 0, totalPages: 1})
+    const table = host(load)
+    await table.refresh()
+
+    await table.more()
+
+    expect(table.rows.value.map((row) => row.id)).toEqual([1, 2])
+    expect(table.pageRangeLabel.value).toBe("1-2 of 4")
+  })
+
   it("stops loading even when the read throws", async () => {
     const table = host(vi.fn().mockRejectedValue(new Error("network")))
 

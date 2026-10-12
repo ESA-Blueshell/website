@@ -30,7 +30,7 @@ const PAGE_SIZE = 50
 const stats = ref<JobStats | null>(null)
 const selectedCategory = ref<string | null>(null)
 // A link may name the status it is about.
-const selectedStatus = ref<string | null>(typeof route.query.status === "string" ? route.query.status : null)
+const selectedStatus = ref<string | null>(Object.values(JobExecutionStatus).find((status) => status === route.query.status) ?? null)
 const hideSkipped = ref(false)
 const HIDDEN = "hidden"
 const runOpen = ref(false)

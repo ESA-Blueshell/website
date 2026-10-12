@@ -139,14 +139,15 @@ const buildPayload = (): Record<string, unknown> =>
   )
 
 const submit = async () => {
-  if (!selectedType.value || requiredMissing.value) return
+  const type = selectedDescriptor.value?.type
+  if (!type || requiredMissing.value) return
   submitting.value = true
   errorMessage.value = null
   try {
-    const result = await enqueueJob(selectedType.value, buildPayload())
+    const result = await enqueueJob(type, buildPayload())
     if (result.ok) {
-      queuedType.value = selectedType.value
-      emit("queued", selectedType.value)
+      queuedType.value = type
+      emit("queued", type)
     } else {
       errorMessage.value = result.reason
     }
@@ -269,7 +270,7 @@ const submit = async () => {
 
     <div class="job-run__actions">
       <cut-button
-        :disabled="!selectedType || requiredMissing || submitting"
+        :disabled="!selectedDescriptor || requiredMissing || submitting"
         testid="job-run-submit"
         tone="solid"
         @click="submit"
@@ -295,7 +296,6 @@ const submit = async () => {
   gap: 0.8rem;
 }
 
-/* Every field the same width, as many to a row as fit. */
 .job-run__fields {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));

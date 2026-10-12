@@ -100,8 +100,13 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
   }
 }
 
-/** One job as the list reads it, or nothing where it could not be read. */
-export const loadJob = (id: number): Promise<Job | null> => readOr(findJobById({path: {id}}), null)
+/** One job as the list reads it. `missing` is the api saying it has none, which a read that failed is not. */
+export async function readJob(id: number): Promise<{job: Job | null; missing: boolean}> {
+  const res = await findJobById({path: {id}})
+  return {job: res.error || res.data == null ? null : res.data, missing: res.status === 404}
+}
+
+export const loadJob = async (id: number): Promise<Job | null> => (await readJob(id)).job
 
 /** The counts behind the stats panel, or nothing where they could not be read — it is supplementary. */
 export const loadJobStats = (): Promise<JobStats | null> => readOr(getStats(), null)

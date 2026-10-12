@@ -1,12 +1,11 @@
 <script lang="ts" setup>
-/* One job: what it did, why it failed, and what it concerns, each thing linked to its own page. */
-import {computed, onMounted, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import {useRoute} from "vue-router"
 import CutButton from "@/components/island/CutButton.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import PairList from "@/components/management/PairList.vue"
-import {type Job, canRetry, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, loadJob, payloadChips, previewTitle, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
+import {type Job, canRetry, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewTitle, readJob, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
 import {formatDate} from "@/utils/timestamps"
@@ -17,10 +16,13 @@ const route = useRoute()
 const id = computed(() => Number(route.params.id))
 
 const job = ref<Job | null>(null)
+const missing = ref(false)
 const loaded = ref(false)
 
 const load = async () => {
-  job.value = await loadJob(id.value)
+  const read = await readJob(id.value)
+  job.value = read.job
+  missing.value = read.missing
   loaded.value = true
 }
 
@@ -54,7 +56,8 @@ const retry = async () => {
   await load()
 }
 
-onMounted(load)
+// The router keeps this page when only the id in the address changes.
+watch(id, load, {immediate: true})
 </script>
 
 <template>
@@ -63,14 +66,29 @@ onMounted(load)
     :back="{to: '/management/jobs', label: 'Jobs'}"
     eyebrow="System"
     testid="job-detail-page"
-    title="No such job"
+    :title="missing ? 'No such job' : `Job ${id}`"
   >
     <p
+      v-if="missing"
       class="job-detail__note"
       data-testid="job-detail-missing"
     >
       There is no job {{ id }}.
     </p>
+    <template v-else>
+      <p
+        class="job-detail__note"
+        data-testid="job-detail-unread"
+      >
+        Job {{ id }} could not be read.
+      </p>
+      <cut-button
+        testid="job-detail-reload"
+        @click="load"
+      >
+        Try again
+      </cut-button>
+    </template>
   </management-page>
   <management-page
     v-else-if="job"
@@ -238,7 +256,7 @@ onMounted(load)
 }
 
 .job-detail__note {
-  margin-top: 1.4rem;
+  margin: 1.4rem 0 0.8rem;
 }
 
 .job-detail__trace {

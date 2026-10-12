@@ -79,6 +79,14 @@ describe("JobRunForm", () => {
     expect(mockEnqueueJob).not.toHaveBeenCalled()
   })
 
+  it("queues nothing for a job type it has no fields for", async () => {
+    const wrapper = await mountForm({type: "gone.job", payload: {userId: 7}})
+
+    await (wrapper.vm as any).submit()
+
+    expect(mockEnqueueJob).not.toHaveBeenCalled()
+  })
+
   it("says why the api refused the job", async () => {
     mockEnqueueJob.mockResolvedValue({ok: false, reason: "That job could not be triggered."})
     const wrapper = await mountForm()

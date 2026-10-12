@@ -3,15 +3,18 @@ import type {VueWrapper} from "@vue/test-utils"
 import JobDetail from "@/pages/management/JobDetail.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockFindJob, mockRetry, mockStore} = vi.hoisted(() => ({
+const {mockFindJob, mockRetry, mockStore, address} = vi.hoisted(() => ({
   mockFindJob: vi.fn(),
   mockRetry: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {isAdmin: true}},
+  address: {route: {params: {id: "12"}}},
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vue-router")>()
-  return {...actual, useRoute: () => ({params: {id: "12"}})}
+  const {reactive} = await import("vue")
+  address.route = reactive(address.route)
+  return {...actual, useRoute: () => address.route}
 })
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -54,6 +57,7 @@ describe("JobDetail page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    address.route.params = {id: "12"}
     mockFindJob.mockResolvedValue({status: 200, data: failed})
     mockRetry.mockResolvedValue({status: 200, data: {...failed, status: "QUEUED"}})
   })
@@ -137,10 +141,34 @@ describe("JobDetail page", () => {
     expect(wrapper.get('[data-testid="job-detail-effect-link"]').attributes("href")).toBe("https://discord.com/channels/1/2/3")
   })
 
-  it("says there is no such job when it cannot be read", async () => {
+  it("says there is no such job when the api has none", async () => {
     mockFindJob.mockResolvedValue({status: 404, error: {detail: "Not found"}})
     const wrapper = await mountDetail()
 
     expect(wrapper.find('[data-testid="job-detail-missing"]').text()).toBe("There is no job 12.")
+    expect(wrapper.find('[data-testid="job-detail-unread"]').exists()).toBe(false)
+  })
+
+  it("says a job could not be read when the read fails, and reads it again when asked", async () => {
+    mockFindJob.mockResolvedValue({status: 500, error: {}})
+    const wrapper = await mountDetail()
+
+    expect(wrapper.find('[data-testid="job-detail-unread"]').text()).toBe("Job 12 could not be read.")
+    expect(wrapper.find('[data-testid="job-detail-missing"]').exists()).toBe(false)
+
+    mockFindJob.mockResolvedValue({status: 200, data: failed})
+    await wrapper.find('[data-testid="job-detail-reload"]').trigger("click")
+    await settle()
+
+    expect(wrapper.find('[data-testid="job-detail-failure"]').text()).toContain("Brevo said no")
+  })
+
+  it("reads the other job when the address names another", async () => {
+    await mountDetail()
+
+    address.route.params = {id: "13"}
+    await settle()
+
+    expect(mockFindJob).toHaveBeenLastCalledWith({path: {id: 13}})
   })
 })

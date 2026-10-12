@@ -21,70 +21,72 @@
 
 
 
-    <v-snackbar
-      v-model="poggers"
-      rounded
-      timeout="105000"
-    >
-      <audio
-        v-if="poggers"
-        autoplay
-        controls
+    <toast-area>
+      <toast-notice
+        v-model:open="poggers"
+        testid="anthem-toast"
+        :timeout="105000"
       >
-        <source
-          src="@/assets/blueshellanthem.mp3"
-          type="audio/mpeg"
+        <audio
+          autoplay
+          controls
         >
-      </audio>
-    </v-snackbar>
+          <source
+            src="@/assets/blueshellanthem.mp3"
+            type="audio/mpeg"
+          >
+        </audio>
+      </toast-notice>
 
-    <v-snackbar
-      v-model="snackbarOpen"
-      timeout="10000"
-    >
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <span v-html="DOMPurify.sanitize(statusSnackbarMessage)" />
-      <template #actions>
-        <v-btn
-          v-if="statusSnackbarAction"
-          color="primary"
-          variant="text"
-          @click="handleSnackbarAction(statusSnackbarAction)"
-        >
-          {{ statusSnackbarAction.label }}
-        </v-btn>
-        <v-btn
-          color="blue"
-          variant="text"
-          @click="statusSnackbarMessage = ''"
-        >
-          Close
-        </v-btn>
-      </template>
-    </v-snackbar>
+      <toast-notice
+        v-model:open="snackbarOpen"
+        testid="status-toast"
+        :timeout="10000"
+      >
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <span v-html="DOMPurify.sanitize(statusSnackbarMessage)" />
+        <template #actions>
+          <cut-button
+            v-if="statusSnackbarAction"
+            small
+            testid="status-toast-action"
+            @click="handleSnackbarAction(statusSnackbarAction)"
+          >
+            {{ statusSnackbarAction.label }}
+          </cut-button>
+          <cut-button
+            small
+            testid="status-toast-close"
+            tone="quiet"
+            @click="statusSnackbarMessage = ''"
+          >
+            Close
+          </cut-button>
+        </template>
+      </toast-notice>
 
-    <!-- Cookie snackbar -->
-    <v-snackbar
-      v-model="showCookieSnackbar"
-      timeout="-1"
-    >
-      We're using cookies to keep you logged in. You can read more about how we use cookies in our
-      <a
-        :href="activeCookiePolicyUrl"
-        class="text-decoration-none"
-        target="_blank"
-      >Cookie Policy</a>.
+      <toast-notice
+        :open="showCookieSnackbar"
+        testid="cookie-toast"
+      >
+        We're using cookies to keep you logged in. You can read more about how we use cookies in our
+        <a
+          class="cookie-policy-link"
+          :href="activeCookiePolicyUrl"
+          target="_blank"
+        >Cookie Policy</a>.
 
-      <template #actions>
-        <v-btn
-          color="primary"
-          variant="text"
-          @click="acceptCookies"
-        >
-          Got it
-        </v-btn>
-      </template>
-    </v-snackbar>
+        <template #actions>
+          <cut-button
+            small
+            testid="cookie-toast-accept"
+            @click="acceptCookies"
+          >
+            Got it
+          </cut-button>
+        </template>
+      </toast-notice>
+    </toast-area>
   </v-app>
 </template>
 
@@ -95,6 +97,9 @@ import {useRoute, useRouter} from "vue-router"
 import type {SnackbarAction, StoredLogin} from "@/plugins/store"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import ToastArea from "@/components/island/ToastArea.vue"
+import ToastNotice from "@/components/island/ToastNotice.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {chooseTheme, siteTheme} from "@/plugins/theme"
@@ -120,7 +125,7 @@ const statusSnackbarMessage = computed({
   set: (message: string) => store.commit("setStatusSnackbarMessage", message),
 })
 
-// The snackbar closes itself on its timeout, which clears the message rather than storing `false`.
+// The toast closes itself on its timeout, which clears the message rather than storing `false`.
 const snackbarOpen = computed({
   get: (): boolean => !!store.state.statusSnackbarMessage,
   set: (open: boolean) => {
@@ -216,18 +221,9 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss" scoped>
-@use '@/styles/colors' as colors;
-
-.v-footer > .v-btn {
-  margin: 0 2px;
-}
-
-.pencil-avatar {
-  background: rgb(var(--v-theme-surface));
-}
-
-.pencil-icon {
-  color: white;
+<style scoped>
+.cookie-policy-link {
+  color: var(--color-brand-ink);
+  text-decoration: none;
 }
 </style>

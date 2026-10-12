@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
 import {createMemoryHistory, createRouter} from "vue-router"
 import App from "@/App.vue"
@@ -34,6 +34,7 @@ const {
     mockStore: {
       state: {
         statusSnackbarMessage: "",
+        statusSnackbarAction: null as {label: string; to: string} | null,
       },
       getters: {
         isLoggedIn: true,
@@ -149,6 +150,11 @@ const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
     .filter((to): to is string => Boolean(to?.startsWith("/management")))
 
 describe("App navbar behavior", () => {
+  // Two cases count a toast's time down on fake timers.
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     forgetGames()
     forgetCommittees()
@@ -158,6 +164,7 @@ describe("App navbar behavior", () => {
     matchMediaState.dark = false
 
     mockStore.state.statusSnackbarMessage = ""
+    mockStore.state.statusSnackbarAction = null
     mockStore.getters.isLoggedIn = true
     mockStore.getters.isBoard = true
     mockStore.getters.isAdmin = true
@@ -443,31 +450,74 @@ describe("App navbar behavior", () => {
     expect(localStorage.getItem("esa-blueshell.nl:darkMode")).toBe("false")
   })
 
-  it("shows a status message and clears it once the snackbar closes itself", async () => {
+  it("shows a status message as a toast, cleared with its Close button", async () => {
     // The store here is a plain object, so the message is in place before the page reads it.
-    mockStore.state.statusSnackbarMessage = "Saved"
+    mockStore.state.statusSnackbarMessage = "Saved <b>twice</b><img src=x onerror=alert(1)>"
     const wrapper = mount(App)
     await settle()
 
-    const status = wrapper.findAllComponents({name: "VSnackbar"}).find((bar) => bar.props("timeout") === "10000")!
-    expect(status.props("modelValue")).toBe(true)
+    const status = wrapper.get("[data-testid='status-toast']")
+    expect(status.attributes("role")).toBe("status")
+    expect(status.text()).toContain("Saved twice")
+    expect(status.find("b").exists()).toBe(true)
+    expect(status.find("img").attributes("onerror")).toBeUndefined()
+    expect(status.find("[data-testid='status-toast-action']").exists()).toBe(false)
 
-    // Reopening leaves the message alone; only closing clears it.
-    status.vm.$emit("update:modelValue", true)
-    expect(mockStore.state.statusSnackbarMessage).toBe("Saved")
-    status.vm.$emit("update:modelValue", false)
+    await status.get("[data-testid='status-toast-close']").trigger("click")
+
     expect(mockStore.state.statusSnackbarMessage).toBe("")
   })
 
-  it("accepts cookies and closes the cookie snackbar", async () => {
-    const wrapper = mount(App)
+  it("clears a status message by itself after ten seconds", async () => {
+    vi.useFakeTimers()
+    mockStore.state.statusSnackbarMessage = "Saved"
+    mount(App)
     await settle()
 
-    expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
-    ;(wrapper.vm as any).acceptCookies()
+    vi.advanceTimersByTime(9_999)
+    expect(mockStore.state.statusSnackbarMessage).toBe("Saved")
+    vi.advanceTimersByTime(1)
+    expect(mockStore.state.statusSnackbarMessage).toBe("")
+  })
+
+  it("offers a status message's action, which clears the message and goes where it leads", async () => {
+    mockStore.state.statusSnackbarMessage = "Your session has ended."
+    mockStore.state.statusSnackbarAction = {label: "Log in", to: "/login"}
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{path: "/:pathMatch(.*)*", component: {template: "<div />"}}],
+    })
+    await router.push("/")
+    const wrapper = mount(App, {global: {plugins: [router], stubs: {RouterLink: false}}})
+    await settle()
+
+    const action = wrapper.get("[data-testid='status-toast-action']")
+    expect(action.text()).toBe("Log in")
+    await action.trigger("click")
+    await settle()
+
+    expect(mockStore.commit).toHaveBeenCalledWith("clearStatusSnackbar")
+    expect(router.currentRoute.value.path).toBe("/login")
+  })
+
+  it("shows the cookie notice until Got it is pressed, then keeps it away", async () => {
+    // The toast leaves through a transition, which a test has no frame to wait out.
+    const wrapper = mount(App, {global: {stubs: {transition: true}}})
+    await settle()
+
+    const notice = wrapper.get("[data-testid='cookie-toast']")
+    expect(notice.text()).toContain("We're using cookies to keep you logged in.")
+    expect(notice.get("a").text()).toBe("Cookie Policy")
+    expect(notice.get("a").attributes("target")).toBe("_blank")
+
+    await notice.get("[data-testid='cookie-toast-accept']").trigger("click")
 
     expect(hasAcceptedCookiePolicy(localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY))).toBe(true)
-    expect((wrapper.vm as any).showCookieSnackbar).toBe(false)
+    expect(wrapper.find("[data-testid='cookie-toast']").exists()).toBe(false)
+
+    const again = mount(App)
+    await settle()
+    expect(again.find("[data-testid='cookie-toast']").exists()).toBe(false)
   })
 
   it("does not treat legacy cookie-consent key as accepted for the active policy", async () => {
@@ -475,7 +525,7 @@ describe("App navbar behavior", () => {
     const wrapper = mount(App)
     await settle()
 
-    expect((wrapper.vm as any).showCookieSnackbar).toBe(true)
+    expect(wrapper.find("[data-testid='cookie-toast']").exists()).toBe(true)
     expect(hasAcceptedCookiePolicy(localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY))).toBe(false)
   })
 
@@ -499,8 +549,10 @@ describe("App navbar behavior", () => {
     expect(mockGoto).toHaveBeenCalledWith("/")
   })
 
-  it("unlocks the konami-code snackbar and alert", async () => {
-    const wrapper = mount(App)
+  it("plays the anthem in a toast on the konami code, with an alert, until the anthem is over", async () => {
+    vi.useFakeTimers()
+    // The toast leaves through a transition, which a test has no frame to wait out.
+    const wrapper = mount(App, {global: {stubs: {transition: true}}})
     await settle()
 
     const sequence = [
@@ -520,7 +572,13 @@ describe("App navbar behavior", () => {
       globalThis.dispatchEvent(new KeyboardEvent("keydown", {key}))
     }
 
-    expect((wrapper.vm as any).poggers).toBe(true)
+    await settle()
+
+    expect(wrapper.get("[data-testid='anthem-toast'] audio").attributes("autoplay")).toBeDefined()
     expect(mockAlert).toHaveBeenCalledWith("BIG SITECIE ENERGY")
+
+    vi.advanceTimersByTime(105_000)
+    await settle()
+    expect(wrapper.find("[data-testid='anthem-toast']").exists()).toBe(false)
   })
 })

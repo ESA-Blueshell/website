@@ -1,24 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
+import {RouterLinkStub} from "@vue/test-utils"
 import BlogsView from "@/pages/blogs/BlogsView.vue"
 import {mountInApp, settle} from "../helpers"
 
-const {
-  mockRouterPush,
-  mockListBlogs,
-} = vi.hoisted(() => ({
-  mockRouterPush: vi.fn(),
-  mockListBlogs: vi.fn(),
-}))
-
-vi.mock("vue-router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vue-router")>()
-  return {
-    ...actual,
-    useRouter: () => ({
-      push: mockRouterPush,
-    }),
-  }
-})
+const {mockListBlogs} = vi.hoisted(() => ({mockListBlogs: vi.fn()}))
 
 vi.mock("@/domains/blogs", () => ({
   listBlogs: mockListBlogs,
@@ -32,13 +17,14 @@ describe("BlogsView page", () => {
     ])
   })
 
-  it("loads blogs and navigates to selected blog", async () => {
-    const wrapper = mountInApp(BlogsView)
+  it("loads blogs and links each to its own page", async () => {
+    const wrapper = mountInApp(BlogsView, {global: {stubs: {RouterLink: RouterLinkStub}}})
     await settle()
 
     expect(mockListBlogs).toHaveBeenCalledTimes(1)
-    await wrapper.get(".v-list-item").trigger("click")
-    expect(mockRouterPush).toHaveBeenCalledWith("/blogs/7")
+    const row = wrapper.getComponent(RouterLinkStub)
+    expect(row.text()).toContain("January update")
+    expect(row.props("to")).toBe("/blogs/7")
   })
 
   it("says the listing could not be read rather than showing an association without newsletters", async () => {

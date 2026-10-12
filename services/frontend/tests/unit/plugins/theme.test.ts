@@ -1,19 +1,106 @@
-import {describe, expect, it} from "vitest"
-import {initialThemeName} from "@/plugins/theme"
+import {beforeEach, describe, expect, it, vi} from "vitest"
+import {chooseTheme, siteTheme, startTheme} from "@/plugins/theme"
 
-describe("theme plugin", () => {
-  it("honours a stored preference over the operating system", () => {
-    expect(initialThemeName("true", false)).toBe("dark")
-    expect(initialThemeName("false", true)).toBe("light")
+const STORED = "esa-blueshell.nl:darkMode"
+
+const system = {dark: false, changed: [] as (() => void)[]}
+
+const systemPrefers = (dark: boolean) => {
+  system.dark = dark
+  for (const tell of system.changed) tell()
+}
+
+describe("the site's theme", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    system.dark = false
+    system.changed = []
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      media: query,
+      get matches() {
+        return system.dark
+      },
+      addEventListener: (_event: string, tell: () => void) => system.changed.push(tell),
+    }))
   })
 
-  it("follows the operating system when nothing is stored", () => {
-    expect(initialThemeName(null, true)).toBe("dark")
-    expect(initialThemeName(null, false)).toBe("light")
+  it("starts on the stored choice, whatever the system prefers", () => {
+    localStorage.setItem(STORED, "true")
+
+    expect(startTheme()).toBe("dark")
+    expect(siteTheme.value).toBe("dark")
+    expect(document.documentElement.dataset.theme).toBe("dark")
+
+    localStorage.setItem(STORED, "false")
+    system.dark = true
+
+    expect(startTheme()).toBe("light")
   })
 
-  // Only "true" means dark, which is the check this replaced. Nothing else writes the key.
+  it("starts on the system's preference when nothing is stored", () => {
+    system.dark = true
+
+    expect(startTheme()).toBe("dark")
+    expect(document.documentElement.dataset.theme).toBe("dark")
+    expect(localStorage.getItem(STORED)).toBeNull()
+  })
+
+  // Only "true" means dark. Nothing else writes the key.
   it("reads anything else stored as light", () => {
-    expect(initialThemeName("yes", true)).toBe("light")
+    localStorage.setItem(STORED, "yes")
+    system.dark = true
+
+    expect(startTheme()).toBe("light")
+  })
+
+  it("starts light where the browser answers neither question", () => {
+    vi.stubGlobal("matchMedia", undefined)
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage is blocked")
+    })
+
+    expect(startTheme()).toBe("light")
+  })
+
+  it("shows the visitor's choice, on the document too, and stores it", () => {
+    startTheme()
+
+    chooseTheme("dark")
+
+    expect(siteTheme.value).toBe("dark")
+    expect(document.documentElement.dataset.theme).toBe("dark")
+    expect(localStorage.getItem(STORED)).toBe("true")
+
+    chooseTheme("light")
+
+    expect(siteTheme.value).toBe("light")
+    expect(document.documentElement.dataset.theme).toBe("light")
+    expect(localStorage.getItem(STORED)).toBe("false")
+  })
+
+  it("still switches in a browser that refuses to store the choice", () => {
+    startTheme()
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage is blocked")
+    })
+
+    chooseTheme("dark")
+
+    expect(siteTheme.value).toBe("dark")
+    expect(document.documentElement.dataset.theme).toBe("dark")
+  })
+
+  it("follows a change of the system's preference until the visitor chooses", () => {
+    startTheme()
+
+    systemPrefers(true)
+    expect(siteTheme.value).toBe("dark")
+    expect(document.documentElement.dataset.theme).toBe("dark")
+
+    chooseTheme("light")
+    systemPrefers(false)
+    systemPrefers(true)
+    expect(siteTheme.value).toBe("light")
+    expect(document.documentElement.dataset.theme).toBe("light")
   })
 })

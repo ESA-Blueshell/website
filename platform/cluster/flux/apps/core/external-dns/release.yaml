@@ -61,7 +61,7 @@ spec:
       # Traefik. LAN-only / internal services never get published.
       - --annotation-filter=kubernetes.io/ingress.class=traefik-public
       # Zone-wide. We manage one-label admin hosts directly under
-      # `esa-blueshell.nl` (auth, kube, mail-admin, status, vault)
+      # `esa-blueshell.nl` (auth, kube, status, vault)
       # rather than two-label hosts under `*.esa-blueshell.nl`,
       # because Cloudflare's free Universal SSL edge cert only covers
       # one label deep (`*.esa-blueshell.nl`). Policy stays upsert-only

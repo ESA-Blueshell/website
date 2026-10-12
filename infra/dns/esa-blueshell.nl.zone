@@ -35,9 +35,7 @@ auth.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 headlamp.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 kube.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
-listmonk.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 mail.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:false
-mail-admin.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 minecraft.event.esa-blueshell.nl.	1	IN	A	193.123.34.253 ; cf_tags=cf-proxied:false
 minecraft.server.esa-blueshell.nl.	1	IN	A	130.89.149.197 ; cf_tags=cf-proxied:false
 stalwart.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
@@ -51,9 +49,7 @@ auth.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:tru
 esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 headlamp.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 kube.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-listmonk.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 mail.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:false
-mail-admin.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 stalwart.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 status.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
 traefik.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
@@ -94,8 +90,6 @@ _dmarc.esa-blueshell.nl.	1	IN	TXT	"v=DMARC1; p=none; rua=mailto:postmaster@esa-b
 aaaa-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 aaaa-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
 aaaa-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
-aaaa-listmonk.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
-aaaa-mail-admin.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
 aaaa-stalwart.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/stalwart-admin"
 aaaa-status.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
 aaaa-traefik.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/traefik-dashboard"
@@ -104,8 +98,6 @@ aaaa-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner
 a-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 a-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
 a-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
-a-listmonk.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
-a-mail-admin.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
 a-stalwart.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/stalwart-admin"
 a-status.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
 a-traefik.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/traefik-dashboard"
@@ -114,6 +106,5 @@ a-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=bl
 cname-api.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/api"
 cname-auth.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 cname-kube.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
-cname-mail-admin.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/listmonk"
 cname-status.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
 cname-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/frontend"

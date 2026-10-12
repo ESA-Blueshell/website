@@ -148,6 +148,12 @@ from Vault (`vault kv get secret/platform/backup`), then follow `platform/recove
 from step 2, using them in place of the Secret Manager password and the temporary key. The
 writer key can read everything it wrote.
 
+`scripts/rehearse-restore.sh` rehearses this path end to end. It restores the newest pair into a
+throwaway stack on your machine, asks three share holders for their shares twice, and checks the
+restore against live: the users created before the day of the backup, the version of
+`secret/platform/backup` and every sealed address opening. It deletes the stack and the download
+when it ends, pass or fail. You need `kubectl`, `vault`, `jq` and Docker.
+
 **Break-glass**, when the server and its Vault are gone: follow `platform/recovery/README.md`
 from the start. A Scaleway owner reads the Kopia password from Secret Manager and makes a
 temporary read key, and three holders of Vault's unseal shares open the restored Vault (#2097).

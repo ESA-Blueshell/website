@@ -98,7 +98,7 @@ data:
       - type: discord
     - name: "Vault Admin"
       group: "admin"
-      url: "http://vault.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
+      url: "http://vault-v2.data-system.svc.cluster.local:8200/v1/sys/health?standbyok=true"
       interval: "60s"
       conditions:
       - "[STATUS] == 200"

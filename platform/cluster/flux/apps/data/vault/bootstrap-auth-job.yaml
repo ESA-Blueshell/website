@@ -49,11 +49,11 @@ spec:
             - /bootstrap/bootstrap.sh
           env:
             - name: VAULT_ADDR
-              value: http://vault.data-system.svc.cluster.local:8200
+              value: http://vault-v2.data-system.svc.cluster.local:8200
             - name: VAULT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: vault-bootstrap-token
+                  name: vault-v2-bootstrap-token
                   key: token
           volumeMounts:
             - name: bootstrap

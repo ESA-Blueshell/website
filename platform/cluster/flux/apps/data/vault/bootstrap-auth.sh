@@ -139,6 +139,9 @@ path "secret/*"        { capabilities = ["create", "read", "update", "delete", "
 path "secret/data/*"   { capabilities = ["create", "read", "update", "delete", "list"] }
 path "secret/metadata/*" { capabilities = ["create", "read", "update", "delete", "list"] }
 path "transit/*"       { capabilities = ["create", "read", "update", "delete", "list"] }
+# The keys moved into vault-v2 by backup and restore stay exportable (#2392); only root may take them out.
+path "transit/export/*" { capabilities = ["deny"] }
+path "transit/backup/*" { capabilities = ["deny"] }
 path "database/*"      { capabilities = ["create", "read", "update", "delete", "list"] }
 path "auth/*"          { capabilities = ["create", "read", "update", "delete", "list", "sudo"] }
 path "sys/auth"        { capabilities = ["read", "list"] }

@@ -78,7 +78,7 @@ spec:
                 - name: VAULT_ROLE
                   value: backup-mail
                 - name: VAULT_ADDR
-                  value: http://vault.data-system.svc.cluster.local:8200
+                  value: http://vault-v2.data-system.svc.cluster.local:8200
                 - name: HOME
                   value: /work
               securityContext:

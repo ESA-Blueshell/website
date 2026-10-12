@@ -312,7 +312,7 @@ authorize request before Vault sees it:
 Logging in from a terminal:
 
 ```bash
-kubectl --context blueshell -n data-system port-forward svc/vault 8200:8200 &
+kubectl --context blueshell -n data-system port-forward svc/vault-v2 8200:8200 &
 export VAULT_ADDR=http://127.0.0.1:8200
 vault login -method=oidc
 ```

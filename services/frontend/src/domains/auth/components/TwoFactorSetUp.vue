@@ -56,15 +56,7 @@
             type="password"
           />
         </form-field>
-        <div class="set-up__acts">
-          <cut-button
-            :disabled="!password || busy"
-            submit
-            testid="two-factor-start-btn"
-            tone="solid"
-          >
-            Continue
-          </cut-button>
+        <div class="form-save">
           <cut-button
             v-if="leave"
             :href="leave"
@@ -72,6 +64,14 @@
             tone="quiet"
           >
             Not now
+          </cut-button>
+          <cut-button
+            :disabled="!password || busy"
+            submit
+            testid="two-factor-start-btn"
+            tone="solid"
+          >
+            Continue
           </cut-button>
         </div>
       </form>
@@ -113,7 +113,7 @@
             </cut-button>
           </div>
         </div>
-        <div class="set-up__acts">
+        <div class="form-save">
           <cut-button
             :disabled="!pending"
             testid="two-factor-scanned-btn"
@@ -150,7 +150,13 @@
             inputmode="numeric"
           />
         </form-field>
-        <div class="set-up__acts">
+        <div class="form-save">
+          <cut-button
+            tone="quiet"
+            @click="stage = 'scan'"
+          >
+            Back
+          </cut-button>
           <cut-button
             :disabled="!code.trim() || busy"
             submit
@@ -158,12 +164,6 @@
             tone="solid"
           >
             Check the code
-          </cut-button>
-          <cut-button
-            tone="quiet"
-            @click="stage = 'scan'"
-          >
-            Back
           </cut-button>
         </div>
       </form>
@@ -183,7 +183,7 @@
             label="I have saved them somewhere safe"
           />
         </div>
-        <div class="set-up__acts">
+        <div class="form-save">
           <cut-button
             :disabled="!saved || busy"
             testid="two-factor-finish-btn"
@@ -419,14 +419,6 @@ const finish = async () => {
 
 .set-up__narrow {
   max-width: 26rem;
-}
-
-.set-up__acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-  padding-top: 0.4rem;
 }
 
 .set-up__scan {

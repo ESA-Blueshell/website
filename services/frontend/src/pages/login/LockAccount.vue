@@ -1,47 +1,49 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Lock your account" />
-    <div class="site-gutter">
-      <div
-        class="site-column"
-        data-testid="lock-account"
-        style="max-width: 600px"
-      >
-        <loading-spinner v-if="loading" />
-        <template v-else>
-          <p class="site-lead">
-            Your account is locked
-          </p>
-          <p>
-            If the link was still good, nobody can sign in to your account now and every sign-in has ended. The
-            change you were told about has not been undone.
-          </p>
-          <p>
-            To get back in, contact the board. An admin will check it is you and unlock the account:
-          </p>
-          <ul class="lock__ways">
-            <li v-if="contact">
-              email <a
-                :href="`mailto:${contact}`"
-                data-testid="lock-account-contact-email"
-              >{{ contact }}</a>
-            </li>
-            <li>
-              ask in <a :href="discordChannel('board')">#board-questions</a> or
-              <a :href="discordChannel('suggestions')">#sitecie</a> on our Discord
-            </li>
-          </ul>
-        </template>
-      </div>
-    </div>
-  </main>
+  <account-frame
+    :heading="loading ? 'Lock your account' : 'Your account is locked'"
+    island-content
+    :tabs="false"
+  >
+    <task-layout data-testid="lock-account">
+      <loading-spinner v-if="loading" />
+      <template v-else>
+        <p>
+          If the link was still good, nobody can sign in to your account now and every sign-in has ended. The
+          change you were told about has not been undone.
+        </p>
+        <p>
+          To get back in, contact the board. An admin will check it is you and unlock the account:
+        </p>
+        <ul class="lock__ways">
+          <li v-if="contact">
+            email <a
+              class="form-link"
+              :href="`mailto:${contact}`"
+              data-testid="lock-account-contact-email"
+            >{{ contact }}</a>
+          </li>
+          <li>
+            ask in <a
+              class="form-link"
+              :href="discordChannel('board')"
+            >#board-questions</a> or
+            <a
+              class="form-link"
+              :href="discordChannel('suggestions')"
+            >#sitecie</a> on our Discord
+          </li>
+        </ul>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {lockAccount} from "@/domains/auth"
 import {discordChannel} from "@/domains/discord"
@@ -65,7 +67,7 @@ onMounted(async () => {
 
 <style scoped>
 .lock__ways {
-  margin-bottom: 16px;
-  margin-left: 24px;
+  margin-left: 1.25rem;
+  list-style: disc;
 }
 </style>

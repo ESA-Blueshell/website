@@ -1,10 +1,14 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Membership Form" />
-
-    <div
-      class="site-column signup-column"
-      style="max-width: 800px"
+  <account-frame
+    :crumb="{label: 'Membership', to: '/membership'}"
+    eyebrow="Membership"
+    heading="Membership form"
+    island-content
+    :tabs="false"
+  >
+    <task-layout
+      aside-title="What happens"
+      wide
     >
       <div
         v-if="!finished"
@@ -161,13 +165,34 @@
           Go to Homepage
         </cut-button>
       </div>
-    </div>
-  </main>
+
+      <template #aside>
+        <p>
+          Your membership starts when you finish the last step. It stays pending until your first contribution is
+          paid.
+        </p>
+        <p v-if="isNewApplicant">
+          Already have an account? <router-link
+            :to="{name: 'login', query: {redirect: '/membership/signup'}}"
+          >
+            Log in
+          </router-link> first and we fill in the details we already have.
+        </p>
+        <p>
+          Questions? <router-link
+            to="/contact"
+          >
+            Ask the board
+          </router-link>
+        </p>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
 import {computed, onMounted, onUnmounted, ref, watch} from "vue"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
@@ -177,6 +202,7 @@ import DoneTick from "@/components/island/DoneTick.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StepStrip from "@/components/island/StepStrip.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import {
   type AddressResponse,
   type MembershipResponse,
@@ -530,19 +556,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* No gap: the strip heads the panel under it. */
 .signup {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
 }
 
 .signup__done {
   align-items: center;
   text-align: center;
-}
-
-.signup-column {
-  margin-block: 24px;
 }
 
 .signup__waiting {

@@ -1,7 +1,10 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Sign in again" />
-    <div class="site-gutter">
+  <account-frame
+    heading="Sign in again"
+    island-content
+    :tabs="false"
+  >
+    <task-layout>
       <form
         v-first-field
         class="island-form"
@@ -31,20 +34,24 @@
           autocomplete="current-password"
           label="Password"
         />
-        <cut-button
-          tone="solid"
-          submit
-          :disabled="!username || !password || !token || loading"
-          data-testid="reenrol-submit-btn"
-        >
-          Sign in
-        </cut-button>
+        <div class="form-save">
+          <cut-button
+            tone="solid"
+            submit
+            :disabled="!username || !password || !token || loading"
+            data-testid="reenrol-submit-btn"
+          >
+            Sign in
+          </cut-button>
+        </div>
       </form>
-    </div>
-  </main>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
@@ -52,7 +59,6 @@ import {vFirstField} from "@/utils/firstField"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {reenrol, SECURITY_PAGES} from "@/domains/auth"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"

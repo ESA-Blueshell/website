@@ -1,78 +1,75 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Activate Member Account" />
-
-    <div
-      class="site-column"
-      style="max-width: 600px"
-    >
-      <div class="island-panel">
-        <form
-          data-testid="activate-member-form"
-          @submit.prevent="onSubmit"
-        >
-          <form-control
-            v-model="form.username"
-            autocomplete="username"
-            data-testid="activate-member-username-field"
-            :error-messages="errorsOf('username')"
-            label="Username"
-            @blur="touch('username')"
-          />
-          <form-control
-            v-model="form.password"
-            autocomplete="new-password"
-            data-testid="activate-member-password-field"
-            :error-messages="errorsOf('password')"
-            kind="password"
-            label="Password"
-            @blur="touch('password')"
-          />
-          <form-control
-            v-model="passwordAgain"
-            autocomplete="new-password"
-            data-testid="activate-member-repeat-password-field"
-            :error-messages="errorsOf('passwordAgain')"
-            kind="password"
-            label="Repeat Password"
-            @blur="touch('passwordAgain')"
-          />
-
-          <div class="form-save">
-            <cut-button
-              data-testid="activate-member-submit-btn"
-              :disabled="loading"
-              submit
-              tone="solid"
-            >
-              Activate Member
-            </cut-button>
-          </div>
-
-          <notice-box
-            v-if="errorMessage"
-            testid="activate-member-error-alert"
-            tone="danger"
+  <account-frame
+    heading="Activate member account"
+    island-content
+    :tabs="false"
+  >
+    <task-layout>
+      <form
+        class="island-form"
+        data-testid="activate-member-form"
+        @submit.prevent="onSubmit"
+      >
+        <form-control
+          v-model="form.username"
+          autocomplete="username"
+          data-testid="activate-member-username-field"
+          :error-messages="errorsOf('username')"
+          label="Username"
+          @blur="touch('username')"
+        />
+        <form-control
+          v-model="form.password"
+          autocomplete="new-password"
+          data-testid="activate-member-password-field"
+          :error-messages="errorsOf('password')"
+          kind="password"
+          label="Password"
+          @blur="touch('password')"
+        />
+        <form-control
+          v-model="passwordAgain"
+          autocomplete="new-password"
+          data-testid="activate-member-repeat-password-field"
+          :error-messages="errorsOf('passwordAgain')"
+          kind="password"
+          label="Repeat Password"
+          @blur="touch('passwordAgain')"
+        />
+        <div class="form-save">
+          <cut-button
+            data-testid="activate-member-submit-btn"
+            :disabled="loading"
+            submit
+            tone="solid"
           >
-            {{ errorMessage }}
-          </notice-box>
-          <notice-box
-            v-if="succeeded"
-            testid="activate-member-success-alert"
-            tone="info"
-          >
-            Account activated! You will be redirected to the login page.
-          </notice-box>
-        </form>
-      </div>
-    </div>
-  </main>
+            Activate Member
+          </cut-button>
+        </div>
+      </form>
+      <notice-box
+        v-if="errorMessage"
+        testid="activate-member-error-alert"
+        tone="danger"
+      >
+        {{ errorMessage }}
+      </notice-box>
+      <notice-box
+        v-if="succeeded"
+        testid="activate-member-success-alert"
+        tone="info"
+      >
+        Account activated! You will be redirected to the login page.
+      </notice-box>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
@@ -138,11 +135,3 @@ async function onSubmit() {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.form-save {
-  display: flex;
-  justify-content: flex-end;
-  margin: 1.2rem 0 1.25rem;
-}
-</style>

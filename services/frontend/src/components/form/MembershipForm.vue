@@ -195,12 +195,6 @@ defineExpose({validate, save})
   background-color: var(--band-ground);
 }
 
-.form-save {
-  display: flex;
-  justify-content: flex-end;
-  margin: 1.2rem 0 1.25rem;
-}
-
 .checkbox-row {
   width: 100%;
 }

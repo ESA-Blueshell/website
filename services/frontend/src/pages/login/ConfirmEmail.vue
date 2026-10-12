@@ -1,34 +1,32 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Confirm your email address" />
-    <div class="site-gutter">
-      <div
-        class="site-column"
-        data-testid="confirm-email"
-        style="max-width: 600px"
+  <account-frame
+    heading="Confirm your email address"
+    island-content
+    :tabs="false"
+  >
+    <task-layout data-testid="confirm-email">
+      <loading-spinner v-if="loading" />
+      <p
+        v-else-if="confirmed"
+        data-testid="confirm-email-done"
       >
-        <loading-spinner v-if="loading" />
-        <p
-          v-else-if="confirmed"
-          data-testid="confirm-email-done"
-        >
-          Your account now uses this address.
-        </p>
-        <p
-          v-else
-          data-testid="confirm-email-refused"
-        >
-          {{ reason }}
-        </p>
-      </div>
-    </div>
-  </main>
+        Your account now uses this address.
+      </p>
+      <p
+        v-else
+        data-testid="confirm-email-refused"
+      >
+        {{ reason }}
+      </p>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {confirmNewEmail} from "@/domains/auth"
 import {loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"

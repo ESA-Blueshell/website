@@ -47,7 +47,7 @@
             type="email"
           />
         </form-field>
-        <div class="security-task__acts">
+        <div class="form-save">
           <cut-button
             :disabled="!newEmail.trim()"
             submit
@@ -147,13 +147,5 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-}
-
-.security-task__acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem 1rem;
-  padding-top: 0.4rem;
 }
 </style>

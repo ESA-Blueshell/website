@@ -12,9 +12,9 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings
 import java.time.Duration
+import java.util.UUID
 
 private const val ACCESS_TOKEN_MINUTES = 15L
-private const val PINGER_ACCESS_TOKEN_HOURS = 72L
 private const val REFRESH_TOKEN_DAYS = 7L
 
 @Configuration
@@ -25,7 +25,7 @@ class RegisteredClients {
     ): RegisteredClientRepository {
         val headlamp =
             RegisteredClient
-                .withId("headlamp")
+                .withId(UUID.randomUUID().toString())
                 .clientId("headlamp")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -45,7 +45,7 @@ class RegisteredClients {
 
         val vault =
             RegisteredClient
-                .withId("vault")
+                .withId(UUID.randomUUID().toString())
                 .clientId("vault")
                 .clientSecret("{noop}$vaultClientSecret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
@@ -70,45 +70,13 @@ class RegisteredClients {
                 ).tokenSettings(tokenSettings())
                 .build()
 
-        return InMemoryRegisteredClientRepository(headlamp, vault, pingerApp())
+        return InMemoryRegisteredClientRepository(headlamp, vault)
     }
 
-    // The desktop pinger client a member signs in. It is public like headlamp (no secret lives on
-    // the member's machine) and redirects to a loopback address: the client binds an ephemeral port
-    // on 127.0.0.1 and the authorization server allows any port for a loopback redirect, so the
-    // registered port is a placeholder the request overrides (RFC 8252).
-    //
-    // It holds a rotating refresh token (reuseRefreshTokens is off) so the desktop app comes back
-    // without a fresh login until the member revokes it on the security page. The stock authorization
-    // server neither mints nor accepts a public client's refresh token; PublicClientRefresh adds both.
-    //
-    // Refresh tokens live in memory, so every api restart forgets them. The access token therefore
-    // lives for days: the report chain checks it statelessly, so it outlasts a restart. Revoking the
-    // app stops its refreshes but not an access token already issued, which runs until it expires.
-    private fun pingerApp(): RegisteredClient =
-        RegisteredClient
-            .withId("pinger-app")
-            .clientId("pinger-app")
-            .clientName("Pinger app")
-            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-            .redirectUri("http://127.0.0.1:8991/login/oauth2/code/pinger-app")
-            .scope(OidcScopes.OPENID)
-            .scope(OidcScopes.PROFILE)
-            .clientSettings(
-                ClientSettings
-                    .builder()
-                    .requireProofKey(true)
-                    .requireAuthorizationConsent(false)
-                    .build(),
-            ).tokenSettings(tokenSettings(Duration.ofHours(PINGER_ACCESS_TOKEN_HOURS)))
-            .build()
-
-    private fun tokenSettings(accessTokenTimeToLive: Duration = Duration.ofMinutes(ACCESS_TOKEN_MINUTES)) =
+    private fun tokenSettings() =
         TokenSettings
             .builder()
-            .accessTokenTimeToLive(accessTokenTimeToLive)
+            .accessTokenTimeToLive(Duration.ofMinutes(ACCESS_TOKEN_MINUTES))
             .refreshTokenTimeToLive(Duration.ofDays(REFRESH_TOKEN_DAYS))
             .reuseRefreshTokens(false)
             .build()

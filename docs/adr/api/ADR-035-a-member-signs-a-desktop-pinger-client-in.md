@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted. Amends [ADR-030](ADR-030-a-sign-in-is-a-server-side-record.md).
+Deprecated. SNTPings ended and the desktop client, the `pinger-app` client, the report chain and
+the SiteCie service token were removed with it; only the public leaderboard remains. Retained for
+history. It amended [ADR-030](ADR-030-a-sign-in-is-a-server-side-record.md), which stands again
+unamended.
 
 ## Context
 

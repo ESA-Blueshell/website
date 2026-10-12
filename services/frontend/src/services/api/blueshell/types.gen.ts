@@ -805,12 +805,6 @@ export type CommitteeSeatResponse = {
     role?: string | null;
 };
 
-export type ConnectedAppResponse = {
-    authorizedAt?: string | null;
-    id: string;
-    name: string;
-};
-
 export enum ContributionEmailKind {
     REMINDER = 'REMINDER',
     INCASSO_NOTIFICATION = 'INCASSO_NOTIFICATION'
@@ -1722,16 +1716,11 @@ export type GuestResponse = {
  */
 export type HouseLineResponse = {
     label: string;
-    online: boolean;
     peakAt?: string | null;
     /**
      * The top rate SiteCie reached across its replicas, in pings per second
      */
     peakPps: number;
-    /**
-     * The live rate across SiteCie's replicas right now, in pings per second
-     */
-    pps: number;
     totalSent: number;
 };
 
@@ -1941,17 +1930,13 @@ export type JwtRequest = {
  */
 export type LeaderboardResponse = {
     /**
-     * Every online sender's live rate right now, summed, SiteCie included, in pings per second
-     */
-    combinedPps: number;
-    /**
      * The members ranked by the top rate they reached across their devices
      */
     fastest: Array<FastestResponse>;
     house?: HouseLineResponse | null;
     members: Array<StandingResponse>;
     /**
-     * The top rate every online sender reached together, SiteCie included; null until one is set
+     * The top rate every sender reached together, SiteCie included; null when none was recorded
      */
     record?: RecordResponse | null;
 };
@@ -2090,15 +2075,6 @@ export type MembershipResponse = {
 };
 
 /**
- * A placement's motion: static, or bouncing off the canvas edges at (vx, vy) px/s
- */
-export type MotionResponse = {
-    mode: 'static' | 'bounce';
-    vx: number;
-    vy: number;
-};
-
-/**
  * Where to file a target.
  */
 export type MoveTargetRequest = {
@@ -2137,41 +2113,6 @@ export type PagedModelJobExecution = {
 export type PagedModelUserDetailResponse = {
     content?: Array<UserDetailResponse>;
     page?: PageMetadata;
-};
-
-/**
- * The prefix, rate and the images the pinger paints with
- */
-export type PaintResponse = {
-    /**
-     * The images on the canvas, each with its box, in draw order
-     */
-    placements: Array<PlacementResponse>;
-    prefix?: string | null;
-    ratePps: number;
-    /**
-     * The api's clock when this was built; place moving boxes against it, not the local clock
-     */
-    serverTime: string;
-    /**
-     * Whether the always-on SiteCie painter contributes; ratePps is its rate
-     */
-    siteCieEnabled: boolean;
-};
-
-/**
- * An admin's edit to the paint-job settings
- */
-export type PaintSettingsRequest = {
-    /**
-     * The SNTPings /64 to paint towards, e.g. 2001:db8:b317:a000::/64; empty leaves the pinger idle
-     */
-    prefix?: string | null;
-    ratePps: number;
-    /**
-     * Whether the always-on SiteCie painter contributes; ratePps above is its rate
-     */
-    siteCieEnabled: boolean;
 };
 
 export type PasswordChangeRequest = {
@@ -2234,109 +2175,6 @@ export type PingedRoleResponse = {
      * The role's name as last known
      */
     name: string;
-};
-
-/**
- * A pinger's status report
- */
-export type PingerReportRequest = {
-    /**
-     * A stable per-install id for the reporting device, so its counter is kept apart from the member's other devices
-     */
-    deviceId: string;
-    /**
-     * The client's own count of send errors this session
-     */
-    errors: number;
-    /**
-     * Whether the pinger is currently sending
-     */
-    online: boolean;
-    /**
-     * The current send rate in pings per second
-     */
-    pps: number;
-    /**
-     * The client's own cumulative pings sent this session; resets to 0 on restart
-     */
-    sent: number;
-};
-
-/**
- * The slice of the paint this device takes: it keeps pixel i (0-based, placements concatenated in descriptor order) iff frac((i + 1) * 0.6180339887498949) lies in [from, to)
- */
-export type PingerShareResponse = {
-    /**
-     * How many devices share the paint, this one included
-     */
-    devices: number;
-    /**
-     * Inclusive start of the slice, in [0, 1)
-     */
-    from: number;
-    /**
-     * Exclusive end of the slice, in (0, 1]; the last device's is exactly 1
-     */
-    to: number;
-};
-
-/**
- * An admin moving or resizing a placement's box
- */
-export type PlacementBoxRequest = {
-    height: number;
-    originX: number;
-    originY: number;
-    width: number;
-};
-
-/**
- * An admin setting a placement's motion
- */
-export type PlacementMotionRequest = {
-    mode: 'static' | 'bounce';
-    /**
-     * Horizontal speed in px/s, negative is leftwards
-     */
-    vx: number;
-    /**
-     * Vertical speed in px/s, negative is upwards
-     */
-    vy: number;
-};
-
-/**
- * An admin adding an image to the canvas in its own box
- */
-export type PlacementRequest = {
-    height: number;
-    /**
-     * Where the image is stored, as returned by the image upload
-     */
-    imagePath: string;
-    originX: number;
-    originY: number;
-    width: number;
-};
-
-/**
- * One image on the canvas and the box it lands in at motionEpoch
- */
-export type PlacementResponse = {
-    height: number;
-    id: number;
-    imageUrl: string;
-    /**
-     * How the box moves from its origin. x(s) = reflect(originX + vx*s, 3840 - width), y(s) = reflect(originY + vy*s, 2160 - height), s seconds since motionEpoch; reflect(p, L) = 0 if L <= 0, else m = ((p mod 2L) + 2L) mod 2L, m <= L ? m : 2L - m
-     */
-    motion: MotionResponse;
-    /**
-     * When the box stood at its origin and the motion started
-     */
-    motionEpoch: string;
-    originX: number;
-    originY: number;
-    width: number;
 };
 
 export enum PlatformType {
@@ -2426,7 +2264,7 @@ export type ReasonRequest = {
 };
 
 /**
- * The top rate every online sender reached together, SiteCie included, and when
+ * The top rate every sender reached together, SiteCie included, and when
  */
 export type RecordResponse = {
     at: string;
@@ -2860,11 +2698,6 @@ export type StandingResponse = {
     avatarUrl?: string | null;
     discordTag?: string | null;
     memberId: number;
-    online: boolean;
-    /**
-     * The member's live rate across their devices right now, in pings per second
-     */
-    pps: number;
     rank: number;
     totalSent: number;
     username?: string | null;
@@ -3299,19 +3132,6 @@ export type UserSummaryResponse = {
 
 export type Version = {
     version: string;
-};
-
-/**
- * Who the report request resolved to: a member with their roles, or the SiteCie service
- */
-export type WhoAmIResponse = {
-    member: boolean;
-    roles: Array<string>;
-    subject: string;
-    /**
-     * The member's site username, where the subject resolved to one; absent for the SiteCie service
-     */
-    username?: string | null;
 };
 
 export type FindAllAddressesData = {
@@ -9327,90 +9147,6 @@ export type RetryResponses = {
 
 export type RetryResponse = RetryResponses[keyof RetryResponses];
 
-export type ConnectedAppsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/me/connected-apps';
-};
-
-export type ConnectedAppsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ConnectedAppsError = ConnectedAppsErrors[keyof ConnectedAppsErrors];
-
-export type ConnectedAppsResponses = {
-    /**
-     * OK
-     */
-    200: Array<ConnectedAppResponse>;
-};
-
-export type ConnectedAppsResponse = ConnectedAppsResponses[keyof ConnectedAppsResponses];
-
-export type RevokeConnectedAppData = {
-    body?: never;
-    path: {
-        appId: string;
-    };
-    query?: never;
-    url: '/me/connected-apps/{appId}';
-};
-
-export type RevokeConnectedAppErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RevokeConnectedAppError = RevokeConnectedAppErrors[keyof RevokeConnectedAppErrors];
-
-export type RevokeConnectedAppResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RevokeConnectedAppResponse = RevokeConnectedAppResponses[keyof RevokeConnectedAppResponses];
-
 export type MyServicesData = {
     body?: never;
     path?: never;
@@ -10040,43 +9776,6 @@ export type ForwardAuthResponses = {
     200: unknown;
 };
 
-export type DownloadAppData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * The platform to download for: macos, linux or windows
-         */
-        os: string;
-    };
-    url: '/pinger/app/download';
-};
-
-export type DownloadAppErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * The OS is unknown or the latest release has no installer for it
-     */
-    404: unknown;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type DownloadAppError = DownloadAppErrors[keyof DownloadAppErrors];
-
 export type BoardData = {
     body?: never;
     path?: never;
@@ -10117,508 +9816,6 @@ export type BoardResponses = {
 };
 
 export type BoardResponse2 = BoardResponses[keyof BoardResponses];
-
-export type StreamData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/pinger/leaderboard/stream';
-};
-
-export type StreamErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type StreamError = StreamErrors[keyof StreamErrors];
-
-export type StreamResponses = {
-    /**
-     * OK
-     */
-    200: LeaderboardResponse;
-};
-
-export type StreamResponse = StreamResponses[keyof StreamResponses];
-
-export type PaintData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/pinger/paint';
-};
-
-export type PaintErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PaintError = PaintErrors[keyof PaintErrors];
-
-export type PaintResponses = {
-    /**
-     * OK
-     */
-    200: PaintResponse;
-};
-
-export type PaintResponse2 = PaintResponses[keyof PaintResponses];
-
-export type AddPlacementData = {
-    body: PlacementRequest;
-    path?: never;
-    query?: never;
-    url: '/pinger/paint/placements';
-};
-
-export type AddPlacementErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type AddPlacementError = AddPlacementErrors[keyof AddPlacementErrors];
-
-export type AddPlacementResponses = {
-    /**
-     * OK
-     */
-    200: PlacementResponse;
-};
-
-export type AddPlacementResponse = AddPlacementResponses[keyof AddPlacementResponses];
-
-export type RemovePlacementData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/pinger/paint/placements/{id}';
-};
-
-export type RemovePlacementErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemovePlacementError = RemovePlacementErrors[keyof RemovePlacementErrors];
-
-export type RemovePlacementResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemovePlacementResponse = RemovePlacementResponses[keyof RemovePlacementResponses];
-
-export type MovePlacementData = {
-    body: PlacementBoxRequest;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/pinger/paint/placements/{id}';
-};
-
-export type MovePlacementErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type MovePlacementError = MovePlacementErrors[keyof MovePlacementErrors];
-
-export type MovePlacementResponses = {
-    /**
-     * OK
-     */
-    200: PlacementResponse;
-};
-
-export type MovePlacementResponse = MovePlacementResponses[keyof MovePlacementResponses];
-
-export type SetSettingsData = {
-    body: PaintSettingsRequest;
-    path?: never;
-    query?: never;
-    url: '/pinger/paint/settings';
-};
-
-export type SetSettingsErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetSettingsError = SetSettingsErrors[keyof SetSettingsErrors];
-
-export type SetSettingsResponses = {
-    /**
-     * OK
-     */
-    200: PaintResponse;
-};
-
-export type SetSettingsResponse = SetSettingsResponses[keyof SetSettingsResponses];
-
-export type PaintStreamData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/pinger/paint/stream';
-};
-
-export type PaintStreamErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type PaintStreamError = PaintStreamErrors[keyof PaintStreamErrors];
-
-export type PaintStreamResponses = {
-    /**
-     * The whole paint job as each event's data, on connect and on every change, with a comment every 15 s
-     */
-    200: PaintResponse;
-};
-
-export type PaintStreamResponse = PaintStreamResponses[keyof PaintStreamResponses];
-
-export type SetPlacementMotionData = {
-    body: PlacementMotionRequest;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/pinger/placements/{id}/motion';
-};
-
-export type SetPlacementMotionErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetPlacementMotionError = SetPlacementMotionErrors[keyof SetPlacementMotionErrors];
-
-export type SetPlacementMotionResponses = {
-    /**
-     * OK
-     */
-    200: PlacementResponse;
-};
-
-export type SetPlacementMotionResponse = SetPlacementMotionResponses[keyof SetPlacementMotionResponses];
-
-export type ReportData = {
-    body: PingerReportRequest;
-    path?: never;
-    query?: never;
-    url: '/pinger/report';
-};
-
-export type ReportErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ReportError = ReportErrors[keyof ReportErrors];
-
-export type ReportResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type ReportResponse = ReportResponses[keyof ReportResponses];
-
-export type ShareData = {
-    body?: never;
-    path?: never;
-    query: {
-        deviceId: string;
-    };
-    url: '/pinger/report/share';
-};
-
-export type ShareErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ShareError = ShareErrors[keyof ShareErrors];
-
-export type ShareResponses = {
-    /**
-     * OK
-     */
-    200: PingerShareResponse;
-};
-
-export type ShareResponse = ShareResponses[keyof ShareResponses];
-
-export type ShareStreamData = {
-    body?: never;
-    path?: never;
-    query: {
-        deviceId: string;
-    };
-    url: '/pinger/report/share/stream';
-};
-
-export type ShareStreamErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type ShareStreamError = ShareStreamErrors[keyof ShareStreamErrors];
-
-export type ShareStreamResponses = {
-    /**
-     * OK
-     */
-    200: PingerShareResponse;
-};
-
-export type ShareStreamResponse = ShareStreamResponses[keyof ShareStreamResponses];
-
-export type WhoamiData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/pinger/report/whoami';
-};
-
-export type WhoamiErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type WhoamiError = WhoamiErrors[keyof WhoamiErrors];
-
-export type WhoamiResponses = {
-    /**
-     * OK
-     */
-    200: WhoAmIResponse;
-};
-
-export type WhoamiResponse = WhoamiResponses[keyof WhoamiResponses];
 
 export type ConfirmEmailChangeData = {
     body: TokenRequest;

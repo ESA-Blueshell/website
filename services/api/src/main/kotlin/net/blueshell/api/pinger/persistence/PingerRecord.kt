@@ -8,8 +8,8 @@ import net.blueshell.api.shared.model.Identifiable
 import java.time.Instant
 
 /**
- * The single combined-rate record row, id 1: the top rate every online sender reached together,
- * SiteCie included, and when. The migration seeds it at zero with no [setAt], and it only ever rises.
+ * The single combined-rate record row, id 1: the top rate every sender reached together, SiteCie
+ * included, and when. [setAt] is null when no rate was ever recorded.
  */
 @Entity
 @Table(name = "pinger_record")

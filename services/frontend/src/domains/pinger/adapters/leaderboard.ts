@@ -1,10 +1,8 @@
 /*
- * The leaderboard side of the pinger domain. Like the paint adapter, this is a file the domain
- * lets a page in through (frontend ADR-001/002): a page reads the board and its live stream from
- * here, never from the generated client. There is no opt-in: contributing is the permission.
+ * The pinger domain's adapter. A page reads the final SNTPings board from here, never from the
+ * generated client (frontend ADR-001/002).
  */
 import {
-  apiUrl,
   board,
   type FastestResponse,
   type HouseLineResponse,
@@ -21,30 +19,10 @@ export type CombinedRecord = RecordResponse
 export type Leaderboard = LeaderboardResponse
 
 /** An empty board, painted until the api answers and kept when the read is refused. */
-export const EMPTY_LEADERBOARD: Leaderboard = {house: null, members: [], fastest: [], record: null, combinedPps: 0}
-
-/** Fills what an api older than the fastest board leaves out, so the page reads one shape. */
-const complete = (snapshot: Leaderboard): Leaderboard => ({...EMPTY_LEADERBOARD, ...snapshot})
+export const EMPTY_LEADERBOARD: Leaderboard = {house: null, members: [], fastest: [], record: null}
 
 /** The ranked members and the house line. The read is public, so this rarely falls back. */
-export const loadLeaderboard = async (): Promise<Leaderboard> => complete(await readOr(board(), EMPTY_LEADERBOARD))
-
-/**
- * Opens the public stream and hands each snapshot to [onSnapshot]. Returns a close handle the
- * caller runs on unmount: an EventSource left open keeps reconnecting once the page is gone.
- */
-export function openLeaderboardStream(onSnapshot: (snapshot: Leaderboard) => void): () => void {
-  const source = new EventSource(apiUrl("/pinger/leaderboard/stream"))
-  source.onmessage = (event: MessageEvent<string>) => {
-    // A malformed frame is dropped, not thrown: the initial GET already painted a board to fall back on.
-    try {
-      onSnapshot(complete(JSON.parse(event.data) as Leaderboard))
-    } catch {
-      // Nothing to paint from a frame that does not parse.
-    }
-  }
-  return () => source.close()
-}
+export const loadLeaderboard = async (): Promise<Leaderboard> => readOr(board(), EMPTY_LEADERBOARD)
 
 /** The signed-in member's own row, matched by the username the api prints for an unlinked member. */
 export const ownStanding = (snapshot: Leaderboard, username: string | null | undefined): Standing | null =>

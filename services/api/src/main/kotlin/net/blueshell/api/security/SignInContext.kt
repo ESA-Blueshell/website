@@ -16,8 +16,6 @@ object SignInContext {
 data class SignInDetails(
     val signInId: String,
     val methods: Set<String>,
-    val userId: Long,
-    val securityStamp: Long,
 ) : Serializable {
     private companion object {
         private const val serialVersionUID: Long = 1L

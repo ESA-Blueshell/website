@@ -6,4 +6,3 @@ resources:
   - stalwart-secrets.yaml
   - ghcr.yaml
   - flux-git.yaml
-  - pinger-secrets.yaml

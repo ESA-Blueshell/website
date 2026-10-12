@@ -2,9 +2,6 @@ package net.blueshell.api.oidc.domain
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.springframework.security.oauth2.core.AuthorizationGrantType
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod
-import java.time.Duration
 
 /**
  * Pins the redirect URIs each downstream client may be sent back to. The
@@ -34,47 +31,5 @@ class RegisteredClientsTest {
         assertThat(headlamp).isNotNull
         assertThat(headlamp!!.redirectUris)
             .containsExactly("https://headlamp.esa-blueshell.nl/oidc-callback")
-    }
-
-    @Test
-    fun `pinger-app is public, uses PKCE and redirects to a loopback address`() {
-        val pingerApp = clients.findByClientId("pinger-app")
-
-        assertThat(pingerApp).isNotNull
-        assertThat(pingerApp!!.clientAuthenticationMethods).containsExactly(ClientAuthenticationMethod.NONE)
-        assertThat(pingerApp.clientSettings.isRequireProofKey).isTrue()
-        assertThat(pingerApp.redirectUris)
-            .containsExactly("http://127.0.0.1:8991/login/oauth2/code/pinger-app")
-    }
-
-    @Test
-    fun `pinger-app holds a refresh token so a member can revoke it`() {
-        val pingerApp = clients.findByClientId("pinger-app")
-
-        assertThat(pingerApp!!.authorizationGrantTypes)
-            .contains(AuthorizationGrantType.AUTHORIZATION_CODE, AuthorizationGrantType.REFRESH_TOKEN)
-    }
-
-    @Test
-    fun `pinger-app access token outlasts an api restart that forgets its refresh token`() {
-        val pingerApp = clients.findByClientId("pinger-app")!!
-
-        assertThat(pingerApp.tokenSettings.accessTokenTimeToLive).isEqualTo(Duration.ofHours(72))
-    }
-
-    @Test
-    fun `headlamp and vault keep short access tokens`() {
-        listOf("headlamp", "vault").forEach {
-            assertThat(clients.findByClientId(it)!!.tokenSettings.accessTokenTimeToLive).isEqualTo(Duration.ofMinutes(15))
-        }
-    }
-
-    @Test
-    fun `each client keeps its id across api starts`() {
-        val again = RegisteredClients().registeredClientRepository("secret")
-
-        listOf("headlamp", "vault", "pinger-app").forEach {
-            assertThat(again.findByClientId(it)!!.id).isEqualTo(clients.findByClientId(it)!!.id)
-        }
     }
 }

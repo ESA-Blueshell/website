@@ -59,13 +59,11 @@ const formatPps = (pps: number): string => pps.toLocaleString("en")
       class="fastest__empty"
       data-testid="snt-fastest-empty"
     >
-      No member has a top rate yet. Send from the pinger app to set one.
+      No member reported a top rate.
     </p>
 
-    <transition-group
+    <ol
       v-else
-      name="row"
-      tag="ol"
       class="fastest__rows"
     >
       <li
@@ -104,7 +102,7 @@ const formatPps = (pps: number): string => pps.toLocaleString("en")
           >set {{ setAt(standing.peakAt) }}</span>
         </span>
       </li>
-    </transition-group>
+    </ol>
   </div>
 </template>
 
@@ -253,16 +251,6 @@ const formatPps = (pps: number): string => pps.toLocaleString("en")
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.row-move {
-  transition: transform 0.45s var(--ease-out-quint);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .row-move {
-    transition: none;
-  }
 }
 
 @media (max-width: 639px) {

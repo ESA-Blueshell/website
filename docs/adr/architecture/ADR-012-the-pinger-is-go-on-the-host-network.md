@@ -1,7 +1,8 @@
 # ADR-012: The Pinger Is Go, on the Host Network
 
 ## Status
-Accepted
+Deprecated. SNTPings ended and the pinger service, its Deployment and its page at
+`pings.esa-blueshell.nl` were removed. Retained for history.
 
 ## Context
 

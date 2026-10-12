@@ -13,14 +13,14 @@
       >
         <step-strip
           :current="currentStep - 1"
-          :steps="stepItems.map((step) => step.title)"
+          :steps="stepTitles"
           testid="membership-signup-steps"
         />
 
-        <!-- Only the step in hand is mounted, so a form reads what it needs as it is reached. -->
         <!-- Step 1: who they are -->
         <div
-          v-if="currentStep === Steps.Details"
+          v-if="reached.includes(Steps.Details)"
+          v-show="currentStep === Steps.Details"
           class="island-panel"
         >
           <div
@@ -56,7 +56,8 @@
 
         <!-- Step 2: where they live -->
         <div
-          v-else-if="currentStep === Steps.Address"
+          v-if="reached.includes(Steps.Address)"
+          v-show="currentStep === Steps.Address"
           class="island-panel"
         >
           <address-form
@@ -85,7 +86,8 @@
 
         <!-- Step 3: the application itself -->
         <div
-          v-else-if="currentStep === Steps.Membership"
+          v-if="reached.includes(Steps.Membership)"
+          v-show="currentStep === Steps.Membership"
           class="island-panel"
         >
           <notice-box
@@ -130,7 +132,8 @@
 
         <!-- Step 4: confirm the email address. New applicants only. -->
         <email-confirmation-panel
-          v-else
+          v-if="reached.includes(Steps.ConfirmEmail)"
+          v-show="currentStep === Steps.ConfirmEmail"
           :email="user?.email ?? ''"
           :username="user?.username ?? ''"
           :continuation-token="signupToken"
@@ -145,19 +148,7 @@
         class="island-panel signup__done"
         data-testid="membership-complete-panel"
       >
-        <svg
-          aria-hidden="true"
-          class="signup__tick"
-          fill="none"
-          height="64"
-          stroke="currentColor"
-          stroke-linecap="square"
-          stroke-width="3"
-          viewBox="0 0 24 24"
-          width="64"
-        >
-          <path d="M4 12.5 9.5 18 20 6.5" />
-        </svg>
+        <done-tick :size="64" />
         <p class="text-h6 font-weight-medium mb-2">
           Welcome to Blueshell
         </p>
@@ -185,6 +176,7 @@ import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import CutButton from "@/components/island/CutButton.vue"
+import DoneTick from "@/components/island/DoneTick.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StepStrip from "@/components/island/StepStrip.vue"
@@ -219,6 +211,12 @@ const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
 const STEP_DID_NOT_OPEN = "that step did not open, so reload the page and try again"
 
 const currentStep = ref<number>(Steps.Details)
+// A step is drawn once it is reached and kept from then on, so what was typed on it and not
+// yet saved is still there after going back and forward.
+const reached = ref<number[]>([Steps.Details])
+watch(currentStep, (step) => {
+  if (!reached.value.includes(step)) reached.value.push(step)
+})
 const submitting = ref(false)
 // True while the account's own details are still being fetched. Nothing on the
 // first step is offered until they land: a form standing in for data that has not
@@ -254,16 +252,10 @@ const isNewApplicant = computed<boolean>(() => !isLoggedIn.value)
 // step that is no longer rendered.
 const awaitsEmailConfirmation = computed<boolean>(() => isNewApplicant.value && !emailConfirmed.value)
 
-const stepItems = computed<Array<{title: string; value: number}>>(() => {
-  const items = [
-    {title: "Your details", value: Steps.Details as number},
-    {title: "Address", value: Steps.Address as number},
-    {title: "Membership", value: Steps.Membership as number},
-  ]
-  if (awaitsEmailConfirmation.value) {
-    items.push({title: "Confirm email", value: Steps.ConfirmEmail})
-  }
-  return items
+/** In the order of `Steps`, which counts from 1 where the strip counts from 0. */
+const stepTitles = computed<string[]>(() => {
+  const titles = ["Your details", "Address", "Membership"]
+  return awaitsEmailConfirmation.value ? [...titles, "Confirm email"] : titles
 })
 
 function rememberToken(token: string) {
@@ -550,9 +542,5 @@ onUnmounted(() => {
 .signup__done {
   align-items: center;
   text-align: center;
-}
-
-.signup__tick {
-  color: var(--color-ok);
 }
 </style>

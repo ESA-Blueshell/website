@@ -134,9 +134,6 @@ describe("an applicant whose tab reloaded", () => {
     const wrapper = await mount()
 
     expect(steps(wrapper)).toEqual(["Your details", "Address*", "Membership", "Confirm email"])
-
-    // Only the step in hand is mounted, so the details are read a step back.
-    await press(wrapper, "membership-address-back-btn")
     expect(field(wrapper, "user-form-username-field").value).toBe("lena")
   })
 
@@ -319,6 +316,29 @@ describe("an applicant carrying on from where they were", () => {
     sessionStorage.setItem(SIGNUP_TOKEN_KEY, "sel.ver")
     vi.mocked(updateDetails).mockResolvedValue(emptyAnswer(updateDetails))
     vi.mocked(saveAddress).mockResolvedValue(emptyAnswer(saveAddress))
+  })
+
+  it("keeps what was typed on a step and not yet saved, going back and forward", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+    const wrapper = await mount()
+    await byLabel(wrapper, "Street").setValue("Hengelosestraat")
+
+    await press(wrapper, "membership-address-back-btn")
+    await press(wrapper, "membership-details-next-btn")
+
+    expect(steps(wrapper)).toContain("Address*")
+    expect((byLabel(wrapper, "Street").element as HTMLInputElement).value).toBe("Hengelosestraat")
+  })
+
+  it("draws a step only once it is reached, and shows the one in hand alone", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, resumed))
+    const wrapper = await mount()
+    const shown = (name: string) => wrapper.findComponent({name}).exists()
+      && wrapper.getComponent({name}).element.closest<HTMLElement>(".island-panel")!.style.display !== "none"
+
+    expect(shown("AddressForm")).toBe(true)
+    expect(shown("UserForm")).toBe(false)
+    expect(wrapper.findComponent({name: "MembershipForm"}).exists()).toBe(false)
   })
 
   it("saves the details step on the token and moves on to the address", async () => {

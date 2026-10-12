@@ -110,7 +110,7 @@ everything as it was at the last sync.
 ## 4. Afterwards
 
 1. Run the nightly backup by hand, as in `backup.md`, so a `vault-v2` snapshot sits in Scaleway.
-2. Run `scripts/rehearse-restore.sh` with three of the new shares.
+2. Run `scripts/restore.sh rehearse` with three of the new shares.
 3. Hand the shares to named holders (#2097).
 4. Remove the old `vault` release, no sooner than 7 days after the switch. Database logins it
    leased live up to `max_ttl`, 168 hours, and the old Vault revokes each one when it runs out; once

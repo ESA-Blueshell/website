@@ -12,7 +12,8 @@ services:
       - db:/var/lib/mysql
 
   vault:
-    image: hashicorp/vault:1.21
+    # vault-v2 runs 2.0; a Raft snapshot never restores into an older Vault.
+    image: hashicorp/vault:2.0
     # Production's audit log lives in /vault/audit. Vault refuses every request it cannot log, so
     # both volumes must belong to the vault user before it starts.
     entrypoint: ["/bin/sh", "-c", "chown -R vault:vault /vault/data /vault/audit && exec docker-entrypoint.sh server"]

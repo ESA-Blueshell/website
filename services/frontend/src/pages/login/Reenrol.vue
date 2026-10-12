@@ -1,14 +1,14 @@
 <template>
   <main class="site-main">
     <top-banner title="Sign in again" />
-    <div class="mx-3">
+    <div class="site-gutter">
       <form
         v-first-field
         class="island-form"
         data-testid="reenrol-form"
         @submit.prevent="submit"
       >
-        <p class="mb-4">
+        <p>
           An admin reset your two-factor authentication. Sign in with your username and password to set it up
           again.
         </p>

@@ -46,7 +46,7 @@ defineExpose({validate})
 <template>
   <div
     v-if="shown"
-    class="mb-2"
+    class="guest-form"
   >
     <notice-box
       v-if="!force"
@@ -109,5 +109,9 @@ defineExpose({validate})
 
 .form-fields + .form-fields {
   margin-top: 0.5rem;
+}
+
+.guest-form {
+  margin-bottom: 8px;
 }
 </style>

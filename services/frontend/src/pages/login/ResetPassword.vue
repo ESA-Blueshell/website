@@ -3,7 +3,7 @@
     <top-banner title="Reset Password" />
 
     <div
-      class="mx-auto my-10"
+      class="site-column"
       style="max-width: 600px"
     >
       <div
@@ -53,14 +53,14 @@
 
           <div
             v-if="succeeded"
-            class="mt-6"
+            class="reset__done"
             data-testid="reset-password-success-state"
           >
-            <p class="text-subtitle-1">
+            <p>
               Your password has been reset successfully.
               <RouterLink
                 :to="{ name: 'login' }"
-                class="text-decoration-none"
+                class="site-link"
               >
                 Sign in
               </RouterLink>
@@ -136,7 +136,8 @@ async function onSubmit() {
 </script>
 
 <style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
+
+.reset__done {
+  margin-top: 24px;
 }
 </style>

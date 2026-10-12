@@ -3,17 +3,17 @@
     <top-banner title="Account Activation" />
 
     <div
-      class="mx-auto my-10"
+      class="site-column"
       style="max-width: 600px"
     >
       <div class="island-panel activate-panel">
         <div
           v-if="loading"
-          class="d-flex align-center justify-center"
+          class="site-waiting"
           data-testid="activate-user-loading-state"
         >
-          <loading-spinner class="mr-3" />
-          <p class="text-subtitle-1 mb-0">
+          <loading-spinner />
+          <p>
             Please wait a moment, we’re activating your account.
           </p>
         </div>
@@ -23,7 +23,7 @@
           data-testid="activate-user-success-state"
         >
           <done-tick />
-          <p class="text-subtitle-1">
+          <p>
             {{ membershipStarted
               ? "Account confirmed and your membership has started. You will be redirected to the login page."
               : "Account confirmed! You will be redirected to the login page." }}
@@ -37,7 +37,7 @@
           testid="activate-user-error-alert"
         >
           <div>{{ errorMessage }}</div>
-          <div class="mt-2">
+          <div class="activate-panel__next">
             You will be redirected to the login page.
           </div>
         </notice-box>
@@ -105,5 +105,9 @@ onMounted(async () => {
 .activate-panel {
   align-items: center;
   text-align: center;
+}
+
+.activate-panel__next {
+  margin-top: 8px;
 }
 </style>

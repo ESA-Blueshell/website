@@ -3,7 +3,7 @@
     <top-banner title="Confirm Your Account" />
 
     <div
-      class="mx-auto my-10"
+      class="site-column"
       style="max-width: 600px"
     >
       <div
@@ -107,9 +107,3 @@ const onSubmit = async () => {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
-}
-</style>

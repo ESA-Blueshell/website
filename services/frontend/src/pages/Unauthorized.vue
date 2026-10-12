@@ -1,17 +1,16 @@
 <template>
   <main class="site-main">
     <div
-      class="text-body-1 mx-auto mt-16 px-4 text-center"
-      style="max-width: 800px;"
+      class="unauthorized"
     >
-      <h1 class="text-h4 text-sm-h3 mb-4">
+      <h1 class="site-lead unauthorized__title">
         Not allowed
       </h1>
-      <p class="text-h6 text-sm-h5">
+      <p class="site-lead">
         Your account doesn't have permission to access
         <strong>{{ serviceLabel }}</strong>.
       </p>
-      <p class="mt-3 text-body-1">
+      <p class="unauthorized__hint">
         If you think this is a mistake, ask board to bump your role.
       </p>
       <div class="unauthorized__acts">
@@ -62,5 +61,20 @@ export default defineComponent({
   justify-content: center;
   gap: 0.75rem;
   margin-top: 2rem;
+}
+
+.unauthorized {
+  max-width: 800px;
+  margin: 64px auto 0;
+  padding-inline: 16px;
+  text-align: center;
+}
+
+.unauthorized__title {
+  margin-bottom: 16px;
+}
+
+.unauthorized__hint {
+  margin-top: 12px;
 }
 </style>

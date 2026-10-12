@@ -57,7 +57,7 @@ defineExpose({validate})
         class="answers-form__item"
       >
         <markdown-view
-          class="text-body-1 answers-form__description"
+          class="answers-form__description"
           :source="question.label"
         />
       </question-card>
@@ -92,5 +92,11 @@ defineExpose({validate})
     white-space: pre-wrap;
     word-break: break-word;
   }
+}
+
+/* The body face, where a description is set in the prose face everywhere else. !important:
+   the reader's own rule has the same weight, and which of the two loads last is not fixed. */
+.answers-form__description {
+  font-family: var(--font-body) !important;
 }
 </style>

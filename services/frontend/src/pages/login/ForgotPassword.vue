@@ -1,74 +1,78 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Forgot Password" />
-
-    <div
-      class="site-column"
-      style="max-width: 600px"
-    >
+  <account-frame
+    :crumb="{label: 'Login', to: '/login'}"
+    heading="Forgot password"
+    island-content
+    :tabs="false"
+  >
+    <task-layout aside-title="Haven't confirmed your email yet?">
       <div
-        class="island-panel"
+        v-if="!succeeded"
+        class="island-form"
+        data-testid="forgot-password-form-state"
       >
-        <div
-          v-if="!succeeded"
-          data-testid="forgot-password-form-state"
+        <p>Enter your username, and we’ll email you a link to reset your password.</p>
+        <notice-box
+          v-if="failed"
+          tone="warning"
+          testid="forgot-password-failed-alert"
         >
-          <p>Enter your username, and we’ll email you a link to reset your password.</p>
-
-          <notice-box
-            v-if="failed"
-            tone="warning"
-            testid="forgot-password-failed-alert"
-          >
-            We could not send that just now, so no email is on its way. Please try again.
-          </notice-box>
-
-          <form
-            data-testid="forgot-password-form"
-            @submit.prevent="onSubmit"
-          >
-            <form-control
-              v-model="form.username"
-              autocomplete="username"
-              data-testid="forgot-password-username-field"
-              :error-messages="errorsOf('username')"
-              label="Username"
-              @blur="touch('username')"
-            />
-
-            <div class="form-save">
-              <cut-button
-                tone="solid"
-                submit
-                :disabled="loading"
-                data-testid="forgot-password-submit-btn"
-              >
-                Send reset mail
-              </cut-button>
-            </div>
-          </form>
-        </div>
-
-        <div
-          v-else
-          data-testid="forgot-password-success-state"
+          We could not send that just now, so no email is on its way. Please try again.
+        </notice-box>
+        <form
+          class="island-form"
+          data-testid="forgot-password-form"
+          @submit.prevent="onSubmit"
         >
-          <p>
-            If an account with that username exists, you’ll receive an email with a password reset link.
-            Didn’t get it? Check your spam folder or try again later.
-          </p>
-        </div>
+          <form-control
+            v-model="form.username"
+            autocomplete="username"
+            data-testid="forgot-password-username-field"
+            :error-messages="errorsOf('username')"
+            label="Username"
+            @blur="touch('username')"
+          />
+          <div class="form-save">
+            <cut-button
+              tone="solid"
+              submit
+              :disabled="loading"
+              data-testid="forgot-password-submit-btn"
+            >
+              Send reset mail
+            </cut-button>
+          </div>
+        </form>
       </div>
-    </div>
-  </main>
+      <div
+        v-else
+        data-testid="forgot-password-success-state"
+      >
+        <p>
+          If an account with that username exists, you’ll receive an email with a password reset link.
+          Didn’t get it? Check your spam folder or try again later.
+        </p>
+      </div>
+
+      <template #aside>
+        <p>You need to click the link in the email we sent you before you can log in.</p>
+        <p>
+          Can't find that email? <router-link :to="`/login/confirm?username=${form.username}`">
+            Send a new confirmation email
+          </router-link>
+        </p>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import {useFormChecks} from "@/composables/useFormChecks"
 import {required} from "@/utils/checks"

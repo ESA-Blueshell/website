@@ -641,7 +641,7 @@ defineExpose({validate, save, signupSession})
 
       <div
         v-if="showSubmit"
-        class="user-form__save"
+        class="form-save"
       >
         <submit-button
           :disabled="isSaving"
@@ -672,12 +672,6 @@ defineExpose({validate, save, signupSession})
 
 .checkbox-label-text {
   font-weight: normal;
-}
-
-.user-form__save {
-  display: flex;
-  justify-content: flex-end;
-  margin: 1.2rem 0 1.25rem;
 }
 
 .user-form__policy {

@@ -25,7 +25,6 @@ vi.mock("@/domains/auth", async () => ({
 }))
 vi.mock("@/plugins/recoveryToken", () => ({loadRecoveryTokenFromRoute: mockToken, clearStoredRecoveryToken: mockClear}))
 vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockNetworkError}))
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
 
 const fill = async (wrapper: ReturnType<typeof mountInApp>) => {
   await wrapper.find("[data-testid=reenrol-username-field] input").setValue("alice")

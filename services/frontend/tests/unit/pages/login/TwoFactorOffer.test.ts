@@ -30,7 +30,6 @@ vi.mock("@/domains/auth", async () => ({
 }))
 
 vi.mock("@/plugins/recoveryToken", () => ({loadRecoveryTokenFromRoute: () => "sel.ver"}))
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
 
 describe("the one-time offer", () => {
   beforeEach(() => vi.clearAllMocks())

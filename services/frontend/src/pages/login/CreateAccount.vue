@@ -1,46 +1,69 @@
 <template>
-  <main class="site-main">
-    <TopBanner title="Create Account" />
-
-    <div
-      v-if="!session"
-      class="create__column"
-      data-testid="create-account-form-state"
-      style="max-width: 600px"
+  <account-frame
+    :crumb="{label: 'Login', to: '/login'}"
+    heading="Create account"
+    island-content
+    :tabs="false"
+  >
+    <task-layout
+      aside-title="Becoming a member?"
+      wide
     >
-      <user-form
-        ref="userRef"
-        v-model="user"
-        data-testid="create-account-user-form"
-        show-password
-        show-submit
-        :signup-token="signupSession?.signupToken"
-        :submit-text="submitText"
-        @submitted="onFormSubmitted"
-      />
-    </div>
+      <div
+        v-if="!session"
+        class="island-panel"
+        data-testid="create-account-form-state"
+      >
+        <user-form
+          ref="userRef"
+          v-model="user"
+          data-testid="create-account-user-form"
+          show-password
+          show-submit
+          :signup-token="signupSession?.signupToken"
+          :submit-text="submitText"
+          @submitted="onFormSubmitted"
+        />
+      </div>
 
-    <div
-      v-else
-      class="site-column"
-      data-testid="create-account-success-state"
-      style="max-width: 600px"
-    >
-      <email-confirmation-panel
-        :email="user?.email ?? ''"
-        :username="user?.username ?? ''"
-        :continuation-token="session.signupToken"
-        confirmation-consequence="Your account works as soon as you do."
-        @back="editing = true"
-        @email-corrected="onEmailCorrected"
-      />
-    </div>
-  </main>
+      <div
+        v-else
+        data-testid="create-account-success-state"
+      >
+        <email-confirmation-panel
+          :email="user?.email ?? ''"
+          :username="user?.username ?? ''"
+          :continuation-token="session.signupToken"
+          confirmation-consequence="Your account works as soon as you do."
+          @back="editing = true"
+          @email-corrected="onEmailCorrected"
+        />
+      </div>
+
+      <template #aside>
+        <p>
+          You do not need an account first. The <router-link
+            to="/membership/signup"
+          >
+            membership form
+          </router-link> creates one for you.
+        </p>
+        <p>
+          Already have an account? <router-link
+            to="/login"
+          >
+            Log in
+          </router-link>
+        </p>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
 import {computed, ref} from "vue"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import UserForm from "@/components/form/UserForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
 import type {SignupSessionResponse} from "@/domains/user"
@@ -66,10 +89,3 @@ const onEmailCorrected = (email: string) => {
   if (user.value) user.value.email = email
 }
 </script>
-
-<style scoped>
-.create__column {
-  margin: 40px auto 0;
-  padding-bottom: 40px;
-}
-</style>

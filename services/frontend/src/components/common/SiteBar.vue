@@ -136,8 +136,8 @@
       </button>
 
       <!--
-        On a narrow screen one icon stands for both menus, and the panel it opens folds out of
-        the right edge as the drawer's counterpart. Only somebody logged in has either.
+        On a narrow screen the panel the account icon opens folds out of the right edge as the
+        drawer's counterpart. Only somebody logged in has one.
       -->
       <button
         v-if="narrow && reader.loggedIn"
@@ -326,15 +326,6 @@
     >
       {{ entry.label }}
     </router-link>
-    <button
-      class="site-bar-drawer__entry"
-      data-testid="nav-log-out"
-      type="button"
-      @click="side = false; emit('logOut')"
-    >
-      Log out
-    </button>
-
     <router-link
       v-if="managementSwitch"
       class="site-bar-drawer__entry site-bar__switch"
@@ -344,6 +335,14 @@
     >
       {{ managementSwitch.label }}
     </router-link>
+    <button
+      class="site-bar-drawer__entry"
+      data-testid="nav-log-out"
+      type="button"
+      @click="side = false; emit('logOut')"
+    >
+      Log out
+    </button>
   </nav>
 </template>
 
@@ -390,7 +389,7 @@ const narrow = useNarrow()
 const drawer = ref<boolean>(false)
 const drawerPanel = ref<HTMLElement | null>(null)
 
-/** The account and management panel folding out of the right edge on a narrow screen. */
+/** The account panel folding out of the right edge on a narrow screen. */
 const side = ref<boolean>(false)
 const sidePanel = ref<HTMLElement | null>(null)
 
@@ -831,10 +830,9 @@ const account = computed(() => accountFor(reader.value))
 .roll-on svg { animation: roll-on v-bind(rollTravel) var(--ease-out-quint); }
 .roll-off svg { animation: roll-off v-bind(rollTravel) var(--ease-out-quint); }
 
-/* After the entries' own colour, which it replaces. */
-:deep(.site-bar__switch),
-.site-bar__switch {
-  color: var(--color-brand-ink);
+/* After the entries' own colour, which it replaces. The ink alone is under AA on the menu's dark ground. */
+:deep(.site-bar__switch) {
+  color: color-mix(in oklab, var(--color-brand-ink) 70%, var(--color-chalk));
   border-top: 1px solid var(--color-hairline);
 }
 </style>

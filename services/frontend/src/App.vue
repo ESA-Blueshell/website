@@ -1,16 +1,16 @@
 <template>
   <v-app>
-    <!-- `route.meta.bare` (set on /login, /unauthorized, etc., see
-         router.ts) drops the full site chrome. Useful when this SPA
-         is loaded into a small popup window (Vault's OIDC flow being
-         the canonical case) where the top bar / drawer / footer are
-         purely visual noise around the login form. -->
     <management-bar
       v-if="isManagement"
       :dark-mode="isDarkMode"
       @log-out="logOut"
       @toggle-dark-mode="toggleDarkMode"
     />
+    <!-- `route.meta.bare` (set on /login, /unauthorized, etc., see
+         router.ts) drops the full site chrome. Useful when this SPA
+         is loaded into a small popup window (Vault's OIDC flow being
+         the canonical case) where the top bar / drawer / footer are
+         purely visual noise around the login form. -->
     <site-bar
       v-else-if="!isBareLayout"
       :dark-mode="isDarkMode"
@@ -27,7 +27,8 @@
 
 
 
-    <toast-area>
+    <!-- A phone's Management has a tab bar at the foot, and the toasts stand over it. -->
+    <toast-area :style="isManagement ? {bottom: 'var(--management-tabs)'} : undefined">
       <toast-notice
         v-model:open="poggers"
         testid="anthem-toast"

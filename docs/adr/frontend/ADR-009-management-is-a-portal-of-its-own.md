@@ -1,7 +1,7 @@
 # ADR-009: Management Is a Portal of Its Own
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 
@@ -40,6 +40,13 @@ Alternatives considered:
   public header and footer around work that is not public.
 - **A separate application or subdomain.** A second build, session and deployment for pages
   that share the site's components, api client and sign-in.
+
+## Implementation status
+
+The frame is built: the bar, the sidebar, the phone bar, the layout route and the switch in the
+account menu. Still to come with the pages they belong to: the dashboard (Management opens on
+the list of its pages until then), alerts and their count, record and task pages, and the
+redirects from today's addresses, which the sidebar links to as they are.
 
 ## Consequences
 

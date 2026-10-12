@@ -9,9 +9,11 @@
       to="/management"
     >
       <img
-        alt="ESA Blueshell"
+        alt=""
+        height="38"
         :src="logo"
         :srcset="`${logo} 1x, ${logo2x} 2x, ${logo3x} 3x`"
+        width="163"
       >
       <span class="mg-bar__word">Management</span>
     </router-link>
@@ -110,7 +112,7 @@ const account = computed(() =>
   display: flex;
   align-items: center;
   gap: 1rem;
-  height: 60px;
+  height: var(--management-bar);
   /* The island class stretches to fill its parent; a bar stays its own height. */
   min-height: 0;
   padding: 0 20px 0 22px;
@@ -159,7 +161,6 @@ const account = computed(() =>
 
 @media (max-width: 839px) {
   .mg-bar {
-    height: 56px;
     padding: 0 8px 0 14px;
   }
 
@@ -175,7 +176,7 @@ const account = computed(() =>
   background: var(--color-surface);
   border-top: 3px solid var(--color-brand);
   color: var(--color-chalk);
-  box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
+  box-shadow: 0 18px 40px color-mix(in oklab, var(--color-void) 45%, transparent);
 }
 
 :deep(.mg-menu__entry) {
@@ -194,7 +195,8 @@ const account = computed(() =>
 
 :deep(.mg-menu__switch) {
   border-top: 1px solid var(--color-hairline);
-  color: var(--color-brand-ink);
+  /* The ink alone is under AA on the menu's dark ground. */
+  color: color-mix(in oklab, var(--color-brand-ink) 70%, var(--color-chalk));
 }
 
 :deep(.mg-menu__out) {

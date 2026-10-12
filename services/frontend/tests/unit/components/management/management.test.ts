@@ -55,12 +55,19 @@ describe("the Management portal", {timeout: 20_000}, () => {
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 
-  it("gives a phone a bottom bar with the members tab and More, lit for the page open", async () => {
-    const wrapper = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin, width: 390})
+  it("ends the page with the site's footer, outside the page's main area", async () => {
+    const wrapper = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+
+    expect(wrapper.find("footer").exists()).toBe(true)
+    expect(wrapper.find("main footer").exists()).toBe(false)
+  })
+
+  it("carries a bar of tabs for a phone, the members tab and More, and says which is open", async () => {
+    const wrapper = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
     expect(targets(wrapper, "management-tabbar")).toEqual(["/user-manager", "/management/more"])
-    expect(wrapper.get("[data-testid=management-tab-more]").classes()).toContain("mg-tab--on")
-    expect(wrapper.get("[data-testid=management-tab-members]").classes()).not.toContain("mg-tab--on")
+    expect(wrapper.get("[data-testid=management-tab-more]").attributes("aria-current")).toBe("page")
+    expect(wrapper.get("[data-testid=management-tab-members]").attributes("aria-current")).toBeUndefined()
   })
 
   it("lists every page on More, grouped like the sidebar", async () => {
@@ -82,7 +89,7 @@ describe("the Management portal", {timeout: 20_000}, () => {
     expect(items().map((item) => item.find("a").exists() ? item.find("a").attributes("to") : item.text()))
       .toEqual(["/account", "/account/security", "/account/games", "/account/addresses", "/", "Log out"])
     expect(items().at(-2)!.text()).toBe("Back to the site")
-    items().at(-1)!.vm.$emit("select", new Event("select"))
+    await wrapper.get("[data-testid=management-log-out]").trigger("click")
     expect(wrapper.emitted("logOut")).toHaveLength(1)
   })
 })

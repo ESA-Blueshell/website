@@ -41,6 +41,9 @@ export const managementFor = (reader: ManagementReader): ManagementGroup[] =>
       .filter((group) => group.entries.length > 0)
     : []
 
+/** A page's name as its testids carry it: "Account recovery" is `account-recovery`. */
+export const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
+
 /** Whether [path] is on the page [entry] leads to, or one below it. */
 export const isOn = (path: string, entry: ManagementEntry): boolean =>
   path === entry.to || path.startsWith(`${entry.to}/`)

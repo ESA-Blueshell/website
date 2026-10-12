@@ -369,7 +369,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.get("[data-testid='nav-side-panel']").text()).not.toContain("management")
   })
 
-  it("gives Management its own bar and leaves the footer to its shell", async () => {
+  it("gives Management its own bar and draws no footer of its own there", async () => {
     mockRoute.path = "/management/more"
     mockRoute.meta.management = true
 

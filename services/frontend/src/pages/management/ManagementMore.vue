@@ -13,7 +13,7 @@
       <management-row
         v-for="entry in group.entries"
         :key="entry.to"
-        :data-testid="`management-more-${entry.label.toLowerCase().replace(/\s+/g, '-')}`"
+        :data-testid="`management-more-${slug(entry.label)}`"
         :name="entry.label"
         :to="entry.to"
       />
@@ -22,19 +22,16 @@
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue"
-import {useStore} from "vuex"
 import ListHead from "@/components/management/ListHead.vue"
-import {managementFor} from "@/components/management/managementNav"
+import {slug} from "@/components/management/managementNav"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementRow from "@/components/management/ManagementRow.vue"
+import {useManagementGroups} from "@/composables/useManagementGroups"
 
 defineOptions({name: "ManagementMore"})
 
-const store = useStore()
-
-/** Every page the reader may open, grouped as the sidebar groups them; a phone has no sidebar. */
-const groups = computed(() => managementFor({board: store.getters.isBoard === true, admin: store.getters.isAdmin === true}))
+/** Grouped as the sidebar groups them; a phone has no sidebar. */
+const groups = useManagementGroups()
 </script>
 
 <style scoped>

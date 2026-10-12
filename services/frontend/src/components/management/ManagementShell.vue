@@ -38,10 +38,12 @@
       </div>
     </nav>
 
-    <main class="mg-main">
-      <router-view />
+    <div class="mg-main">
+      <main>
+        <router-view />
+      </main>
       <footer-banner class="mg-footer" />
-    </main>
+    </div>
 
     <nav
       aria-label="Management"
@@ -51,6 +53,7 @@
       <router-link
         v-for="tab in tabs"
         :key="tab.to"
+        :aria-current="tab.on ? 'page' : undefined"
         class="mg-tab"
         :class="{'mg-tab--on': tab.on}"
         :data-testid="`management-tab-${slug(tab.label)}`"
@@ -74,17 +77,15 @@
 <script lang="ts" setup>
 import {computed} from "vue"
 import {useRoute} from "vue-router"
-import {useStore} from "vuex"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import RoleMark from "@/components/island/RoleMark.vue"
-import {isOn, managementFor} from "@/components/management/managementNav"
+import {isOn, slug} from "@/components/management/managementNav"
+import {useManagementGroups} from "@/composables/useManagementGroups"
 
 defineOptions({name: "ManagementShell"})
 
 const route = useRoute()
-const store = useStore()
-
-const groups = computed(() => managementFor({board: store.getters.isBoard === true, admin: store.getters.isAdmin === true}))
+const groups = useManagementGroups()
 
 const MEMBERS_ICON = "M9 4.6a3.4 3.4 0 1 1 0 6.8a3.4 3.4 0 1 1 0-6.8M2.6 19.4c0-3.4 2.9-5.6 6.4-5.6s6.4 2.2 6.4 5.6M16 5.2a3.2 3.2 0 0 1 0 6.1M18.4 14.2c1.8.8 3 2.6 3 5.2"
 const MORE_ICON = "M4 7h16M4 12h16M4 17h16"
@@ -97,15 +98,13 @@ const tabs = computed(() => {
     : [])
   return [...owned, {label: "More", to: "/management/more", icon: MORE_ICON, on: !owned.some((tab) => tab.on)}]
 })
-
-const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
 </script>
 
 <style scoped>
 .mg-shell {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
-  min-height: calc(100vh - 60px);
+  min-height: calc(100vh - var(--management-bar));
 }
 
 .mg-side {
@@ -118,9 +117,9 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
 
   /* The navigation stays where it is: the page beside it is what scrolls. */
   position: sticky;
-  top: 60px;
+  top: var(--management-bar);
   align-self: start;
-  height: calc(100vh - 60px);
+  height: calc(100dvh - var(--management-bar));
   overflow-y: auto;
 }
 
@@ -136,7 +135,7 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
   gap: 0.4rem;
   margin: 0;
   padding: 0 0.7rem 0.35rem;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.3em;
   text-transform: uppercase;
@@ -195,7 +194,7 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
 @media (max-width: 839px) {
   .mg-shell {
     grid-template-columns: minmax(0, 1fr);
-    padding-bottom: 64px;
+    padding-bottom: var(--management-tabs);
   }
 
   .mg-side {
@@ -211,7 +210,7 @@ const slug = (label: string): string => label.toLowerCase().replace(/\s+/g, "-")
     display: grid;
     grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
-    height: 64px;
+    height: var(--management-tabs);
     background: color-mix(in oklab, var(--color-pit) 96%, transparent);
     border-top: 1px solid var(--color-hairline);
   }

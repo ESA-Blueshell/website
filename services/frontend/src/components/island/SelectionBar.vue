@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import CutButton from "@/components/island/CutButton.vue"
 
-/* Under a list whose rows can be ticked: how many are, what can be done with them, and a way to
-   clear. A list that keeps it in view with nothing ticked says so, "0 selected", and its actions
-   wait, disabled, until something is. */
+/* Under a list whose rows can be ticked: how many are, what can be done with them and a way to
+   clear. A list that keeps it in view with nothing ticked reads "0 selected" and its actions wait,
+   disabled, until something is. */
 const {count, noun = "selected", always = false, testid = undefined} = defineProps<{
   count: number
   noun?: string
@@ -55,7 +55,7 @@ const emit = defineEmits<{clear: []}>()
 }
 
 .selection-bar__n {
-  font-family: "Shellhouse One", sans-serif;
+  font-family: var(--font-display);
   font-size: 0.95rem;
   text-transform: uppercase;
 }
@@ -81,6 +81,6 @@ const emit = defineEmits<{clear: []}>()
 .selection-bar--idle :deep(.island-cut:disabled) {
   opacity: 1;
   color: var(--color-ash);
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
 }
 </style>

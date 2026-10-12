@@ -43,7 +43,7 @@ const open = defineModel<boolean>("open", {default: false})
 
 <style scoped>
 .fold-out {
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
   border-left: 3px solid transparent;
 }
 
@@ -60,7 +60,7 @@ const open = defineModel<boolean>("open", {default: false})
   border: 0;
   background: none;
   color: var(--color-chalk);
-  font-family: "Shellhouse One", sans-serif;
+  font-family: var(--font-display);
   font-size: 0.95rem;
   text-transform: uppercase;
   cursor: pointer;

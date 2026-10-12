@@ -31,13 +31,17 @@ const pick = (key: string) => {
     :label="label"
     variant="inside"
   >
-    <search-picker
-      :options="rows"
-      :placeholder="rows.find((row) => row.key === (chosen ?? ANY))?.label ?? anyLabel"
-      :selected-key="chosen ?? ANY"
-      :testid-prefix="testid"
-      @pick="pick"
-    />
+    <template #default="{controlId, labelId}">
+      <search-picker
+        :control-id="controlId"
+        :labelled-by="labelId"
+        :options="rows"
+        :placeholder="rows.find((row) => row.key === (chosen ?? ANY))?.label ?? anyLabel"
+        :selected-key="chosen ?? ANY"
+        :testid-prefix="testid"
+        @pick="pick"
+      />
+    </template>
   </form-field>
 </template>
 

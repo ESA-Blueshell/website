@@ -50,7 +50,7 @@ const WORDS: Record<StateKind, string> = {
 }
 
 .state-mark--missing {
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .state-mark--extra {
@@ -73,7 +73,7 @@ const WORDS: Record<StateKind, string> = {
 }
 
 .state-mark--not-compared {
-  color: color-mix(in oklab, var(--color-ash) 70%, transparent);
+  color: var(--color-ash);
 }
 
 .state-mark--not-compared::before {

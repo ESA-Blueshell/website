@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/* A role written as Discord writes a mention: what a mark needs, or what a Discord role is. */
+/* A role, written as Discord writes a mention. */
 import {computed} from "vue"
 
 const {role, testid = undefined} = defineProps<{
@@ -8,7 +8,7 @@ const {role, testid = undefined} = defineProps<{
   testid?: string
 }>()
 
-const tone = computed(() => (["admin", "board", "treasurer"].includes(role.toLowerCase()) ? role.toLowerCase() : "plain"))
+const tone = computed(() => (["admin", "treasurer"].includes(role.toLowerCase()) ? role.toLowerCase() : "plain"))
 </script>
 
 <template>
@@ -31,25 +31,17 @@ const tone = computed(() => (["admin", "board", "treasurer"].includes(role.toLow
   letter-spacing: 0;
   text-transform: none;
   white-space: nowrap;
-  color: color-mix(in oklab, var(--mention-lit) 70%, var(--color-chalk));
+  color: color-mix(in oklab, var(--mention) 70%, var(--color-chalk));
   background: color-mix(in oklab, var(--mention) 22%, transparent);
 
-  --mention: var(--color-brand);
-  --mention-lit: var(--color-brand-lit);
+  --mention: var(--color-brand-ink);
 }
 
 .role-mark--admin {
-  --mention: #e8594f;
-  --mention-lit: #e8594f;
-}
-
-.role-mark--board {
-  --mention: #3387fa;
-  --mention-lit: #3387fa;
+  --mention: var(--color-danger);
 }
 
 .role-mark--treasurer {
-  --mention: #e0a100;
-  --mention-lit: #e0a100;
+  --mention: var(--color-warning);
 }
 </style>

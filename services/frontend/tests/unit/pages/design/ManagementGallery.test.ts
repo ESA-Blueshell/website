@@ -1,49 +1,61 @@
-import {describe, expect, it} from "vitest"
+import {afterEach, describe, expect, it} from "vitest"
 import {mount} from "@vue/test-utils"
 import ManagementGallery from "@/pages/design/ManagementGallery.vue"
-import FilterPicker from "@/components/island/FilterPicker.vue"
 import {JobExecutionStatus} from "@/domains/jobs"
 
-const firstRow = (wrapper: ReturnType<typeof mount>) => wrapper.get("[data-testid=gallery-list] .gallery__cell").text()
+const gallery = () => mount(ManagementGallery, {attachTo: document.body})
 
 describe("the management parts gallery", () => {
-  it("draws every part, in either half of the theme", async () => {
-    const wrapper = mount(ManagementGallery)
+  afterEach(() => {
+    document.body.innerHTML = ""
+  })
+
+  it("draws the parts in either half of the theme", async () => {
+    const wrapper = gallery()
 
     expect(wrapper.find("[data-testid=gallery-search]").exists()).toBe(true)
     expect(wrapper.findAll(".state-mark")).toHaveLength(6)
+    expect(wrapper.findAll(".role-mark")).toHaveLength(4)
+    expect(wrapper.get("[data-theme]").attributes("data-theme")).toBe("dark")
     await wrapper.get("[data-testid=management-gallery-theme]").trigger("click")
     expect(wrapper.get("[data-theme]").attributes("data-theme")).toBe("light")
   })
 
-  it("takes its picker's values from the SDK and clears the filters", async () => {
-    const wrapper = mount(ManagementGallery)
-    const picker = wrapper.findComponent(FilterPicker)
+  it("offers every job status the SDK names, and clears the search and the filter together", async () => {
+    const wrapper = gallery()
+    const search = wrapper.get<HTMLInputElement>("[data-testid=gallery-search]")
+    const status = wrapper.get<HTMLInputElement>("[data-testid=gallery-status-search]")
 
-    expect(picker.props("options").map((option: {key: string}) => option.key)).toEqual(Object.values(JobExecutionStatus))
-    picker.vm.$emit("update:modelValue", JobExecutionStatus.FAILED)
-    await wrapper.get("[data-testid=gallery-search]").setValue("brevo")
+    await status.trigger("click")
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await wrapper.vm.$nextTick()
+    const rows = [...document.querySelectorAll<HTMLButtonElement>("[data-testid=gallery-status-list] [role=option]")]
+    expect(rows.map((row) => row.textContent.trim())).toEqual(["Any", ...Object.values(JobExecutionStatus).map((value) => value.toLowerCase())])
+
+    rows[1]!.click()
+    await search.setValue("brevo")
+    expect(status.element.value).toBe(rows[1]!.textContent.trim())
     await wrapper.get("[data-testid=gallery-filters-clear]").trigger("click")
-    expect(picker.props("modelValue")).toBeNull()
+    expect(status.element.value).toBe("Any")
+    expect(search.element.value).toBe("")
+    expect(wrapper.find("[data-testid=gallery-filters-clear]").exists()).toBe(false)
   })
 
-  it("sorts the long list by either column, newest first by time", async () => {
-    const wrapper = mount(ManagementGallery)
+  it("keeps the selection bar in view once cleared, and takes a tick again", async () => {
+    const wrapper = gallery()
+    const bar = wrapper.get("[data-testid=gallery-selection]")
 
-    expect(firstRow(wrapper)).toBe("Member 1")
-    await wrapper.get("[data-testid=gallery-sort-when]").trigger("click")
-    expect(firstRow(wrapper)).toBe("Member 5000")
-    await wrapper.get("[data-testid=gallery-sort-name]").trigger("click")
-    expect(firstRow(wrapper)).toBe("Member 1")
-    await wrapper.get("[data-testid=gallery-sort-name]").trigger("click")
-    expect(firstRow(wrapper)).toBe("Member 5000")
-  })
-
-  it("clears the selection and folds the fold-out", async () => {
-    const wrapper = mount(ManagementGallery)
-
+    expect(bar.text()).toContain("2 selected")
     await wrapper.get("[data-testid=gallery-selection-clear]").trigger("click")
-    expect(wrapper.find("[data-testid=gallery-selection]").exists()).toBe(false)
+    expect(bar.text()).toContain("0 selected")
+    await wrapper.get("[data-testid=gallery-tick]").trigger("click")
+    expect(bar.text()).toContain("1 selected")
+  })
+
+  it("folds the fold-out and its note away", async () => {
+    const wrapper = gallery()
+
+    expect(wrapper.text()).toContain("Work that opens in place")
     await wrapper.get("[data-testid=gallery-fold-toggle]").trigger("click")
     expect(wrapper.text()).not.toContain("Work that opens in place")
   })

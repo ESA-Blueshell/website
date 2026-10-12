@@ -1,17 +1,15 @@
 <script lang="ts" setup>
 /* The parts every management page is built from, on one page and in both halves of the theme.
    Dev only: the route that reaches it is registered only when `import.meta.env.DEV`. */
-import {computed, ref} from "vue"
+import {ref} from "vue"
 import CountBadge from "@/components/island/CountBadge.vue"
 import FactList from "@/components/island/FactList.vue"
 import FilterBar from "@/components/island/FilterBar.vue"
 import FilterPicker from "@/components/island/FilterPicker.vue"
 import FoldOut from "@/components/island/FoldOut.vue"
-import FullList from "@/components/island/FullList.vue"
 import RoleMark from "@/components/island/RoleMark.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
 import SelectionBar from "@/components/island/SelectionBar.vue"
-import SortHeader from "@/components/island/SortHeader.vue"
 import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
 import {JobExecutionStatus} from "@/domains/jobs"
 
@@ -32,22 +30,8 @@ const facts = [
   {label: "Needs a look", value: "[ 6 ] people"},
 ]
 
-const sortedBy = ref<"name" | "when">("when")
-const descending = ref(true)
-const sortBy = (column: "name" | "when") => {
-  // A time column starts newest first; any other starts from the top of the alphabet.
-  descending.value = sortedBy.value === column ? !descending.value : column === "when"
-  sortedBy.value = column
-}
-
-const people = Array.from({length: 5000}, (_, index) => ({id: index + 1, name: `Member ${index + 1}`, when: 5000 - index}))
-const sorted = computed(() => {
-  const rows = [...people].sort((a, b) => (sortedBy.value === "name" ? a.name.localeCompare(b.name, undefined, {numeric: true}) : a.when - b.when))
-  return descending.value ? rows.reverse() : rows
-})
-
 const selected = ref(2)
-const folded = ref(true)
+const unfolded = ref(true)
 </script>
 
 <template>
@@ -128,35 +112,20 @@ const folded = ref(true)
 
       <section class="gallery__set gallery__set--wide">
         <h2 class="gallery__what">
-          Full-length list, sortable
+          Selection bar
         </h2>
-        <div class="gallery__heads">
-          <sort-header
-            :direction="sortedBy === 'name' ? (descending ? 'desc' : 'asc') : null"
-            label="Name"
-            testid="gallery-sort-name"
-            @sort="sortBy('name')"
-          />
-          <sort-header
-            :direction="sortedBy === 'when' ? (descending ? 'desc' : 'asc') : null"
-            label="Joined"
-            testid="gallery-sort-when"
-            @sort="sortBy('when')"
-          />
+        <div class="gallery__row">
+          <button
+            class="gallery__theme"
+            data-testid="gallery-tick"
+            type="button"
+            @click="selected += 1"
+          >
+            Tick a row
+          </button>
         </div>
-        <full-list
-          class="gallery__list"
-          :height="320"
-          :row-height="44"
-          :row-key="(row) => row.id"
-          :rows="sorted"
-          testid="gallery-list"
-        >
-          <template #row="{row}">
-            <span class="gallery__cell">{{ row.name }}</span>
-          </template>
-        </full-list>
         <selection-bar
+          always
           :count="selected"
           testid="gallery-selection"
           @clear="selected = 0"
@@ -175,7 +144,7 @@ const folded = ref(true)
           Fold-out
         </h2>
         <fold-out
-          v-model:open="folded"
+          v-model:open="unfolded"
           label="Run a job"
           testid="gallery-fold"
         >
@@ -241,27 +210,11 @@ const folded = ref(true)
   text-transform: uppercase;
 }
 
-.gallery__row,
-.gallery__heads {
+.gallery__row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 1.2rem;
-}
-
-.gallery__heads {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-ash);
-}
-
-.gallery__list {
-  background-color: var(--band-ground);
-}
-
-.gallery__cell {
-  padding: 0 1rem;
 }
 
 .gallery__note {

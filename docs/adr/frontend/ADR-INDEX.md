@@ -14,6 +14,7 @@ This index tracks frontend architecture decisions for the Vue application.
 | [006](ADR-006-component-and-composable-standards.md) | Component and Composable Standards | Accepted | Vue 3 Composition API standards and clear responsibility split |
 | [007](superseded/ADR-007-testing-and-quality-gates.md) | Testing and Quality Gates | Superseded | Replaced by the [testing ADR set](../testing/ADR-INDEX.md); contract-safety rules carried forward |
 | [008](ADR-008-printed-figures-stand-until-the-records-answer.md) | Printed Figures Stand Until the Records Answer | Accepted | Published figures are drawn first and replaced by the records; what nothing can count stays a claim |
+| [009](ADR-009-management-is-a-portal-of-its-own.md) | Management Is a Portal of Its Own | Proposed | /management with its own bar, sidebar and phone bar, switched to from the account menu; records get pages, bulk acts get task pages, dialogs only confirm |
 
 ## Related Documentation
 - [ADR umbrella index](../ADR-INDEX.md)

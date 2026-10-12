@@ -5,8 +5,14 @@
          is loaded into a small popup window (Vault's OIDC flow being
          the canonical case) where the top bar / drawer / footer are
          purely visual noise around the login form. -->
+    <management-bar
+      v-if="isManagement"
+      :dark-mode="isDarkMode"
+      @log-out="logOut"
+      @toggle-dark-mode="toggleDarkMode"
+    />
     <site-bar
-      v-if="!isBareLayout"
+      v-else-if="!isBareLayout"
       :dark-mode="isDarkMode"
       @log-out="logOut"
       @toggle-dark-mode="toggleDarkMode"
@@ -17,7 +23,7 @@
 
     <backup-codes-banner />
 
-    <footer-banner v-if="!isBareLayout" />
+    <footer-banner v-if="!isBareLayout && !isManagement" />
 
 
 
@@ -97,6 +103,7 @@ import {useRoute, useRouter} from "vue-router"
 import type {SnackbarAction, StoredLogin} from "@/plugins/store"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
+import ManagementBar from "@/components/management/ManagementBar.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import ToastArea from "@/components/island/ToastArea.vue"
 import ToastNotice from "@/components/island/ToastNotice.vue"
@@ -134,6 +141,9 @@ const snackbarOpen = computed({
 })
 
 const statusSnackbarAction = computed((): SnackbarAction | null => store.state.statusSnackbarAction)
+
+/** Management has its own bar, and its shell draws the footer (frontend ADR-009). */
+const isManagement = computed((): boolean => route.meta.management === true)
 
 // Bare layout is for the SSO redirect chain only: a route that surfaces solely inside an OIDC
 // popup, or a `redirect` at the api's authorize endpoint, meaning the Authorization Server

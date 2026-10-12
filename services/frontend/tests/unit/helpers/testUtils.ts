@@ -83,7 +83,7 @@ export async function withVueRouter(
 /**
  * Mounts a component under a `v-app`, and hands back the component's own wrapper.
  *
- * Anything rooted in `v-main`, `v-app-bar` or another layout child injects from the layout
+ * Anything rooted in `v-app-bar` or another Vuetify layout child injects from the layout
  * `v-app` provides, and a mount without one renders nothing. The wrapper is the component's,
  * not the layout's, so `vm` and every query read the component under test; `setProps` is the
  * one thing it cannot do, Vue Test Utils reserving that for a root it mounted itself.

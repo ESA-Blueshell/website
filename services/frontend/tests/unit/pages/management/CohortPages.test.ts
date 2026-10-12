@@ -11,7 +11,7 @@ vi.mock("vue-router", async (importOriginal) => {
   return withVueRouter(importOriginal, {route: {params: {category: "committee", id: "7"}, query: {}}, router: mockRouter})
 })
 vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {name: "TopBanner", props: ["title"], template: "<div data-test='banner'>{{ title }}</div>"},
+  default: {name: "TopBanner", props: ["title"], template: "<div data-testid='banner'>{{ title }}</div>"},
 }))
 
 describe("the old cohort pages", () => {
@@ -27,7 +27,7 @@ describe("the old cohort pages", () => {
       await settle()
 
       expect(wrapper.findAll("main")).toHaveLength(1)
-      expect(wrapper.get("main").find("[data-test='banner']").exists()).toBe(true)
+      expect(wrapper.get("main").find("[data-testid='banner']").exists()).toBe(true)
       expect(mockRouter.replace).toHaveBeenCalledWith("/")
     })
   }

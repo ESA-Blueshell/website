@@ -15,15 +15,13 @@ class LeaderboardResponseTest {
     fun `a Discord-identified member maps its tag and avatar and leaves username null`() {
         val board =
             Leaderboard(
-                house = HouseStanding(label = "SiteCie", totalSent = 5_000, online = true, pps = 150),
+                house = HouseStanding(label = "SiteCie", totalSent = 5_000),
                 members =
                     listOf(
                         MemberStanding(
                             rank = 1,
                             memberId = 2,
                             totalSent = 900,
-                            online = true,
-                            pps = 90,
                             discord = DiscordStanding(tag = "Bob#2", avatarUrl = "https://cdn/2.png"),
                             username = null,
                         ),
@@ -33,13 +31,11 @@ class LeaderboardResponseTest {
         val response = LeaderboardResponse.from(board)
 
         assertThat(response.house)
-            .isEqualTo(HouseLineResponse(label = "SiteCie", totalSent = 5_000, online = true, pps = 150, peakPps = 0, peakAt = null))
-        assertThat(response.house?.pps).isEqualTo(150)
+            .isEqualTo(HouseLineResponse(label = "SiteCie", totalSent = 5_000, peakPps = 0, peakAt = null))
         val row = response.members.single()
         assertThat(row.discordTag).isEqualTo("Bob#2")
         assertThat(row.avatarUrl).isEqualTo("https://cdn/2.png")
         assertThat(row.username).isNull()
-        assertThat(row.pps).isEqualTo(90)
         assertThat(row.rank).isEqualTo(1)
     }
 
@@ -54,8 +50,6 @@ class LeaderboardResponseTest {
                             rank = 1,
                             memberId = 1,
                             totalSent = 100,
-                            online = false,
-                            pps = 0,
                             discord = null,
                             username = "ann",
                         ),
@@ -72,11 +66,11 @@ class LeaderboardResponseTest {
     }
 
     @Test
-    fun `the fastest board, the record and the combined rate map across`() {
+    fun `the fastest board and the record map across`() {
         val at = Instant.parse("2026-10-09T21:14:00Z")
         val board =
             Leaderboard(
-                house = HouseStanding(label = "SiteCie", totalSent = 5_000, online = true, pps = 150, peakPps = 17_000, peakAt = at),
+                house = HouseStanding(label = "SiteCie", totalSent = 5_000, peakPps = 17_000, peakAt = at),
                 members = emptyList(),
                 fastest =
                     listOf(
@@ -90,7 +84,6 @@ class LeaderboardResponseTest {
                         ),
                     ),
                 record = CombinedRecord(pps = 2_400_000, at = at),
-                combinedPps = 9_300,
             )
 
         val response = LeaderboardResponse.from(board)
@@ -112,7 +105,6 @@ class LeaderboardResponseTest {
         assertThat(response.record).isEqualTo(RecordResponse(pps = 2_400_000, at = at))
         assertThat(response.record?.pps).isEqualTo(2_400_000)
         assertThat(response.fastest.single().peakPps).isEqualTo(700)
-        assertThat(response.combinedPps).isEqualTo(9_300)
     }
 
     @Test

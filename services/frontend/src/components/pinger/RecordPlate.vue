@@ -1,20 +1,16 @@
 <script lang="ts" setup>
-import {computed} from "vue"
 import {compactRate, setAt, type CombinedRecord} from "@/domains/pinger"
 
 /**
- * The combined record: the top rate every sender reached together, SiteCie included, and when,
- * beside the combined rate right now and how close it runs to the record.
+ * The event in two figures: the top rate every sender reached together, SiteCie included, and when,
+ * beside the pings every sender sent in total.
  */
 defineOptions({name: "RecordPlate"})
 
-const {record = null, combinedPps} = defineProps<{
+const {record = null, totalSent} = defineProps<{
   record?: CombinedRecord | null
-  combinedPps: number
+  totalSent: number
 }>()
-
-/** How far the rate right now runs towards the record, as a share capped at the whole bar. */
-const share = computed<number>(() => (record && record.pps > 0 ? Math.min(1, combinedPps / record.pps) : 0))
 </script>
 
 <template>
@@ -38,28 +34,19 @@ const share = computed<number>(() => (record && record.pps > 0 ? Math.min(1, com
         class="plate__line plate__line--quiet"
         data-testid="snt-record-none"
       >
-        No record set yet
+        No record set
       </p>
     </div>
     <div class="plate__part">
       <p class="plate__eyebrow">
-        Right now
+        Sent in total
       </p>
       <p
         class="plate__line"
-        data-testid="snt-record-now"
+        data-testid="snt-record-total"
       >
-        <b>{{ compactRate(combinedPps) }}</b> pings a second
+        <b>{{ compactRate(totalSent) }}</b> pings
       </p>
-      <span
-        v-if="record"
-        class="plate__meter"
-      >
-        <span
-          class="plate__fill"
-          :style="{width: `${Math.round(share * 100)}%`}"
-        />
-      </span>
     </div>
   </div>
 </template>
@@ -112,29 +99,6 @@ const share = computed<number>(() => (record && record.pps > 0 ? Math.min(1, com
 
 .plate__when {
   font-variant-numeric: tabular-nums;
-}
-
-.plate__meter {
-  position: relative;
-  width: 100%;
-  max-width: 16rem;
-  height: 0.5rem;
-  overflow: hidden;
-  background: color-mix(in oklab, var(--color-chalk) 12%, transparent);
-  transform: skewX(-12deg);
-}
-
-.plate__fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--color-acid);
-  transition: width 0.4s var(--ease-out-quint);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .plate__fill {
-    transition: none;
-  }
 }
 
 @media (max-width: 639px) {

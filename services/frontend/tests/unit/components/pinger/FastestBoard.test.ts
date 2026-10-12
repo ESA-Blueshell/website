@@ -14,7 +14,7 @@ const rows: FastestStanding[] = [
   {rank: 2, memberId: 3, peakPps: 640, peakAt: null, discordTag: null, avatarUrl: null, username: "robin"},
 ]
 
-const house: HouseLine = {label: "SiteCie", totalSent: 9_000, online: true, pps: 3_000, peakPps: 17_000, peakAt: at}
+const house: HouseLine = {label: "SiteCie", totalSent: 9_000, peakPps: 17_000, peakAt: at}
 
 describe("FastestBoard", () => {
   const wrappers: VueWrapper[] = []

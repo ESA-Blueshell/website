@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
 
 /**
- * The public leaderboard reads the durable tallies. Every contributor appears: contributing is the
+ * The public leaderboard reads the final tallies. Every contributor appears: contributing was the
  * permission, so there is no opt-in. The association has no bot token under test, so every member
  * resolves to their site username rather than a Discord face; the Discord-tag path is covered by
  * [net.blueshell.api.pinger.api.LeaderboardServiceTest].
@@ -64,27 +64,6 @@ class LeaderboardIT : UserTestSupport() {
             .andExpect(jsonPath("$.house.totalSent").value(5_000))
             .andExpect(jsonPath("$.members.length()").value(1))
             .andExpect(jsonPath("$.members[0].memberId").value(member.id))
-    }
-
-    @Test
-    fun `two members swapping total swap their order`() {
-        val ann = createUserWithRole(Role.MEMBER)
-        val bob = createUserWithRole(Role.MEMBER)
-        tally("member:${ann.id}", ann.id, total = 900)
-        tally("member:${bob.id}", bob.id, total = 500)
-        mvc
-            .perform(get("/pinger/leaderboard"))
-            .andExpect(jsonPath("$.members[0].memberId").value(ann.id))
-
-        contributions.findAll().single { it.memberId == bob.id }.let {
-            it.totalSent = 1_500
-            contributions.save(it)
-        }
-
-        mvc
-            .perform(get("/pinger/leaderboard"))
-            .andExpect(jsonPath("$.members[0].memberId").value(bob.id))
-            .andExpect(jsonPath("$.members[1].memberId").value(ann.id))
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService
 import org.springframework.security.web.context.SecurityContextRepository
 
 class AuthorizationServerChainTest {
@@ -16,13 +17,13 @@ class AuthorizationServerChainTest {
         val http = StandInHttpSecurity.create()
         val repository = mock<SecurityContextRepository>()
 
-        AuthorizationServerConfig().authorizationServerFilterChain(http, mock(), mock(), mock(), repository, mock(), mock(), mock())
+        AuthorizationServerConfig().authorizationServerFilterChain(http, mock(), mock(), mock(), repository, mock())
 
         verify(http).addFilterAfter(any<DownstreamClientAuthorizationFilter>(), eq(JwtAuthFilter::class.java))
     }
 
     @Test
-    fun `the authorization store is the principal-indexing one, so grants can be listed and revoked`() {
-        assertThat(AuthorizationServerConfig().authorizationService()).isInstanceOf(IndexingOAuth2AuthorizationService::class.java)
+    fun `authorizations are held in memory`() {
+        assertThat(AuthorizationServerConfig().authorizationService()).isInstanceOf(InMemoryOAuth2AuthorizationService::class.java)
     }
 }

@@ -1,134 +1,40 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref} from "vue"
+import {computed, onMounted, ref} from "vue"
 import Island from "@/components/island/Island.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
-import CallBand from "@/components/island/CallBand.vue"
-import BandRule from "@/components/island/BandRule.vue"
 import BandHead from "@/components/island/BandHead.vue"
-import CutButton from "@/components/island/CutButton.vue"
-import NoticeBox from "@/components/island/NoticeBox.vue"
-import StateTag from "@/components/island/StateTag.vue"
 import Leaderboard from "@/components/pinger/Leaderboard.vue"
 import FastestBoard from "@/components/pinger/FastestBoard.vue"
-import LiveCanvas from "@/components/pinger/LiveCanvas.vue"
 import RecordPlate from "@/components/pinger/RecordPlate.vue"
-import PingerProgress from "@/components/pinger/PingerProgress.vue"
 import {
-  appDownloadUrl,
-  clockOffset,
-  DEFAULT_PAINT,
   EMPTY_LEADERBOARD,
   loadLeaderboard,
-  loadPaintJob,
-  openLeaderboardStream,
-  openPaintStream,
   ownStanding,
-  SNTPINGS_STREAM_URL,
-  type AppOs,
   type Leaderboard as LeaderboardSnapshot,
-  type PaintJob,
 } from "@/domains/pinger"
 import store from "@/plugins/store"
 
 defineOptions({name: "SntPingsPage"})
 
-// The SNTPings event start. The countdown runs to this and hides once it passes. CET is UTC+1.
-const EVENT_START = new Date("2025-12-05T18:00:00+01:00").getTime()
-
-const paint = ref<PaintJob>(DEFAULT_PAINT)
-const paintOffset = ref<number>(0)
 const snapshot = ref<LeaderboardSnapshot>(EMPTY_LEADERBOARD)
 
-// Only a signed-in member sees the block below the board; a visitor never does.
-const isMember = computed<boolean>(() => store.getters.isMember)
-
-// The installers are unsigned, so each platform needs its own first-run step to open them.
-const downloads: {os: AppOs, label: string, openStep: string}[] = [
-  {os: "macos", label: "macOS", openStep: "Right-click the app and choose Open the first time."},
-  {os: "windows", label: "Windows", openStep: "On the SmartScreen prompt choose More info then Run anyway. If Defender removes it, open Protection history in Windows Security and choose Allow on device."},
-  {os: "linux", label: "Linux", openStep: "Run chmod +x on the file then launch it. Needs webkit2gtk-4.1."},
-]
-
-const downloadUrl = (os: AppOs): string => appDownloadUrl(os)
-
-/** The members in rank order, so a stream snapshot that reorders them moves the rows. */
 const ranked = computed(() => [...snapshot.value.members].sort((a, b) => a.rank - b.rank))
 
 const house = computed(() => snapshot.value.house ?? null)
 
-/** The members by peak rate, so a stream snapshot that reorders them moves the rows. */
 const fastest = computed(() => [...snapshot.value.fastest].sort((a, b) => a.rank - b.rank))
 
 /** The signed-in member's own row, where the board carries one for them. */
-const mine = computed(() => ownStanding(snapshot.value, store.getters.getLogin?.username))
-const mineId = computed<number | null>(() => mine.value?.memberId ?? null)
+const mineId = computed<number | null>(() =>
+  ownStanding(snapshot.value, store.getters.getLogin?.username)?.memberId ?? null)
 
-/** Whether any pinger is reporting right now, which lights the canvas as live rather than idle. */
-const anyPainting = computed<boolean>(() =>
-  (house.value?.online ?? false) || ranked.value.some(row => row.online))
-
-/** Total pings across SiteCie and every member, which drives the meter. */
-const siteSent = computed<number>(() =>
+/** Every ping SiteCie and the members sent over the event. */
+const totalSent = computed<number>(() =>
   (house.value?.totalSent ?? 0) + ranked.value.reduce((sum, row) => sum + row.totalSent, 0))
 
-/**
- * The live rate is the sum of what each online sender reports. Deriving it from the growth of the
- * totals overshoots: a member reports every ten seconds, so one push can carry ten seconds of pings.
- */
-const sitePps = computed<number>(() =>
-  (house.value?.online ? house.value.pps : 0) +
-  ranked.value.reduce((sum, row) => sum + (row.online ? row.pps : 0), 0))
-
-/** Pixels in one pass, measured from our art by the live canvas and shared with the meter. */
-const passTotal = ref<number>(0)
-
-/** The target prefix the board set, shown on the status line. */
-const prefixLabel = computed<string>(() => paint.value.prefix ?? "no prefix set")
-
-let clockTimer = 0
-// A live now so the countdown advances each second.
-const now = ref<number>(Date.now())
-const tickClock = (): void => {
-  now.value = Date.now()
-}
-
-/** Whether the event is still ahead, which keeps the countdown on screen until it starts. */
-const beforeEvent = computed<boolean>(() => EVENT_START - now.value > 0)
-
-/** Time left until the event, as `Dd HH:MM:SS` (the day part drops inside a day). */
-const countdown = computed<string>(() => {
-  const total = Math.max(0, Math.floor((EVENT_START - now.value) / 1000))
-  const days = Math.floor(total / 86400)
-  const pad = (n: number): string => String(n).padStart(2, "0")
-  const hms = `${pad(Math.floor((total % 86400) / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
-  return days > 0 ? `${days}d ${hms}` : hms
-})
-
-let closeStream: (() => void) | null = null
-let closePaint: (() => void) | null = null
-
-const showPaint = (job: PaintJob): void => {
-  paint.value = job
-  paintOffset.value = clockOffset(job)
-}
-
 onMounted(async () => {
-  tickClock()
-  clockTimer = window.setInterval(tickClock, 1000)
-  showPaint(await loadPaintJob())
-  closePaint = openPaintStream(showPaint)
   snapshot.value = await loadLeaderboard()
-  // The stream drives the swap-without-reload; the GET above is the first paint and the fallback.
-  closeStream = openLeaderboardStream((next) => {
-    snapshot.value = next
-  })
-})
-
-onBeforeUnmount(() => {
-  closeStream?.()
-  closePaint?.()
-  clearInterval(clockTimer)
 })
 </script>
 
@@ -136,81 +42,11 @@ onBeforeUnmount(() => {
   <v-main>
     <island testid="sntpings-island">
       <header-band
-        body="Watch us paint onto the SNTPings canvas live, and help us stay on top! You can see your performance on the leaderboard :)"
-        eyebrow="SNTPings · Live event"
-        heading="Paint the canvas,"
-        heading-tail="top the board"
-      >
-        <template #acts>
-          <cut-button
-            href="https://pings.utwente.io"
-            away
-            testid="snt-watch"
-            tone="solid"
-          >
-            Watch the live canvas
-          </cut-button>
-        </template>
-      </header-band>
-
-      <!-- The canvas is a photographic band, so it keeps the dark set in light mode too. -->
-      <section
-        id="snt-canvas"
-        class="canvas island-dark"
-        data-testid="snt-canvas"
-      >
-        <div class="canvas__inner">
-          <band-head
-            eyebrow="The live canvas"
-            heading="What we are painting"
-            testid="snt-canvas-head"
-          >
-            <state-tag
-              :tone="anyPainting ? 'ok' : 'quiet'"
-              testid="snt-canvas-state"
-            >
-              {{ anyPainting ? "Painting now" : "Canvas idle" }}
-            </state-tag>
-          </band-head>
-
-          <p
-            class="canvas__status"
-            data-testid="snt-canvas-status"
-          >
-            <span
-              class="canvas__dot"
-              :class="{'canvas__dot--on': anyPainting}"
-            />
-            <span>{{ anyPainting ? "Event running" : "Waiting for the canvas" }}</span>
-            <span class="canvas__sep">·</span>
-            <span>Painting onto <b>{{ prefixLabel }}</b></span>
-            <template v-if="beforeEvent">
-              <span class="canvas__sep">·</span>
-              <span
-                class="snt-countdown"
-                data-testid="snt-countdown"
-              >Event starts in <b>{{ countdown }}</b></span>
-            </template>
-          </p>
-
-          <div class="canvas__grid">
-            <live-canvas
-              :clock-offset="paintOffset"
-              :placements="paint.placements"
-              :stream-url="SNTPINGS_STREAM_URL"
-              @passtotal="passTotal = $event"
-            />
-            <pinger-progress
-              :pass-total="passTotal"
-              :pps="sitePps"
-              :running="anyPainting"
-              :sent="siteSent"
-            />
-          </div>
-        </div>
-      </section>
-
-      <band-rule testid="snt-rule" />
+        body="SNTPings is over. These are the final standings: who sent the most pings onto the canvas and who sent them the fastest."
+        eyebrow="SNTPings · October 2026"
+        heading="The canvas is painted,"
+        heading-tail="the board is final"
+      />
 
       <lead-band
         accent="var(--color-acid)"
@@ -219,14 +55,14 @@ onBeforeUnmount(() => {
         <band-head
           :count="ranked.length"
           count-said="members on the board"
-          eyebrow="Who sends the most and the fastest"
+          eyebrow="Who sent the most and the fastest"
           heading="Leaderboard"
           testid="snt-leaderboard-head"
         />
         <record-plate
           class="record-wrap"
-          :combined-pps="snapshot.combinedPps"
           :record="snapshot.record"
+          :total-sent="totalSent"
         />
         <div class="boards">
           <section
@@ -257,142 +93,17 @@ onBeforeUnmount(() => {
           </section>
         </div>
       </lead-band>
-
-      <template v-if="isMember">
-        <band-rule
-          mirrored
-          testid="snt-rule-foot"
-        />
-
-        <lead-band
-          accent="var(--color-brand)"
-          testid="snt-member"
-        >
-          <band-head
-            eyebrow="Members only"
-            heading="Get on the leaderboard!"
-            testid="snt-member-head"
-          />
-
-          <div class="member">
-            <p
-              class="permission"
-              data-testid="snt-permission"
-            >
-              By contributing you'll get listed on the leaderboards too!
-            </p>
-
-            <div class="panel downloads-panel">
-              <h3 class="panel__title">
-                Download the pinger
-              </h3>
-
-              <div class="downloads">
-                <div
-                  v-for="d in downloads"
-                  :key="d.os"
-                  class="downloads__one"
-                >
-                  <cut-button
-                    :data-os="d.os"
-                    :href="downloadUrl(d.os)"
-                    testid="snt-download"
-                    tone="solid"
-                  >
-                    {{ d.label }}
-                  </cut-button>
-                  <span class="downloads__step">{{ d.openStep }}</span>
-                </div>
-              </div>
-
-              <notice-box
-                class="member__caveat"
-                tone="warning"
-              >
-                The installers are unsigned, so your system warns before the first run.
-              </notice-box>
-            </div>
-          </div>
-        </lead-band>
-      </template>
-
-      <call-band
-        body="SNTPings is a members-only event. Join the association and send your share of the canvas."
-        eyebrow="Not a member yet"
-        headline="Get on the board"
-        :actions="[{label: 'Become a member', href: '/membership/signup', tone: 'solid', testid: 'snt-call-signup'}]"
-        testid="snt-call"
-      />
     </island>
   </v-main>
 </template>
 
 <style scoped>
-/* The canvas band, dark whatever the viewer reads in: a painted picture reads on its own ground,
-   not on the page's. */
-.canvas {
-  width: 100%;
-  background-color: var(--color-ground);
-}
-
-.canvas__inner {
-  width: 100%;
-  max-width: 82rem;
-  margin: 0 auto;
-  padding: 2.5rem 2rem;
-}
-
-/* This page runs a notch wider than the default island column: the header, the bands and the
-   canvas all share the one width so their edges still line up. Only the cap grows, so a phone is
-   unchanged and nothing scrolls sideways. */
+/* This page runs a notch wider than the default island column: the header and the band share the
+   one width so their edges still line up. Only the cap grows, so a phone is unchanged and nothing
+   scrolls sideways. */
 :deep(.island-header .max-w-6xl),
 :deep(.lead-band__inner) {
   max-width: 82rem;
-}
-
-/* A live line under the head: the state, the target prefix and a ticking clock, so the band reads
-   as the event happening now rather than a frozen picture. */
-.canvas__status {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.9rem;
-  font-size: 0.82rem;
-  color: var(--color-ash);
-}
-
-.canvas__status b {
-  font-family: var(--font-bitmap, ui-monospace, monospace);
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  color: var(--color-brand-lit);
-}
-
-.canvas__sep {
-  opacity: 0.5;
-}
-
-.canvas__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: var(--color-ash);
-  opacity: 0.6;
-}
-
-.canvas__dot--on {
-  background: var(--color-ok);
-  opacity: 1;
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ok) 24%, transparent);
-}
-
-/* The one canvas takes the band's width with the numbers under it. */
-.canvas__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2rem;
-  margin-top: 1.5rem;
 }
 
 .record-wrap {
@@ -423,103 +134,6 @@ onBeforeUnmount(() => {
 @media (max-width: 1199px) {
   .boards {
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.member {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  max-width: 52rem;
-}
-
-/* The house cut, so each part of the member block reads as a panel of the page rather than a plain
-   box. A brand bar down the lean marks it as the member's own, the way their row is marked. */
-.panel {
-  position: relative;
-  padding: 1.15rem calc(0.7rem + 1.1rem);
-  clip-path: polygon(0.7rem 0, 100% 0, calc(100% - 0.7rem) 100%, 0 100%);
-  background-color: var(--band-ground);
-  box-shadow: inset 3px 0 0 var(--color-brand);
-}
-
-/* Contributing is the permission, so this says so rather than offering a switch. */
-.permission {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--color-ash);
-  max-width: 44rem;
-}
-
-.panel__eyebrow {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--color-eyebrow);
-}
-
-.panel__title {
-  margin-top: 0.4rem;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  text-transform: uppercase;
-}
-
-.downloads-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* The three platform buttons sit side by side, each over its own open-step, and wrap on a phone. */
-.downloads {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 1rem 1.25rem;
-  margin-top: 0.5rem;
-}
-
-.downloads__one {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  flex: 1 1 11rem;
-  min-width: 0;
-}
-
-.downloads__one :deep(.island-cut) {
-  min-width: 7.5rem;
-  justify-content: center;
-}
-
-.downloads__step {
-  font-size: 0.82rem;
-  color: var(--color-ash);
-}
-
-.member__caveat {
-  margin-top: 0.5rem;
-}
-
-.snt-countdown {
-  margin: 0 0 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-ash);
-}
-
-.snt-countdown b {
-  color: var(--color-chalk);
-  font-weight: 700;
-}
-
-@media (max-width: 639px) {
-  .canvas__inner {
-    padding: 1.75rem 1.25rem;
   }
 }
 </style>

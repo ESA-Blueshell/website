@@ -4,8 +4,6 @@ import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.pinger.persistence.PingerContribution
 import net.blueshell.api.pinger.persistence.PingerContributionRepository
-import net.blueshell.api.pinger.persistence.PingerLive
-import net.blueshell.api.pinger.persistence.PingerLiveStore
 import net.blueshell.api.pinger.persistence.PingerRecord
 import net.blueshell.api.pinger.persistence.PingerRecordRepository
 import net.blueshell.api.shared.discord.DiscordFace
@@ -19,7 +17,6 @@ import java.util.Optional
 
 class LeaderboardServiceTest {
     private val contributions = mockk<PingerContributionRepository>()
-    private val live = mockk<PingerLiveStore>()
     private val records = mockk<PingerRecordRepository>()
 
     init {
@@ -44,11 +41,7 @@ class LeaderboardServiceTest {
     private fun service(
         identities: MemberIdentities = MemberIdentities { emptyMap() },
         faces: DiscordFaces = DiscordFaces { emptyMap() },
-    ) = LeaderboardService(contributions, identities, faces, live, records)
-
-    private fun offline() {
-        every { live.aggregateAll() } returns emptyMap()
-    }
+    ) = LeaderboardService(contributions, identities, faces, records)
 
     @Test
     fun `every contributor appears, ranked by total sent descending`() {
@@ -58,7 +51,6 @@ class LeaderboardServiceTest {
                 contribution("member:2", 2, total = 300),
                 contribution("member:3", 3, total = 200),
             )
-        offline()
         val identities =
             MemberIdentities {
                 mapOf(1L to MemberIdentity("ann", null), 2L to MemberIdentity("bob", null), 3L to MemberIdentity("cara", null))
@@ -78,7 +70,6 @@ class LeaderboardServiceTest {
                 contribution("member:1", 1, total = 500),
                 contribution("member:2", 2, total = 900),
             )
-        offline()
         val identities =
             MemberIdentities { mapOf(1L to MemberIdentity("ann", null), 2L to MemberIdentity("bob", null)) }
 
@@ -90,7 +81,6 @@ class LeaderboardServiceTest {
     @Test
     fun `a linked and visible member shows their Discord tag and avatar, not a username`() {
         every { contributions.findAll() } returns listOf(contribution("member:1", 1, total = 100))
-        offline()
         val identities = MemberIdentities { mapOf(1L to MemberIdentity("ann", discordId = "42")) }
         val faces = DiscordFaces { mapOf("42" to DiscordFace(name = "Ann#1", avatar = "https://cdn/42.png")) }
 
@@ -103,7 +93,6 @@ class LeaderboardServiceTest {
     @Test
     fun `a member whose Discord the bot cannot see falls back to the site username`() {
         every { contributions.findAll() } returns listOf(contribution("member:1", 1, total = 100))
-        offline()
         val identities = MemberIdentities { mapOf(1L to MemberIdentity("ann", discordId = "42")) }
         val faces = DiscordFaces { emptyMap() }
 
@@ -120,31 +109,17 @@ class LeaderboardServiceTest {
                 contribution("sitecie", null, total = 5_000),
                 contribution("member:1", 1, total = 100),
             )
-        every { live.aggregateAll() } returns mapOf("sitecie" to PingerLive(online = true, pps = 200, lastSeen = Instant.EPOCH))
         val identities = MemberIdentities { mapOf(1L to MemberIdentity("ann", null)) }
 
         val board = service(identities = identities).snapshot()
 
-        assertThat(board.house).isEqualTo(HouseStanding(label = "SiteCie", totalSent = 5_000, online = true, pps = 200))
+        assertThat(board.house).isEqualTo(HouseStanding(label = "SiteCie", totalSent = 5_000))
         assertThat(board.members.map { it.memberId }).containsExactly(1)
-    }
-
-    @Test
-    fun `an online member is marked online and carries its aggregated rate from the live row`() {
-        every { contributions.findAll() } returns listOf(contribution("member:1", 1, total = 100))
-        every { live.aggregateAll() } returns mapOf("member:1" to PingerLive(online = true, pps = 64, lastSeen = Instant.EPOCH))
-        val identities = MemberIdentities { mapOf(1L to MemberIdentity("ann", null)) }
-
-        val row = service(identities = identities).snapshot().members.single()
-
-        assertThat(row.online).isTrue()
-        assertThat(row.pps).isEqualTo(64)
     }
 
     @Test
     fun `a contributor with no account is left out of the ranking`() {
         every { contributions.findAll() } returns listOf(contribution("member:9", 9, total = 100))
-        offline()
 
         val board = service(identities = MemberIdentities { emptyMap() }).snapshot()
 
@@ -154,14 +129,13 @@ class LeaderboardServiceTest {
     @Test
     fun `a board with no SiteCie row has no house line`() {
         every { contributions.findAll() } returns listOf(contribution("member:1", 1, total = 100))
-        offline()
         val identities = MemberIdentities { mapOf(1L to MemberIdentity("ann", null)) }
 
         assertThat(service(identities = identities).snapshot().house).isNull()
     }
 
     @Test
-    fun `the fastest board ranks members by peak rate and leaves out who never sent online`() {
+    fun `the fastest board ranks members by peak rate and leaves out who never reported one`() {
         val at = Instant.parse("2026-10-09T21:00:00Z")
         every { contributions.findAll() } returns
             listOf(
@@ -169,7 +143,6 @@ class LeaderboardServiceTest {
                 contribution("member:2", 2, total = 100, peak = 700, peakAt = at),
                 contribution("member:3", 3, total = 500),
             )
-        offline()
         val identities =
             MemberIdentities {
                 mapOf(1L to MemberIdentity("ann", null), 2L to MemberIdentity("bob", discordId = "7"), 3L to MemberIdentity("cara", null))
@@ -191,7 +164,6 @@ class LeaderboardServiceTest {
     fun `the house line carries SiteCie's peak`() {
         val at = Instant.parse("2026-10-09T21:00:00Z")
         every { contributions.findAll() } returns listOf(contribution("sitecie", null, total = 5_000, peak = 17_000, peakAt = at))
-        offline()
 
         val house = service().snapshot().house!!
 
@@ -200,27 +172,17 @@ class LeaderboardServiceTest {
     }
 
     @Test
-    fun `the board carries the combined record and the combined rate of every online sender right now`() {
+    fun `the board carries the combined record`() {
         val at = Instant.parse("2026-10-09T21:14:00Z")
         every { contributions.findAll() } returns emptyList()
         every { records.findById(1L) } returns Optional.of(PingerRecord(pps = 2_400_000, setAt = at))
-        every { live.aggregateAll() } returns
-            mapOf(
-                "sitecie" to PingerLive(online = true, pps = 9_000, lastSeen = at),
-                "member:1" to PingerLive(online = true, pps = 300, lastSeen = at),
-                "member:2" to PingerLive(online = false, pps = 0, lastSeen = at),
-            )
 
-        val board = service().snapshot()
-
-        assertThat(board.record).isEqualTo(CombinedRecord(pps = 2_400_000, at = at))
-        assertThat(board.combinedPps).isEqualTo(9_300)
+        assertThat(service().snapshot().record).isEqualTo(CombinedRecord(pps = 2_400_000, at = at))
     }
 
     @Test
-    fun `there is no record until one is set`() {
+    fun `there is no record when none was set`() {
         every { contributions.findAll() } returns emptyList()
-        offline()
 
         assertThat(service().snapshot().record).isNull()
     }

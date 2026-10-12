@@ -2,8 +2,6 @@ package net.blueshell.api.pinger.api
 
 import net.blueshell.api.pinger.persistence.PingerContribution
 import net.blueshell.api.pinger.persistence.PingerContributionRepository
-import net.blueshell.api.pinger.persistence.PingerLive
-import net.blueshell.api.pinger.persistence.PingerLiveStore
 import net.blueshell.api.pinger.persistence.PingerRecordRepository
 import net.blueshell.api.shared.discord.DiscordFaces
 import net.blueshell.api.shared.user.MemberIdentities
@@ -15,9 +13,6 @@ import java.time.Instant
 data class HouseStanding(
     val label: String,
     val totalSent: Long,
-    val online: Boolean,
-    /** The live rate across SiteCie's replicas right now, summed. */
-    val pps: Int,
     val peakPps: Long = 0,
     val peakAt: Instant? = null,
 )
@@ -39,9 +34,6 @@ data class MemberStanding(
     val rank: Int,
     val memberId: Long,
     val totalSent: Long,
-    val online: Boolean,
-    /** The member's live rate across their devices right now, summed. */
-    val pps: Int,
     val discord: DiscordStanding?,
     val username: String?,
 )
@@ -56,60 +48,50 @@ data class FastestStanding(
     val username: String?,
 )
 
-/** The top rate every online sender reached together, SiteCie included, and when. */
+/** The top rate every sender reached together, SiteCie included, and when. */
 data class CombinedRecord(
     val pps: Long,
     val at: Instant,
 )
 
 /**
- * A snapshot of the public leaderboard: the SiteCie house line, the members ranked by total sent and
- * by peak rate, the combined record and the combined rate right now.
+ * The public leaderboard: the SiteCie house line, the members ranked by total sent and by peak rate,
+ * and the combined record.
  */
 data class Leaderboard(
     val house: HouseStanding?,
     val members: List<MemberStanding>,
     val fastest: List<FastestStanding> = emptyList(),
     val record: CombinedRecord? = null,
-    val combinedPps: Long = 0,
 )
 
 private const val SITECIE_LABEL = "SiteCie"
 
-/** Every online sender's live rate summed, SiteCie included: the rate the combined record is set from. */
-internal fun Map<String, PingerLive>.combinedPps(): Long = values.filter { it.online }.sumOf { it.pps.toLong() }
-
 /**
- * Composes the public leaderboard from the durable tallies: it ranks the opted-in members by total
- * sent, resolves each to their Discord or site identity, and reads live presence from Valkey. The
- * api decides who is in and in what order; the frontend only formats the rows.
+ * Composes the public leaderboard from the final tallies: it ranks the members by total sent and by
+ * peak rate and resolves each to their Discord or site identity. The api decides who is in and in
+ * what order; the frontend only formats the rows.
  */
 @Service
 class LeaderboardService(
     private val contributions: PingerContributionRepository,
     private val identities: MemberIdentities,
     private val faces: DiscordFaces,
-    private val live: PingerLiveStore,
     private val records: PingerRecordRepository,
 ) {
     @Transactional(readOnly = true)
     fun snapshot(): Leaderboard {
         val rows = contributions.findAll()
-        // One Valkey scan for every identity's presence, rather than one scan per contributor.
-        val presence = live.aggregateAll()
         val house =
             rows.firstOrNull { it.memberId == null }?.let {
-                val here = presence[it.identity]
                 HouseStanding(
                     label = SITECIE_LABEL,
                     totalSent = it.totalSent,
-                    online = here?.online ?: false,
-                    pps = here?.pps ?: 0,
                     peakPps = it.peakPps,
                     peakAt = it.peakAt,
                 )
             }
-        // Every contributor is on the board: contributing is the permission, so there is no opt-in
+        // Every contributor is on the board: contributing was the permission, so there is no opt-in
         // to filter on. A member is shown by their public identity, never a real name.
         val included = rows.filter { it.memberId != null }
         val byId = identities.of(included.mapNotNull { it.memberId })
@@ -129,18 +111,15 @@ class LeaderboardService(
                 .mapIndexed { index, row ->
                     val id = row.memberId!!
                     val (discord, username) = faceOf(id)
-                    val here = presence[row.identity]
                     MemberStanding(
                         rank = index + 1,
                         memberId = id,
                         totalSent = row.totalSent,
-                        online = here?.online ?: false,
-                        pps = here?.pps ?: 0,
                         discord = discord,
                         username = username,
                     )
                 }
-        // Only a member who has sent while online has a rate to rank.
+        // Only a member who reported a rate has one to rank.
         val fastest =
             shown
                 .filter { it.peakPps > 0 }
@@ -161,6 +140,6 @@ class LeaderboardService(
             records.findById(PingerRecordRepository.RECORD_ID).orElse(null)?.let { stored ->
                 stored.setAt?.takeIf { stored.pps > 0 }?.let { CombinedRecord(pps = stored.pps, at = it) }
             }
-        return Leaderboard(house = house, members = members, fastest = fastest, record = record, combinedPps = presence.combinedPps())
+        return Leaderboard(house = house, members = members, fastest = fastest, record = record)
     }
 }

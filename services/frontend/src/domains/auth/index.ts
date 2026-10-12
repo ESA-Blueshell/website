@@ -14,7 +14,6 @@ export {
   finishTwoFactorSetUp,
   forgetEveryTrustedBrowser,
   forgetOneTrustedBrowser,
-  listConnectedApps,
   listSignIns,
   listTrustedBrowsers,
   lockAccount,
@@ -27,7 +26,6 @@ export {
   removeTwoFactor,
   resendReenrolment,
   resetTwoFactorOf,
-  revokeApp,
   savePassword,
   startTwoFactorSetUp,
   unlockAccount,
@@ -59,7 +57,6 @@ export {default as TwoFactorSetUp} from "./components/TwoFactorSetUp.vue"
 export {needsStepUp, reasonFor as accountSecurityReason} from "./refusals"
 export type {
   AccountStandingResponse,
-  ConnectedAppResponse,
   EmailAddressResponse,
   LoginResponse,
   SecurityEventResponse,

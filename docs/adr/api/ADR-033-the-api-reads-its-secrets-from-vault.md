@@ -105,15 +105,9 @@ is not how a rotated key reaches the api.
   logs in with exactly that policy against a real Vault, so the two cannot drift.
 - A secret the api shares with another workload lives on its own `secret/platform/<name>`
   path, not in `secret/api`, so the other workload is granted read over that one value rather
-  than the whole api blob. The SiteCie report token is the first: it sits at
-  `secret/platform/pinger-report` (key `service-token`), the api imports it with a
-  `pinger.report.` prefix so it fills `pinger.report.service-token`, and the pinger's VSO
-  secret reads the same path. The import is optional, so an unprovisioned token leaves the
-  property empty and SiteCie idle rather than failing the start. Only the `api` and `vso`
-  policies grant read on that path, and nothing broader. The migrate boot runs `prod,migrate`
-  but has no use for the token, so its `migrate` policy is not granted the path and the import
-  sits in a `!migrate` document, which keeps the migrator from reading it (a grant it lacks
-  would 403, which `optional:` does not swallow the way it does a 404).
+  than the whole api blob. Such an import sits in a `!migrate` document when the migrator has
+  no use for it: the `migrate` policy is not granted the path, and a grant it lacks would 403,
+  which `optional:` does not swallow the way it does a 404.
 
 ## Implementation status
 

@@ -1,16 +1,11 @@
 <script lang="ts" setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from "vue"
+import {computed} from "vue"
 import StateTag from "@/components/island/StateTag.vue"
 import {apiUrl, type HouseLine, type Standing} from "@/domains/pinger"
 
 /**
  * The ranked contribution board, drawn in the island's own cut shapes: the SiteCie house line set
- * apart at the top, then every contributor in rank order. A reorder moves the rows in place rather
- * than redrawing the list, so a member overtaking another is something a watcher sees.
- *
- * Each total climbs continuously between the stream's snapshots, interpolated from the row's own
- * rate so the numbers tick as fast as the canvas pixel counter, and reconciled to the real value on
- * every push so they never drift. A reader who asked for less motion gets the pushed value, snapped.
+ * apart at the top, then every contributor in rank order.
  *
  * Only ever the public identity the api prints: a Discord tag and avatar where the member linked
  * one, otherwise their site username and a monogram. Never a real or legal name.
@@ -24,44 +19,10 @@ const {house = null, rows, mineId = null} = defineProps<{
   mineId?: number | null
 }>()
 
-const reduceMotion = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
-
-/** The key the house line's interpolation base is held under; no member id is negative. */
-const HOUSE_KEY = -1
-
-interface Base {total: number, at: number, pps: number}
-
-const now = (): number => (typeof performance !== "undefined" ? performance.now() : Date.now())
-
-// Each row's last pushed total, when it arrived and its rate, so the display can climb from there.
-const bases = new Map<number, Base>()
-const frameNow = ref(now())
-
-const rebase = (key: number, total: number, pps: number): void => {
-  bases.set(key, {total, at: now(), pps})
-}
-
-// On every snapshot, reconcile each base to the real value, so interpolation never drifts.
-watch(() => rows, (next) => next.forEach(row => rebase(row.memberId, row.totalSent, row.pps)), {immediate: true, deep: true})
-watch(() => house, (next) => {
-  if (next) rebase(HOUSE_KEY, next.totalSent, next.pps)
-}, {immediate: true, deep: true})
-
-/** The interpolated total for a key, climbing at its rate since the last push; snapped under reduced motion. */
-const liveTotal = (key: number, fallback: number): number => {
-  const base = bases.get(key)
-  if (!base) return fallback
-  if (reduceMotion) return base.total
-  return base.total + Math.max(0, base.pps) * Math.max(0, frameNow.value - base.at) / 1000
-}
-
-const displayTotal = (standing: Standing): number => Math.floor(liveTotal(standing.memberId, standing.totalSent))
-const houseTotal = computed<number>(() => (house ? Math.floor(liveTotal(HOUSE_KEY, house.totalSent)) : 0))
-
 /** The top total on the board, which every meter is read against. At least one so a lone row fills. */
-const topTotal = computed<number>(() => Math.max(1, ...rows.map(displayTotal)))
+const topTotal = computed<number>(() => Math.max(1, ...rows.map(row => row.totalSent)))
 
-const shareOf = (standing: Standing): number => displayTotal(standing) / topTotal.value
+const shareOf = (standing: Standing): number => standing.totalSent / topTotal.value
 
 /** The Discord tag where the member linked one, else their username. Never a legal name. */
 const nameOf = (standing: Standing): string => standing.discordTag ?? standing.username ?? "—"
@@ -72,19 +33,6 @@ const avatarOf = (standing: Standing): string | null =>
 const initialOf = (standing: Standing): string => nameOf(standing).slice(0, 1).toUpperCase()
 
 const formatTotal = (total: number): string => total.toLocaleString("en")
-const formatPps = (pps: number): string => pps.toLocaleString("en")
-
-// One clock drives every row's climb; it ticks each frame unless the reader asked for less motion.
-let frame = 0
-onMounted(() => {
-  if (reduceMotion) return
-  const step = (): void => {
-    frame = requestAnimationFrame(step)
-    frameNow.value = now()
-  }
-  frame = requestAnimationFrame(step)
-})
-onBeforeUnmount(() => cancelAnimationFrame(frame))
 </script>
 
 <template>
@@ -107,19 +55,8 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
           {{ house.label }}
         </p>
       </div>
-      <state-tag
-        :tone="house.online ? 'ok' : 'quiet'"
-        testid="snt-house-state"
-      >
-        {{ house.online ? "Painting" : "Idle" }}
-      </state-tag>
       <p class="house__total">
-        <span class="house__total-line">{{ formatTotal(houseTotal) }}<span class="house__unit">pings</span></span>
-        <span
-          v-if="house.online && house.pps > 0"
-          class="rate"
-          data-testid="snt-house-rate"
-        >{{ formatPps(house.pps) }}/s now</span>
+        <span class="house__total-line">{{ formatTotal(house.totalSent) }}<span class="house__unit">pings</span></span>
       </p>
     </div>
 
@@ -128,13 +65,11 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
       class="board__empty"
       data-testid="snt-empty"
     >
-      No members are on the board yet. Contribute from the pinger app to be the first.
+      No members made it onto the board.
     </p>
 
-    <transition-group
+    <ol
       v-else
-      name="row"
-      tag="ol"
       class="board__rows"
     >
       <li
@@ -176,21 +111,11 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
         >
           You
         </state-tag>
-        <span
-          class="row__dot"
-          :class="{'row__dot--on': standing.online}"
-          :title="standing.online ? 'Online' : 'Offline'"
-        />
         <span class="row__total">
-          <span class="row__total-line">{{ formatTotal(displayTotal(standing)) }}<span class="row__unit">pings</span></span>
-          <span
-            v-if="standing.online && standing.pps > 0"
-            class="rate"
-            data-testid="snt-row-rate"
-          >{{ formatPps(standing.pps) }}/s now</span>
+          <span class="row__total-line">{{ formatTotal(standing.totalSent) }}<span class="row__unit">pings</span></span>
         </span>
       </li>
-    </transition-group>
+    </ol>
   </div>
 </template>
 
@@ -205,7 +130,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
    rather than as another row. */
 .house {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0 1.1rem;
   padding: 0.95rem calc(0.6rem + 0.9rem);
@@ -241,26 +166,13 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
   white-space: nowrap;
 }
 
-/* The body face, not the display one: its figures are tabular, so a ticking total holds its width. */
+/* The body face, not the display one: its figures are tabular, so the totals line up. */
 .house__total-line {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 1.5rem;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-}
-
-/* The live rate right now, acid so it reads as the thing that is happening this second. */
-.rate {
-  margin-top: 0.15rem;
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-  color: var(--color-ok);
 }
 
 .house__unit,
@@ -294,7 +206,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 2.6rem 3rem minmax(0, 1fr) auto auto auto;
+  grid-template-columns: 2.6rem 3rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0 1rem;
   padding: 0.65rem calc(0.6rem + 0.9rem);
@@ -390,20 +302,6 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
   background: var(--color-acid);
 }
 
-.row__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 9999px;
-  background: var(--color-ash);
-  opacity: 0.5;
-}
-
-.row__dot--on {
-  background: var(--color-ok);
-  opacity: 1;
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ok) 22%, transparent);
-}
-
 .row__total {
   display: flex;
   flex-direction: column;
@@ -417,18 +315,6 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
   font-size: 1.2rem;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-}
-
-/* The reorder: the row slides to its new place rather than jumping, which is the whole point of a
-   board that moves on its own. A reader who asked for less motion gets the new order at rest. */
-.row-move {
-  transition: transform 0.45s var(--ease-out-quint);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .row-move {
-    transition: none;
-  }
 }
 
 @media (max-width: 639px) {
@@ -448,9 +334,8 @@ onBeforeUnmount(() => cancelAnimationFrame(frame))
     padding: 0.6rem 0.9rem;
   }
 
-  /* The meter and the online dot step back on a phone; the rank, face, name and total are the row. */
-  .row__meter,
-  .row__dot {
+  /* The meter steps back on a phone; the rank, face, name and total are the row. */
+  .row__meter {
     display: none;
   }
 

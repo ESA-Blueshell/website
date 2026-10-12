@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {shallowMount} from "@vue/test-utils"
+import {mount} from "@vue/test-utils"
 import DocumentTable from "@/components/base/DocumentTable.vue"
 import {
   ACTIVE_COOKIE_POLICY_DOWNLOAD_NAMES,
@@ -19,17 +19,7 @@ function assetUrl(path: string) {
 }
 
 function mountTable() {
-  return shallowMount(DocumentTable, {
-    global: {
-      stubs: {
-        VSheet: {template: "<div><slot /></div>"},
-        VRow: {template: "<div><slot /></div>"},
-        VCol: {template: "<div><slot /></div>"},
-        VDivider: {template: "<hr />"},
-        VBtn: {template: "<a><slot /></a>"},
-      },
-    },
-  })
+  return mount(DocumentTable)
 }
 
 function documentLinks(wrapper: ReturnType<typeof mountTable>) {

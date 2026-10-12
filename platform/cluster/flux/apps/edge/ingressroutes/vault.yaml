@@ -23,7 +23,7 @@ spec:
         - name: forward-auth
           namespace: edge-system
       services:
-        - name: vault
+        - name: vault-v2
           namespace: data-system
           port: 8200
   tls: {}

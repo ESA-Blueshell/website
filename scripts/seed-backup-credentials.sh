@@ -73,7 +73,7 @@ if [[ -z ${VAULT_ADDR:-} ]]; then
     die "No answer given."
   [[ $answer == yes ]] || die "Not confirmed. Pick the cluster with KUBE_CONTEXT=<name> $0"
   log=$(mktemp)
-  kubectl --context "$context" -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &
+  kubectl --context "$context" -n data-system port-forward svc/vault-v2 :8200 >"$log" 2>&1 &
   forward_pid=$!
   port=""
   for _ in $(seq 1 30); do

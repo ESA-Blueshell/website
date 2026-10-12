@@ -120,6 +120,8 @@ spec:
             # Private details are sealed by Vault Transit, never by the stand-in (api ADR-038).
             - name: PRIVACY_SEALING
               value: vault
+            - name: VAULT_ADDR
+              value: http://vault-v2.data-system.svc.cluster.local:8200
           ports:
             - containerPort: 8080
               name: http

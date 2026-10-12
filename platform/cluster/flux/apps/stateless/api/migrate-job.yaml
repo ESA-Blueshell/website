@@ -43,6 +43,8 @@ spec:
                   # prod first: the Job runs the configuration production runs,
                   # and migrate only changes what it does with it.
                   value: prod,migrate
+                - name: VAULT_ADDR
+                  value: http://vault-v2.data-system.svc.cluster.local:8200
                 - name: MYSQL_HOST
                   value: mariadb.data-system.svc.cluster.local
                 - name: MYSQL_PORT

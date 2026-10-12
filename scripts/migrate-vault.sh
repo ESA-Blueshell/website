@@ -4,14 +4,16 @@
 # every KV secret, the transit keys by backup and restore, and the policies, after which
 # bootstrap-auth.sh rebuilds the auth methods, roles, database engine and OIDC on vault-v2.
 #
-#   scripts/migrate-vault.sh          initialises vault-v2 on the first run, then copies and checks
-#   scripts/migrate-vault.sh --check  only compares the two; writes nothing
+#   scripts/migrate-vault.sh           initialises vault-v2 on the first run, then copies and checks
+#   scripts/migrate-vault.sh --check   only compares the two; writes nothing
+#   scripts/migrate-vault.sh --finish  after the switch: revokes vault-v2's root token
 #
 # Safe to run again: a second run copies only what changed, so it doubles as the last sync before
 # the switch. Everything stays in this process: nothing is written to disk, and no secret reaches
 # a command line. The old Vault is only ever read, except that its transit keys are made
-# exportable, which cannot be undone. vault-v2's root token is kept in the Secret
-# vault-v2-bootstrap-token, where the bootstrap Job reads it after the switch.
+# exportable, which cannot be undone. vault-v2's root token waits in the Secret
+# vault-v2-bootstrap-token until --finish revokes it; the bootstrap Job signs in by its service
+# account instead.
 # platform/docs/vault-migration.md has the whole procedure.
 set -euo pipefail
 
@@ -26,13 +28,15 @@ KNOWN_DB_ROLES="api backup"
 # role:namespace:service account, as bootstrap-auth.sh binds them.
 K8S_ROLES="api:default:api migrate:default:migrate stalwart:mail-system:stalwart
   backup:data-system:backup backup-mail:mail-system:backup backup-gatus:utility-system:backup
-  vso:data-system:vault-secrets-operator"
+  vso:data-system:vault-secrets-operator bootstrap:data-system:vault-bootstrap-auth"
 
 check_only=false
+finish=false
 case "${1:-}" in
   "") ;;
   --check) check_only=true ;;
-  *) echo "Usage: $0 [--check]" >&2; exit 64 ;;
+  --finish) finish=true ;;
+  *) echo "Usage: $0 [--check | --finish]" >&2; exit 64 ;;
 esac
 
 die() { echo "Stopped: $*" >&2; exit 1; }
@@ -82,7 +86,7 @@ forward() {
   rm -f "$log"
   echo "$port $pid"
 }
-if [[ -z ${OLD_VAULT_ADDR:-} ]]; then
+if [[ -z ${OLD_VAULT_ADDR:-} ]] && ! $finish; then
   read -r port pid < <(forward svc/vault) || die "No port-forward to the old Vault."
   forward_pids+=("$pid"); OLD_VAULT_ADDR=http://127.0.0.1:$port
 fi
@@ -92,6 +96,34 @@ if [[ -z ${NEW_VAULT_ADDR:-} ]]; then
 fi
 old() { VAULT_ADDR=$OLD_VAULT_ADDR VAULT_TOKEN=$old_token vault "$@"; }
 new() { VAULT_ADDR=$NEW_VAULT_ADDR VAULT_TOKEN=${new_token:-} vault "$@"; }
+# A rerun after --finish needs a root token made with `vault operator generate-root`.
+stored_token() {
+  if [[ -n ${NEW_VAULT_TOKEN:-} ]]; then printf '%s' "$NEW_VAULT_TOKEN"; return; fi
+  "${K[@]}" get secret "$TOKEN_SECRET" -o jsonpath='{.data.token}' 2>/dev/null | base64 -d
+}
+
+# --- After the switch: no root token left lying around -------------------------------------------
+
+if $finish; then
+  new_token=$(stored_token) || true
+  [[ -n $new_token ]] || die "There is no $TOKEN_SECRET; the root token is already gone."
+  new token lookup >/dev/null 2>&1 || die "vault-v2 refuses the stored root token; it may be revoked already."
+  # The bootstrap Job must manage without it before it goes.
+  jwt=$("${K[@]}" create token vault-bootstrap-auth --audience=vault --duration=10m) ||
+    die "No token for the service account vault-bootstrap-auth."
+  job_token=$(printf '%s' "$jwt" | new write -field=token auth/kubernetes/login role=bootstrap jwt=- 2>/dev/null) ||
+    die "The bootstrap Job cannot sign in to vault-v2 yet. Run this script without --finish from a checkout that has the bootstrap role, then again with --finish."
+  caps=$(VAULT_ADDR=$NEW_VAULT_ADDR VAULT_TOKEN=$job_token vault token capabilities sys/policies/acl/api)
+  VAULT_ADDR=$NEW_VAULT_ADDR VAULT_TOKEN=$job_token vault token revoke -self >/dev/null 2>&1 || true
+  unset jwt job_token
+  [[ $caps == *update* ]] || die "The bootstrap role may not write policies (it has: $caps)."
+  new token revoke -self >/dev/null
+  "${K[@]}" delete secret "$TOKEN_SECRET" --ignore-not-found >/dev/null
+  unset new_token
+  step "vault-v2's root token is revoked and $TOKEN_SECRET deleted."
+  step "When one is needed, three share holders make it with vault operator generate-root."
+  exit 0
+fi
 
 if [[ -n ${OLD_VAULT_TOKEN:-} ]]; then
   old_token=$OLD_VAULT_TOKEN
@@ -181,8 +213,9 @@ if [[ $(jq -r .initialized <<<"$new_status") == false ]]; then
   unset init
   step "vault-v2 is initialised 5-of-3 and unsealed; its root token is in the Secret $TOKEN_SECRET."
 else
-  new_token=$("${K[@]}" get secret "$TOKEN_SECRET" -o jsonpath='{.data.token}' 2>/dev/null | base64 -d) || true
-  [[ -n $new_token ]] || die "vault-v2 is initialised but $TOKEN_SECRET is missing. Wipe vault-v2 and start again (docs)."
+  new_token=$(stored_token) || true
+  [[ -n $new_token ]] ||
+    die "vault-v2 has no root token in $TOKEN_SECRET. Make one with vault operator generate-root and pass it as NEW_VAULT_TOKEN."
   while [[ $(new status -format=json 2>/dev/null | jq -r .sealed) == true ]]; do
     echo "vault-v2 is sealed. Unseal key (hidden):"
     new operator unseal >/dev/null || echo "  vault-v2 refused that share."
@@ -192,7 +225,7 @@ for _ in $(seq 1 60); do
   [[ $(new read -format=json sys/leader 2>/dev/null | jq -r .data.is_self) == true ]] && break
   sleep 1
 done
-new token lookup >/dev/null 2>&1 || die "vault-v2 does not accept the token in $TOKEN_SECRET."
+new token lookup >/dev/null 2>&1 || die "vault-v2 does not accept its root token."
 
 # --- Copy ---------------------------------------------------------------------------------------
 
@@ -205,6 +238,7 @@ if ! $check_only; then
   audits=$(new audit list -format=json 2>/dev/null | jq 'length' 2>/dev/null || echo 0)
   [[ ${audits:-0} -gt 0 ]] || new audit enable file file_path=/vault/audit/audit.log >/dev/null
 
+  step "Copying ${#secrets[@]} secrets."
   copied=0; gone=0
   for path in ${secrets[@]+"${secrets[@]}"}; do
     src=$(old read -format=json "secret/data/$path")
@@ -232,6 +266,7 @@ if ! $check_only; then
     [[ $policy == default ]] && continue
     old policy read "$policy" | new policy write "$policy" - >/dev/null
   done
+  step "Policies copied; bootstrap-auth.sh runs in $NEW_POD next."
 
   # Run inside the pod: the Kubernetes auth config needs its service host and CA.
   if ! out=$({ printf '%s\n' "$new_token"; cat "$BOOTSTRAP"; } |
@@ -285,14 +320,22 @@ for key in $transit_keys; do
   step "Transit: $key equal, every version opens."
 done
 
-for policy in $policies; do
-  [[ $(old policy read "$policy") == "$(new policy read "$policy" 2>/dev/null)" ]] || fail "policy $policy differs"
+# bootstrap-auth.sh owns the policies it writes, so those follow this checkout rather than the old Vault.
+managed=$(sed -n 's/^vault policy write \([a-z-]*\) .*/\1/p' "$BOOTSTRAP" | tr '\n' ' ')
+for policy in $policies $managed; do
+  if [[ " $managed " == *" $policy "* ]]; then
+    new policy read "$policy" >/dev/null 2>&1 || fail "policy $policy is missing"
+  else
+    [[ $(old policy read "$policy") == "$(new policy read "$policy" 2>/dev/null)" ]] || fail "policy $policy differs"
+  fi
 done
-step "Policies: $policies"
+step "Policies: as bootstrap-auth.sh writes them: $managed; copied: $(unknown "$managed" "$policies")"
 
 for entry in $K8S_ROLES; do
   role=${entry%%:*}; rest=${entry#*:}; namespace=${rest%%:*}; account=${rest#*:}
-  if ! jwt=$(kubectl --context "$context" -n "$namespace" create token "$account" --duration=10m 2>/dev/null); then
+  audience=()
+  [[ $role == bootstrap ]] && audience=(--audience=vault)
+  if ! jwt=$(kubectl --context "$context" -n "$namespace" create token "$account" ${audience[@]+"${audience[@]}"} --duration=10m 2>/dev/null); then
     echo "  skipped: role $role, there is no service account $namespace/$account"
     continue
   fi

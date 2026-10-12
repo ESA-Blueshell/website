@@ -145,7 +145,7 @@ missing `cloudflare.dns_api_token` mid-bootstrap.
 Port-forward and point the CLI at Vault:
 
 ```bash
-kubectl -n data-system port-forward svc/vault 8200:8200 &
+kubectl -n data-system port-forward svc/vault-v2 8200:8200 &
 ```
 ```bash
 export VAULT_ADDR=http://127.0.0.1:8200

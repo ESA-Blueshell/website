@@ -40,6 +40,9 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: vault-bootstrap-auth
+      # Its only credential is a short token meant for Vault alone, so a copy of it opens nothing
+      # else and no other token for this account signs in to Vault.
+      automountServiceAccountToken: false
       containers:
         - name: bootstrap
           image: hashicorp/vault
@@ -49,17 +52,22 @@ spec:
             - /bootstrap/bootstrap.sh
           env:
             - name: VAULT_ADDR
-              value: http://vault.data-system.svc.cluster.local:8200
-            - name: VAULT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-bootstrap-token
-                  key: token
+              value: http://vault-v2.data-system.svc.cluster.local:8200
           volumeMounts:
             - name: bootstrap
               mountPath: /bootstrap
               readOnly: true
+            - name: vault-token
+              mountPath: /var/run/secrets/vault
+              readOnly: true
       volumes:
+        - name: vault-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: vault
+                  expirationSeconds: 600
+                  path: token
         - name: bootstrap
           configMap:
             name: vault-bootstrap-auth

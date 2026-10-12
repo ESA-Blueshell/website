@@ -14,7 +14,7 @@ spec:
         name: hashicorp
         namespace: vso-system
   # The chart ships a default VaultConnection CR pointing at
-  # vault.data-system.svc.cluster.local. VSO itself runs the controller
+  # vault-v2.data-system.svc.cluster.local. VSO itself runs the controller
   # that reports Ready on that CR, but it can only report Ready once
   # Vault is reachable — which doesn't happen until apps-data installs
   # Vault, which in turn depends on apps-core (this Kustomization) being
@@ -45,7 +45,7 @@ spec:
     # non-default.
     defaultVaultConnection:
       enabled: true
-      address: 'http://vault.data-system.svc.cluster.local:8200'
+      address: 'http://vault-v2.data-system.svc.cluster.local:8200'
     defaultAuthMethod:
       enabled: true
       namespace: 'vso-system'

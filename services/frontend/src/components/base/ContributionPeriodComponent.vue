@@ -63,7 +63,7 @@ onMounted(() => {
 
     <div
       v-else-if="error"
-      class="bg-error"
+      class="contribution__error"
     >
       Error fetching contribution information: {{ error }}
     </div>
@@ -81,7 +81,7 @@ onMounted(() => {
         <li><b>{{ formatCurrency(contributionPeriod?.halfYearFee) }}</b> for a half-year membership*</li>
         <li><b>{{ formatCurrency(contributionPeriod?.alumniFee) }}</b> for an Alumni membership</li>
       </ul>
-      <p class="text-body-1">
+      <p>
         <br>
         <span v-if="!currentPeriod">
           <strong>
@@ -95,3 +95,10 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.contribution__error {
+  background-color: #ff0022;
+  color: #fff;
+}
+</style>

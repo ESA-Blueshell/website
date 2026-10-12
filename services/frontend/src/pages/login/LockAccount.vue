@@ -1,25 +1,25 @@
 <template>
   <main class="site-main">
     <top-banner title="Lock your account" />
-    <div class="mx-3">
+    <div class="site-gutter">
       <div
-        class="mx-auto my-10"
+        class="site-column"
         data-testid="lock-account"
         style="max-width: 600px"
       >
         <loading-spinner v-if="loading" />
         <template v-else>
-          <p class="text-h5 mb-4">
+          <p class="site-lead">
             Your account is locked
           </p>
-          <p class="mb-4">
+          <p>
             If the link was still good, nobody can sign in to your account now and every sign-in has ended. The
             change you were told about has not been undone.
           </p>
-          <p class="mb-2">
+          <p>
             To get back in, contact the board. An admin will check it is you and unlock the account:
           </p>
-          <ul class="mb-4 ml-6">
+          <ul class="lock__ways">
             <li v-if="contact">
               email <a
                 :href="`mailto:${contact}`"
@@ -62,3 +62,10 @@ onMounted(async () => {
   loading.value = false
 })
 </script>
+
+<style scoped>
+.lock__ways {
+  margin-bottom: 16px;
+  margin-left: 24px;
+}
+</style>

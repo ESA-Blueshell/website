@@ -1,8 +1,8 @@
 <template>
   <main class="site-main">
     <div class="apps">
-      <!-- `text-h4` is what the global heading rule reads: without it an h1 here is drawn at 90px. -->
-      <h1 class="apps__title text-h4">
+      <!-- `site-lead` keeps the global heading rule off this h1: without it the title is drawn at 90px. -->
+      <h1 class="apps__title site-lead">
         My Apps
       </h1>
 

@@ -4,7 +4,7 @@
 
     <div
       v-if="!session"
-      class="mx-auto pb-10 mt-10"
+      class="create__column"
       data-testid="create-account-form-state"
       style="max-width: 600px"
     >
@@ -22,7 +22,7 @@
 
     <div
       v-else
-      class="mx-auto my-10"
+      class="site-column"
       data-testid="create-account-success-state"
       style="max-width: 600px"
     >
@@ -66,3 +66,10 @@ const onEmailCorrected = (email: string) => {
   if (user.value) user.value.email = email
 }
 </script>
+
+<style scoped>
+.create__column {
+  margin: 40px auto 0;
+  padding-bottom: 40px;
+}
+</style>

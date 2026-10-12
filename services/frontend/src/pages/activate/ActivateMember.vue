@@ -3,7 +3,7 @@
     <top-banner title="Activate Member Account" />
 
     <div
-      class="mx-auto my-10"
+      class="site-column"
       style="max-width: 600px"
     >
       <div class="island-panel">

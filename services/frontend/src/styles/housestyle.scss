@@ -90,9 +90,10 @@ CSS MOMENT
 // the rules are otherwise identical.
 // A heading that names its own size keeps it. The rule below is unlayered and beats any
 // Vuetify size class, so an `<h1 class="text-h4">` still came out at 90px — which is 419px of
-// text on a 390px screen, and the page scrolled sideways.
+// text on a 390px screen, and the page scrolled sideways. A heading that leads a block in the
+// site's own `site-lead` is body text in bold, and keeps its size the same way.
 .v-application .text-h1,
-.v-application h1:not(.island h1):not([class*="text-h"]) {
+.v-application h1:not(.island h1):not([class*="text-h"]):not(.site-lead) {
   font-family: "Shellhouse One", sans-serif !important;
   text-transform: uppercase;
   font-size: 90px;

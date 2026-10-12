@@ -2,7 +2,7 @@
   <main class="site-main">
     <top-banner title="Documents" />
     <div
-      class="mx-auto my-5"
+      class="site-column documents-column"
       style="max-width: 800px"
     >
       <document-table />
@@ -23,3 +23,9 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.documents-column {
+  margin-block: 20px;
+}
+</style>

@@ -3,7 +3,7 @@
     <top-banner title="Membership Form" />
 
     <div
-      class="mx-auto my-6"
+      class="site-column signup-column"
       style="max-width: 800px"
     >
       <div
@@ -25,14 +25,11 @@
         >
           <div
             v-if="preparing"
-            class="d-flex align-center justify-center pa-6"
+            class="site-waiting signup__waiting"
             data-testid="membership-details-loading"
           >
-            <loading-spinner
-              class="mr-3"
-              :size="28"
-            />
-            <span class="text-body-1">Fetching the details we already hold.</span>
+            <loading-spinner :size="28" />
+            <span>Fetching the details we already hold.</span>
           </div>
           <user-form
             v-else
@@ -149,10 +146,10 @@
         data-testid="membership-complete-panel"
       >
         <done-tick :size="64" />
-        <p class="text-h6 font-weight-medium mb-2">
+        <p class="site-lead">
           Welcome to Blueshell
         </p>
-        <p class="text-body-1 text-medium-emphasis">
+        <p class="site-muted">
           Your membership has started and is pending until your first contribution is paid. You become a member once
           the treasurer records it.
         </p>
@@ -542,5 +539,13 @@ onUnmounted(() => {
 .signup__done {
   align-items: center;
   text-align: center;
+}
+
+.signup-column {
+  margin-block: 24px;
+}
+
+.signup__waiting {
+  padding: 24px;
 }
 </style>

@@ -34,7 +34,7 @@ onMounted(async () => {
   <main class="site-main">
     <div
       v-if="blog"
-      class="mx-3 align-center"
+      class="site-gutter"
     >
       <iframe
         :srcdoc="blog.html"
@@ -46,23 +46,23 @@ onMounted(async () => {
     </div>
     <div
       v-else-if="loading"
-      class="text-center py-10"
+      class="site-empty"
     >
       <loading-spinner class="blog-loading" />
     </div>
     <div
       v-else-if="notFound"
-      class="text-center py-10"
+      class="site-empty"
     >
-      <p class="text-body-1">
+      <p>
         Blog not found.
       </p>
     </div>
     <div
       v-else
-      class="text-center py-10"
+      class="site-empty"
     >
-      <p class="text-body-1">
+      <p>
         Failed to load blog.
       </p>
     </div>

@@ -1,11 +1,11 @@
 <template>
   <account-frame heading="Account">
-    <div class="mx-3">
+    <div class="site-gutter">
       <div
-        class="mx-auto my-10"
+        class="site-column"
         style="max-width: 800px"
       >
-        <p class="text-h3">
+        <p class="account__hello">
           Hello {{ user != null ? user.firstName : "" }}!
         </p>
 
@@ -31,12 +31,12 @@
 
         <pending-membership
           v-if="user"
-          class="mt-6"
+          class="account__pending"
         />
 
         <div
           v-if="user"
-          class="mt-10"
+          class="account__details"
         >
           <user-form
             v-model="user"
@@ -87,11 +87,17 @@ onMounted(async () => {
 
 
 <style lang="scss" scoped>
-.v-col:first-child {
-  padding-left: 0;
+
+.account__hello {
+  font-size: 26px;
+  line-height: 1.3;
 }
 
-.v-col:last-child {
-  padding-right: 0;
+.account__pending {
+  margin-top: 24px;
+}
+
+.account__details {
+  margin-top: 40px;
 }
 </style>

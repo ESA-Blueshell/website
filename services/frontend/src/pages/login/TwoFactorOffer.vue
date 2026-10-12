@@ -1,21 +1,21 @@
 <template>
   <main class="site-main">
     <top-banner title="Two-factor authentication" />
-    <div class="mx-3">
+    <div class="site-gutter">
       <div
-        class="mx-auto my-10"
+        class="site-column"
         data-testid="two-factor-offer"
         style="max-width: 600px"
       >
-        <p class="text-h5 mb-4">
+        <p class="site-lead">
           Keep your account yours
         </p>
-        <p class="mb-4">
+        <p>
           With two-factor authentication, signing in also asks for a code from an app on your phone. Somebody
           who learns your password still cannot get in. Setting it up takes about two minutes, and you can do
           it any time from the Security page.
         </p>
-        <div class="d-flex ga-3">
+        <div class="offer__acts">
           <cut-button
             tone="solid"
             data-testid="two-factor-offer-accept-btn"
@@ -58,3 +58,10 @@ const answer = async (setUpNow: boolean) => {
   else await router.replace(onward)
 }
 </script>
+
+<style scoped>
+.offer__acts {
+  display: flex;
+  gap: 12px;
+}
+</style>

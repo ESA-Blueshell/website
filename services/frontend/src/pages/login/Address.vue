@@ -1,17 +1,16 @@
 <template>
   <account-frame heading="Address">
-    <div class="mx-3">
+    <div class="site-gutter">
       <div
-        class="mx-auto my-10"
+        class="site-column"
         style="max-width: 800px"
       >
-        <p class="mb-6">
+        <p>
           Here you can edit your address details. This address may be used for communication and billing purposes,
           so please make sure it is correct before saving.
         </p>
         <p
           v-if="address.opened === false"
-          class="mb-6"
           data-testid="account-address-unopened"
         >
           Your address cannot be shown. Saving writes it anew.

@@ -14,6 +14,12 @@ const {mockStartMembershipAsBoard, mockStartOwnMembership, mockSaveMembership, m
     mockApplyForMembership: vi.fn(),
   }))
 
+// The real one reads the current period as it mounts. Unanswered, that request fails after
+// the test that mounted it is over, and its late log can outlive the run.
+vi.mock("@/components/base/ContributionPeriodComponent.vue", () => ({
+  default: {name: "ContributionPeriod", template: "<div />"},
+}))
+
 vi.mock("@/domains/user", async () => {
   const {MemberType} = await import("@/services/api")
   return {

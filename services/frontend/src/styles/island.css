@@ -395,6 +395,50 @@
   max-width: 100%;
 }
 
+/* The shapes a page outside an island is laid out with. */
+.site-gutter {
+  margin-inline: 12px;
+}
+
+/* Its width is the page's own: each sets a max-width. */
+.site-column {
+  margin: 40px auto;
+}
+
+.site-lead {
+  font-weight: bold;
+}
+
+/* On a paragraph in the dark theme the house stylesheet's white outranks this. */
+.site-muted {
+  color: rgb(255 255 255 / 60%);
+}
+
+:where([data-theme="light"]) .site-muted {
+  color: rgb(0 0 0 / 60%);
+}
+
+.site-link {
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.site-link:visited {
+  color: #549aff;
+}
+
+.site-waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.site-empty {
+  padding-block: 40px;
+  text-align: center;
+}
+
 /*
  * The shared shapes of a form and the panel it stands in, for every page that is not yet an
  * island of its own: one look for the sign-in pages, the account pages and the sign-up steps.

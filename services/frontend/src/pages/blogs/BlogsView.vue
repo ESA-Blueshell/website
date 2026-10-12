@@ -21,11 +21,11 @@ onMounted(async () => {
   <main class="site-main">
     <top-banner title="Newsletters" />
     <div
-      class="mx-auto my-10"
+      class="site-column"
       style="max-width: 900px"
     >
-      <div class="mx-3">
-        <p class="text-body-1">
+      <div class="site-gutter">
+        <p>
           Welcome to our newsletters page! Here you'll find the latest updates, insights, and stories from our
           community.
           Click any newsletter to read the full article.
@@ -34,9 +34,9 @@ onMounted(async () => {
 
       <div
         v-if="failedToLoad"
-        class="text-center py-10"
+        class="site-empty"
       >
-        <p class="text-body-1">
+        <p>
           Failed to load newsletters.
         </p>
       </div>

@@ -21,12 +21,12 @@ withDefaults(
       >*</span>
       <span
         v-else
-        class="question-label__optional text-caption"
+        class="question-label__optional"
       >(optional)</span>
     </div>
     <div
       v-if="helperText"
-      class="question-label__helper text-caption text-medium-emphasis"
+      class="question-label__helper site-muted"
     >
       {{ helperText }}
     </div>
@@ -48,20 +48,20 @@ withDefaults(
     font-size: 1.05rem;
     font-weight: 600;
     line-height: 1.45;
-    color: rgba(var(--v-theme-on-surface), 0.94);
+    color: color-mix(in srgb, currentColor 94%, transparent);
     white-space: pre-wrap;
     word-break: break-word;
   }
 
   &__required {
-    color: rgb(var(--v-theme-error));
+    color: #ff0022;
     font-weight: 700;
     font-size: 1.1rem;
     line-height: 1;
   }
 
   &__optional {
-    color: rgba(var(--v-theme-on-surface), 0.55);
+    color: color-mix(in srgb, currentColor 55%, transparent);
     font-style: italic;
   }
 

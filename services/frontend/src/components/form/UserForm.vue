@@ -630,7 +630,7 @@ defineExpose({validate, save, signupSession})
             <template #label>
               <span class="checkbox-label-text">I have read and agree to the <a
                 :href="privacyPolicyUrl"
-                class="text-primary"
+                class="user-form__policy"
                 target="_blank"
                 @click.stop
               >Privacy Policy</a> and consent to the processing of my personal data as described therein.</span>
@@ -678,5 +678,9 @@ defineExpose({validate, save, signupSession})
   display: flex;
   justify-content: flex-end;
   margin: 1.2rem 0 1.25rem;
+}
+
+.user-form__policy {
+  color: var(--color-brand);
 }
 </style>

@@ -1,9 +1,9 @@
 <template>
   <main class="site-main">
     <top-banner title="Confirm your email address" />
-    <div class="mx-3">
+    <div class="site-gutter">
       <div
-        class="mx-auto my-10"
+        class="site-column"
         data-testid="confirm-email"
         style="max-width: 600px"
       >

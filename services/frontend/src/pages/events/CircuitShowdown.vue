@@ -37,13 +37,13 @@ const playoffs = ref<Matchup[]>([
   <main class="site-main">
     <top-banner title="Circuit Showdown" />
     <div
-      class="mx-auto my-3"
+      class="site-column showdown-column"
       style="max-width: 800px"
     >
-      <p class="text-h4 font-weight-light">
+      <p class="site-lead">
         What is the Blueshell Circuit Showdown?
       </p>
-      <p class="text-body-1">
+      <p>
         This is a competition hosted within Blueshell where teams compete in the games that are currently competitively
         being played by the teams of Blueshell. Teams generally focus on their own game and it’s hard for them to
         compete among each other, this will be the opportunity to do so. All to prove what team is the best team in our
@@ -175,5 +175,9 @@ h2 {
 
 h4 {
   margin-bottom: 16px;
+}
+
+.showdown-column {
+  margin-block: 12px;
 }
 </style>

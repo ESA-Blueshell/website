@@ -342,6 +342,13 @@ class InboundReconcileTest {
         ): ExternalTarget = error("not used")
 
         override fun delete(external: ExternalTarget) = error("not used")
+
+        override fun rename(
+            external: ExternalTarget,
+            name: String,
+        ): ExternalTarget = error("not used")
+
+        override fun createFolder(name: String): List<String> = error("not used")
     }
 
     private class ImmediateTransactionManager : AbstractPlatformTransactionManager() {

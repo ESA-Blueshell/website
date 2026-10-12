@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.client.RestClientException
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 
@@ -109,11 +110,39 @@ class BrevoListAdapter(
             val response = contactsApi.createList(CreateListRequest(name = name, folderId = folderId))
             log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
-        } catch (e: RestClientResponseException) {
+        } catch (e: RestClientException) {
             log.error("Failed to create Brevo list '{}'", safeName, e)
-            throw ContactServiceException("Failed to create list", e)
+            throw ContactServiceException("Failed to create list: ${reasonOf(e)}", e)
         }
     }
+
+    override fun renameList(
+        externalListId: Long,
+        name: String,
+    ) {
+        log.info("Renaming Brevo list {} to '{}'", externalListId, sanitizeForLog(name))
+        try {
+            contactsApi.updateList(externalListId, UpdateListRequest(name = name))
+        } catch (e: RestClientException) {
+            log.error("Failed to rename Brevo list {}", externalListId, e)
+            throw ContactServiceException("Failed to rename list: ${reasonOf(e)}", e)
+        }
+    }
+
+    override fun createFolder(name: String): Long =
+        try {
+            folderNamed(name)
+        } catch (e: RestClientException) {
+            log.error("Failed to create Brevo folder '{}'", sanitizeForLog(name), e)
+            throw ContactServiceException("Failed to create folder: ${reasonOf(e)}", e)
+        }
+
+    /** What Brevo said, or its status where it said nothing; a call that got no answer says that. */
+    private fun reasonOf(e: RestClientException): String =
+        when (e) {
+            is RestClientResponseException -> parseBrevoError(e, jsonMapper)?.message ?: e.statusText
+            else -> "Brevo did not answer"
+        }
 
     // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
     private fun folderNamed(name: String): Long =

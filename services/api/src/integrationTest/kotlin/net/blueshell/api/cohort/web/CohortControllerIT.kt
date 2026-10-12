@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.sync.persistence.ExternalIdMapping
@@ -32,6 +33,11 @@ class CohortControllerIT : UserTestSupport() {
 
     @Autowired
     private lateinit var externalIds: ExternalIdMappingRepository
+
+    @Autowired
+    private lateinit var contactListAdapters: List<ContactListAdapter>
+
+    private val contactLists get() = contactListAdapters.single { it.system == TargetSystem.BREVO }
 
     // The cohort's own read carries the states and the strangers; no separate drift report does.
 
@@ -64,10 +70,12 @@ class CohortControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `a target reports the folder it is filed in as a path, outside in`() {
+    fun `a target reports the folder Brevo files it in as a path, outside in`() {
         val admin = createUserWithRole(Role.ADMIN)
         val cohort = newCohort()
-        newTarget(cohort, externalId = "list-1", folder = "Committees")
+        // Created for another folder: the page follows Brevo, not the row.
+        val listId = contactLists.createList("Sitecie", "Committees")
+        newTarget(cohort, externalId = listId.toString(), folder = "Members")
 
         mvc
             .perform(
@@ -76,13 +84,14 @@ class CohortControllerIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
             .andExpect(jsonPath("$.mappings[0].path[1]").value("Committees"))
+            .andExpect(jsonPath("$.mappings[0].folderKnown").value(true))
     }
 
     @Test
-    fun `an unfiled target is one step deep, not one with a nameless folder`() {
+    fun `a target Brevo cannot place shows its folder as unknown`() {
         val admin = createUserWithRole(Role.ADMIN)
         val cohort = newCohort()
-        newTarget(cohort, externalId = "list-2")
+        newTarget(cohort, externalId = "999999", folder = "Committees")
 
         mvc
             .perform(
@@ -91,6 +100,7 @@ class CohortControllerIT : UserTestSupport() {
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.mappings[0].path.length()").value(1))
             .andExpect(jsonPath("$.mappings[0].path[0]").value("Brevo"))
+            .andExpect(jsonPath("$.mappings[0].folderKnown").value(false))
     }
 
     @Test

@@ -21,11 +21,11 @@ class PingerContribution(
     @Column(name = "member_id")
     val memberId: Long?,
     @Column(name = "updated", nullable = false)
-    val updated: Instant,
+    var updated: Instant,
     @Column(name = "total_sent", nullable = false)
-    val totalSent: Long = 0,
+    var totalSent: Long = 0,
     @Column(name = "peak_pps", nullable = false)
-    val peakPps: Long = 0,
+    var peakPps: Long = 0,
     @Column(name = "peak_at")
-    val peakAt: Instant? = null,
+    var peakAt: Instant? = null,
 ) : AutoIdEntity()

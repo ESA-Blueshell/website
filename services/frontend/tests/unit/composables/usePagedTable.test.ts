@@ -195,6 +195,62 @@ describe("usePagedTable", () => {
     expect(load).toHaveBeenCalledTimes(1)
   })
 
+  it("orders by a head: up, then down, then the list's own order again, each from the first page", async () => {
+    const load = vi.fn(async (): Promise<PageOf<Row>> => ({rows: rowsNumbered(1, 2), totalElements: 4, totalPages: 2}))
+    const table = host(load)
+    table.page.value = 2
+    await settle()
+    const asked = () => load.mock.lastCall?.[0] as unknown as PageQuery
+
+    table.sortBy("name")
+    await settle()
+    expect(asked()).toMatchObject({page: 0, sort: {key: "name", descending: false}})
+    expect([table.sortKey.value, table.descending.value]).toEqual(["name", false])
+    table.sortBy("name")
+    await settle()
+    expect(asked().sort).toEqual({key: "name", descending: true})
+    table.sortBy("name")
+    await settle()
+    expect(asked().sort).toBeUndefined()
+    expect(table.sortKey.value).toBe("")
+
+    table.sortBy("name")
+    table.sortBy("when")
+    await settle()
+    expect(asked().sort).toEqual({key: "when", descending: false})
+    await table.more()
+    expect(asked()).toMatchObject({page: 1, sort: {key: "when", descending: false}})
+
+    // A phone's picker names the order outright, and none puts it back to what the api gives.
+    table.orderBy("name", true)
+    await settle()
+    expect(asked()).toMatchObject({page: 0, sort: {key: "name", descending: true}})
+    table.orderBy(null, true)
+    await settle()
+    expect(asked().sort).toBeUndefined()
+  })
+
+  it("reads the next page onto the end of the rows, and nothing past the last page", async () => {
+    const load = vi.fn(async (query: PageQuery): Promise<PageOf<Row>> => ({
+      rows: rowsNumbered(query.page * 2 + 1, 2),
+      totalElements: 4,
+      totalPages: 2,
+    }))
+    const table = host(load)
+    await table.refresh()
+
+    await table.more()
+    expect(table.rows.value.map((row) => row.id)).toEqual([1, 2, 3, 4])
+
+    await table.more()
+    expect(load).toHaveBeenCalledTimes(2)
+
+    await table.refresh()
+    expect(table.rows.value.map((row) => row.id)).toEqual([1, 2])
+    await table.more()
+    expect(table.rows.value.map((row) => row.id)).toEqual([1, 2, 3, 4])
+  })
+
   it("stops loading even when the read throws", async () => {
     const table = host(vi.fn().mockRejectedValue(new Error("network")))
 

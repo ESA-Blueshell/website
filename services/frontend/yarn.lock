@@ -4409,13 +4409,13 @@ __metadata:
   linkType: hard
 
 "ics@npm:^3.12.0":
-  version: 3.12.0
-  resolution: "ics@npm:3.12.0"
+  version: 3.12.1
+  resolution: "ics@npm:3.12.1"
   dependencies:
     nanoid: "npm:^3.1.23"
     runes2: "npm:^1.1.2"
     yup: "npm:^1.2.0"
-  checksum: 10c0/65f5e341ad28361711624893950dbfb62068d13b010354cd20a95ee9d7eea9f9896653eabdc6f8f3a55f7518ffe1f60150407c3fd1d7752bcd8e1cc4046a2f35
+  checksum: 10c0/a6484c2d75f72a4926dd1b2dd22c62100479d5786072f055031d7ce6cc2581fa52fc13d1881a0aebaf882c38c45a3dc67f71b16db63453e16d9793c1f3f305fb
   languageName: node
   linkType: hard
 

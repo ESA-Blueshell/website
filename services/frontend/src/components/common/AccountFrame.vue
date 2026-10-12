@@ -40,7 +40,7 @@ const pages = computed(() => accountFor(reader.value))
 </script>
 
 <template>
-  <v-main class="account-main">
+  <main class="site-main account-main">
     <island
       class="account"
       :class="{'account--whole': islandContent}"
@@ -99,7 +99,7 @@ const pages = computed(() => accountFor(reader.value))
     </island>
 
     <slot v-if="!islandContent" />
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

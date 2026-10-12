@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Two-factor authentication" />
     <div class="mx-3">
       <div
@@ -33,7 +33,7 @@
         </div>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

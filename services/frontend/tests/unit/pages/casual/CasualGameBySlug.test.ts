@@ -15,7 +15,6 @@ vi.mock("@/services/api", async importOriginal => ({
 const stubs = {
   CasualGamePage: {name: "CasualGamePage", props: ["game"], template: "<div data-testid=page />"},
   NotFound: {name: "NotFound", template: "<div data-testid=missing />"},
-  VMain: {template: "<main><slot /></main>"},
 }
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Documents" />
     <div
       class="mx-auto my-5"
@@ -7,7 +7,7 @@
     >
       <document-table />
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts">

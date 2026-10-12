@@ -34,7 +34,7 @@ const playoffs = ref<Matchup[]>([
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Circuit Showdown" />
     <div
       class="mx-auto my-3"
@@ -122,7 +122,7 @@ const playoffs = ref<Matchup[]>([
         </tbody>
       </table>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

@@ -38,9 +38,12 @@ watch(record, (found) => {
     :game="record.code"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="esports-game-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

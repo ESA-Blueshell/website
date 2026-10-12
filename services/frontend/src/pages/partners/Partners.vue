@@ -75,7 +75,7 @@ const TALK = {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="partners-island">
       <hero-band
         alt="The association together, the whole room in one photograph"
@@ -212,7 +212,7 @@ const TALK = {
         testid="partners-call"
       />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

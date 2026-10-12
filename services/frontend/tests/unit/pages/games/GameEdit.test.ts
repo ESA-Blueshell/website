@@ -15,7 +15,7 @@ const chess = {code: "CHESS", name: "Chess", slug: "chess"}
 vi.mock("@/domains/games", () => ({useCasualGames: () => ({games: ref([chess]), ready: Promise.resolve([chess])}), forgetCasualGames: () => {}}))
 
 const GameEditor = {name: "GameEditor", props: ["game", "area", "back", "enterIn"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {GameEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
+const stubs = {GameEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const mountPage = async (at: {params?: Record<string, string>, query?: Record<string, string>, area?: string, back?: string | null}) => {
   route.params = at.params ?? {}

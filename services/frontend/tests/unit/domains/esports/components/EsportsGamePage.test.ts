@@ -39,7 +39,7 @@ const SeasonSwipe = {name: "SeasonSwipe", props: ["season"], template: "<div><sl
 const SliceBand = {name: "SliceBand", props: ["items"], emits: ["add", "edit", "open"], template: "<div />"}
 const stubs = {
   EsportsGameHead, Timeline, SeasonSwipe, SliceBand, RouterLink: RouterLinkStub,
-  "motion.div": {template: "<div><slot /></div>"}, VMain: {template: "<main><slot /></main>"}, Island: {template: "<div><slot /></div>"},
+  "motion.div": {template: "<div><slot /></div>"}, Island: {template: "<div><slot /></div>"},
 }
 
 const mountPage = () => shallowMount(EsportsGamePage, {props: {game: "VALORANT"}, global: {stubs}})

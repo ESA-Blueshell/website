@@ -48,7 +48,7 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="casual-game-island">
       <record-head
         :accent="accent"
@@ -213,7 +213,7 @@ const accent = computed(() => game.accent || BRAND_ACCENT)
         />
       </template>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

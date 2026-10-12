@@ -61,7 +61,6 @@ const event = (over: Record<string, unknown> = {}) => ({
 /* The parts have their own specs; here they only say what they were handed and what they did. */
 const passing = (name: string, props: string[], emits: string[] = []) => ({name, props, emits, template: "<div />"})
 const stubs = {
-  VMain: {template: "<main><slot /></main>"},
   RouterLink: RouterLinkStub,
   EventBand: {name: "EventBand", props: {event: Object, eyebrow: String, full: Boolean, heading: String}, template: "<section><slot name='actions' /></section>"},
   EventSignUpPanel: passing("EventSignUpPanel", ["event", "signUp"], ["update:signUp", "delete:signUp"]),

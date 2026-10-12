@@ -49,9 +49,12 @@ const removed = async () => {
     @saved="saved"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="committee-edit-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

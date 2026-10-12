@@ -389,6 +389,12 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* A page's main area: it fills what the bar and the footer leave. */
+.site-main {
+  flex: 1 0 auto;
+  max-width: 100%;
+}
+
 /*
  * The shared shapes of a form and the panel it stands in, for every page that is not yet an
  * island of its own: one look for the sign-in pages, the account pages and the sign-up steps.

@@ -163,7 +163,6 @@ describe("Board page", () => {
       global: {
         provide: {store: {getters: {isBoard: false}}},
         stubs: {
-          VMain: {template: "<main><slot /></main>"},
           Island: {template: "<div><slot /></div>"},
           BandSwipe: {props: ["stop"], template: "<div><slot :stop=\"stop\" /></div>"},
           "motion.div": {template: "<div><slot /></div>"},

@@ -173,7 +173,7 @@ function exportCsv(): void {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="signups-page"
       testid="signups-island"
@@ -306,7 +306,7 @@ function exportCsv(): void {
         @confirm="confirmRemove"
       />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

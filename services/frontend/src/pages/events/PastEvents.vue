@@ -6,7 +6,7 @@ import EventsHead from "@/domains/events/island/EventsHead.vue"
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="past-page"
       testid="past-events-island"
@@ -29,7 +29,7 @@ import EventsHead from "@/domains/events/island/EventsHead.vue"
 
       <event-archive />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

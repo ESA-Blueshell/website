@@ -52,9 +52,12 @@ const saved = (now: CasualGame) => {
     @saved="saved"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="game-edit-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

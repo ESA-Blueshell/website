@@ -30,7 +30,6 @@ const stubs = {
   ArtCells: {name: "ArtCells", props: ["cells", "testidPrefix"], emits: ["go"], template: "<div><div v-for=\"cell in cells\" :key=\"cell.id\"><slot name=\"action\" :cell=\"cell\" /></div></div>"},
   ArchiveCommitteeDialog: {name: "ArchiveCommitteeDialog", props: ["open", "committee"], emits: ["update:open", "saved"], template: "<div />"},
   CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
-  VMain: {template: "<main><slot /></main>"},
 }
 
 const mountPage = async () => {

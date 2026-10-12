@@ -228,7 +228,7 @@ const addMember = (stop: string | number | null) => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="board-island">
       <header-band v-bind="HEAD" />
 
@@ -382,7 +382,7 @@ const addMember = (stop: string | number | null) => {
         </band-swipe>
       </div>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

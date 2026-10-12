@@ -225,7 +225,7 @@ const takeOut = async (game: GameCode, season: Season | null) => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="esports-island">
       <header-band v-bind="HEAD" />
 
@@ -377,7 +377,7 @@ const takeOut = async (game: GameCode, season: Season | null) => {
 
       <call-band v-bind="JOIN_CALL" />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

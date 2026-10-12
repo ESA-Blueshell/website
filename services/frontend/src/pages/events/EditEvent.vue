@@ -55,7 +55,7 @@ function onSuccess() {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="edit-event"
       testid="edit-event-island"
@@ -124,7 +124,7 @@ function onSuccess() {
         @update:open="deleting = $event"
       />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

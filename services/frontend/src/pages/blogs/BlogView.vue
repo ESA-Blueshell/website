@@ -31,7 +31,7 @@ onMounted(async () => {
 
 </script>
 <template>
-  <v-main>
+  <main class="site-main">
     <div
       v-if="blog"
       class="mx-3 align-center"
@@ -66,7 +66,7 @@ onMounted(async () => {
         Failed to load blog.
       </p>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

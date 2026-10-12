@@ -40,7 +40,7 @@ const gameOf = (id: string | number) => games.value.find(game => game.code === i
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <record-index
       body="The games members play together outside competition. Every game has its channel on the Blueshell Discord: join the server, open the channel and there is usually somebody up for a round."
       each="game"
@@ -86,5 +86,5 @@ const gameOf = (id: string | number) => games.value.find(game => game.code === i
         @update:open="archiving = null"
       />
     </record-index>
-  </v-main>
+  </main>
 </template>

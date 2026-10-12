@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <div class="apps">
       <!-- `text-h4` is what the global heading rule reads: without it an h1 here is drawn at 90px. -->
       <h1 class="apps__title text-h4">
@@ -42,7 +42,7 @@
         No services available.
       </p>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script setup lang="ts">

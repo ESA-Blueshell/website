@@ -55,7 +55,7 @@ const archived = async (now: Committee) => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="committee-island">
       <record-head
         :accent="BRAND_ACCENT"
@@ -164,7 +164,7 @@ const archived = async (now: Committee) => {
         />
       </template>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

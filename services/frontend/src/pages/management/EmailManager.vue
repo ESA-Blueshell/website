@@ -87,7 +87,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Email Manager" />
 
     <v-container>
@@ -572,7 +572,7 @@ onMounted(async () => {
       :preview="preview"
       title="Sent email"
     />
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

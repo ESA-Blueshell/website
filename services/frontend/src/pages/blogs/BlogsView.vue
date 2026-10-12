@@ -18,7 +18,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Newsletters" />
     <div
       class="mx-auto my-10"
@@ -60,7 +60,7 @@ onMounted(async () => {
         </li>
       </ul>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

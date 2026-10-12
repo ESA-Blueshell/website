@@ -94,7 +94,7 @@ watch(category, async (next) => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner :title="heading" />
 
     <v-container>
@@ -206,7 +206,7 @@ watch(category, async (next) => {
         </v-card>
       </div>
     </v-container>
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

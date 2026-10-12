@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <TopBanner title="Create Account" />
 
     <div
@@ -35,7 +35,7 @@
         @email-corrected="onEmailCorrected"
       />
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

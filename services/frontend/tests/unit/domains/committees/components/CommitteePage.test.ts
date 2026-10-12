@@ -27,7 +27,6 @@ vi.mock("@/domains/games", async importOriginal => ({
 const dialog = (name: string) => ({name, props: {open: Boolean, committee: Object, asBoard: Boolean}, emits: ["update:open", "saved"], template: "<div />"})
 const stubs = {
   RouterLink: RouterLinkStub,
-  VMain: {template: "<main><slot /></main>"},
   ScopedEvents: {name: "ScopedEvents", props: ["scope", "testid"], template: "<section />"},
   ArchiveCommitteeDialog: dialog("ArchiveCommitteeDialog"),
 }

@@ -39,7 +39,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="sntpings-island">
       <header-band
         body="SNTPings is over. These are the final standings: who sent the most pings onto the canvas and who sent them the fastest."
@@ -94,7 +94,7 @@ onMounted(async () => {
         </div>
       </lead-band>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

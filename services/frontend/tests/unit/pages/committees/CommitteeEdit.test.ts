@@ -16,7 +16,7 @@ vi.mock("@/domains/committees", () => ({
 }))
 
 const CommitteeEditor = {name: "CommitteeEditor", props: ["committee", "asBoard", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {CommitteeEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
+const stubs = {CommitteeEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const mountPage = async (address?: string) => {
   route.params = address ? {address} : {}

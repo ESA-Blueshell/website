@@ -21,7 +21,7 @@ vi.mock("@/domains/esports", () => ({useSeasons: () => {
 }}))
 
 const SeasonEditor = {name: "SeasonEditor", props: ["season", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {SeasonEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
+const stubs = {SeasonEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 beforeEach(() => router.replace.mockReset())
 

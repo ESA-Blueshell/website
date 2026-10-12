@@ -1,0 +1,84 @@
+# The paint job and the desktop app left with the pinger runtime (#2380), and v1.20.5, the release
+# before this one, reads none of these tables. pinger_contribution and pinger_record stay: the
+# SNTPings leaderboard reads them (#2381).
+#
+# The paint images go with their renditions. A changeset cannot reach the blob store, so the paths
+# only they use wait in blobs_to_delete until the api deletes the bytes at start
+# (QueuedBlobDeletions). Deleting the rows is the point, so a rollback cannot bring them back: it
+# takes back the queued paths and makes the tables again, empty.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-12-pinger-paint-leaves.yaml
+      id: pinger-paint-tables-leave
+      author: blueshell
+      changes:
+        - dropTable:
+            tableName: pinger_placement
+        - dropTable:
+            tableName: pinger_paint
+        - dropTable:
+            tableName: pinger_device_session
+      rollback:
+        - createTable:
+            tableName: pinger_paint
+            columns:
+              - column: {name: id, type: BIGINT, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: prefix, type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci}
+              - column: {name: rate_pps, type: INT, constraints: {nullable: false}}
+              - column: {name: site_cie_enabled, type: BOOLEAN, defaultValueBoolean: true, constraints: {nullable: false}}
+              - column: {name: defaults_initialized, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+        - createTable:
+            tableName: pinger_placement
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: image_path, type: VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, constraints: {nullable: false}}
+              - column: {name: origin_x, type: INT, constraints: {nullable: false}}
+              - column: {name: origin_y, type: INT, constraints: {nullable: false}}
+              - column: {name: width, type: INT, constraints: {nullable: false}}
+              - column: {name: height, type: INT, constraints: {nullable: false}}
+              - column: {name: ordinal, type: INT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column:
+                  name: motion_mode
+                  type: VARCHAR(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  defaultValue: static
+                  constraints: {nullable: false}
+              - column: {name: motion_vx, type: DOUBLE, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: motion_vy, type: DOUBLE, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: motion_epoch, type: DATETIME(3), defaultValueComputed: CURRENT_TIMESTAMP(3), constraints: {nullable: false}}
+        - createTable:
+            tableName: pinger_device_session
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column:
+                  name: identity
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false}
+              - column:
+                  name: device_id
+                  type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                  constraints: {nullable: false}
+              - column: {name: last_session_sent, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: updated, type: DATETIME, constraints: {nullable: false}}
+        - addUniqueConstraint:
+            tableName: pinger_device_session
+            columnNames: identity, device_id
+            constraintName: uk_pinger_device_session_identity_device
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-12-pinger-paint-leaves.yaml
+      id: pinger-paint-files-leave
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              INSERT INTO blobs_to_delete (path)
+              SELECT DISTINCT f.path FROM files f
+              WHERE f.type = 'PINGER_PAINT'
+              AND NOT EXISTS (SELECT 1 FROM files o WHERE o.path = f.path AND o.type <> 'PINGER_PAINT')
+        # A rendition before its source: fk_files_source refuses the other order.
+        - sql:
+            sql: DELETE FROM files WHERE type = 'PINGER_PAINT' AND source_file_id IS NOT NULL
+        - sql:
+            sql: DELETE FROM files WHERE type = 'PINGER_PAINT'
+      rollback:
+        - sql:
+            sql: DELETE FROM blobs_to_delete

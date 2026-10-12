@@ -1601,8 +1601,7 @@ export enum FileType {
     TEAM_ICON = 'TEAM_ICON',
     ROSTER_ICON = 'ROSTER_ICON',
     BOARD_PHOTO = 'BOARD_PHOTO',
-    BOARD_PORTRAIT = 'BOARD_PORTRAIT',
-    PINGER_PAINT = 'PINGER_PAINT'
+    BOARD_PORTRAIT = 'BOARD_PORTRAIT'
 }
 
 export type FirstContribution = {

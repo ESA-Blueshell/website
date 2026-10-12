@@ -25,6 +25,7 @@ import PanChevron from "@/components/island/PanChevron.vue"
 import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
 import StateTag from "@/components/island/StateTag.vue"
+import StepStrip from "@/components/island/StepStrip.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import ToastNotice from "@/components/island/ToastNotice.vue"
 import {BRAND_ACCENT} from "@/utils/brand"
@@ -247,6 +248,16 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
             :size="28"
           />
         </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Steps
+        </h2>
+        <step-strip
+          :current="1"
+          :steps="['Your details', 'Address', 'Membership', 'Confirm email']"
+        />
       </section>
 
       <section class="gallery__set">

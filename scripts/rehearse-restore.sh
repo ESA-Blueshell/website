@@ -121,11 +121,15 @@ kopia snapshot restore "$(jq -r .id <<<"$vault_snap")" /restore/vault >/dev/null
 
 # --- MariaDB --------------------------------------------------------------------------------------
 
+# A run cut short can leave its database volume behind, holding that run's password.
+dc down -v >/dev/null 2>&1 || true
 dc up -d db vault >/dev/null 2>&1 || die "The recovery stack did not start."
+db_up=false
 for _ in $(seq 1 60); do
-  dc exec -T db mariadb -uroot -e "SELECT 1" >/dev/null 2>&1 && break
+  dc exec -T db mariadb -uroot -e "SELECT 1" >/dev/null 2>&1 && { db_up=true; break; }
   sleep 1
 done
+$db_up || die "The scratch MariaDB did not let root in within a minute."
 dc exec -T db mariadb -uroot -e "CREATE DATABASE blueshell"
 gunzip -c "$work/restore/mariadb/blueshell.sql.gz" | dc exec -T db mariadb -uroot blueshell ||
   die "The dump did not load."

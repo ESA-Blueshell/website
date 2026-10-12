@@ -231,8 +231,8 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     description: "Queues a list for every cohort that has none yet.",
   },
   "cohort.materialize-target": {
-    title: "Create a cohort's list (older job)",
-    description: "Queued before creating a cohort's list got its own job; it now does the same.",
+    title: "Create a cohort's list (stored jobs)",
+    description: "Creates one cohort's list, the same as Create a cohort's list. Nothing queues it.",
   },
   "user.seal-addresses": {
     title: "Seal addresses",

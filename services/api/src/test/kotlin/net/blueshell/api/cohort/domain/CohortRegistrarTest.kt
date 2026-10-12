@@ -52,8 +52,11 @@ class CohortRegistrarTest {
         val report = registrar.register()
 
         assertThat(report.created).isEqualTo(1)
+        verify { cohorts.save(match { it.definitionKey == "COMMITTEE_MEMBERS:7" && it.type == CohortType.COMMITTEE_MEMBERS }) }
         verify {
-            targets.save(match { it.folder == "Committees" && it.label == "Sitecie" && it.cohortId == 3L })
+            targets.save(
+                match { it.folder == "Committees" && it.label == "Sitecie" && it.cohortId == 3L && it.kind == TargetKind.LIST },
+            )
             jobs.runAsync(CohortJobs.CreateCohortTarget, CohortJobs.CreateCohortTargetPayload(30L), JobTrigger.SITE_ACTION)
         }
     }

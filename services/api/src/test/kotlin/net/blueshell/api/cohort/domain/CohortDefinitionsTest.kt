@@ -141,5 +141,14 @@ class CohortDefinitionsTest {
         assertThat(PeriodActiveMembersDefinition(year, emptyList()).folder).isEqualTo(CohortFolders.ACTIVE_MEMBERS)
         assertThat(CommitteeMembersDefinition(committee, mockk()).folder).isEqualTo(CohortFolders.COMMITTEES)
         assertThat(NewsletterSubscribersDefinition(mockk()).folder).isEqualTo(CohortFolders.NEWSLETTER)
+        assertThat(CohortType.entries.associateWith { CohortFolders.forType(it) }).containsExactlyInAnyOrderEntriesOf(
+            mapOf(
+                CohortType.PERIOD_MEMBERS to "Members",
+                CohortType.PERIOD_PAYERS to "Contribution paid",
+                CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
+                CohortType.COMMITTEE_MEMBERS to "Committees",
+                CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
+            ),
+        )
     }
 }

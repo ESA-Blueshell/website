@@ -34,12 +34,18 @@ class CohortTargetingService(
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
     private val writeTransaction = TransactionTemplate(transactionManager)
 
-    // Suspends any active transaction (e.g. the one AbstractJsonJobHandler opens
-    // around deleteTarget / materialize) so provider HTTP calls hold no DB
-    // connection — ADR-006/ADR-023.
+    // Suspends any active transaction (the one AbstractJsonJobHandler opens around a job) so
+    // provider HTTP calls hold no DB connection (ADR-006, ADR-023).
     private val outsideTransaction =
         TransactionTemplate(transactionManager).apply {
             propagationBehavior = TransactionDefinition.PROPAGATION_NOT_SUPPORTED
+        }
+
+    // Commits apart from the job's own transaction: a run that fails after the provider made the
+    // target rolls that transaction back, and the claim has to be there for the retry to find.
+    private val claimTransaction =
+        TransactionTemplate(transactionManager).apply {
+            propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
         }
 
     override fun linkExisting(
@@ -81,12 +87,11 @@ class CohortTargetingService(
     ): CohortTargetRow {
         // Validate before touching the provider so a linked or missing cohort never creates an
         // external target. A registered cohort's row without an id is the one to fill.
-        val unlinked =
+        val (cohort, unlinked) =
             writeTransaction.execute {
-                requireCohort(cohortId)
-                unlinkedOrNone(cohortId, system)
+                requireCohort(cohortId) to unlinkedOrNone(cohortId, system)
             }
-        val folder = folderHint ?: unlinked?.folder
+        val folder = folderHint ?: CohortFolders.forType(cohort.type)
 
         val external = outsideTransaction.execute { strategies.require(system).create(label, folder) }
 
@@ -137,7 +142,7 @@ class CohortTargetingService(
 
     override fun createFor(targetId: Long): CohortTargetRef {
         val claim =
-            writeTransaction.execute {
+            claimTransaction.execute {
                 val target =
                     targetRepo.findById(targetId).orElseThrow {
                         NonRetryableJobException("Target $targetId not found")
@@ -146,6 +151,8 @@ class CohortTargetingService(
                 val retry = target.targetClaimedAt != null
                 if (linked == null && !retry) {
                     target.targetClaimedAt = Instant.now()
+                    // A row registered before folders went by cohort type still names another.
+                    target.folder = folderOf(target)
                     targetRepo.save(target)
                 }
                 Claim(TargetSystem.valueOf(target.system), target.label, target.folder, retry, linked)
@@ -158,7 +165,7 @@ class CohortTargetingService(
                 // An earlier run may have made the target and failed before recording it.
                 val made =
                     if (claim.retry) {
-                        strategy.catalog(claim.label).firstOrNull { it.label == claim.label && it.folderLabel == claim.folder }
+                        strategy.catalog(claim.label).firstOrNull { it.label == claim.label && claim.filedWith(it) }
                     } else {
                         null
                     }
@@ -189,6 +196,12 @@ class CohortTargetingService(
         val external = ExternalTarget(system, externalTargetId, strategies.descriptor(system).kind, externalTargetId)
         outsideTransaction.executeWithoutResult { strategies.require(system).delete(external) }
     }
+
+    private fun folderOf(target: Target): String? =
+        target.cohortId
+            ?.let { cohortRepo.findById(it).orElse(null) }
+            ?.let { CohortFolders.forType(it.type) }
+            ?: target.folder
 
     private fun requireCohort(cohortId: Long) =
         cohortRepo.findById(cohortId).orElseThrow {
@@ -256,7 +269,10 @@ class CohortTargetingService(
         val folder: String?,
         val retry: Boolean,
         val linked: String?,
-    )
+    ) {
+        /** Systems match a folder's name whatever its case; with no folder the name alone decides. */
+        fun filedWith(external: ExternalTarget): Boolean = folder == null || external.folderLabel.equals(folder, ignoreCase = true)
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(CohortTargetingService::class.java)

@@ -58,11 +58,11 @@ const onFile = {country: "NL", city: "Enschede", street: "Straat", houseNumber: 
 
 const mount = () => mountPage(MembershipSignUp, {path: "/membership/signup"})
 
-/** The steps the stepper offers, and which one it stands on, marked with a star. */
+/** The steps the page offers, and which one it stands on, marked with a star. */
 const steps = (wrapper: VueWrapper<any>) =>
-  wrapper.findAll(".v-stepper-item").map((item) => {
-    const title = item.find(".v-stepper-item__title").text()
-    return item.classes().includes("v-stepper-item--selected") ? `${title}*` : title
+  wrapper.get('[data-testid="membership-signup-steps"]').findAll("li").map((item) => {
+    const title = item.findAll("span").at(-1)!.text()
+    return item.attributes("aria-current") === "step" ? `${title}*` : title
   })
 
 // The details form reads the profile of any account it holds, a resumed one included.
@@ -85,7 +85,7 @@ function byLabel(wrapper: VueWrapper<any>, text: string) {
   return wrapper.get(`#${label.attributes("for")}`)
 }
 
-/** The steps the stepper offers, without the mark on the one it stands on. */
+/** The steps the page offers, without the mark on the one it stands on. */
 const stepTitles = (wrapper: VueWrapper<any>) => steps(wrapper).map((step) => step.replace(/\*$/, ""))
 
 /**
@@ -134,6 +134,9 @@ describe("an applicant whose tab reloaded", () => {
     const wrapper = await mount()
 
     expect(steps(wrapper)).toEqual(["Your details", "Address*", "Membership", "Confirm email"])
+
+    // Only the step in hand is mounted, so the details are read a step back.
+    await press(wrapper, "membership-address-back-btn")
     expect(field(wrapper, "user-form-username-field").value).toBe("lena")
   })
 
@@ -143,6 +146,21 @@ describe("an applicant whose tab reloaded", () => {
     const wrapper = await mount()
 
     expect(steps(wrapper)).toContain("Membership*")
+  })
+
+  it("keeps what each step's form hands back", async () => {
+    vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, address: onFile}))
+    const wrapper = await mount()
+    const handBack = async (form: string, value: Record<string, unknown>) => {
+      await wrapper.getComponent({name: form}).vm.$emit("update:modelValue", value)
+      expect(wrapper.getComponent({name: form}).props("modelValue")).toEqual(value)
+    }
+
+    await handBack("MembershipForm", {memberType: "REGULAR"})
+    await press(wrapper, "membership-conditions-back-btn")
+    await handBack("AddressForm", {...onFile, city: "Hengelo"})
+    await press(wrapper, "membership-address-back-btn")
+    await handBack("UserForm", {firstName: "Lena", username: "lena"})
   })
 
   it("carries on at the confirmation step once the application is in", async () => {

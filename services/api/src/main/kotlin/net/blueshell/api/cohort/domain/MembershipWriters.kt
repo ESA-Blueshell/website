@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortSubjectType
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.contribution.api.ContributionService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -28,7 +28,7 @@ enum class MembershipWriteStatus {
  * Only some cohorts can be written into at all; the rest report that they cannot.
  */
 interface MembershipWriter {
-    val type: CohortSubjectType
+    val type: CohortType
 
     fun preview(
         userId: Long,
@@ -47,7 +47,7 @@ class MembershipWriters(
 ) {
     private val byType = writers.associateBy { it.type }
 
-    fun find(type: CohortSubjectType): MembershipWriter? = byType[type]
+    fun find(type: CohortType): MembershipWriter? = byType[type]
 }
 
 /** Being in the paid cohort is having paid, so joining it is a contribution being recorded. */
@@ -56,7 +56,7 @@ class ContributionPaidWriter(
     private val contributions: ContributionService,
     private val reconciliation: CohortReconciliationService,
 ) : MembershipWriter {
-    override val type: CohortSubjectType = CohortSubjectType.PERIOD_PAYERS
+    override val type: CohortType = CohortType.PERIOD_PAYERS
 
     override fun preview(
         userId: Long,

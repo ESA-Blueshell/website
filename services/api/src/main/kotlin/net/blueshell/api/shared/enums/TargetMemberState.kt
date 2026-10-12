@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * wire, and an enum that reaches a response carries a schema.
  */
 @Schema(description = "Whether a cohort ledger row is in step with the external system")
-enum class CohortMemberState {
+enum class TargetMemberState {
     /** The rule engine wants this user here, and nothing has been pushed yet. */
     DESIRED,
 

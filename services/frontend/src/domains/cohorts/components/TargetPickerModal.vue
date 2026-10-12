@@ -7,9 +7,9 @@ import { systemLabel } from "@/domains/cohorts/reading"
 const props = defineProps<{
   modelValue: boolean
   mode: "add" | "switch"
-  subjectId: number
+  cohortId: number
   system: TargetSystem
-  cohortId?: number
+  targetId?: number
 }>()
 
 const emit = defineEmits<{
@@ -58,9 +58,9 @@ const close = () => emit("update:modelValue", false)
 
 const submit = async () => {
   const ok =
-    props.mode === "switch" && props.cohortId != null
-      ? await submitSwitch(props.subjectId, props.cohortId)
-      : await submitAdd(props.subjectId, props.system)
+    props.mode === "switch" && props.targetId != null
+      ? await submitSwitch(props.cohortId, props.targetId)
+      : await submitAdd(props.cohortId, props.system)
   if (ok) {
     emit("saved")
     close()
@@ -88,7 +88,7 @@ const submit = async () => {
           density="compact"
           type="warning"
         >
-          This subject already has a {{ system }} target. Switch the existing one instead.
+          This cohort already has a {{ system }} target. Switch the existing one instead.
         </v-alert>
         <v-alert
           v-if="errorMessage"

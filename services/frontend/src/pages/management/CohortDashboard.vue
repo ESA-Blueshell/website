@@ -3,7 +3,7 @@ import {computed, onMounted, ref} from "vue"
 import {useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {CohortSubjectCategory, fetchCohortSubjects, queueCohortJob, type CohortSubjectSummary} from "@/domains/cohorts"
+import {CohortCategory, fetchCohorts, queueCohortJob, type CohortSummary} from "@/domains/cohorts"
 import store from "@/plugins/store"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 import {useTableSort} from "@/composables/useTableSort"
@@ -12,7 +12,7 @@ defineOptions({name: "CohortDashboardPage"})
 
 const router = useRouter()
 
-const subjects = ref<CohortSubjectSummary[]>([])
+const cohorts = ref<CohortSummary[]>([])
 const loading = ref<boolean>(false)
 const triggering = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
@@ -26,7 +26,7 @@ const successMessage = ref<string | null>(null)
  * declaration order.
  */
 type Card = {
-  category: CohortSubjectCategory
+  category: CohortCategory
   title: string
   blurb: string
   icon: string
@@ -34,19 +34,19 @@ type Card = {
 
 const CARDS: Card[] = [
   {
-    category: CohortSubjectCategory.COMMITTEES,
+    category: CohortCategory.COMMITTEES,
     title: "Committees",
     blurb: "One cohort per committee. Driven by committee_members.",
     icon: "mdi-account-group",
   },
   {
-    category: CohortSubjectCategory.PERIODS,
+    category: CohortCategory.PERIODS,
     title: "Periods",
     blurb: "Contribution-period scoped cohorts: Members, Active Members, Contribution Paid.",
     icon: "mdi-calendar-range",
   },
   {
-    category: CohortSubjectCategory.MEMBERS,
+    category: CohortCategory.MEMBERS,
     title: "Members",
     blurb: "Member-status cohorts that aren't tied to a single period (today: Newsletter).",
     icon: "mdi-shield-account",
@@ -54,17 +54,17 @@ const CARDS: Card[] = [
 ]
 
 /** What the engine holds in total, which is what the heading claims. */
-const totalSubjects = computed(() => subjects.value.length)
+const totalCohorts = computed(() => cohorts.value.length)
 
-const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: number; members: number}>>(() => {
-  const counts: Record<CohortSubjectCategory, {subjects: number; members: number}> = {
-    [CohortSubjectCategory.COMMITTEES]: {subjects: 0, members: 0},
-    [CohortSubjectCategory.PERIODS]: {subjects: 0, members: 0},
-    [CohortSubjectCategory.MEMBERS]: {subjects: 0, members: 0},
+const countsByCategory = computed<Record<CohortCategory, {cohorts: number; members: number}>>(() => {
+  const counts: Record<CohortCategory, {cohorts: number; members: number}> = {
+    [CohortCategory.COMMITTEES]: {cohorts: 0, members: 0},
+    [CohortCategory.PERIODS]: {cohorts: 0, members: 0},
+    [CohortCategory.MEMBERS]: {cohorts: 0, members: 0},
   }
-  for (const subject of subjects.value) {
-    counts[subject.category].subjects += 1
-    counts[subject.category].members += subject.memberCount
+  for (const cohort of cohorts.value) {
+    counts[cohort.category].cohorts += 1
+    counts[cohort.category].members += cohort.memberCount
   }
   return counts
 })
@@ -72,7 +72,7 @@ const countsByCategory = computed<Record<CohortSubjectCategory, {subjects: numbe
 const refresh = async () => {
   loading.value = true
   try {
-    subjects.value = await fetchCohortSubjects()
+    cohorts.value = await fetchCohorts()
   } catch (error) {
     $handleNetworkError(error)
   } finally {
@@ -113,7 +113,7 @@ type CategoryRow = Card & {cohorts: number; members: number}
 const rows = computed<CategoryRow[]>(() =>
   CARDS.map((card) => ({
     ...card,
-    cohorts: countsByCategory.value[card.category].subjects,
+    cohorts: countsByCategory.value[card.category].cohorts,
     members: countsByCategory.value[card.category].members,
   })),
 )
@@ -134,7 +134,7 @@ const COLUMNS: ReadonlyArray<{label: string; sortKey: SortKey; align?: string; w
   {label: "Members", sortKey: "members", align: "text-right", width: "12%"},
 ]
 
-const openCategory = (category: CohortSubjectCategory) => {
+const openCategory = (category: CohortCategory) => {
   void router.push({name: "cohortCategory", params: {category: category.toLowerCase()}})
 }
 
@@ -188,7 +188,7 @@ onMounted(async () => {
               <div class="manager-heading">
                 <v-badge
                   color="primary"
-                  :content="totalSubjects"
+                  :content="totalCohorts"
                   data-testid="cohort-total-count"
                 >
                   <h2 class="ma-0">

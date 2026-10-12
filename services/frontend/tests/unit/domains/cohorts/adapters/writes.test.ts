@@ -1,8 +1,8 @@
 import {describe, expect, it, vi} from "vitest"
 import {
   applyInboundReconcileSelection,
-  createTargetForSubject,
-  linkExistingTargetForSubject,
+  createTargetForCohort,
+  linkExistingTargetForCohort,
   linkUserToExternal,
   moveTargetToFolder,
   moveTargetsToFolder,
@@ -23,7 +23,7 @@ import {
 import type {ExternalTarget} from "@/services/api"
 import {aJob} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
-import {CohortKind, TargetSystem} from "@/services/api"
+import {TargetKind, TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -43,7 +43,7 @@ const thrown = (status: number, data?: Record<string, unknown>) => ({response: {
 const target = (over: Partial<ExternalTarget> = {}): ExternalTarget => ({
   system: TargetSystem.BREVO,
   externalId: "17",
-  kind: CohortKind.LIST,
+  kind: TargetKind.LIST,
   label: "Paid members",
   path: [],
   ...over,
@@ -123,24 +123,24 @@ describe("linkUserToExternal", () => {
   })
 })
 
-describe("giving a subject's cohort a target", () => {
+describe("giving a cohort a target", () => {
   it("maps the cohort to a target that already exists", async () => {
     vi.mocked(linkExistingTarget).mockResolvedValue(answer(linkExistingTarget, {
-        cohortId: 4,
+        targetId: 4,
         system: TargetSystem.BREVO,
-        kind: CohortKind.LIST,
+        kind: TargetKind.LIST,
         externalId: "17",
         label: "Paid members",
         lastReconciledAt: "2026-01-05T10:00:00Z",
         path: ["Members"],
       }))
 
-    await expect(linkExistingTargetForSubject(1, TargetSystem.BREVO, "17")).resolves.toEqual({
+    await expect(linkExistingTargetForCohort(1, TargetSystem.BREVO, "17")).resolves.toEqual({
       type: "ok",
       mapping: {
-        cohortId: 4,
+        targetId: 4,
         system: TargetSystem.BREVO,
-        kind: CohortKind.LIST,
+        kind: TargetKind.LIST,
         externalId: "17",
         label: "Paid members",
         lastReconciledAt: "2026-01-05T10:00:00Z",
@@ -158,14 +158,14 @@ describe("giving a subject's cohort a target", () => {
   // sends none, and a target nothing has reconciled yet sends no time: all three read as absent
   // rather than as undefined leaking into the page.
   it("reads a mapping the api sent no path, id or reconcile time for", async () => {
-    vi.mocked(createTarget).mockResolvedValue(answer(createTarget, {cohortId: 4, system: TargetSystem.GOOGLE_CALENDAR, kind: CohortKind.GROUP, label: "Board", path: []}))
+    vi.mocked(createTarget).mockResolvedValue(answer(createTarget, {targetId: 4, system: TargetSystem.GOOGLE_CALENDAR, kind: TargetKind.GROUP, label: "Board", path: []}))
 
-    await expect(createTargetForSubject(1, TargetSystem.GOOGLE_CALENDAR, "Board", null)).resolves.toEqual({
+    await expect(createTargetForCohort(1, TargetSystem.GOOGLE_CALENDAR, "Board", null)).resolves.toEqual({
       type: "ok",
       mapping: {
-        cohortId: 4,
+        targetId: 4,
         system: TargetSystem.GOOGLE_CALENDAR,
-        kind: CohortKind.GROUP,
+        kind: TargetKind.GROUP,
         externalId: null,
         label: "Board",
         lastReconciledAt: null,
@@ -182,26 +182,26 @@ describe("giving a subject's cohort a target", () => {
   // The cohort already has a target, which is a state the operator resolves, not an error.
   it("answers with a conflict where the cohort is already mapped", async () => {
     vi.mocked(linkExistingTarget).mockRejectedValue(thrown(409))
-    await expect(linkExistingTargetForSubject(1, TargetSystem.BREVO, "17")).resolves.toEqual({type: "conflict"})
+    await expect(linkExistingTargetForCohort(1, TargetSystem.BREVO, "17")).resolves.toEqual({type: "conflict"})
 
     vi.mocked(createTarget).mockRejectedValue(thrown(409))
-    await expect(createTargetForSubject(1, TargetSystem.BREVO, "Paid members", "Members")).resolves.toEqual({type: "conflict"})
+    await expect(createTargetForCohort(1, TargetSystem.BREVO, "Paid members", "Members")).resolves.toEqual({type: "conflict"})
   })
 
   it("leaves anything else to the caller's error path", async () => {
     vi.mocked(linkExistingTarget).mockRejectedValue(thrown(500))
-    await expect(linkExistingTargetForSubject(1, TargetSystem.BREVO, "17")).rejects.toMatchObject({response: {status: 500}})
+    await expect(linkExistingTargetForCohort(1, TargetSystem.BREVO, "17")).rejects.toMatchObject({response: {status: 500}})
 
     vi.mocked(createTarget).mockRejectedValue(new Error("boom"))
-    await expect(createTargetForSubject(1, TargetSystem.BREVO, "Paid members", null)).rejects.toThrow("boom")
+    await expect(createTargetForCohort(1, TargetSystem.BREVO, "Paid members", null)).rejects.toThrow("boom")
   })
 
   it("repoints a mapping at another target, carrying both choices the operator made", async () => {
-    vi.mocked(switchTarget).mockResolvedValue(answer(switchTarget, {cohortId: 4, system: TargetSystem.BREVO, kind: CohortKind.LIST, externalId: "18", label: "Paid members", path: []}))
+    vi.mocked(switchTarget).mockResolvedValue(answer(switchTarget, {targetId: 4, system: TargetSystem.BREVO, kind: TargetKind.LIST, externalId: "18", label: "Paid members", path: []}))
 
     await expect(switchCohortTarget(1, 4, "18", true, false)).resolves.toMatchObject({externalId: "18"})
     expect(switchTarget).toHaveBeenCalledWith({
-      path: {id: 1, cohortId: 4},
+      path: {id: 1, targetId: 4},
       body: {externalId: "18", deletePrevious: true, reconcileNow: false},
       throwOnError: true,
     })
@@ -216,7 +216,7 @@ describe("moving targets between folders", () => {
       externalId: "17",
       folderLabel: "Archive",
       memberCount: null,
-      linkedCohortId: null,
+      linkedTargetId: null,
       path: [],
     })
     expect(moveCohortTarget).toHaveBeenCalledWith({
@@ -246,7 +246,7 @@ describe("moving targets between folders", () => {
 
   it("reports the ones that moved and the ones the system would not move", async () => {
     vi.mocked(moveCohortTargets).mockResolvedValue(answer(moveCohortTargets, {
-        moved: [target({externalId: "17", folderLabel: "Archive", memberCount: 12, linkedCohortId: 4, path: ["Archive"]})],
+        moved: [target({externalId: "17", folderLabel: "Archive", memberCount: 12, linkedTargetId: 4, path: ["Archive"]})],
         failed: [{externalId: "18", label: "Guests", message: "The folder is full."}],
       }))
 
@@ -258,11 +258,11 @@ describe("moving targets between folders", () => {
         moved: [{
           system: TargetSystem.BREVO,
           externalId: "17",
-          kind: CohortKind.LIST,
+          kind: TargetKind.LIST,
           label: "Paid members",
           folderLabel: "Archive",
           memberCount: 12,
-          linkedCohortId: 4,
+          linkedTargetId: 4,
           path: ["Archive"],
         }],
         failed: [{externalId: "18", label: "Guests", message: "The folder is full."}],
@@ -290,7 +290,7 @@ describe("applyInboundReconcileSelection", () => {
 
     await expect(applyInboundReconcileSelection(1, 4, "tok", ["ext-1", "ext-2"])).resolves.toEqual({acceptedCount: 2, skippedCount: 0})
     expect(applyInboundReconcile).toHaveBeenCalledWith({
-      path: {id: 1, cohortId: 4},
+      path: {id: 1, targetId: 4},
       body: {previewToken: "tok", selectedExternalUserIds: ["ext-1", "ext-2"]},
       throwOnError: true,
     })

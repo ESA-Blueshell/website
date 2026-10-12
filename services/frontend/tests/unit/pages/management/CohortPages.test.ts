@@ -1,7 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import CohortCategory from "@/pages/management/CohortCategory.vue"
 import CohortDashboard from "@/pages/management/CohortDashboard.vue"
-import CohortSubjectDetail from "@/pages/management/CohortSubjectDetail.vue"
+import CohortDetail from "@/pages/management/CohortDetail.vue"
 import {mountInApp, settle} from "../helpers"
 
 const {mockRouter} = vi.hoisted(() => ({mockRouter: {replace: vi.fn(), push: vi.fn()}}))
@@ -20,7 +20,7 @@ describe("the old cohort pages", () => {
   for (const [name, page] of [
     ["the dashboard", CohortDashboard],
     ["a category", CohortCategory],
-    ["one cohort", CohortSubjectDetail],
+    ["one cohort", CohortDetail],
   ] as const) {
     it(`${name} stands in one main area and sends anybody but an admin home`, async () => {
       const wrapper = mountInApp(page)

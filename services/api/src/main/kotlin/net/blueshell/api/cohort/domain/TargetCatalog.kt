@@ -1,6 +1,6 @@
 package net.blueshell.api.cohort.domain
 
-import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.stereotype.Service
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class TargetCatalog(
     private val strategies: TargetStrategies,
-    private val cohorts: CohortRepository,
+    private val targets: TargetRepository,
 ) {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun search(
@@ -18,9 +18,9 @@ class TargetCatalog(
         query: String?,
     ): List<ExternalTarget> {
         val strategy = strategies.require(system)
-        val linked = linkedCohorts(system)
-        return strategy.catalog(query).map { target ->
-            target.copy(linkedCohortId = linked[target.externalId])
+        val linked = linkedTargets(system)
+        return strategy.catalog(query).map { external ->
+            external.copy(linkedTargetId = linked[external.externalId])
         }
     }
 
@@ -36,12 +36,12 @@ class TargetCatalog(
         folder: String,
     ): ExternalTarget {
         val strategy = strategies.require(system)
-        val target =
+        val external =
             strategy.resolve(externalId)
                 ?: throw IllegalArgumentException("No target $externalId in $system")
 
-        val moved = strategy.move(target, folder)
-        return moved.copy(linkedCohortId = linkedCohorts(system)[moved.externalId])
+        val moved = strategy.move(external, folder)
+        return moved.copy(linkedTargetId = linkedTargets(system)[moved.externalId])
     }
 
     /**
@@ -90,18 +90,18 @@ class TargetCatalog(
             }
         if (violations.isNotEmpty()) throw BulkSelectionRejected("BulkMoveTargetsRequest", violations)
 
-        val linked = linkedCohorts(system)
+        val linked = linkedTargets(system)
         val moved = mutableListOf<ExternalTarget>()
         val failed = mutableListOf<FailedTargetMove>()
         for (id in ids) {
-            val target = resolved.getValue(id)!!
+            val external = resolved.getValue(id)!!
             try {
-                val result = strategy.move(target, destination!!)
-                moved += result.copy(linkedCohortId = linked[result.externalId])
+                val result = strategy.move(external, destination!!)
+                moved += result.copy(linkedTargetId = linked[result.externalId])
             } catch (ex: RuntimeException) {
                 // The system refused this one. The moves already made stand, so the id is
                 // reported rather than the whole call failing and hiding them.
-                failed += FailedTargetMove(id, target.label, ex.message ?: "The system refused the move.")
+                failed += FailedTargetMove(id, external.label, ex.message ?: "The system refused the move.")
             }
         }
         return BulkTargetMoveResult(moved = moved, failed = failed)
@@ -109,9 +109,9 @@ class TargetCatalog(
 
     fun descriptors(): List<TargetDescriptor> = strategies.descriptors()
 
-    private fun linkedCohorts(system: TargetSystem): Map<String, Long> =
-        cohorts
+    private fun linkedTargets(system: TargetSystem): Map<String, Long> =
+        targets
             .findAllBySystem(system.name)
-            .mapNotNull { cohort -> cohort.externalId?.takeIf { it.isNotBlank() }?.let { it to cohort.id!! } }
+            .mapNotNull { target -> target.externalId?.takeIf { it.isNotBlank() }?.let { it to target.id!! } }
             .toMap()
 }

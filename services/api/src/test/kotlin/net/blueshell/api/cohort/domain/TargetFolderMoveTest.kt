@@ -3,7 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.blueshell.api.cohort.persistence.CohortKind
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.contact.api.ContactListAdapter
 import net.blueshell.api.shared.enums.TargetSystem
 import org.assertj.core.api.Assertions.assertThat
@@ -22,11 +22,11 @@ class TargetFolderMoveTest {
         }
     private val strategy = BrevoTargetStrategy(listOf(lists))
 
-    private val target =
+    private val external =
         ExternalTarget(
             system = TargetSystem.BREVO,
             externalId = "42",
-            kind = CohortKind.LIST,
+            kind = TargetKind.LIST,
             label = "Members 2025",
             folderLabel = "Old folder",
         )
@@ -35,7 +35,7 @@ class TargetFolderMoveTest {
     fun `a named folder is resolved to the id the system files by`() {
         every { lists.listFolders() } returns mapOf(7L to "Contribution periods", 9L to "Newsletter")
 
-        val moved = strategy.move(target, "Newsletter")
+        val moved = strategy.move(external, "Newsletter")
 
         verify(exactly = 1) { lists.moveList(42L, 9L) }
         assertThat(moved.folderLabel).isEqualTo("Newsletter")
@@ -46,7 +46,7 @@ class TargetFolderMoveTest {
     fun `the name is matched however it is capitalised`() {
         every { lists.listFolders() } returns mapOf(9L to "Newsletter")
 
-        strategy.move(target, "newsletter")
+        strategy.move(external, "newsletter")
 
         verify { lists.moveList(42L, 9L) }
     }
@@ -55,7 +55,7 @@ class TargetFolderMoveTest {
     fun `an unknown folder is refused rather than created`() {
         every { lists.listFolders() } returns mapOf(9L to "Newsletter")
 
-        assertThatThrownBy { strategy.move(target, "Somewhere else") }
+        assertThatThrownBy { strategy.move(external, "Somewhere else") }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("No folder named")
 

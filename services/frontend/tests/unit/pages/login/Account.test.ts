@@ -54,6 +54,22 @@ describe("Account page", () => {
     })
   })
 
+  it("shows the island spinner until the account is read", async () => {
+    let read: (user: {id: number; firstName: string}) => void = () => undefined
+    mockReadUser.mockReturnValue(new Promise((resolve) => {
+      read = resolve
+    }))
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm: true}}})
+    await settle()
+
+    expect(wrapper.find("[role=status]").exists()).toBe(true)
+    expect(wrapper.find("[role=progressbar]").exists()).toBe(false)
+
+    read({id: 42, firstName: "Jane"})
+    await settle()
+    expect(wrapper.find("[role=status]").exists()).toBe(false)
+  })
+
   it("loads account data for the logged-in user", async () => {
     const wrapper = mountInApp(Account, {
       global: {

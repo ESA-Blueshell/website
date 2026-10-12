@@ -197,8 +197,11 @@ describe("an applicant whose tab reloaded", () => {
 
     const wrapper = await mount()
     const next = () => wrapper.get('[data-testid="membership-details-next-btn"]').attributes("disabled")
+    const waiting = wrapper.get('[data-testid="membership-details-loading"]')
 
     expect(next()).toBeDefined()
+    expect(waiting.find("[role=status]").exists()).toBe(true)
+    expect(waiting.find("[role=progressbar]").exists()).toBe(false)
     release(answer(resumeSignup, resumed))
     await settle()
     expect(wrapper.find('[data-testid="membership-address-next-btn"]').exists()).toBe(true)

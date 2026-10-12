@@ -7,10 +7,7 @@
         data-testid="lock-account"
         style="max-width: 600px"
       >
-        <v-progress-circular
-          v-if="loading"
-          indeterminate
-        />
+        <loading-spinner v-if="loading" />
         <template v-else>
           <p class="text-h5 mb-4">
             Your account is locked
@@ -45,6 +42,7 @@ import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {lockAccount} from "@/domains/auth"
 import {discordChannel} from "@/domains/discord"
 import {loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"

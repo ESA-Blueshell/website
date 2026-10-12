@@ -3,6 +3,7 @@ import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
 import {type BlogResponse, readBlog} from "@/domains/blogs"
 import {tabTitle} from "@/plugins/tabTitle"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 
 // Reactive reference to hold the single blog data
 const blog = ref<BlogResponse | null>(null)
@@ -47,10 +48,7 @@ onMounted(async () => {
       v-else-if="loading"
       class="text-center py-10"
     >
-      <v-progress-circular
-        color="primary"
-        indeterminate
-      />
+      <loading-spinner class="blog-loading" />
     </div>
     <div
       v-else-if="notFound"
@@ -70,3 +68,9 @@ onMounted(async () => {
     </div>
   </v-main>
 </template>
+
+<style scoped>
+.blog-loading {
+  color: var(--color-brand-ink);
+}
+</style>

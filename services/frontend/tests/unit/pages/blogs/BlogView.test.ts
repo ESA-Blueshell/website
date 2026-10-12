@@ -30,6 +30,22 @@ describe("BlogView page", () => {
     mockRoute.params = {id: "9"}
   })
 
+  it("shows the island spinner until the blog is read", async () => {
+    let read: (blog: {id: number; html: string}) => void = () => undefined
+    mockReadBlog.mockReturnValue(new Promise((resolve) => {
+      read = resolve
+    }))
+    const wrapper = mountInApp(BlogView)
+    await settle()
+
+    expect(wrapper.find("[role=status]").exists()).toBe(true)
+    expect(wrapper.find("[role=progressbar]").exists()).toBe(false)
+
+    read({id: 9, html: "<h1>Blog</h1>"})
+    await settle()
+    expect(wrapper.find("[role=status]").exists()).toBe(false)
+  })
+
   it("renders hardened iframe when blog is returned", async () => {
     mockReadBlog.mockResolvedValue({id: 9, html: "<h1>Blog</h1>"})
 

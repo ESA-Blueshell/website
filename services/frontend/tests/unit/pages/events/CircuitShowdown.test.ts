@@ -11,4 +11,11 @@ describe("CircuitShowdown page", () => {
     expect((wrapper.vm as any).playoffs).toHaveLength(3)
     expect(wrapper.text()).toContain("Circuit Showdown")
   })
+
+  it("draws both groups and the playoffs as plain tables, a row per result", () => {
+    const tables = mountInApp(CircuitShowdown).findAll("table.showdown-table")
+
+    expect(tables.map((table) => table.find("th").text())).toEqual(["Group A", "Group B", "Team 1"])
+    expect(tables.map((table) => table.findAll("tbody tr").length)).toEqual([3, 3, 3])
+  })
 })

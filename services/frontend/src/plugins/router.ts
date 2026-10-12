@@ -450,6 +450,8 @@ const routes: RouteRecordRaw[] = [
       // No dashboard yet, so Management opens on the list of its pages.
       {path: "", name: "management", redirect: "/management/more"},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+      {path: "jobs", name: "jobManager", component: () => import("@/pages/management/JobManager.vue"), meta: {title: "Jobs", requiresAdmin: true}},
+      {path: "jobs/:id(\\d+)", name: "jobDetail", component: () => import("@/pages/management/JobDetail.vue"), meta: {title: "Job", requiresAdmin: true}},
     ],
   },
   {
@@ -463,12 +465,6 @@ const routes: RouteRecordRaw[] = [
     name: "recoveryManager",
     component: () => import("@/pages/management/RecoveryManager.vue"),
     meta: {title: "Manage account recovery", requiresAuth: true, requiresBoard: true},
-  },
-  {
-    path: "/management/jobs",
-    name: "jobManager",
-    component: () => import("@/pages/management/JobManager.vue"),
-    meta: {title: "Manage jobs", requiresAuth: true, requiresAdmin: true},
   },
   {
     path: "/management/emails",

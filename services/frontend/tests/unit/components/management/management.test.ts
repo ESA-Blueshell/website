@@ -112,6 +112,20 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     expect(router.currentRoute.value.path).toBe("/")
   })
 
+  it("opens Jobs and one job inside the portal for the admin, and turns the board away", async () => {
+    await mountPage(ManagementShell, {path: "/", login: adminLogin})
+
+    await router.push("/management/jobs")
+    expect(router.currentRoute.value.name).toBe("jobManager")
+    await router.push("/management/jobs/7")
+    expect(router.currentRoute.value.name).toBe("jobDetail")
+    expect(router.currentRoute.value.meta.management).toBe(true)
+
+    await mountPage(ManagementShell, {path: "/", login: boardLogin})
+    await router.push("/management/jobs")
+    expect(router.currentRoute.value.path).toBe("/")
+  })
+
   it("asks a visitor to log in first, and remembers where they were going", async () => {
     await mountPage(ManagementShell, {path: "/", login: null})
 

@@ -190,20 +190,16 @@ export function statusCounts(stats: JobStats | null): Record<JobExecutionStatus,
 
 /** One option in a filter picker: what it says, and the value it filters by. */
 export interface FilterOption {
-  title: string
-  value: string
+  key: string
+  label: string
 }
 
 /**
  * The filters offered, built from the generated enums rather than from the rows on screen, so a
  * category with nothing in it today is still selectable.
  */
-export const categoryOptions = (): FilterOption[] => [
-  {title: "All categories", value: "all"},
-  ...Object.values(JobExecutionCategory).map(value => ({title: titleCase(value), value})),
-]
+export const categoryOptions = (): FilterOption[] =>
+  Object.values(JobExecutionCategory).map(key => ({key, label: titleCase(key)}))
 
-export const statusOptions = (): FilterOption[] => [
-  {title: "All statuses", value: "all"},
-  ...Object.values(JobExecutionStatus).map(value => ({title: titleCase(value), value})),
-]
+export const statusOptions = (): FilterOption[] =>
+  Object.values(JobExecutionStatus).map(key => ({key, label: titleCase(key)}))

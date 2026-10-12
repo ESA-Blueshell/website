@@ -164,15 +164,14 @@ describe("job reading", () => {
 
   it("offers every filter the api declares, not only the ones on screen", () => {
     expect(categoryOptions()).toEqual([
-      {title: "All categories", value: "all"},
-      {title: "Calendar", value: "calendar"},
-      {title: "Contact", value: "contact"},
-      {title: "Cohort", value: "cohort"},
-      {title: "Discord", value: "discord"},
-      {title: "Email", value: "email"},
-      {title: "Other", value: "other"},
+      {key: "calendar", label: "Calendar"},
+      {key: "contact", label: "Contact"},
+      {key: "cohort", label: "Cohort"},
+      {key: "discord", label: "Discord"},
+      {key: "email", label: "Email"},
+      {key: "other", label: "Other"},
     ])
-    expect(statusOptions().map(one => one.value))
-      .toEqual(["all", "QUEUED", "RUNNING", "SUCCESS", "SKIPPED", "FAILED", "DEAD"])
+    expect(statusOptions().map(one => one.key))
+      .toEqual(["QUEUED", "RUNNING", "SUCCESS", "SKIPPED", "FAILED", "DEAD"])
   })
 })

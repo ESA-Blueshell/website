@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.mockk.verifyOrder
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.platform.config.JacksonConfig
@@ -81,6 +82,29 @@ class CohortJobHandlersTest {
         assertThat(bound.removeMemberHandler().runJob("""{"userId":1,"cohortId":10}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
         assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
+    }
+
+    @Test
+    fun `the jobs keyed by a target hand its id on from the key stored jobs carry`() {
+        val remediation = mockk<CohortRemediation>(relaxed = true)
+        val targeting = mockk<CohortTargeting>(relaxed = true)
+        val bound =
+            CohortJobHandlers(
+                objectMapper,
+                reconciliation = mockk(relaxed = true),
+                membership = mockk(relaxed = true),
+                targeting = targeting,
+                remediation = remediation,
+                inbound = mockk(relaxed = true),
+            )
+
+        bound.reconcileListHandler().runJob("""{"cohortId":10}""")
+        bound.removeExternalMemberHandler().runJob("""{"cohortId":10,"externalUserId":"ext-1"}""")
+        bound.materializeCohortTargetHandler().runJob("""{"cohortId":10}""")
+
+        verify { remediation.verifyTarget(10L) }
+        verify { remediation.removeExternalMember(10L, "ext-1") }
+        verify { targeting.materialize(10L) }
     }
 
     @Test

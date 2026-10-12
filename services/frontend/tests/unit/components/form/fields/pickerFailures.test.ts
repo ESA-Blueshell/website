@@ -1,6 +1,6 @@
 import {describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import CohortPicker from "@/components/form/fields/CohortPicker.vue"
+import TargetPicker from "@/components/form/fields/TargetPicker.vue"
 import PeriodPicker from "@/components/form/fields/ContributionPeriodPicker.vue"
 import EventPicker from "@/components/form/fields/EventPicker.vue"
 import UserPicker from "@/components/form/fields/UserPicker.vue"
@@ -12,7 +12,7 @@ const {mockCohorts, mockEvents, mockPeriods, mockUsers, mockNetworkError} = vi.h
   mockUsers: vi.fn(),
   mockNetworkError: vi.fn(),
 }))
-vi.mock("@/domains/cohorts", () => ({fetchCohortOptions: mockCohorts}))
+vi.mock("@/domains/cohorts", () => ({fetchCohortTargets: mockCohorts}))
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   findEvents: mockEvents,
@@ -29,7 +29,7 @@ describe("a picker whose fetch fails", () => {
       throw new Error("offline")
     })
 
-    const wrapper = mount(CohortPicker, {props: {}, global: {stubs}})
+    const wrapper = mount(TargetPicker, {props: {}, global: {stubs}})
     await flushPromises()
 
     expect(mockNetworkError).toHaveBeenCalledOnce()

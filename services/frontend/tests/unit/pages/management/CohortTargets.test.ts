@@ -17,7 +17,7 @@ const mountPage = async () => {
   vi.mocked(fetchTargetDescriptors).mockResolvedValue([{system: "BREVO", kind: "LIST"}])
   vi.mocked(fetchTargetOptions).mockResolvedValue([{
     system: "BREVO", externalId: "7", kind: "LIST", label: "Guests", folderLabel: "Newsletter",
-    memberCount: 3, linkedCohortId: null, path: ["Brevo", "Newsletter"],
+    memberCount: 3, linkedTargetId: null, path: ["Brevo", "Newsletter"],
   }])
   vi.mocked(fetchTargetFolders).mockResolvedValue(["Newsletter"])
   const wrapper = mountInApp(CohortTargets)

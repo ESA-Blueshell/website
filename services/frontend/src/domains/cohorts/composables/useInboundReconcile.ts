@@ -25,12 +25,12 @@ export function useInboundReconcile() {
     Boolean(preview.value?.writerSupported) && selectedExternalUserIds.value.length > 0 && !applying.value,
   )
 
-  async function load(subjectId: number, cohortId: number): Promise<void> {
+  async function load(cohortId: number, targetId: number): Promise<void> {
     loading.value = true
     errorMessage.value = null
     applyResult.value = null
     try {
-      preview.value = await fetchInboundReconcilePreview(subjectId, cohortId)
+      preview.value = await fetchInboundReconcilePreview(cohortId, targetId)
       selectedExternalUserIds.value = writableRows.value.map((row) => row.externalUserId)
     } catch (err: unknown) {
       preview.value = null
@@ -41,14 +41,14 @@ export function useInboundReconcile() {
     }
   }
 
-  async function apply(subjectId: number, cohortId: number): Promise<boolean> {
+  async function apply(cohortId: number, targetId: number): Promise<boolean> {
     if (!preview.value || !canApply.value) return false
     applying.value = true
     errorMessage.value = null
     try {
       applyResult.value = await applyInboundReconcileSelection(
-        subjectId,
         cohortId,
+        targetId,
         preview.value.previewToken,
         selectedExternalUserIds.value,
       )

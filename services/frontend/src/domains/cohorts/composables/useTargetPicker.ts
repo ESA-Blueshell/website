@@ -1,8 +1,8 @@
 import { computed, reactive, ref } from "vue"
 import {
-  createTargetForSubject,
+  createTargetForCohort,
   fetchTargetOptions,
-  linkExistingTargetForSubject,
+  linkExistingTargetForCohort,
   switchCohortTarget,
   type ExternalTarget,
   type TargetSystem,
@@ -80,15 +80,15 @@ export function useTargetPicker() {
   }
 
   /** Link or create, depending on the active tab. Returns true on success. */
-  async function submitAdd(subjectId: number, system: TargetSystem): Promise<boolean> {
+  async function submitAdd(cohortId: number, system: TargetSystem): Promise<boolean> {
     submitting.value = true
     errorMessage.value = null
     conflict.value = false
     try {
       const result =
         form.tab === "create"
-          ? await createTargetForSubject(subjectId, system, form.label.trim(), form.folderHint.trim() || null)
-          : await linkExistingTargetForSubject(subjectId, system, form.externalId.trim())
+          ? await createTargetForCohort(cohortId, system, form.label.trim(), form.folderHint.trim() || null)
+          : await linkExistingTargetForCohort(cohortId, system, form.externalId.trim())
       if (result.type === "conflict") {
         conflict.value = true
         return false
@@ -103,13 +103,13 @@ export function useTargetPicker() {
   }
 
   /** Repoint an existing cohort at a different target. Returns true on success. */
-  async function submitSwitch(subjectId: number, cohortId: number): Promise<boolean> {
+  async function submitSwitch(cohortId: number, targetId: number): Promise<boolean> {
     submitting.value = true
     errorMessage.value = null
     try {
       await switchCohortTarget(
-        subjectId,
         cohortId,
+        targetId,
         form.externalId.trim(),
         form.deletePrevious,
         form.reconcileNow,

@@ -7,8 +7,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
   return {
     ...actual,
     fetchTargetOptions: vi.fn(),
-    linkExistingTargetForSubject: vi.fn(),
-    createTargetForSubject: vi.fn(),
+    linkExistingTargetForCohort: vi.fn(),
+    createTargetForCohort: vi.fn(),
     switchCohortTarget: vi.fn(),
   }
 })
@@ -72,6 +72,6 @@ function target(externalId: string, label: string, folderLabel: string): Externa
     label,
     folderLabel,
     memberCount: null,
-    linkedCohortId: null,
+    linkedTargetId: null,
   }
 }

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {CohortSubjectCategory, type CohortMember} from "@/domains/cohorts/adapters/cohorts"
+import {CohortCategory, type CohortMember} from "@/domains/cohorts/adapters/cohorts"
 import {
   categoryLabel,
   isMember,
@@ -10,7 +10,7 @@ import {
 } from "@/domains/cohorts"
 
 const member = (over: Partial<CohortMember> = {}): CohortMember => ({
-  cohortMemberId: 1,
+  targetMemberId: 1,
   userId: 5,
   userFullName: "Ada Lovelace",
   userEmail: "ada@example.com",
@@ -74,8 +74,8 @@ describe("what a system and a category are called", () => {
   })
 
   it("titles each category the same way on every page", () => {
-    expect(categoryLabel(CohortSubjectCategory.COMMITTEES)).toBe("Committees")
-    expect(categoryLabel(CohortSubjectCategory.PERIODS)).toBe("Periods")
-    expect(categoryLabel(CohortSubjectCategory.MEMBERS)).toBe("Members")
+    expect(categoryLabel(CohortCategory.COMMITTEES)).toBe("Committees")
+    expect(categoryLabel(CohortCategory.PERIODS)).toBe("Periods")
+    expect(categoryLabel(CohortCategory.MEMBERS)).toBe("Members")
   })
 })

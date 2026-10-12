@@ -136,12 +136,12 @@
       </button>
 
       <!--
-        On a narrow screen one icon stands for both menus, and the panel it opens folds out of
-        the right edge as the drawer's counterpart. Only somebody logged in has either.
+        On a narrow screen the panel the account icon opens folds out of the right edge as the
+        drawer's counterpart. Only somebody logged in has one.
       -->
       <button
         v-if="narrow && reader.loggedIn"
-        aria-label="Your account and management"
+        aria-label="Your account"
         :aria-expanded="side"
         class="site-bar__icon"
         :data-state="side ? 'open' : 'closed'"
@@ -154,40 +154,6 @@
           :size="26"
         />
       </button>
-
-      <dropdown-menu-root
-        v-if="!narrow && management.length > 0"
-        :modal="false"
-      >
-        <dropdown-menu-trigger
-          aria-label="Management"
-          class="site-bar__icon"
-          data-testid="nav-management"
-        >
-          <nav-mark
-            mark="management"
-            :size="26"
-          />
-        </dropdown-menu-trigger>
-        <dropdown-menu-content
-          align="end"
-          class="site-bar__menu site-bar__menu--wide"
-          :side-offset="0"
-        >
-          <dropdown-menu-item
-            v-for="entry in management"
-            :key="entry.to"
-            as-child
-          >
-            <router-link
-              class="site-bar__entry"
-              :to="entry.to"
-            >
-              {{ entry.label }}
-            </router-link>
-          </dropdown-menu-item>
-        </dropdown-menu-content>
-      </dropdown-menu-root>
 
       <dropdown-menu-root
         v-if="!narrow && reader.loggedIn"
@@ -218,6 +184,18 @@
               :to="entry.to"
             >
               {{ entry.label }}
+            </router-link>
+          </dropdown-menu-item>
+          <dropdown-menu-item
+            v-if="managementSwitch"
+            as-child
+          >
+            <router-link
+              class="site-bar__entry site-bar__switch"
+              data-testid="nav-switch-management"
+              :to="managementSwitch.to"
+            >
+              {{ managementSwitch.label }}
             </router-link>
           </dropdown-menu-item>
           <dropdown-menu-item
@@ -330,7 +308,7 @@
   <nav
     v-if="side"
     ref="sidePanel"
-    aria-label="Your account and management"
+    aria-label="Your account"
     class="site-bar-drawer site-bar-drawer--end"
     data-testid="nav-side-panel"
     tabindex="-1"
@@ -348,6 +326,15 @@
     >
       {{ entry.label }}
     </router-link>
+    <router-link
+      v-if="managementSwitch"
+      class="site-bar-drawer__entry site-bar__switch"
+      data-testid="nav-switch-management"
+      :to="managementSwitch.to"
+      @click="side = false"
+    >
+      {{ managementSwitch.label }}
+    </router-link>
     <button
       class="site-bar-drawer__entry"
       data-testid="nav-log-out"
@@ -356,21 +343,6 @@
     >
       Log out
     </button>
-
-    <template v-if="management.length > 0">
-      <p class="site-bar-drawer__label">
-        Management
-      </p>
-      <router-link
-        v-for="entry in management"
-        :key="entry.to"
-        class="site-bar-drawer__entry"
-        :to="entry.to"
-        @click="side = false"
-      >
-        {{ entry.label }}
-      </router-link>
-    </template>
   </nav>
 </template>
 
@@ -388,7 +360,7 @@ import NavMark from "@/components/common/NavMark.vue"
 import {
   accountFor,
   covers,
-  managementFor,
+  managementSwitchFor,
   sectionsFor,
   SOCIALS,
   type NavReader,
@@ -417,7 +389,7 @@ const narrow = useNarrow()
 const drawer = ref<boolean>(false)
 const drawerPanel = ref<HTMLElement | null>(null)
 
-/** The account and management panel folding out of the right edge on a narrow screen. */
+/** The account panel folding out of the right edge on a narrow screen. */
 const side = ref<boolean>(false)
 const sidePanel = ref<HTMLElement | null>(null)
 
@@ -510,7 +482,7 @@ const reader = computed<NavReader>(() => ({
 }))
 
 const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value, casualGames.value))
-const management = computed(() => managementFor(reader.value))
+const managementSwitch = computed(() => managementSwitchFor(reader.value))
 const account = computed(() => accountFor(reader.value))
 </script>
 
@@ -694,10 +666,10 @@ const account = computed(() => accountFor(reader.value))
 }
 
 /*
- * The two icon menus are the exception to the trigger-width rule, and they have to be: their
- * trigger is a mark barely wider than it is tall, and a panel that narrow could not hold
- * "Manage account recovery". The rule is about a menu under a labelled entry, where a panel
- * wider than its label points at nothing. These are placed by reka as usual.
+ * The account menu is the exception to the trigger-width rule, and it has to be: its trigger is
+ * a mark barely wider than it is tall, and a panel that narrow could not hold "Switch to
+ * management". The rule is about a menu under a labelled entry, where a panel wider than its
+ * label points at nothing. This one is placed by reka as usual.
  */
 :deep(.site-bar__menu--wide) {
   width: max-content;
@@ -857,4 +829,10 @@ const account = computed(() => accountFor(reader.value))
 
 .roll-on svg { animation: roll-on v-bind(rollTravel) var(--ease-out-quint); }
 .roll-off svg { animation: roll-off v-bind(rollTravel) var(--ease-out-quint); }
+
+/* After the entries' own colour, which it replaces. The ink alone is under AA on the menu's dark ground. */
+:deep(.site-bar__switch) {
+  color: color-mix(in oklab, var(--color-brand-ink) 70%, var(--color-chalk));
+  border-top: 1px solid var(--color-hairline);
+}
 </style>

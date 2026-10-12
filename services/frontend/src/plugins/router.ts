@@ -441,6 +441,18 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Circuit Showdown"},
   },
   {
+    // Management is a portal of its own (frontend ADR-009): one layout route, whose frame and
+    // board role every child takes. A child for the admin alone adds its own.
+    path: "/management",
+    component: () => import("@/components/management/ManagementShell.vue"),
+    meta: {requiresAuth: true, requiresBoard: true, management: true},
+    children: [
+      // No dashboard yet, so Management opens on the list of its pages.
+      {path: "", name: "management", redirect: "/management/more"},
+      {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+    ],
+  },
+  {
     path: "/user-manager",
     name: "userManager",
     component: () => import("@/pages/management/UserManager.vue"),

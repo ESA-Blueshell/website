@@ -389,6 +389,19 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* Management's bar and a phone's tab bar: its frame and the toasts stand clear of both. */
+:root {
+  --management-bar: 60px;
+  --management-tabs: 0px;
+}
+
+@media (max-width: 839px) {
+  :root {
+    --management-bar: 56px;
+    --management-tabs: 64px;
+  }
+}
+
 /* A page's main area: it fills what the bar and the footer leave. */
 .site-main {
   flex: 1 0 auto;

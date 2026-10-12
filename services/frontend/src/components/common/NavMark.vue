@@ -3,7 +3,7 @@
 
   Drawn here rather than taken from an icon font, because the bar is the island's top edge and
   everything on it inherits `currentColor`: an icon that carries its own fill reads as a
-  different shade from the ones beside it, which is exactly what the management icon used to do.
+  different shade from the ones beside it.
 -->
 <template>
   <svg
@@ -41,15 +41,6 @@
         r="3.8"
       />
       <path d="M4.4 20c0-3.8 3.4-6.2 7.6-6.2s7.6 2.4 7.6 6.2" />
-    </template>
-    <template v-else-if="mark === 'management'">
-      <circle
-        cx="9"
-        cy="8"
-        r="3.4"
-      />
-      <path d="M2.6 19.4c0-3.4 2.9-5.6 6.4-5.6 1 0 2 .2 2.8.5" />
-      <path d="M14.4 20.4h2.6l5-5a1.8 1.8 0 0 0-2.6-2.6l-5 5Z" />
     </template>
     <template v-else-if="mark === 'mail'">
       <rect
@@ -127,7 +118,7 @@
 
 <script lang="ts" setup>
 export type Mark =
-  | "caret" | "menu" | "sun" | "moon" | "account" | "management"
+  | "caret" | "menu" | "sun" | "moon" | "account"
   | "mail" | "discord" | "instagram" | "facebook" | "twitch" | "x" | "linkedin"
 
 withDefaults(defineProps<{mark: Mark; size?: number}>(), {size: 20})

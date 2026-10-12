@@ -29,6 +29,7 @@ const {
       path: "/",
       meta: {
         requiresAuth: false,
+        management: false,
       },
     },
     mockStore: {
@@ -140,7 +141,7 @@ const mountWithLinks = async () => {
 const destinations = (wrapper: ReturnType<typeof mount>) =>
   wrapper.findAll("a[href]").map((link) => link.attributes("href"))
 
-// The management menu draws its entries where it stands rather than in an overlay elsewhere, so
+// The account menu draws its entries where it stands rather than in an overlay elsewhere, so
 // they are read off the bar itself. The drawer carries the same entries for a narrow screen and
 // keeps them in the document while it is shut, which is why this looks in the bar alone.
 const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
@@ -177,6 +178,7 @@ describe("App navbar behavior", () => {
 
     mockRoute.path = "/"
     mockRoute.meta.requiresAuth = false
+    mockRoute.meta.management = false
 
     mockFindUserById.mockResolvedValue({
       data: {
@@ -214,7 +216,7 @@ describe("App navbar behavior", () => {
     }
   })
 
-  it("shows full desktop navigation and management links for board/admin users", async () => {
+  it("shows full desktop navigation and the switch to management for board/admin users", async () => {
     const wrapper = await mountWithLinks()
 
     expect(destinations(wrapper)).not.toContain("/login")
@@ -238,14 +240,12 @@ describe("App navbar behavior", () => {
 
     expect(destinations(wrapper)).toContain("/committees/lancie")
     expect(destinations(wrapper)).not.toContain("/committees/oldcie")
-    expect(managementDestinations(wrapper)).not.toContain("/management/jobs")
+    expect(managementDestinations(wrapper)).toEqual([])
 
-    await wrapper.get("[data-testid='nav-management']").trigger("click")
+    await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
 
-    expect(managementDestinations(wrapper)).toContain("/management/jobs")
-    // A board is edited on the page it is read on, so the management entry is gone from here.
-    expect(managementDestinations(wrapper)).not.toContain("/management/boards")
+    expect(managementDestinations(wrapper)).toEqual(["/management"])
   })
 
   // The mark cannot be Vuetify's own active class: an entry that opens a menu addresses one
@@ -316,12 +316,10 @@ describe("App navbar behavior", () => {
     expect(destinations(wrapper)).not.toContain("/blogs")
   })
 
-  // The icons in the corner were a second copy of the drawer's management and account groups.
-  it("folds the account and management out of the right edge, from one icon", async () => {
+  it("folds the account and the switch to management out of the right edge, from one icon", async () => {
     matchMediaState.narrow = true
 
     const wrapper = await mountWithLinks()
-    expect(wrapper.find("[data-testid='nav-management']").exists()).toBe(false)
 
     await wrapper.get("[data-testid='nav-menu-toggle']").trigger("click")
     await settle()
@@ -337,14 +335,14 @@ describe("App navbar behavior", () => {
     const panel = wrapper.get("[data-testid='nav-side-panel']")
     const offered = panel.findAll("a[href]").map(link => link.attributes("href"))
     expect(offered.slice(0, 4)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/7"])
-    expect(offered).toContain("/management/jobs")
+    expect(offered).toContain("/management")
     expect(wrapper.get("[data-testid='nav-account']").attributes("aria-expanded")).toBe("true")
 
     await panel.get("a[href='/account']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
     await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
-    await wrapper.get("[data-testid='nav-side-panel'] a[href='/management/jobs']").trigger("click")
+    await wrapper.get("[data-testid='nav-side-panel'] a[href='/management']").trigger("click")
     expect(wrapper.find("[data-testid='nav-side-panel']").exists()).toBe(false)
 
     // A second press on the icon folds the panel away again, and so does the scrim.
@@ -359,7 +357,7 @@ describe("App navbar behavior", () => {
     expect(wrapper.find("[data-testid='nav-drawer-scrim']").exists()).toBe(false)
   })
 
-  it("leaves management out of the panel for a member with none", async () => {
+  it("leaves the switch to management out of the panel for a member", async () => {
     matchMediaState.narrow = true
     mockStore.getters.isBoard = false
     mockStore.getters.isAdmin = false
@@ -368,7 +366,18 @@ describe("App navbar behavior", () => {
     await wrapper.get("[data-testid='nav-account']").trigger("click")
     await settle()
 
-    expect(wrapper.get("[data-testid='nav-side-panel']").text()).not.toContain("Management")
+    expect(wrapper.get("[data-testid='nav-side-panel']").text()).not.toContain("management")
+  })
+
+  it("gives Management its own bar and draws no footer of its own there", async () => {
+    mockRoute.path = "/management/more"
+    mockRoute.meta.management = true
+
+    const wrapper = await mountWithLinks()
+
+    expect(wrapper.find("[data-testid=management-bar]").exists()).toBe(true)
+    expect(wrapper.find("header.site-bar").exists()).toBe(false)
+    expect(wrapper.find("[data-test=footer-banner]").exists()).toBe(false)
   })
 
   it("lets the side panel go once the window is wide enough for the bar's own menus", async () => {

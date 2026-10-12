@@ -236,6 +236,8 @@ This writes two files into `export/`:
 - `addresses.tsv`: each member's user ID and their address.
 - `bank-details.tsv`: each membership with a direct debit, with its IBAN, account holder and the address the mandate was signed under.
 
+A backup taken before the website stored bank details has none, and then only `addresses.tsv` is written.
+
 Open them in a spreadsheet program, or import them into the spreadsheet at File, Import, separator Tab. Join them to the rest of the member data on the user ID, using the `users` table from step 6.
 
 A value that says `UNOPENABLE` belongs to a member whose details could not be opened, usually because the Vault and database snapshots are from different nights. Repeat steps 4 to 8 with a matching pair.

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.5](https://github.com/ESA-Blueshell/website/compare/v1.20.4...v1.20.5) (2026-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.google.apis:google-api-services-calendar to v3-rev20260925-2.0.0 ([#2377](https://github.com/ESA-Blueshell/website/issues/2377)) ([0705889](https://github.com/ESA-Blueshell/website/commit/07058893ce0bf8032b92931b82ef598da6a89baa))
+
 ## [1.20.4](https://github.com/ESA-Blueshell/website/compare/v1.20.3...v1.20.4) (2026-10-11)
 
 

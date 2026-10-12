@@ -3087,7 +3087,6 @@ components:
       - ROSTER_ICON
       - BOARD_PHOTO
       - BOARD_PORTRAIT
-      - PINGER_PAINT
       type: string
     FirstContribution:
       properties:

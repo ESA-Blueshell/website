@@ -27,12 +27,6 @@ vi.mock("@/domains/user", async () => {
 
 // ── Stubs ─────────────────────────────────────────────────────────────────────
 
-const emittingStub = (name: string) => ({
-  name,
-  props: ["modelValue"],
-  emits: ["update:modelValue"],
-  template: "<div />",
-})
 const submitButtonStub = {
   name: "SubmitButton",
   props: ["text", "loading", "disabled"],
@@ -98,7 +92,6 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm)
 
     expect(wrapper.findComponent({name: "CheckBox"}).exists()).toBe(true)
-    expect(wrapper.find(".v-checkbox").exists()).toBe(false)
   })
 
   // ── Board mode ─────────────────────────────────────────────────────────────
@@ -113,7 +106,8 @@ describe("MembershipForm", () => {
     expect(fieldLabelled(wrapper, "Start Date").props("errorMessages")).toEqual(["This field is required"])
     expect(fieldLabelled(wrapper, "End Date").props("errorMessages")).toEqual([])
     expect(wrapper.findComponent({name: "MemberTypeSelect"}).props("errorMessages")).toEqual(["This field is required"])
-    expect(wrapper.findComponent({name: "CheckBox"}).exists()).toBe(false)
+    // The one tick box is incasso's: nothing asks the board to accept the conditions.
+    expect(wrapper.findAllComponents({name: "CheckBox"}).map((box) => box.props("label"))).toEqual(["Incasso"])
   })
 
   it("board create: save() calls boardCreateMembership and emits submitted(true)", async () => {
@@ -204,13 +198,12 @@ describe("MembershipForm", () => {
     const wrapper = mount(MembershipForm, {
       props: {userId: 42},
       attrs: {modelValue: membership, "onUpdate:modelValue": vi.fn()},
-      global: {stubs: {VCheckbox: emittingStub("VCheckbox")}},
     })
 
     await fieldLabelled(wrapper, "Start Date").vm.$emit("update:modelValue", "2026-03-01")
     await fieldLabelled(wrapper, "End Date").vm.$emit("update:modelValue", "2026-09-01")
     await wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", MemberType.ALUMNI)
-    await wrapper.findComponent({name: "VCheckbox"}).vm.$emit("update:modelValue", true)
+    await wrapper.get("[data-testid=membership-form-incasso]").setValue(true)
 
     expect(membership).toMatchObject({
       startDate: "2026-03-01",

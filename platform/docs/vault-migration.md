@@ -112,11 +112,12 @@ everything as it was at the last sync.
 1. Run the nightly backup by hand, as in `backup.md`, so a `vault-v2` snapshot sits in Scaleway.
 2. Run `scripts/rehearse-restore.sh` with three of the new shares.
 3. Hand the shares to named holders (#2097).
-4. After a week without problems, remove the old `vault` release, then its volumes and its
-   bootstrap token:
+4. Remove the old `vault` release, no sooner than 7 days after the switch. Database logins it
+   leased live up to `max_ttl`, 168 hours, and the old Vault revokes each one when it runs out; once
+   it is gone, a login it leased stays in MariaDB for good. Merge the PR that drops `release.yaml`.
+   Flux uninstalls the release, which takes the pod, its Services and the unused CSI provider with
+   it. The volumes stay behind, so delete them:
 
    ```bash
-   K="kubectl --context blueshell -n data-system"
-   $K delete pvc data-vault-0 audit-vault-0
-   $K delete secret vault-bootstrap-token
+   kubectl --context blueshell -n data-system delete pvc data-vault-0 audit-vault-0
    ```

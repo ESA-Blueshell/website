@@ -1,6 +1,5 @@
-# The Vault that replaces `vault` (#2392): that one was initialised with a single unseal key,
-# which is lost, so it can never be unsealed again once its pod restarts. scripts/migrate-vault.sh
-# fills this one from it. Until the switch, nothing but the script talks to it.
+# Blueshell's Vault, 5-of-3 Shamir. It replaced the first release, `vault`, whose single unseal
+# key was lost (#2392); the name stays, since every client and the PVCs carry it.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -21,7 +20,7 @@ spec:
       enabled: true
     injector:
       enabled: false
-    # Nothing mounts a SecretProviderClass, and a second provider would take the old one's socket.
+    # Nothing mounts a SecretProviderClass.
     csi:
       enabled: false
     server:

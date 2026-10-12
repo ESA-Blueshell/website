@@ -3,7 +3,6 @@ kind: Kustomization
 
 resources:
   - source.yaml
-  - release.yaml
   - release-v2.yaml
   - bootstrap-auth-job.yaml
 

@@ -73,7 +73,9 @@ describe("ActivateUser page", () => {
     await settle()
 
     expect(wrapper.text()).toContain("your membership has started")
-    expect(wrapper.get("[data-testid=activate-user-success-state]").findAll("i, svg")).toHaveLength(0)
+    const done = wrapper.get("[data-testid=activate-user-success-state]")
+    expect(done.get("svg").attributes("aria-hidden")).toBe("true")
+    expect(done.find("i").exists()).toBe(false)
   })
 
   it("says the link could not be verified when the API refuses the token", async () => {

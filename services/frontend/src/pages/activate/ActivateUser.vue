@@ -6,7 +6,7 @@
       class="mx-auto my-10"
       style="max-width: 600px"
     >
-      <div class="island-panel">
+      <div class="activate-panel">
         <div
           v-if="loading"
           class="d-flex align-center justify-center"
@@ -22,6 +22,19 @@
           v-else-if="succeeded"
           data-testid="activate-user-success-state"
         >
+          <svg
+            aria-hidden="true"
+            class="activate-panel__done"
+            fill="none"
+            height="48"
+            stroke="currentColor"
+            stroke-linecap="square"
+            stroke-width="3"
+            viewBox="0 0 24 24"
+            width="48"
+          >
+            <path d="M4 12.5 9.5 18 20 6.5" />
+          </svg>
           <p class="text-subtitle-1">
             {{ membershipStarted
               ? "Account confirmed and your membership has started. You will be redirected to the login page."
@@ -99,8 +112,17 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss" scoped>
-.v-card {
-  border-radius: 12px;
+<style scoped>
+/* Not `.island-panel`: its ground is the island's, and this page stands outside one. */
+.activate-panel {
+  padding: 1.5rem;
+  background-color: var(--color-surface);
+  text-align: center;
+}
+
+.activate-panel__done {
+  display: block;
+  margin: 0 auto 0.5rem;
+  color: var(--color-ok);
 }
 </style>

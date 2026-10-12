@@ -53,4 +53,14 @@ class JobManagementControllerTest {
         assertThat(stats.successCount).isEqualTo(3L)
         assertThat(stats.totalCount).isEqualTo(5L)
     }
+
+    @Test
+    fun `reads one job as the list reads it`() {
+        val job = execution(JobExecutionStatus.FAILED)
+        val dto = mock<JobExecutionDTO>()
+        whenever(executions.findById(7L)).thenReturn(job)
+        whenever(views.toDto(job)).thenReturn(dto)
+
+        assertThat(controller.findJobById(7L)).isSameAs(dto)
+    }
 }

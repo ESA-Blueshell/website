@@ -1,32 +1,14 @@
 import "@mdi/font/css/materialdesignicons.css"
 import "@/styles/main.scss"
 
+import {watch} from "vue"
 import type {VuetifyOptions} from "vuetify"
 import {createVuetify} from "vuetify"
 import * as directives from "vuetify/directives"
 
 import {aliases as mdiAliases, mdi} from "vuetify/iconsets/mdi"
 import {customAliases, customIconSet} from "@/plugins/icons/custom"
-import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
-
-const storedTheme = (): string | null => {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-const osPrefersDark = (): boolean => {
-  try {
-    return globalThis.matchMedia("(prefers-color-scheme: dark)").matches
-  } catch {
-    return false
-  }
-}
-
-const startingTheme = initialThemeName(storedTheme(), osPrefersDark())
-markDocumentTheme(startingTheme)
+import {siteTheme, startTheme} from "@/plugins/theme"
 
 const vuetifyConfig: VuetifyOptions = {
   locale: {
@@ -44,7 +26,7 @@ const vuetifyConfig: VuetifyOptions = {
     },
   },
   theme: {
-    defaultTheme: startingTheme,
+    defaultTheme: startTheme(),
     variations: {
       colors: ["primary"],
       lighten: 1,
@@ -81,7 +63,13 @@ const vuetifyConfig: VuetifyOptions = {
   },
 }
 
-export default createVuetify({
+const vuetify = createVuetify({
   ...vuetifyConfig,
   directives,
 })
+
+// The site holds the theme. Vuetify's own only follows it, in the same tick, so its
+// parts and the island switch together.
+watch(siteTheme, name => vuetify.theme.change(name), {flush: "sync"})
+
+export default vuetify

@@ -93,12 +93,11 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useStore} from "vuex"
 import {useRoute, useRouter} from "vue-router"
 import type {SnackbarAction, StoredLogin} from "@/plugins/store"
-import {useTheme} from "vuetify"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import SiteBar from "@/components/common/SiteBar.vue"
 import {$goto} from "@/plugins/goto"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
-import {initialThemeName, markDocumentTheme, THEME_STORAGE_KEY} from "@/plugins/theme"
+import {chooseTheme, siteTheme} from "@/plugins/theme"
 import {useCookiePolicyConsent} from "@/composables/useCookiePolicyConsent"
 import DOMPurify from "dompurify"
 import {apiUrl, findUserById, type UserDetailResponse} from "@/services/api"
@@ -115,7 +114,6 @@ const {
 const store = useStore()
 const route = useRoute()
 const router = useRouter()
-const theme = useTheme()
 
 const statusSnackbarMessage = computed({
   get: (): string => store.state.statusSnackbarMessage,
@@ -158,24 +156,10 @@ async function handleSnackbarAction(action: SnackbarAction): Promise<void> {
 
 const login = computed(() => store.getters.getLogin)
 
-const isDarkMode = computed((): boolean => theme.global.current.value.dark)
-
-// The island's stylesheet reads the theme off the document element: see plugins/theme.
-watch(isDarkMode, dark => markDocumentTheme(dark ? "dark" : "light"))
-
-/** An OS change reaches a visitor who has never chosen; a choice of theirs outlives it. */
-const followOsTheme = (): void => {
-  if (localStorage.getItem(THEME_STORAGE_KEY) !== null) return
-  theme.change(initialThemeName(null, globalThis.matchMedia("(prefers-color-scheme: dark)").matches))
-}
-
-const setDarkMode = (dark: boolean): void => {
-  localStorage.setItem(THEME_STORAGE_KEY, dark.toString())
-  theme.change(dark ? "dark" : "light")
-}
+const isDarkMode = computed((): boolean => siteTheme.value === "dark")
 
 const toggleDarkMode = (): void => {
-  setDarkMode(!theme.global.current.value.dark)
+  chooseTheme(isDarkMode.value ? "light" : "dark")
 }
 
 const logOut = async (): Promise<void> => {
@@ -229,9 +213,6 @@ onMounted(async () => {
       }
     }
   })
-
-  // The theme itself is settled before Vuetify is created, in plugins/theme.
-  globalThis.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", followOsTheme)
 })
 </script>
 

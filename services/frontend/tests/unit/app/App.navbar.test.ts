@@ -4,16 +4,15 @@ import {createMemoryHistory, createRouter} from "vue-router"
 import App from "@/App.vue"
 import {
   COOKIE_CONSENT_STORAGE_KEY,
-  encodeCookieConsentPayload,
   hasAcceptedCookiePolicy,
 } from "@/config/policies"
 import {settle} from "../helpers/testUtils"
 import {forgetGames} from "@/domains/esports/island/useGames"
 import {forgetCommittees} from "@/domains/committees"
+import {startTheme} from "@/plugins/theme"
 
 const {
   mockDisplay,
-  mockTheme,
   mockRoute,
   mockStore,
   mockGoto,
@@ -22,24 +21,10 @@ const {
   mockAlert,
   matchMediaState,
 } = vi.hoisted(() => {
-  const mockTheme = {
-    global: {
-      current: {
-        value: {
-          dark: false,
-        },
-      },
-    },
-    change: vi.fn((name: string) => {
-      mockTheme.global.current.value.dark = name === "dark"
-    }),
-  }
-
   return {
     mockDisplay: {
       mdAndDown: {value: false},
     },
-    mockTheme,
     mockRoute: {
       path: "/",
       meta: {
@@ -79,7 +64,6 @@ vi.mock("vuetify", async (importOriginal) => {
   const {withVuetify} = await import("../helpers/testUtils")
   return withVuetify(importOriginal, {
     useDisplay: () => mockDisplay,
-    useTheme: () => mockTheme,
   })
 })
 
@@ -171,8 +155,7 @@ describe("App navbar behavior", () => {
     vi.clearAllMocks()
     localStorage.clear()
     matchMediaState.narrow = false
-
-    mockTheme.global.current.value.dark = false
+    matchMediaState.dark = false
 
     mockStore.state.statusSnackbarMessage = ""
     mockStore.getters.isLoggedIn = true
@@ -208,6 +191,7 @@ describe("App navbar behavior", () => {
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
     })))
+    startTheme()
   })
 
   it("keeps a section's link beside its menu button, never inside it", async () => {
@@ -444,16 +428,19 @@ describe("App navbar behavior", () => {
     expect(mockHandleNetworkError).toHaveBeenCalledWith(error)
   })
 
-  it("toggles dark mode and persists the preference", async () => {
-    localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, encodeCookieConsentPayload())
+  it("switches the theme from the bar, on the document too, and stores the choice", async () => {
     const wrapper = mount(App)
     await settle()
 
-    mockTheme.change.mockClear()
-    ;(wrapper.vm as any).toggleDarkMode()
+    await wrapper.get("button[aria-label='Switch to the dark theme']").trigger("click")
 
+    expect(document.documentElement.dataset.theme).toBe("dark")
     expect(localStorage.getItem("esa-blueshell.nl:darkMode")).toBe("true")
-    expect(mockTheme.change).toHaveBeenCalledWith("dark")
+
+    await wrapper.get("button[aria-label='Switch to the light theme']").trigger("click")
+
+    expect(document.documentElement.dataset.theme).toBe("light")
+    expect(localStorage.getItem("esa-blueshell.nl:darkMode")).toBe("false")
   })
 
   it("shows a status message and clears it once the snackbar closes itself", async () => {

@@ -31,7 +31,7 @@
 
 <script lang="ts" setup>
 /* The head of a Management page: the group it belongs to, its name, one sentence on what it is
-   for, and what the page as a whole can do. */
+   for and what the page as a whole can do. */
 const {eyebrow, title, testid = undefined} = defineProps<{
   eyebrow: string
   title: string

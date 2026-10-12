@@ -419,7 +419,8 @@ const windowHeight = ref(800)
 const span = computed(() => {
   const count = kept.value.length
   if (count <= WHOLE_UP_TO) return {from: 0, until: count}
-  const from = Math.max(0, Math.floor(scrolled.value / rowHeight.value) - OVERSCAN)
+  // Never past the last row: a list that gets shorter under a reader far down it keeps rows drawn.
+  const from = Math.max(0, Math.min(count - 1, Math.floor(scrolled.value / rowHeight.value) - OVERSCAN))
   const until = Math.min(count, Math.ceil((scrolled.value + windowHeight.value) / rowHeight.value) + OVERSCAN)
   return {from, until}
 })
@@ -506,6 +507,13 @@ const UNSORTED = "M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7"
   background-color: var(--color-ground);
 }
 
+/* A finger has no wheel for passOn to hand on, so there the box lets the page take what is left. */
+@media (pointer: coarse) {
+  .mg-table__scroll {
+    overscroll-behavior: auto;
+  }
+}
+
 .mg-table thead {
   position: sticky;
   top: 0;
@@ -535,7 +543,7 @@ tr.mg-table__gap {
   background-color: var(--color-raised);
 }
 
-/* The count first, then the filters, the search, and Clear filters last. */
+/* The count first, then the filters, the search and Clear filters last. */
 .mg-table__bar :deep(.filter-bar) {
   display: contents;
 }
@@ -781,7 +789,7 @@ tbody tr:hover td:first-child::before {
   letter-spacing: 0;
   text-transform: none;
   color: var(--color-chalk);
-  background-color: color-mix(in oklab, var(--color-brand) 12%, var(--band-ground));
+  background-color: color-mix(in oklab, var(--color-brand) 12%, var(--band-ground, var(--color-surface)));
 }
 
 .mg-table__all-act {
@@ -805,7 +813,7 @@ tbody tr:hover td:first-child::before {
   padding: 0.7rem 1rem;
   font-size: 0.86rem;
   color: var(--color-ash);
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
 }
 
 .mg-table__empty,

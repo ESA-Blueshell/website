@@ -38,7 +38,7 @@ const {title, to = "", link = "", testid = undefined} = defineProps<{
   gap: 0.8rem;
   min-width: 0;
   padding: 1.2rem 1.3rem;
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
 }
 
 .mg-panel__head {

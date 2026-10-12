@@ -196,7 +196,7 @@ describe("ManagementTable", () => {
 
   afterEach(() => vi.unstubAllGlobals())
 
-  it("draws a row per record, sorts by a head and ends each row with the arrow to its page", async () => {
+  it("draws a row per record and sorts by a head", async () => {
     const wrapper = mount(ManagementTable<Row>, {
       props: {
         columns, rows, rowKey: (row: Row) => row.id, sortKey: "name", descending: true, height: 300, testid: "table",
@@ -228,7 +228,7 @@ describe("ManagementTable", () => {
     expect(acting.get("th[aria-sort]").attributes("aria-sort")).toBe("ascending")
     expect(acting.findAll("td.mg-table__acts")).toHaveLength(2)
     expect(acting.get(".mg-table__scroll").attributes("style")).toBeUndefined()
-    // A row with acts and a page of its own keeps its acts and opens on a press, with no arrow column.
+    // A row with acts and a page of its own keeps its acts and opens on a press.
     const both = mount(ManagementTable<Row>, {
       props: {columns, rows, rowKey: (row: Row) => row.id, to: (row: Row) => `/management/committees/${row.id}`},
       slots: {...cells, acts: () => h("button", "Approve")},
@@ -385,6 +385,19 @@ describe("ManagementTable", () => {
     await wrapper.get(".mg-table__scroll").trigger("scroll")
     expect(wrapper.emitted("more")).toHaveLength(1)
     expect(wrapper.find("[data-testid=row-300]").exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it("keeps rows in its window where the list gets shorter under a reader far down it", async () => {
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: many, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`}, slots: cells, global: {stubs}, attachTo: document.body})
+    const box = wrapper.get(".mg-table__scroll").element as HTMLElement
+    Object.defineProperties(box, {scrollTop: {value: 14300, configurable: true}, clientHeight: {value: 600, configurable: true}, scrollHeight: {value: 15000, configurable: true}})
+    await wrapper.get(".mg-table__scroll").trigger("scroll")
+
+    await wrapper.setProps({rows: many.slice(0, 70)})
+
+    expect(wrapper.find("[data-testid=row-70]").exists()).toBe(true)
     wrapper.unmount()
   })
 

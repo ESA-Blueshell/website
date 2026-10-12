@@ -41,7 +41,7 @@
 
 <script lang="ts" setup>
 /* A Management page: its head, the tabs that close the head where it has some, the way back where
-   it sits inside another, and its body at the portal's margins. */
+   it sits inside another and its body at the portal's margins. */
 import BackBar from "@/components/island/BackBar.vue"
 import ManagementHead from "@/components/management/ManagementHead.vue"
 

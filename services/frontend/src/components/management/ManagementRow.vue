@@ -72,7 +72,7 @@ const {name, to = "", meta = "", testid = undefined} = defineProps<{
   min-height: 4.4rem;
   padding: 0.75rem 1rem;
   color: var(--color-chalk);
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
 }
 
 .mg-row--check {
@@ -110,6 +110,7 @@ a.mg-row__name::after {
 }
 
 .mg-row :deep(.island-check),
+.mg-row :deep(.row-check),
 .mg-row__acts {
   position: relative;
   z-index: 1;

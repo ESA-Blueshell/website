@@ -57,7 +57,7 @@ const {pairs, testid = undefined} = defineProps<{
   gap: 0.5rem;
   padding: 0.5rem 0.8rem;
   font-size: 0.88rem;
-  background-color: var(--band-ground);
+  background-color: var(--band-ground, var(--color-surface));
 }
 
 .pairs li > :last-child {

@@ -10,6 +10,7 @@ import {
   previewActorDisplay,
   previewTitle,
   relatedEntityLabel,
+  relatedEntityLink,
   retryLabel,
   rowStatusClass,
   stackTrace,
@@ -33,7 +34,7 @@ describe("job reading", () => {
     expect(triggerLabel(job({trigger: JobTrigger.MORNING_RUN}))).toBe("The 08:00 run")
     expect(triggerLabel(job({trigger: JobTrigger.EVENT_SENT_BACK}))).toBe("Sending the event back to the board")
     expect(triggerLabel(job({trigger: JobTrigger.EVENT_UPDATED, forced: true}))).toBe("Editing the event, run again by hand")
-    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("The trigger dialog")
+    expect(triggerLabel(job({trigger: JobTrigger.BY_HAND, forced: true}))).toBe("Run a job")
     expect(triggerLabel(job({}))).toBe("")
     expect(Object.values(JobTrigger).every(trigger => triggerLabel(job({trigger})) !== "")).toBe(true)
   })
@@ -153,6 +154,12 @@ describe("job reading", () => {
     expect(statusCounts(null)).toEqual({QUEUED: 0, RUNNING: 0, SUCCESS: 0, SKIPPED: 0, FAILED: 0, DEAD: 0})
     expect(successRate(null)).toBe(0)
     expect(successRate({...stats, totalCount: 0})).toBe(0)
+  })
+
+  it("links what a job concerns to its own page, where it has one", () => {
+    expect(relatedEntityLink({type: "EVENT", id: 4, label: "LAN"})).toBe("/events/4")
+    expect(relatedEntityLink({type: "USER", id: 7, label: "Ada Lovelace (@ada.l)"})).toBeNull()
+    expect(relatedEntityLink({type: "EVENT", id: null, label: "Event"})).toBeNull()
   })
 
   it("offers every filter the api declares, not only the ones on screen", () => {

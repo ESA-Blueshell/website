@@ -4,6 +4,7 @@
  */
 import {
   enqueue,
+  findJobById,
   getStats,
   jobTypes,
   type JobTypeDescriptor,
@@ -45,6 +46,13 @@ export interface JobFilter {
 
 /** Newest first, and by id where two share a moment, so paging cannot show a row twice. */
 const JOB_SORT = ["updatedAt,desc", "id,desc"]
+/** What the api orders each of the table's columns by. A job's kind is worked out from its type, so it has none. */
+const JOB_SORTS: Record<string, string> = {queued: "queuedAt", job: "jobType", by: "trigger", status: "status", attempts: "attempts"}
+
+const sortOf = (sort: PageQuery["sort"]): string[] => {
+  const field = sort ? JOB_SORTS[sort.key] : undefined
+  return field ? [`${field},${sort?.descending ? "desc" : "asc"}`, "id,desc"] : JOB_SORT
+}
 
 const emptyPage: PageOf<Job> = {rows: [], totalElements: 0, totalPages: 1}
 
@@ -63,7 +71,7 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
     query: {
       page: query.page,
       size: query.size,
-      sort: JOB_SORT,
+      sort: sortOf(query.sort),
       ...(filter.category ? {category: filter.category} : {}),
       ...(filter.status ? {status: filter.status} : {}),
       ...(filter.hideSkipped ? {hideSkipped: true} : {}),
@@ -92,6 +100,9 @@ export async function loadJobPage(query: PageQuery, filter: JobFilter = {}): Pro
   }
 }
 
+/** One job as the list reads it, or nothing where it could not be read. */
+export const loadJob = (id: number): Promise<Job | null> => readOr(findJobById({path: {id}}), null)
+
 /** The counts behind the stats panel, or nothing where they could not be read — it is supplementary. */
 export const loadJobStats = (): Promise<JobStats | null> => readOr(getStats(), null)
 
@@ -111,7 +122,7 @@ export async function listJobTypes(): Promise<JobTypeDescriptor[]> {
 }
 
 /**
- * Queues one job with the payload the dialog built.
+ * Queues one job with the payload the run form built.
  *
  * Answers with the api's own words when it says no, as retrying does: pressing Trigger and
  * being told nothing is indistinguishable from pressing nothing at all.

@@ -50,7 +50,7 @@ const TRIGGERS: Record<JobTrigger, string> = {
   [JobTrigger.MORNING_RUN]: "The 08:00 run",
   [JobTrigger.SCHEDULED_RUN]: "A scheduled run",
   [JobTrigger.ANOTHER_JOB]: "Another job",
-  [JobTrigger.BY_HAND]: "The trigger dialog",
+  [JobTrigger.BY_HAND]: "Run a job",
 }
 
 /** What queued the job, and that somebody ran it again by hand; empty on a row too old to say. */
@@ -123,6 +123,13 @@ export function previewActorDisplay(job: Job): string {
 export function relatedEntityLabel(entity: JobRelatedEntity): string {
   const type = titleCase(entity.type ?? "entity")
   return entity.label ?? `${type} #${entity.id}`
+}
+
+/** Where the page for what a job concerns lives, or nothing where it has none. */
+export function relatedEntityLink(entity: JobRelatedEntity): string | null {
+  if (entity.id == null) return null
+  if (entity.type === "EVENT") return `/events/${entity.id}`
+  return null
 }
 
 export function relatedEntityTypeLabel(type?: string | null): string {

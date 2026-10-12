@@ -28,7 +28,7 @@ const previewShut = ref(false)
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="edit-page"
       :data-testid="testid"
@@ -99,7 +99,7 @@ const previewShut = ref(false)
         </div>
       </div>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

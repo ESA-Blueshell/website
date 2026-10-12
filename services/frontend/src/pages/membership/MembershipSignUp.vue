@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Membership Form" />
 
     <div
@@ -165,7 +165,7 @@
         </cut-button>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

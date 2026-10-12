@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Lock your account" />
     <div class="mx-3">
       <div
@@ -34,7 +34,7 @@
         </template>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

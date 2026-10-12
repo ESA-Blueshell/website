@@ -18,7 +18,6 @@ const stubs = {
   CommitteePage: {name: "CommitteePage", props: ["page"], emits: ["changed"], template: "<div data-testid=page />"},
   NotFound: {name: "NotFound", template: "<div data-testid=missing />"},
   PagePlaceholder: {name: "PagePlaceholder", props: ["testid"], template: "<div data-testid=placeholder />"},
-  VMain: {template: "<main><slot /></main>"},
 }
 
 const lan = {id: 7, name: "LanCie", slug: "lancie", description: "", archived: false, banner: null, gameCodes: [], members: []}

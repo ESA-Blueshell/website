@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <div
       class="text-body-1 mx-auto mt-16 px-4 text-center"
       style="max-width: 800px;"
@@ -26,7 +26,7 @@
         </cut-button>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts">

@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Sign in again" />
     <div class="mx-3">
       <form
@@ -41,7 +41,7 @@
         </cut-button>
       </form>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

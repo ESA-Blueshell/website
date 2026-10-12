@@ -36,7 +36,7 @@ const copyAddress = async () => {
 </script>
 
 <template>
-  <main class="contact-page">
+  <main class="site-main">
     <island testid="contact-island">
       <header-band
         body="A question about joining, an event or working with us? Mail the board, ask in #board-questions on Discord or find them at the Esports Lounge."
@@ -214,11 +214,6 @@ const copyAddress = async () => {
 </template>
 
 <style scoped>
-/* The page's own main, in place of a layout's: it fills what the bar and the footer leave. */
-.contact-page {
-  flex: 1 0 auto;
-}
-
 /* A band, on the shared band ground: see island.css. */
 .contact-ways {
   background-color: var(--band-ground);

@@ -409,7 +409,7 @@ async function confirmDeleteUser() {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="User Manager" />
 
     <v-container>
@@ -788,7 +788,7 @@ async function confirmDeleteUser() {
       :user-ids="selectedIdsArray"
       @done="onBulkDone"
     />
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

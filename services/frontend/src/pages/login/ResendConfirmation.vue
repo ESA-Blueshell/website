@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Confirm Your Account" />
 
     <div
@@ -55,7 +55,7 @@
         </div>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

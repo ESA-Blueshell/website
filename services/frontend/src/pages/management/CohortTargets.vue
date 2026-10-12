@@ -83,7 +83,7 @@ onMounted(() => void load(TargetSystem.BREVO))
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Brevo targets" />
 
     <v-container>
@@ -304,7 +304,7 @@ onMounted(() => void load(TargetSystem.BREVO))
         </base-modal>
       </div>
     </v-container>
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

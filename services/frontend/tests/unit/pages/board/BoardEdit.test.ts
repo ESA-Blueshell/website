@@ -18,7 +18,7 @@ vi.mock("@/composables/useIsBoard", () => ({useIsBoard: () => ref(state.may)}))
 
 const BoardEditor = {name: "BoardEditor", props: ["board", "boards", "nextNumber", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
 const BoardMemberEditor = {name: "BoardMemberEditor", props: ["board", "member", "back"], emits: ["saved", "removed", "cancel"], template: "<div />"}
-const stubs = {BoardEditor, BoardMemberEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
+const stubs = {BoardEditor, BoardMemberEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const mountAt = async (page: typeof BoardEdit, params: Record<string, string>) => {
   route.params = params

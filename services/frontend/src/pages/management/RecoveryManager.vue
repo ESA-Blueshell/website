@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Recovery Manager" />
 
     <v-container>
@@ -35,7 +35,7 @@
         />
       </div>
     </v-container>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

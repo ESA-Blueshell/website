@@ -35,7 +35,6 @@ const dota: CasualGame = {esportsChannels: [], code: "DOTA_2", name: "Dota 2", s
 const dialog = (name: string) => ({name, props: ["open", "game"], emits: ["update:open", "saved", "removed"], template: "<div />"})
 const stubs = {
   RouterLink: RouterLinkStub,
-  VMain: {template: "<main><slot /></main>"},
   ArchiveGameDialog: dialog("ArchiveGameDialog"),
   RemoveGameDialog: dialog("RemoveGameDialog"),
   ScopedEvents: {name: "ScopedEvents", props: ["scope", "testid"], template: "<section><slot /></section>"},

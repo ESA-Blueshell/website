@@ -35,7 +35,7 @@ const JOIN = {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="aboutus-island">
       <hero-band
         alt="A Blueshell LAN party, rows of screens and people playing"
@@ -211,7 +211,7 @@ const JOIN = {
         testid="aboutus-call"
       />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

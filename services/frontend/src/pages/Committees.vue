@@ -39,7 +39,7 @@ const committeeOf = (id: string | number) => committees.value.find(committee => 
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <record-index
       body="Committees are groups of members who organise the events and run the things the association does, and have a good time doing it. Want to join one, or start something new? Ask the board on Discord."
       each="committee"
@@ -76,5 +76,5 @@ const committeeOf = (id: string | number) => committees.value.find(committee => 
         @update:open="archiving = null"
       />
     </record-index>
-  </v-main>
+  </main>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner :title="stepUpMode ? 'Confirm it is you' : 'Login'" />
 
     <div class="login">
@@ -123,7 +123,7 @@
         </div>
       </form>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

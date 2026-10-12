@@ -55,9 +55,12 @@ watch(() => shown.value?.name, name => {
     @changed="read"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="committee-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

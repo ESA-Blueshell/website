@@ -113,7 +113,7 @@ const deleteSignUp = (id: number) => {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="events-page"
       testid="events-island"
@@ -188,7 +188,7 @@ const deleteSignUp = (id: number) => {
         </cut-button>
       </events-band>
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

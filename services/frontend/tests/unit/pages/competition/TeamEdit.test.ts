@@ -22,7 +22,7 @@ const TeamEditor = {
   emits: ["saved", "removed", "cancel"],
   template: "<div />",
 }
-const stubs = {TeamEditor, NotFound: {template: "<div data-testid=missing />"}, VMain: {template: "<main><slot /></main>"}}
+const stubs = {TeamEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const answer = (season: unknown, teams: {id: number, name: string}[], team: unknown) => ({
   season: ref(season), fielded: ref(teams), team: ref(team), answered: Promise.resolve(),

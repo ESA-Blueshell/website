@@ -334,7 +334,7 @@ watch(subjectId, () => void load())
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner :title="subject?.label ?? 'Cohort'" />
 
     <v-container>
@@ -806,7 +806,7 @@ watch(subjectId, () => void load())
         />
       </div>
     </v-container>
-  </v-main>
+  </main>
 </template>
 
 <style lang="scss" scoped>

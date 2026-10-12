@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Forgot Password" />
 
     <div
@@ -60,7 +60,7 @@
         </div>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

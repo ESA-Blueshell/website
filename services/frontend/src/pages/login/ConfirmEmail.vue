@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <top-banner title="Confirm your email address" />
     <div class="mx-3">
       <div
@@ -22,7 +22,7 @@
         </p>
       </div>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

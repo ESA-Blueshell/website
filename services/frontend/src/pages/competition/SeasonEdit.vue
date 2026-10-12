@@ -49,9 +49,12 @@ const backOn = (id: number | null) => {
     @saved="saved => router.replace(backOn(saved.id))"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="season-edit-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

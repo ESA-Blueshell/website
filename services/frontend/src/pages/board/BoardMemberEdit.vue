@@ -41,9 +41,12 @@ const done = async () => {
     @saved="done"
   />
   <not-found v-else-if="!loading" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="board-member-edit-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

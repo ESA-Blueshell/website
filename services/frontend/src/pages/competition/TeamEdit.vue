@@ -63,9 +63,12 @@ const found = computed(() => answered.value && game.value != null && (teamId == 
     @saved="router.replace(back)"
   />
   <not-found v-else-if="answered" />
-  <v-main v-else>
+  <main
+    v-else
+    class="site-main"
+  >
     <island>
       <page-placeholder testid="team-edit-placeholder" />
     </island>
-  </v-main>
+  </main>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <div
       class="text-body-1 mx-auto mt-16 text-center"
       data-testid="not-found"
@@ -22,7 +22,7 @@
         >here</a> to go back to the main page!
       </p>
     </div>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts">

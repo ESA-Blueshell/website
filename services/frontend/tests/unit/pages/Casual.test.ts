@@ -29,7 +29,6 @@ const stubs = {
   ArchiveGameDialog: {name: "ArchiveGameDialog", props: ["open", "game"], emits: ["update:open", "saved"], template: "<div />"},
   RemoveGameDialog: {name: "RemoveGameDialog", props: ["open", "game"], emits: ["update:open", "removed"], template: "<div />"},
   CutButton: {name: "CutButton", props: ["href", "away", "tone", "testid"], template: "<a :href=\"href\" :data-testid=\"testid\"><slot /></a>"},
-  VMain: {template: "<main><slot /></main>"},
 }
 
 const mountPage = async () => {

@@ -5,7 +5,7 @@ import EditPage from "@/components/island/EditPage.vue"
 const mountPage = (slots: Record<string, string> = {}) => mount(EditPage, {
   props: {testid: "thing-edit", eyebrow: "Competition", title: "Edit season", back: {to: "/esports?season=3", label: "Competition"}, accent: "#ff4655"},
   slots: {default: "<form data-testid=form />", ...slots},
-  global: {stubs: {RouterLink: RouterLinkStub, VMain: {template: "<main><slot /></main>"}}},
+  global: {stubs: {RouterLink: RouterLinkStub}},
 })
 
 describe("an edit page", () => {

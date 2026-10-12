@@ -5,7 +5,6 @@ import {settle} from "../helpers"
 
 // The dialogs portal out of the page and have their own specs; the page only opens them.
 const renderingStubs = {
-  VMain: {name: "VMain", template: "<main><slot /></main>"},
   RouterLink: RouterLinkStub,
   RemoveSignUpDialog: {name: "RemoveSignUpDialog", props: ["modelValue", "personName"], template: "<div />"},
   EditSignUpDialog: {name: "EditSignUpDialog", props: ["modelValue", "event", "signUp"], template: "<div />"},

@@ -76,7 +76,7 @@ const {quote} = useMembershipFees()
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="membership-island">
       <header-band v-bind="HEAD" />
 
@@ -109,5 +109,5 @@ const {quote} = useMembershipFees()
 
       <call-band v-bind="MEMBERSHIP_CALL" />
     </island>
-  </v-main>
+  </main>
 </template>

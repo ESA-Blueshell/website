@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="home-island"
       testid="home-island"
@@ -41,7 +41,7 @@
       </partner-wall>
       <call-band v-bind="HOME_CALL" />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <script lang="ts" setup>

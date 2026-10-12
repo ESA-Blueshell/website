@@ -179,7 +179,7 @@ const carried = ref<number | null>(null)
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island testid="esports-island">
       <esports-game-head
         :accent="identity.accent"
@@ -349,7 +349,7 @@ const carried = ref<number | null>(null)
 
       <call-band v-bind="JOIN_CALL" />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

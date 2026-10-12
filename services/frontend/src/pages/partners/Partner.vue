@@ -6,7 +6,7 @@ const {slug} = defineProps<{slug: PartnerSlug}>()
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <partner-page :content="PARTNER_PAGES[slug]" />
-  </v-main>
+  </main>
 </template>

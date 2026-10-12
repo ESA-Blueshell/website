@@ -111,7 +111,7 @@ function signedOut(signUpId: number) {
 </script>
 
 <template>
-  <v-main>
+  <main class="site-main">
     <island
       class="event-page"
       testid="event-island"
@@ -245,7 +245,7 @@ function signedOut(signUpId: number) {
         testid="event-placeholder"
       />
     </island>
-  </v-main>
+  </main>
 </template>
 
 <style scoped>

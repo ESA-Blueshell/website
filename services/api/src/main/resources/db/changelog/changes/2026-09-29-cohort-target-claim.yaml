@@ -1,0 +1,15 @@
+# Creating a cohort's list claims the cohort first (api ADR-035), so a retried job that finds the
+# claim looks the list up instead of making a second one. Nullable, so the release before this one
+# keeps writing cohort rows without it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-09-29-cohort-target-claim.yaml
+      id: cohort-target-claimed-at
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: cohort
+            columns:
+              - column: {name: target_claimed_at, type: DATETIME(6)}
+      rollback:
+        - dropColumn: {tableName: cohort, columnName: target_claimed_at}

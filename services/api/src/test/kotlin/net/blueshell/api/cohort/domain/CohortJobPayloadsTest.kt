@@ -11,6 +11,7 @@ class CohortJobPayloadsTest {
     fun `payloads keep the keys stored jobs were written with`() {
         val written =
             listOf(
+                CohortJobs.CreateCohortTargetPayload(4L),
                 CohortJobs.SyncCohortMembershipPayload(1L, 4L, SyncCohortMembershipIntent.ADD),
                 CohortJobs.RemoveExternalMemberPayload(4L, "ext"),
                 CohortJobs.ReconcileListPayload(4L),
@@ -41,6 +42,7 @@ class CohortJobPayloadsTest {
     @Test
     fun `jobs on one target share a dedup key`() {
         assertThat(CohortJobs.ReconcileList.dedupKey(CohortJobs.ReconcileListPayload(4L))).isEqualTo("cohort=4")
+        assertThat(CohortJobs.CreateCohortTarget.dedupKey(CohortJobs.CreateCohortTargetPayload(4L))).isEqualTo("cohort=4")
         assertThat(CohortJobs.MaterializeCohortTarget.dedupKey(CohortJobs.MaterializeCohortTargetPayload(4L))).isEqualTo("cohort=4")
     }
 }

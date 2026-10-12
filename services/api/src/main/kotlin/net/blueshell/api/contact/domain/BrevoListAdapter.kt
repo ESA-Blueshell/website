@@ -10,6 +10,7 @@ import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.clients.brevo.api.ContactsApi
 import net.blueshell.clients.brevo.model.AddContactToListRequest
 import net.blueshell.clients.brevo.model.CreateListRequest
+import net.blueshell.clients.brevo.model.CreateUpdateFolder
 import net.blueshell.clients.brevo.model.GetContactsSortParameter
 import net.blueshell.clients.brevo.model.RemoveContactFromListRequest
 import net.blueshell.clients.brevo.model.UpdateListRequest
@@ -23,8 +24,8 @@ import tools.jackson.databind.json.JsonMapper
 /**
  * Brevo anti-corruption layer for [ContactListAdapter] (ADR-019), in production only.
  *
- * [contributionPeriodsFolder] is a numeric Brevo folder id: Brevo organises lists by id rather
- * than name, so the domain's `folderName` hint is ignored.
+ * A new list goes into the folder its `folderName` names, created first when Brevo has none by
+ * that name; with no name it goes into [contributionPeriodsFolder], a numeric Brevo folder id.
  *
  * Brevo answers an add for a contact already in the list with an ambiguous
  * `400 invalid_parameter "Contact already in list and/or does not exist"`, so a follow-up GET
@@ -104,9 +105,8 @@ class BrevoListAdapter(
         val safeName = sanitizeForLog(name)
         log.info("Creating Brevo list '{}'", safeName)
         return try {
-            val response = contactsApi.createList(
-                CreateListRequest(name = name, folderId = contributionPeriodsFolder),
-            )
+            val folderId = folderName?.let(::folderNamed) ?: contributionPeriodsFolder
+            val response = contactsApi.createList(CreateListRequest(name = name, folderId = folderId))
             log.info("Created Brevo list '{}' id={}", safeName, response.id)
             response.id
         } catch (e: RestClientResponseException) {
@@ -114,6 +114,13 @@ class BrevoListAdapter(
             throw ContactServiceException("Failed to create list", e)
         }
     }
+
+    // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
+    private fun folderNamed(name: String): Long =
+        listFolders().entries.firstOrNull { it.value.equals(name, ignoreCase = true) }?.key
+            ?: contactsApi.createFolder(CreateUpdateFolder(name = name)).id.also {
+                log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), it)
+            }
 
     private fun sanitizeForLog(value: String): String = buildString(value.length) {
         value.forEach { ch ->

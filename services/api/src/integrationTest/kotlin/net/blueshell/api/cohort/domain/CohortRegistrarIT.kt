@@ -38,10 +38,9 @@ class CohortRegistrarIT : UserTestSupport() {
         keys.forEach { key ->
             val cohort = cohorts.findByDefinitionKey(key)
             assertThat(cohort).describedAs("no record for %s", key).isNotNull
-            // A target to link, with no external id until an operator supplies one.
+            // Its target row, whose list the create-target job makes after the commit.
             val targets = targets.findAllByCohortId(cohort!!.id!!)
             assertThat(targets).describedAs("no target for %s", key).isNotEmpty
-            assertThat(targets.first().externalId).isNull()
         }
     }
 

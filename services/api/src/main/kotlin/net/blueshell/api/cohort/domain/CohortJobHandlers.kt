@@ -66,9 +66,22 @@ class CohortJobHandlers(
         }
 
     @Bean
+    fun createCohortTargetHandler() =
+        bind(CohortJobs.CreateCohortTarget) {
+            targeting.createFor(it.targetId)
+        }
+
+    @Bean
+    fun createMissingCohortTargetsHandler() =
+        bindSkipping(CohortJobs.CreateMissingCohortTargets) {
+            val queued = targeting.createMissing()
+            if (queued == 0) "Every cohort has its target" else null
+        }
+
+    @Bean
     fun materializeCohortTargetHandler() =
         bind(CohortJobs.MaterializeCohortTarget) {
-            targeting.materialize(it.targetId)
+            targeting.createFor(it.targetId)
         }
 
     @Bean

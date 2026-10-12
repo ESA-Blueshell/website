@@ -19,6 +19,8 @@ interface TargetRepository : BaseRepository<Target, Long> {
 
     fun findAllByCohortId(cohortId: Long): List<Target>
 
+    fun findAllByCohortIdIsNotNullAndExternalIdIsNull(): List<Target>
+
     fun countByCohortId(cohortId: Long): Long
 
     fun findByCohortIdAndSystem(

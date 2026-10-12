@@ -34,12 +34,6 @@ html {
   background-color: #1E1E1E;
 }
 
-.v-snackbar__wrapper.v-theme--dark.v-snackbar--variant-elevated {
-  background-color: rgb(var(--v-theme-wallpaper));
-  outline: 1px $accent solid;
-  color: white;
-}
-
 .v-toolbar {
   transition: none;
 }

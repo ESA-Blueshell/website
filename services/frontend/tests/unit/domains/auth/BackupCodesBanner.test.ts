@@ -16,13 +16,13 @@ vi.mock("vue-router", async (importOriginal) => {
   return withVueRouter(importOriginal, {route: mockRoute})
 })
 
-const VSnackbar = {name: "VSnackbar", props: ["modelValue"], template: "<div v-if='modelValue'><slot /><slot name='actions' /></div>"}
 const RouterLink = {name: "RouterLink", props: ["to"], template: "<a><slot /></a>"}
 
 const signedIn = (on: boolean, backupCodesLeft: number) => {
   mockStore.getters.getLogin = {twoFactor: {on, backupCodesLeft, required: false, offered: false}}
 }
-const banner = () => mount(BackupCodesBanner, {global: {stubs: {VSnackbar, RouterLink}}})
+// The toast leaves through a transition, which a test has no frame to wait out.
+const banner = () => mount(BackupCodesBanner, {global: {stubs: {RouterLink, transition: true}}})
 
 describe("the low backup codes banner", () => {
   beforeEach(() => {
@@ -35,6 +35,8 @@ describe("the low backup codes banner", () => {
     const wrapper = banner()
 
     expect(wrapper.text()).toContain("1 backup code left.")
+    expect(wrapper.get("[data-testid=backup-codes-banner]").attributes("role")).toBe("status")
+    expect(wrapper.get("[data-testid=backup-codes-banner]").classes()).toContain("toast--warning")
     expect(wrapper.findComponent(RouterLink).props("to")).toBe("/account/security/two-factor")
     await wrapper.find("[data-testid=backup-codes-banner-open-btn]").trigger("click")
     expect(wrapper.find("[data-testid=backup-codes-banner-open-btn]").exists()).toBe(false)

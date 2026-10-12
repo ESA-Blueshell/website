@@ -26,6 +26,7 @@ import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import SliceBand, {type SliceItem} from "@/components/island/SliceBand.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
+import ToastNotice from "@/components/island/ToastNotice.vue"
 import {BRAND_ACCENT} from "@/utils/brand"
 
 const dark = ref(true)
@@ -250,6 +251,39 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
 
       <section class="gallery__set">
         <h2 class="gallery__what">
+          Toasts
+        </h2>
+        <div class="gallery__toasts">
+          <toast-notice open>
+            Your details are saved.
+            <template #actions>
+              <cut-button small>
+                Undo
+              </cut-button>
+              <cut-button
+                small
+                tone="quiet"
+              >
+                Close
+              </cut-button>
+            </template>
+          </toast-notice>
+          <toast-notice
+            open
+            tone="warning"
+          >
+            2 backup codes left. Create new ones before you run out.
+            <template #actions>
+              <cut-button small>
+                Create new codes
+              </cut-button>
+            </template>
+          </toast-notice>
+        </div>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
           Chevrons
         </h2>
         <div class="gallery__pan">
@@ -430,6 +464,13 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 0.8rem;
+}
+
+.gallery__toasts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.8rem;
 }
 

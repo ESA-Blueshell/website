@@ -37,6 +37,14 @@ while IFS=$'\t' read -r user sealed; do
   printf '%s\t%s\n' "$user" "$(open api-address "address:$user" "$sealed")" >> export/addresses.tsv
 done
 
+# A backup taken before bank details were stored has no mandate columns.
+has_bank_details=$(sql "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'blueshell'
+                        AND table_name = 'memberships' AND column_name = 'mandate_iban'")
+if [[ $has_bank_details == 0 ]]; then
+  echo "Written: export/addresses.tsv. This backup holds no bank details."
+  exit 0
+fi
+
 printf 'membership_id\tuser_id\tiban\taccount_holder\tmandate_address\n' > export/bank-details.tsv
 sql "SELECT id, user_id, mandate_iban, mandate_account_holder, IFNULL(mandate_address, '')
      FROM memberships WHERE mandate_iban IS NOT NULL" |

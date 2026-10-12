@@ -398,7 +398,8 @@
   flex-direction: column;
   gap: 0.9rem;
   padding: 1.4rem 1.5rem;
-  background-color: var(--band-ground, #2a2a2a);
+  /* The surface where no island gives a band ground: a page outside one, in either theme. */
+  background-color: var(--band-ground, var(--color-surface));
 }
 
 .island-panel__title {

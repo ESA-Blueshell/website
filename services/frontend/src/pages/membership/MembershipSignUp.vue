@@ -6,167 +6,149 @@
       class="mx-auto my-6"
       style="max-width: 800px"
     >
-      <v-stepper
+      <div
         v-if="!finished"
-        v-model="currentStep"
+        class="signup"
         data-testid="membership-signup-stepper"
-        :items="stepItems"
-        hide-actions
       >
+        <step-strip
+          :current="currentStep - 1"
+          :steps="stepTitles"
+          testid="membership-signup-steps"
+        />
+
         <!-- Step 1: who they are -->
-        <template #[`item.1`]>
-          <v-card class="pa-4">
-            <div
-              v-if="preparing"
-              class="d-flex align-center justify-center pa-6"
-              data-testid="membership-details-loading"
-            >
-              <loading-spinner
-                class="mr-3"
-                :size="28"
-              />
-              <span class="text-body-1">Fetching the details we already hold.</span>
-            </div>
-            <user-form
-              v-else
-              ref="userRef"
-              v-model="user"
-              :options="{ includeMemberProfile: true, createVia: 'signup' }"
-              :show-password="isNewApplicant"
-              :signup-token="signupToken"
+        <div
+          v-if="reached.includes(Steps.Details)"
+          v-show="currentStep === Steps.Details"
+          class="island-panel"
+        >
+          <div
+            v-if="preparing"
+            class="d-flex align-center justify-center pa-6"
+            data-testid="membership-details-loading"
+          >
+            <loading-spinner
+              class="mr-3"
+              :size="28"
             />
-            <v-row align="center">
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="submitting || preparing"
-                  :loading="submitting || preparing"
-                  color="primary"
-                  data-testid="membership-details-next-btn"
-                  @click="saveDetails"
-                >
-                  Next
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+            <span class="text-body-1">Fetching the details we already hold.</span>
+          </div>
+          <user-form
+            v-else
+            ref="userRef"
+            v-model="user"
+            :options="{ includeMemberProfile: true, createVia: 'signup' }"
+            :show-password="isNewApplicant"
+            :signup-token="signupToken"
+          />
+          <div class="panel-acts">
+            <cut-button
+              :disabled="submitting || preparing"
+              testid="membership-details-next-btn"
+              tone="solid"
+              @click="saveDetails"
+            >
+              Next
+            </cut-button>
+          </div>
+        </div>
 
         <!-- Step 2: where they live -->
-        <template #[`item.2`]>
-          <v-card class="pa-4">
-            <address-form
-              ref="addressRef"
-              v-model="address"
-              :user-id="user?.id"
-              :signup-token="signupToken"
-            />
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-address-back-btn"
-                  variant="outlined"
-                  @click="currentStep = Steps.Details"
-                >
-                  Previous
-                </v-btn>
-              </v-col>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  :disabled="submitting"
-                  :loading="submitting"
-                  color="primary"
-                  data-testid="membership-address-next-btn"
-                  @click="saveAddressStep"
-                >
-                  Next
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+        <div
+          v-if="reached.includes(Steps.Address)"
+          v-show="currentStep === Steps.Address"
+          class="island-panel"
+        >
+          <address-form
+            ref="addressRef"
+            v-model="address"
+            :user-id="user?.id"
+            :signup-token="signupToken"
+          />
+          <div class="panel-acts panel-acts--split">
+            <cut-button
+              testid="membership-address-back-btn"
+              @click="currentStep = Steps.Details"
+            >
+              Previous
+            </cut-button>
+            <cut-button
+              :disabled="submitting"
+              testid="membership-address-next-btn"
+              tone="solid"
+              @click="saveAddressStep"
+            >
+              Next
+            </cut-button>
+          </div>
+        </div>
 
         <!-- Step 3: the application itself -->
-        <template #[`item.3`]>
-          <v-card class="pa-4">
-            <v-alert
-              v-if="applicationSubmitted"
-              border="start"
-              class="mb-4"
-              color="success"
-              data-testid="membership-conditions-accepted"
-              variant="tonal"
+        <div
+          v-if="reached.includes(Steps.Membership)"
+          v-show="currentStep === Steps.Membership"
+          class="island-panel"
+        >
+          <notice-box
+            v-if="applicationSubmitted"
+            testid="membership-conditions-accepted"
+          >
+            Your application is in and you agreed to the membership conditions.
+            Details and address can still be changed; the agreement stands.
+          </notice-box>
+          <membership-form
+            v-else
+            ref="membershipRef"
+            v-model="membership"
+            :signup-token="signupToken"
+          />
+          <div class="panel-acts panel-acts--split">
+            <cut-button
+              testid="membership-conditions-back-btn"
+              @click="currentStep = Steps.Address"
             >
-              Your application is in and you agreed to the membership conditions.
-              Details and address can still be changed; the agreement stands.
-            </v-alert>
-            <membership-form
+              Previous
+            </cut-button>
+            <cut-button
+              v-if="applicationSubmitted && awaitsEmailConfirmation"
+              testid="membership-conditions-continue-btn"
+              tone="solid"
+              @click="currentStep = Steps.ConfirmEmail"
+            >
+              Continue
+            </cut-button>
+            <cut-button
               v-else
-              ref="membershipRef"
-              v-model="membership"
-              :signup-token="signupToken"
-            />
-            <v-row align="center">
-              <v-col cols="auto">
-                <v-btn
-                  data-testid="membership-conditions-back-btn"
-                  variant="outlined"
-                  @click="currentStep = Steps.Address"
-                >
-                  Previous
-                </v-btn>
-              </v-col>
-              <v-spacer />
-              <v-col cols="auto">
-                <v-btn
-                  v-if="applicationSubmitted && awaitsEmailConfirmation"
-                  color="primary"
-                  data-testid="membership-conditions-continue-btn"
-                  @click="currentStep = Steps.ConfirmEmail"
-                >
-                  Continue
-                </v-btn>
-                <v-btn
-                  v-else
-                  :disabled="submitting"
-                  :loading="submitting"
-                  color="primary"
-                  data-testid="membership-conditions-submit-btn"
-                  @click="submitApplication"
-                >
-                  Complete Membership
-                </v-btn>
-              </v-col>
-            </v-row>
-          </v-card>
-        </template>
+              :disabled="submitting"
+              testid="membership-conditions-submit-btn"
+              tone="solid"
+              @click="submitApplication"
+            >
+              Complete Membership
+            </cut-button>
+          </div>
+        </div>
 
         <!-- Step 4: confirm the email address. New applicants only. -->
-        <template #[`item.4`]>
-          <email-confirmation-panel
-            :email="user?.email ?? ''"
-            :username="user?.username ?? ''"
-            :continuation-token="signupToken"
-            confirmation-consequence="Your membership starts as soon as you do."
-            @back="currentStep = Steps.Membership"
-            @email-corrected="onEmailCorrected"
-          />
-        </template>
-      </v-stepper>
+        <email-confirmation-panel
+          v-if="reached.includes(Steps.ConfirmEmail)"
+          v-show="currentStep === Steps.ConfirmEmail"
+          :email="user?.email ?? ''"
+          :username="user?.username ?? ''"
+          :continuation-token="signupToken"
+          confirmation-consequence="Your membership starts as soon as you do."
+          @back="currentStep = Steps.Membership"
+          @email-corrected="onEmailCorrected"
+        />
+      </div>
 
-      <v-card
+      <div
         v-else
-        class="pa-6 text-center"
+        class="island-panel signup__done"
         data-testid="membership-complete-panel"
       >
-        <v-icon
-          class="mb-4"
-          color="success"
-          size="64"
-        >
-          mdi-check-circle
-        </v-icon>
+        <done-tick :size="64" />
         <p class="text-h6 font-weight-medium mb-2">
           Welcome to Blueshell
         </p>
@@ -174,15 +156,14 @@
           Your membership has started and is pending until your first contribution is paid. You become a member once
           the treasurer records it.
         </p>
-        <v-btn
-          class="mt-4"
-          color="primary"
-          data-testid="membership-home-btn"
+        <cut-button
+          testid="membership-home-btn"
+          tone="solid"
           @click="$goto('/')"
         >
           Go to Homepage
-        </v-btn>
-      </v-card>
+        </cut-button>
+      </div>
     </div>
   </v-main>
 </template>
@@ -194,7 +175,11 @@ import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import DoneTick from "@/components/island/DoneTick.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
+import StepStrip from "@/components/island/StepStrip.vue"
 import {
   type AddressResponse,
   type MembershipResponse,
@@ -226,6 +211,12 @@ const Steps = {Details: 1, Address: 2, Membership: 3, ConfirmEmail: 4} as const
 const STEP_DID_NOT_OPEN = "that step did not open, so reload the page and try again"
 
 const currentStep = ref<number>(Steps.Details)
+// A step is drawn once it is reached and kept from then on, so what was typed on it and not
+// yet saved is still there after going back and forward.
+const reached = ref<number[]>([Steps.Details])
+watch(currentStep, (step) => {
+  if (!reached.value.includes(step)) reached.value.push(step)
+})
 const submitting = ref(false)
 // True while the account's own details are still being fetched. Nothing on the
 // first step is offered until they land: a form standing in for data that has not
@@ -261,16 +252,10 @@ const isNewApplicant = computed<boolean>(() => !isLoggedIn.value)
 // step that is no longer rendered.
 const awaitsEmailConfirmation = computed<boolean>(() => isNewApplicant.value && !emailConfirmed.value)
 
-const stepItems = computed<Array<{title: string; value: number}>>(() => {
-  const items = [
-    {title: "Your details", value: Steps.Details as number},
-    {title: "Address", value: Steps.Address as number},
-    {title: "Membership", value: Steps.Membership as number},
-  ]
-  if (awaitsEmailConfirmation.value) {
-    items.push({title: "Confirm email", value: Steps.ConfirmEmail})
-  }
-  return items
+/** In the order of `Steps`, which counts from 1 where the strip counts from 0. */
+const stepTitles = computed<string[]>(() => {
+  const titles = ["Your details", "Address", "Membership"]
+  return awaitsEmailConfirmation.value ? [...titles, "Confirm email"] : titles
 })
 
 function rememberToken(token: string) {
@@ -547,12 +532,15 @@ onUnmounted(() => {
 })
 </script>
 
-<style lang="scss" scoped>
-.v-stepper {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+<style scoped>
+.signup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 }
 
-.v-card {
-  border-radius: 12px;
+.signup__done {
+  align-items: center;
+  text-align: center;
 }
 </style>

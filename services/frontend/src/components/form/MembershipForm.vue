@@ -115,60 +115,38 @@ defineExpose({validate, save})
 <template>
   <div>
     <!-- Board mode: compact date/type/incasso fields for administrative use -->
-    <template v-if="isBoardMode">
-      <v-row dense>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <form-control
-            v-model="membership.startDate"
-            data-testid="membership-form-start-date"
-            :error-messages="errorsOf('startDate')"
-            kind="date"
-            label="Start Date"
-            @blur="touch('startDate')"
-          />
-        </v-col>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <form-control
-            v-model="membership.endDate"
-            data-testid="membership-form-end-date"
-            :error-messages="errorsOf('endDate')"
-            kind="date"
-            label="End Date"
-            @blur="touch('endDate')"
-          />
-        </v-col>
-      </v-row>
-      <v-row dense>
-        <v-col
-          cols="12"
-          sm="6"
-        >
-          <member-type-select
-            v-model="membership.memberType"
-            data-testid="membership-form-member-type"
-            :error-messages="errorsOf('memberType')"
-          />
-        </v-col>
-        <v-col
-          class="d-flex align-center justify-center"
-          cols="12"
-          sm="6"
-        >
-          <v-checkbox
-            v-model="membership.incasso"
-            data-testid="membership-form-incasso"
-            hide-details
-            label="Incasso"
-          />
-        </v-col>
-      </v-row>
-    </template>
+    <div
+      v-if="isBoardMode"
+      class="membership-board"
+    >
+      <form-control
+        v-model="membership.startDate"
+        data-testid="membership-form-start-date"
+        :error-messages="errorsOf('startDate')"
+        kind="date"
+        label="Start Date"
+        @blur="touch('startDate')"
+      />
+      <form-control
+        v-model="membership.endDate"
+        data-testid="membership-form-end-date"
+        :error-messages="errorsOf('endDate')"
+        kind="date"
+        label="End Date"
+        @blur="touch('endDate')"
+      />
+      <member-type-select
+        v-model="membership.memberType"
+        data-testid="membership-form-member-type"
+        :error-messages="errorsOf('memberType')"
+      />
+      <check-box
+        v-model="membership.incasso"
+        class="membership-board__incasso"
+        label="Incasso"
+        testid="membership-form-incasso"
+      />
+    </div>
 
     <!-- Self-service mode: membership conditions + consent + member type -->
     <template v-else>
@@ -227,8 +205,20 @@ defineExpose({validate, save})
   width: 100%;
 }
 
-.checkbox-row :deep(.v-label) {
-  white-space: normal;
-  text-wrap: pretty;
+.membership-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.membership-board__incasso {
+  align-self: center;
+  justify-self: center;
+}
+
+@media (--phone) {
+  .membership-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

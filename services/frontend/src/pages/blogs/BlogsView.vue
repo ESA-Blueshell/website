@@ -65,9 +65,7 @@ onMounted(async () => {
 
 <style scoped>
 .blogs {
-  margin: 1rem 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 1rem;
 }
 
 .blogs__row {

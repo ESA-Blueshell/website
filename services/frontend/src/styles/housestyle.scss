@@ -163,9 +163,15 @@ CSS MOMENT
 
   // A list that draws its own rows outside an island carries `bare-list`. Its own stylesheet
   // cannot say so: these selectors outrank a scoped class.
-  ol:not(.island ol), ul:not(.island ul):not(.bare-list) {
+  ol:not(.island ol):not(.bare-list), ul:not(.island ul):not(.bare-list) {
     padding-left: 24px;
   }
+}
+
+.bare-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 a.text-decoration-none {

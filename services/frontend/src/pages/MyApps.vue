@@ -1,7 +1,8 @@
 <template>
   <v-main>
     <div class="apps">
-      <h1 class="apps__title">
+      <!-- `text-h4` is what the global heading rule reads: without it an h1 here is drawn at 90px. -->
+      <h1 class="apps__title text-h4">
         My Apps
       </h1>
 
@@ -29,14 +30,14 @@
               width="48"
             >
             <span class="apps__name">{{ service.name }}</span>
-            <span class="apps__about">{{ service.description }}</span>
+            <span class="apps__description">{{ service.description }}</span>
           </a>
         </li>
       </ul>
 
       <p
         v-else
-        class="apps__said"
+        class="apps__empty"
       >
         No services available.
       </p>
@@ -80,12 +81,9 @@ onMounted(async () => {
 
 .apps__title {
   margin: 0 0 1.5rem;
-  font-family: "Shellhouse One", sans-serif;
-  font-size: 2rem;
-  text-transform: uppercase;
 }
 
-.apps__said {
+.apps__empty {
   color: var(--color-ash);
 }
 
@@ -93,9 +91,6 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
   gap: 1rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .apps__tile {
@@ -126,7 +121,7 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.apps__about {
+.apps__description {
   font-size: 0.85rem;
   color: var(--color-ash);
 }

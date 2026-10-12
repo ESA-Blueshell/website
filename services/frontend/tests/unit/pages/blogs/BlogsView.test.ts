@@ -22,7 +22,8 @@ describe("BlogsView page", () => {
     await settle()
 
     expect(mockListBlogs).toHaveBeenCalledTimes(1)
-    const row = wrapper.getComponent(RouterLinkStub)
+    const row = wrapper.findAllComponents(RouterLinkStub)
+      .find((link) => link.attributes("data-testid") === "blog-row-7")!
     expect(row.text()).toContain("January update")
     expect(row.props("to")).toBe("/blogs/7")
   })

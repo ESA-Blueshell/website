@@ -68,7 +68,7 @@ read -rp "kubectl context \"$context\" ($server). Is this Blueshell's cluster? T
 [[ $answer == yes ]] || die "Not confirmed. Pick the cluster with KUBE_CONTEXT=<name> $0"
 
 log=$(mktemp)
-"${K[@]}" -n data-system port-forward svc/vault :8200 >"$log" 2>&1 &
+"${K[@]}" -n data-system port-forward svc/vault-v2 :8200 >"$log" 2>&1 &
 forward_pid=$!
 port=""
 for _ in $(seq 1 30); do

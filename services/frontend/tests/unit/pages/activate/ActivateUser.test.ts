@@ -46,6 +46,16 @@ describe("ActivateUser page", () => {
     mockActivateUser.mockResolvedValue({membershipStarted: false})
   })
 
+  it("shows the island spinner while the account is being activated", async () => {
+    mockActivateUser.mockReturnValue(new Promise(() => undefined))
+    const wrapper = mountInApp(ActivateUser)
+    await settle()
+
+    const waiting = wrapper.get("[data-testid=activate-user-loading-state]")
+    expect(waiting.find("[role=status]").exists()).toBe(true)
+    expect(waiting.find("[role=progressbar]").exists()).toBe(false)
+  })
+
   it("confirms the account and sends the applicant to sign in", async () => {
     mountInApp(ActivateUser)
     await settle()

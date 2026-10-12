@@ -12,11 +12,7 @@
           class="d-flex align-center justify-center"
           data-testid="activate-user-loading-state"
         >
-          <v-progress-circular
-            class="mr-3"
-            indeterminate
-            size="32"
-          />
+          <loading-spinner class="mr-3" />
           <p class="text-subtitle-1 mb-0">
             Please wait a moment, we’re activating your account.
           </p>
@@ -61,6 +57,7 @@
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {activateUser} from "@/domains/recovery"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"

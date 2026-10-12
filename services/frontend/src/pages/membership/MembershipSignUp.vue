@@ -21,10 +21,9 @@
               class="d-flex align-center justify-center pa-6"
               data-testid="membership-details-loading"
             >
-              <v-progress-circular
+              <loading-spinner
                 class="mr-3"
-                indeterminate
-                size="28"
+                :size="28"
               />
               <span class="text-body-1">Fetching the details we already hold.</span>
             </div>
@@ -195,6 +194,7 @@ import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {
   type AddressResponse,
   type MembershipResponse,

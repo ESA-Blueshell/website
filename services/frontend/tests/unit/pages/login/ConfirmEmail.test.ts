@@ -15,6 +15,23 @@ vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "To
 describe("confirming a new email address", () => {
   beforeEach(() => vi.clearAllMocks())
 
+  it("shows the island spinner while the link is being confirmed", async () => {
+    mockToken.mockReturnValue("s.v")
+    let confirm: (answer: {ok: boolean}) => void = () => undefined
+    mockConfirm.mockReturnValue(new Promise((resolve) => {
+      confirm = resolve
+    }))
+    const wrapper = mountInApp(ConfirmEmail)
+    await settle()
+
+    expect(wrapper.find("[role=status]").exists()).toBe(true)
+    expect(wrapper.find("[role=progressbar]").exists()).toBe(false)
+
+    confirm({ok: true})
+    await settle()
+    expect(wrapper.find("[role=status]").exists()).toBe(false)
+  })
+
   it("says the account uses the new address once the link is confirmed", async () => {
     mockToken.mockReturnValue("s.v")
     mockConfirm.mockResolvedValue({ok: true})

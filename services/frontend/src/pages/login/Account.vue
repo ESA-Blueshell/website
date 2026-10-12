@@ -45,7 +45,7 @@
             show-submit
           />
         </div>
-        <v-progress-circular v-else />
+        <loading-spinner v-else />
       </div>
     </div>
   </account-frame>
@@ -59,6 +59,7 @@ import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
 import PendingMembership from "@/components/account/PendingMembership.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
 import {useIsBoard} from "@/composables/useIsBoard"

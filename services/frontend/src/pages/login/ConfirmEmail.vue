@@ -7,10 +7,7 @@
         data-testid="confirm-email"
         style="max-width: 600px"
       >
-        <v-progress-circular
-          v-if="loading"
-          indeterminate
-        />
+        <loading-spinner v-if="loading" />
         <p
           v-else-if="confirmed"
           data-testid="confirm-email-done"
@@ -32,6 +29,7 @@
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {confirmNewEmail} from "@/domains/auth"
 import {loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
 

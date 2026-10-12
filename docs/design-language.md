@@ -40,9 +40,9 @@ at every width, because the artwork carries the name, the time and the place and
 them unreadable. The cut stays on buttons, segmented choices and slices.
 
 Corners are never rounded to soften a box. `--radius-*` is cleared in `island.css`, so
-`rounded-md` and its siblings generate nothing. Three things are round on purpose and nothing
-else is: a monogram or avatar, a count badge and third-party chrome that has its own house
-style, which the Discord widget does.
+`rounded-md` and its siblings generate nothing. Four things are round on purpose and nothing
+else is: a monogram or avatar, a count badge, the loading spinner and third-party chrome that
+has its own house style, which the Discord widget does.
 
 ## Grounds
 
@@ -118,6 +118,9 @@ light, so a tick or a saved notice reads as the house rather than as a stock gre
 One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, and the durations the components already use:
 850ms for a band pass, 620ms for a slice opening, 900ms for a picture settling, 560ms for a
 reveal, 320ms for a button sweep. Every animation respects `useMotionAllowed`.
+
+The loading spinner (`LoadingSpinner.vue`) is the one thing that turns without stopping: a ring
+on a 1.4s linear turn. With reduced motion it fades in place.
 
 A set of things swapping for another set travels: the arriving set slides in from the side the
 visitor pressed while the leaving set slides out, the same pass `BandSwipe` runs when a

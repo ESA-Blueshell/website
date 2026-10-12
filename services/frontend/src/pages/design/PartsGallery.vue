@@ -18,6 +18,7 @@ import FactList from "@/components/island/FactList.vue"
 import FlickReel, {type ReelItem} from "@/components/island/FlickReel.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
+import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
 import PanChevron from "@/components/island/PanChevron.vue"
@@ -232,6 +233,19 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
             said="upcoming events"
           />
         </p>
+      </section>
+
+      <section class="gallery__set">
+        <h2 class="gallery__what">
+          Loading
+        </h2>
+        <div class="gallery__row">
+          <loading-spinner />
+          <loading-spinner
+            label="Fetching your details"
+            :size="28"
+          />
+        </div>
       </section>
 
       <section class="gallery__set">

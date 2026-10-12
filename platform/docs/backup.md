@@ -138,6 +138,50 @@ secret/platform/backup`) can read everything it wrote; without Vault, a Scaleway
 temporary read key and reads the password from Secret Manager. Rehearse into scratch volumes and
 read the data back before restoring over anything live.
 
+### scripts/restore.sh
+
+One script rehearses and restores every store, or the ones you name, while the cluster and its
+Vault are up. It signs in to Vault through the site for the Kopia credentials, takes the newest
+snapshots (or the newest at or before `--at 2026-10-12`), and deletes everything it downloaded
+when it ends. You need `kubectl`, `vault`, `jq`, `curl`, Docker and bash 4 or newer. The
+`database` store, MariaDB and Vault together, asks three share holders for their shares once.
+
+```bash
+scripts/restore.sh rehearse                    # every store, into containers on this machine
+scripts/restore.sh rehearse stalwart gatus     # only these
+scripts/restore.sh cluster                     # dry run: downloads, checks, prints the plan
+scripts/restore.sh cluster valkey --apply      # writes production
+```
+
+**rehearse** opens each store in a throwaway container and reads it back against live:
+
+| Store | Check |
+|---|---|
+| database | the users created before the day of the backup match live; the Vault snapshot unseals with the shares; `secret/platform/backup` is as live; every sealed address opens |
+| uploads | each restored file that still exists live has the same size; files deleted since are counted |
+| valkey | Valkey loads the save; its key count is shown beside live's |
+| gatus | SQLite's integrity check passes and the history tables hold rows |
+| stalwart | Stalwart opens the store and lists the same accounts as live, with their mail |
+
+The rehearsal's Stalwart runs on a Docker network with no way out, so a restored mail queue never
+sends real mail.
+
+**cluster** is a dry run unless `--apply` is given: it checks that every target exists, downloads
+the snapshots, checks they hold what the restore needs, and prints each step. With `--apply` it
+asks for the backup's date, then:
+
+- **database:** first proves, in scratch, that the dump loads and that the shares unseal the Vault
+  snapshot, so it never writes a snapshot production cannot open. It then scales the api to 0,
+  replaces the `blueshell` database with the dump, restores the snapshot over `vault-v2` with a
+  root token made from the shares (the snapshot's token store replaces it), and starts the api.
+- **uploads:** copies every file back beside the live ones, as the api's user. Files added since
+  stay.
+- **valkey**, **stalwart**, **gatus:** scales the app to 0, replaces its files in the claim from a
+  helper pod with their owner kept, and scales it back up. Mail is down meanwhile; senders retry.
+
+Flux is suspended for the stores involved while it runs, and resumed, with every app scaled back,
+however the script ends. Run a backup by hand once the restored data is checked.
+
 ### MariaDB and Vault
 
 Restore into a throwaway Vault and a scratch database, **never over the live ones**. A snapshot
@@ -147,12 +191,6 @@ loaded into the live Vault replaces every secret written since.
 from Vault (`vault kv get secret/platform/backup`), then follow `platform/recovery/README.md`
 from step 2, using them in place of the Secret Manager password and the temporary key. The
 writer key can read everything it wrote.
-
-`scripts/rehearse-restore.sh` rehearses this path end to end. It restores the newest pair into a
-throwaway stack on your machine, asks three share holders for their shares twice, and checks the
-restore against live: the users created before the day of the backup, the version of
-`secret/platform/backup` and every sealed address opening. It deletes the stack and the download
-when it ends, pass or fail. You need `kubectl`, `vault`, `jq` and Docker.
 
 **Break-glass**, when the server and its Vault are gone: follow `platform/recovery/README.md`
 from the start. A Scaleway owner reads the Kopia password from Secret Manager and makes a

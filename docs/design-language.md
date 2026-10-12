@@ -201,6 +201,15 @@ A form on island fields follows these rules:
   an up and a down button, the minute stepping by the field's step, with Clear and Now.
 - **A save bar is set apart from the footer.** It is raised, on the surface colour, with a
   brand top edge and narrower than the page.
+- **A form's foot holds its buttons at the right.** The main button is last. A way back stands
+  at the left. Words that go with the press, a way to recover or a note on what it does, stand
+  at the left on the button's own line, never on a line of their own between the last field and
+  the button.
+- **Steps head their panel.** A step strip sits flush on the panel it steps through, the step in
+  hand on the panel's ground under an accent top edge, so the two read as one block.
+- **A task has one page shape.** Signing in, recovering an account and signing up use the head
+  band and the task layout the account pages use: the form in a narrow column, and beside it
+  the other ways on.
 - **Notices are a tint only.** The tone's colour at a low mix over the ground, with no leaning
   bar.
 

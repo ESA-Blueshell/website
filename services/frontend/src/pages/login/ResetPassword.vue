@@ -1,83 +1,75 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Reset Password" />
-
-    <div
-      class="site-column"
-      style="max-width: 600px"
-    >
-      <div
-        class="island-panel"
+  <account-frame
+    :crumb="{label: 'Login', to: '/login'}"
+    heading="Reset password"
+    island-content
+    :tabs="false"
+  >
+    <task-layout>
+      <form
+        class="island-form"
+        data-testid="reset-password-form"
+        @submit.prevent="onSubmit"
       >
-        <form
-          data-testid="reset-password-form"
-          @submit.prevent="onSubmit"
+        <form-control
+          v-model="form.password"
+          autocomplete="new-password"
+          data-testid="reset-password-new-password-field"
+          :error-messages="errorsOf('password')"
+          kind="password"
+          label="New Password"
+          @blur="touch('password')"
+        />
+        <form-control
+          v-model="passwordAgain"
+          autocomplete="new-password"
+          data-testid="reset-password-repeat-password-field"
+          :error-messages="errorsOf('passwordAgain')"
+          kind="password"
+          label="Repeat New Password"
+          @blur="touch('passwordAgain')"
+        />
+        <div class="form-save">
+          <cut-button
+            tone="solid"
+            submit
+            :disabled="loading"
+            data-testid="reset-password-submit-btn"
+          >
+            Reset Password
+          </cut-button>
+        </div>
+      </form>
+      <notice-box
+        v-if="errorMessage"
+        tone="danger"
+        testid="reset-password-error-alert"
+      >
+        {{ errorMessage }}
+      </notice-box>
+      <p
+        v-if="succeeded"
+        data-testid="reset-password-success-state"
+      >
+        Your password has been reset successfully.
+        <router-link
+          class="form-link"
+          :to="{ name: 'login' }"
         >
-          <form-control
-            v-model="form.password"
-            autocomplete="new-password"
-            data-testid="reset-password-new-password-field"
-            :error-messages="errorsOf('password')"
-            kind="password"
-            label="New Password"
-            @blur="touch('password')"
-          />
-          <form-control
-            v-model="passwordAgain"
-            autocomplete="new-password"
-            data-testid="reset-password-repeat-password-field"
-            :error-messages="errorsOf('passwordAgain')"
-            kind="password"
-            label="Repeat New Password"
-            @blur="touch('passwordAgain')"
-          />
-
-          <div class="form-save">
-            <cut-button
-              tone="solid"
-              submit
-              :disabled="loading"
-              data-testid="reset-password-submit-btn"
-            >
-              Reset Password
-            </cut-button>
-          </div>
-
-          <notice-box
-            v-if="errorMessage"
-            tone="danger"
-            testid="reset-password-error-alert"
-          >
-            {{ errorMessage }}
-          </notice-box>
-
-          <div
-            v-if="succeeded"
-            class="reset__done"
-            data-testid="reset-password-success-state"
-          >
-            <p>
-              Your password has been reset successfully.
-              <RouterLink
-                :to="{ name: 'login' }"
-                class="site-link"
-              >
-                Sign in
-              </RouterLink>
-            </p>
-          </div>
-        </form>
-      </div>
-    </div>
-  </main>
+          Sign in
+        </router-link>
+      </p>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import {type PasswordResetRequest, setNewPassword} from "@/domains/recovery"
 import {clearStoredRecoveryToken, loadRecoveryTokenFromRoute} from "@/plugins/recoveryToken"
@@ -134,10 +126,3 @@ async function onSubmit() {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-
-.reset__done {
-  margin-top: 24px;
-}
-</style>

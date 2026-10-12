@@ -9,7 +9,7 @@ test.describe("auth guards", () => {
     await page.goto("/account")
 
     await expect(page).toHaveURL(/\/login\?redirect=.*account/)
-    await expect(page.getByText("LOGIN", {exact: true})).toBeVisible()
+    await expect(page.getByRole("heading", {name: "Login", exact: true})).toBeVisible()
   })
 
   test("blocks non-admin users from admin-only route", async ({page}) => {

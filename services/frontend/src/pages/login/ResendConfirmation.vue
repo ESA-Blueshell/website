@@ -1,68 +1,73 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Confirm Your Account" />
-
-    <div
-      class="site-column"
-      style="max-width: 600px"
-    >
+  <account-frame
+    :crumb="{label: 'Login', to: '/login'}"
+    heading="Confirm your account"
+    island-content
+    :tabs="false"
+  >
+    <task-layout aside-title="Forgot your password?">
       <div
-        class="island-panel"
+        v-if="!succeeded"
+        class="island-form"
+        data-testid="resend-confirmation-form-state"
       >
-        <div
-          v-if="!succeeded"
-          data-testid="resend-confirmation-form-state"
+        <p>
+          Enter your username, and we’ll email you a new link to confirm your address.
+          You need it before you can sign in.
+        </p>
+        <form
+          class="island-form"
+          data-testid="resend-confirmation-form"
+          @submit.prevent="onSubmit"
         >
-          <p>
-            Enter your username, and we’ll email you a new link to confirm your address.
-            You need it before you can sign in.
-          </p>
-
-          <form
-            data-testid="resend-confirmation-form"
-            @submit.prevent="onSubmit"
-          >
-            <form-control
-              v-model="form.username"
-              autocomplete="username"
-              data-testid="resend-confirmation-username-field"
-              :error-messages="errorsOf('username')"
-              label="Username"
-              @blur="touch('username')"
-            />
-
-            <div class="form-save">
-              <cut-button
-                tone="solid"
-                submit
-                :disabled="loading"
-                data-testid="resend-confirmation-submit-btn"
-              >
-                Send confirmation mail
-              </cut-button>
-            </div>
-          </form>
-        </div>
-
-        <div
-          v-else
-          data-testid="resend-confirmation-success-state"
-        >
-          <p>
-            If an account with that username is still waiting to be confirmed, you’ll receive an
-            email with a fresh link. Didn’t get it? Check your spam folder or try again later.
-          </p>
-        </div>
+          <form-control
+            v-model="form.username"
+            autocomplete="username"
+            data-testid="resend-confirmation-username-field"
+            :error-messages="errorsOf('username')"
+            label="Username"
+            @blur="touch('username')"
+          />
+          <div class="form-save">
+            <cut-button
+              tone="solid"
+              submit
+              :disabled="loading"
+              data-testid="resend-confirmation-submit-btn"
+            >
+              Send confirmation mail
+            </cut-button>
+          </div>
+        </form>
       </div>
-    </div>
-  </main>
+      <div
+        v-else
+        data-testid="resend-confirmation-success-state"
+      >
+        <p>
+          If an account with that username is still waiting to be confirmed, you’ll receive an
+          email with a fresh link. Didn’t get it? Check your spam folder or try again later.
+        </p>
+      </div>
+
+      <template #aside>
+        <p>We will email you a link to reset it.</p>
+        <p>
+          <router-link :to="`/login/forgor?username=${form.username}`">
+            Send a reset email
+          </router-link>
+        </p>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import {onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import {useFormChecks} from "@/composables/useFormChecks"
 import {required} from "@/utils/checks"

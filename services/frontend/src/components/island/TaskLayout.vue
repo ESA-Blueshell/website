@@ -5,13 +5,18 @@
  */
 defineOptions({name: "TaskLayout"})
 
-const {asideTitle = ""} = defineProps<{
+const {asideTitle = "", wide = false} = defineProps<{
   asideTitle?: string
+  /** For a form that lays its fields two to a row. */
+  wide?: boolean
 }>()
 </script>
 
 <template>
-  <div class="task">
+  <div
+    class="task"
+    :class="{'task--wide': wide}"
+  >
     <div class="task__main">
       <slot />
     </div>
@@ -37,6 +42,11 @@ const {asideTitle = ""} = defineProps<{
   gap: 4rem;
   align-items: start;
   padding: 2.25rem 0 3rem;
+}
+
+.task--wide {
+  grid-template-columns: minmax(0, 48rem) minmax(0, 1fr);
+  gap: 3rem;
 }
 
 .task__main {
@@ -65,8 +75,17 @@ const {asideTitle = ""} = defineProps<{
   color: var(--color-eyebrow);
 }
 
-.task__aside :deep(a) {
+/* A cut button drawn as a link keeps its own ink. */
+.task__aside :deep(a:not(.island-cut)) {
   color: var(--color-brand-ink);
+}
+
+/* Two to a row needs the room: the aside folds under before the fields are squeezed. */
+@media (max-width: 1023px) {
+  .task--wide {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
 }
 
 @media (--phone) {

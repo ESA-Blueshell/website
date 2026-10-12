@@ -1,8 +1,10 @@
 <template>
-  <main class="site-main">
-    <top-banner :title="stepUpMode ? 'Confirm it is you' : 'Login'" />
-
-    <div class="login">
+  <account-frame
+    :heading="stepUpMode ? 'Confirm it is you' : 'Login'"
+    island-content
+    :tabs="false"
+  >
+    <task-layout aside-title="No account yet?">
       <notice-box
         v-if="refusal"
         testid="login-refusal"
@@ -36,17 +38,17 @@
           label="Trust this browser for 30 days"
           testid="login-trust-browser"
         />
-        <div class="login__aside">
-          <button
-            class="login__link"
-            data-testid="login-use-backup-code-btn"
-            type="button"
-            @click="useBackupCode = !useBackupCode"
-          >
-            {{ useBackupCode ? "Use the authenticator app" : "Use a backup code" }}
-          </button>
-        </div>
-        <div class="form-save panel-acts--split">
+        <div class="form-save">
+          <div class="form-save__words">
+            <button
+              class="form-link"
+              data-testid="login-use-backup-code-btn"
+              type="button"
+              @click="useBackupCode = !useBackupCode"
+            >
+              {{ useBackupCode ? "Use the authenticator app" : "Use a backup code" }}
+            </button>
+          </div>
           <cut-button
             v-if="!stepUpMode"
             testid="login-code-back-btn"
@@ -84,34 +86,28 @@
           kind="password"
           label="Password"
         />
-        <div class="login__aside">
-          <!--
-            An account still waiting on its confirmation link cannot be told apart from a
-            wrong password here, on purpose. Offering the way out beside the other one is
-            what keeps that from being a dead end.
-          -->
-          <router-link
-            class="login__link"
-            data-testid="login-resend-confirmation-btn"
-            :to="`/login/confirm?username=${username}`"
-          >
-            Didn't get your confirmation mail?
-          </router-link>
-          <router-link
-            class="login__link"
-            data-testid="login-forgot-password-btn"
-            :to="`/login/forgor?username=${username}`"
-          >
-            Forgot password?
-          </router-link>
-        </div>
-        <div class="form-save panel-acts--split">
-          <cut-button
-            href="/account/create"
-            testid="login-create-account-btn"
-          >
-            Create account
-          </cut-button>
+        <div class="form-save">
+          <div class="form-save__words">
+            <router-link
+              class="form-link"
+              data-testid="login-forgot-password-btn"
+              :to="`/login/forgor?username=${username}`"
+            >
+              Forgot password?
+            </router-link>
+            <!--
+              An account still waiting on its confirmation link cannot be told apart from a
+              wrong password here, on purpose. Offering the way out beside the other one is
+              what keeps that from being a dead end.
+            -->
+            <router-link
+              class="form-link"
+              data-testid="login-resend-confirmation-btn"
+              :to="`/login/confirm?username=${username}`"
+            >
+              Didn't get your confirmation mail?
+            </router-link>
+          </div>
           <cut-button
             :disabled="!valid || loading"
             submit
@@ -122,15 +118,37 @@
           </cut-button>
         </div>
       </form>
-    </div>
-  </main>
+
+      <template
+        v-if="!stepUpMode"
+        #aside
+      >
+        <p>An account lets you sign up for events.</p>
+        <p>
+          Want to become a member? The <router-link
+            to="/membership/signup"
+          >
+            membership form
+          </router-link> creates your account too.
+        </p>
+        <div class="form-save">
+          <cut-button
+            href="/account/create"
+            testid="login-create-account-btn"
+          >
+            Create account
+          </cut-button>
+        </div>
+      </template>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import {useStore} from "vuex"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
+import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.js"
 import {answerChallenge, type LoginResponse, signIn, stepUp} from "@/domains/auth"
 import {resolveLoginRedirect} from "@/utils/loginRedirect"
@@ -139,6 +157,7 @@ import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 
 const router = useRouter()
 const route = useRoute()
@@ -245,41 +264,3 @@ const backToPassword = () => {
   password.value = ""
 }
 </script>
-
-<style scoped>
-.login {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 500px;
-  margin: 2.5rem auto;
-  padding-inline: 1rem;
-}
-
-.login__aside {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.4rem 1.2rem;
-}
-
-/* The ways out beside the form are words alone, so the two buttons below stay the only cuts. */
-.login__link {
-  padding: 0.3rem 0;
-  border: 0;
-  background: none;
-  font-family: var(--font-display);
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--color-ash);
-  cursor: pointer;
-}
-
-.login__link:hover,
-.login__link:focus-visible {
-  color: var(--color-chalk);
-  text-decoration: underline;
-}
-</style>

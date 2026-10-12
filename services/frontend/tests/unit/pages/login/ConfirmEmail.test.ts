@@ -10,7 +10,6 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 vi.mock("@/domains/auth", () => ({confirmNewEmail: mockConfirm}))
 vi.mock("@/plugins/recoveryToken", () => ({loadRecoveryTokenFromRoute: mockToken}))
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
 
 describe("confirming a new email address", () => {
   beforeEach(() => vi.clearAllMocks())

@@ -55,14 +55,14 @@ test.describe("membership signup", () => {
     await page.getByTestId("membership-hero-join").click()
 
     await expect(page).toHaveURL(/\/membership\/signup$/)
-    await expect(page.getByText("MEMBERSHIP FORM", {exact: true})).toBeVisible()
+    await expect(page.getByRole("heading", {name: "Membership form", exact: true})).toBeVisible()
   })
 
   test("shows validation messages when personal details are missing", async ({page}) => {
     await installApiMocks(page)
 
     await page.goto("/membership/signup")
-    await expect(page.getByText("MEMBERSHIP FORM", {exact: true})).toBeVisible()
+    await expect(page.getByRole("heading", {name: "Membership form", exact: true})).toBeVisible()
 
     await page.getByTestId("membership-details-next-btn").click()
 

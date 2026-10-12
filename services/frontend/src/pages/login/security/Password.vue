@@ -38,7 +38,8 @@
             type="password"
           />
         </form-field>
-        <div class="security-task__acts">
+        <div class="form-save">
+          <span class="form-save__words">Every other sign-in ends.</span>
           <cut-button
             :disabled="!currentPassword || !newPassword"
             submit
@@ -47,7 +48,6 @@
           >
             Change password
           </cut-button>
-          <span class="security-task__note">Every other sign-in ends.</span>
         </div>
       </form>
 
@@ -119,18 +119,5 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-}
-
-.security-task__acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem 1rem;
-  padding-top: 0.4rem;
-}
-
-.security-task__note {
-  font-size: 0.85rem;
-  color: var(--color-ash);
 }
 </style>

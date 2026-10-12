@@ -180,12 +180,6 @@ defineExpose({validate, save})
   </div>
 </template>
 <style lang="scss" scoped>
-.form-save {
-  display: flex;
-  justify-content: flex-end;
-  margin: 1.2rem 0 1.25rem;
-}
-
 .form-fields + .form-fields {
   margin-top: 0.5rem;
 }

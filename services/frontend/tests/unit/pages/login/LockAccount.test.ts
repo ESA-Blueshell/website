@@ -17,9 +17,12 @@ vi.mock("vuex", async (importOriginal) => {
   return withVuexUseStore(importOriginal, mockStore)
 })
 vi.mock("@/domains/auth", () => ({lockAccount: mockLock}))
-vi.mock("@/domains/discord", () => ({discordChannel: (name: string) => `https://discord.example/${name}`}))
+// Partial: the page's frame draws the site's social marks, which read the door's invite.
+vi.mock("@/domains/discord", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/domains/discord")>(),
+  discordChannel: (name: string) => `https://discord.example/${name}`,
+}))
 vi.mock("@/plugins/recoveryToken", () => ({loadRecoveryTokenFromRoute: mockToken}))
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({default: {name: "TopBanner", template: "<div />"}}))
 
 describe("locking an account from a warning email", () => {
   beforeEach(() => {

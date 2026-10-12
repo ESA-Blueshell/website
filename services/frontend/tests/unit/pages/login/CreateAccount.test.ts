@@ -27,11 +27,8 @@ vi.mock("@/components/form/EmailConfirmationPanel.vue", () => ({
   },
 }))
 
-vi.mock("@/components/common/banners/TopBanner.vue", () => ({
-  default: {name: "TopBanner", template: "<div />"},
-}))
 
-const mountPage = () => mountInApp(CreateAccount, {global: {stubs: {TopBanner: true}}})
+const mountPage = () => mountInApp(CreateAccount)
 
 const submit = async (wrapper: ReturnType<typeof mountPage>) => {
   await wrapper.get("[data-test='submit']").trigger("click")

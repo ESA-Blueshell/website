@@ -213,6 +213,21 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
           <p class="gallery__said">
             The form for one task, in a narrow column.
           </p>
+          <div class="form-save">
+            <div class="form-save__words">
+              <a
+                class="form-link"
+                href="#"
+              >A way to recover</a>
+              <span>Or a note on what the press does.</span>
+            </div>
+            <cut-button>
+              Back
+            </cut-button>
+            <cut-button tone="solid">
+              Save
+            </cut-button>
+          </div>
           <template #aside>
             <p>What happens, and where to get help.</p>
           </template>
@@ -256,10 +271,25 @@ const flags = ["NL", "DE", "BE", "GB", "FR", "TR"]
         <h2 class="gallery__what">
           Steps
         </h2>
-        <step-strip
-          :current="1"
-          :steps="['Your details', 'Address', 'Membership', 'Confirm email']"
-        />
+        <div>
+          <step-strip
+            :current="1"
+            :steps="['Your details', 'Address', 'Membership', 'Confirm email']"
+          />
+          <div class="island-panel">
+            <p class="gallery__said">
+              The panel the strip heads.
+            </p>
+            <div class="panel-acts panel-acts--split">
+              <cut-button>
+                Previous
+              </cut-button>
+              <cut-button tone="solid">
+                Next
+              </cut-button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="gallery__set">

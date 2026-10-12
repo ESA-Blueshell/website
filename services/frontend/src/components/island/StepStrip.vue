@@ -1,5 +1,8 @@
 <script lang="ts" setup>
-/** The steps of a task across the top of its page: the ones behind ticked, the one in hand lit. */
+/**
+ * The steps of a task, heading the panel they step through: the ones behind ticked, the one in
+ * hand on the panel's own ground.
+ */
 defineOptions({name: "StepStrip"})
 
 const {steps, current, testid = undefined} = defineProps<{
@@ -49,22 +52,24 @@ const {steps, current, testid = undefined} = defineProps<{
 .steps {
   display: grid;
   grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
-  gap: 2px;
+  gap: 0 2px;
 }
 
-/* The surface, not the island's band ground: the strip also stands on pages outside an island. */
+/* A step not in hand stands back: half the panel's ground, so more of the tile shows through. */
 .steps__one {
   display: flex;
   align-items: center;
   gap: 0.8rem;
   padding: 0.9rem 1rem 0.9rem 1.1rem;
   color: var(--color-ash);
-  background-color: var(--color-surface);
+  background-color: color-mix(in oklab, var(--color-pit) 45%, transparent);
 }
 
+/* The panel's ground, so the step in hand runs into the panel it heads. */
 .steps__one--on {
   color: var(--color-chalk);
-  box-shadow: inset 0 -3px 0 var(--color-eyebrow);
+  background-color: var(--band-ground, var(--color-surface));
+  box-shadow: inset 0 3px 0 var(--color-eyebrow);
 }
 
 .steps__n {

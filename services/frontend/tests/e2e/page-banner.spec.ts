@@ -39,15 +39,17 @@ test.describe("the page banner", () => {
   test("wraps a long title on a phone and never runs past the screen", async ({page}) => {
     await page.setViewportSize({width: PHONE, height: 900})
     await installApiMocks(page)
-    await page.goto("/account/confirm-email")
+    await page.goto("/events/circuitShowdown")
 
-    const heading = page.getByTestId("page-banner-title")
-    await expect(heading).toHaveText("CONFIRM YOUR EMAIL ADDRESS")
+    const banner = page.getByTestId("page-banner")
+    const heading = banner.getByTestId("page-banner-title")
+    await expect(heading).toHaveText("CIRCUIT SHOWDOWN")
     const box = (await heading.boundingBox())!
     expect(box.x).toBeGreaterThanOrEqual(0)
     expect(box.x + box.width).toBeLessThanOrEqual(PHONE)
     // One line of this face at 40px is about 59px tall, two about 117px.
     expect(box.height).toBeGreaterThan(100)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(PHONE)
+    // The banner's own width: this page's standings table is wider than a phone.
+    expect(await banner.evaluate(element => element.scrollWidth)).toBeLessThanOrEqual(PHONE)
   })
 })

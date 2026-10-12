@@ -1,55 +1,54 @@
 <template>
-  <main class="site-main">
-    <top-banner title="Account Activation" />
-
-    <div
-      class="site-column"
-      style="max-width: 600px"
-    >
-      <div class="island-panel activate-panel">
-        <div
-          v-if="loading"
-          class="site-waiting"
-          data-testid="activate-user-loading-state"
-        >
-          <loading-spinner />
-          <p>
-            Please wait a moment, we’re activating your account.
-          </p>
-        </div>
-
-        <div
-          v-else-if="succeeded"
-          data-testid="activate-user-success-state"
-        >
-          <done-tick />
-          <p>
-            {{ membershipStarted
-              ? "Account confirmed and your membership has started. You will be redirected to the login page."
-              : "Account confirmed! You will be redirected to the login page." }}
-          </p>
-        </div>
-
-        <!-- Error -->
-        <notice-box
-          v-else
-          tone="warning"
-          testid="activate-user-error-alert"
-        >
-          <div>{{ errorMessage }}</div>
-          <div class="activate-panel__next">
-            You will be redirected to the login page.
-          </div>
-        </notice-box>
+  <account-frame
+    heading="Account activation"
+    island-content
+    :tabs="false"
+  >
+    <task-layout>
+      <div
+        v-if="loading"
+        class="site-waiting activate__waiting"
+        data-testid="activate-user-loading-state"
+      >
+        <loading-spinner />
+        <p>
+          Please wait a moment, we’re activating your account.
+        </p>
       </div>
-    </div>
-  </main>
+
+      <div
+        v-else-if="succeeded"
+        class="site-waiting activate__waiting"
+        data-testid="activate-user-success-state"
+      >
+        <done-tick />
+        <p>
+          {{ membershipStarted
+            ? "Account confirmed and your membership has started. You will be redirected to the login page."
+            : "Account confirmed! You will be redirected to the login page." }}
+        </p>
+      </div>
+
+      <!-- Error -->
+      <notice-box
+        v-else
+        tone="warning"
+        testid="activate-user-error-alert"
+      >
+        <div>{{ errorMessage }}</div>
+        <div>
+          You will be redirected to the login page.
+        </div>
+      </notice-box>
+    </task-layout>
+  </account-frame>
 </template>
 
 <script lang="ts" setup>
+import AccountFrame from "@/components/common/AccountFrame.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import {onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
 import DoneTick from "@/components/island/DoneTick.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
@@ -102,12 +101,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.activate-panel {
-  align-items: center;
-  text-align: center;
-}
-
-.activate-panel__next {
-  margin-top: 8px;
+.activate__waiting {
+  justify-content: flex-start;
 }
 </style>

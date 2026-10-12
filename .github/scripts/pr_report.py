@@ -5,7 +5,9 @@ Replaces the body splice that `pr_diff_stats.py` did: a comment can carry the
 coverage tables too, and it stops a bot rewriting the author's description.
 
 Three modes. `render` builds the body and upserts the comment, found again by
-MARKER so a second push updates one comment rather than leaving a trail.
+MARKER so a second push updates one comment rather than leaving a trail. With
+IN_PROGRESS set it renders mid-run: a suite that has not reported yet is
+waited on rather than reported missing, and patch coverage says what it counts.
 `summarize` writes the normalised coverage of a run to one JSON file, which a
 push to main uploads as the baseline artifact for pull requests to compare
 against. `gate` fails when a changed line the unit suites measure never ran.
@@ -15,7 +17,7 @@ renames resolved, and its `patch` hunks are what patch coverage reads, so no
 head checkout is needed anywhere in this script.
 
 Reads GH_TOKEN, REPO, PR_NUMBER, COVERAGE_DIR, BASELINE_PATH, BASE_REF,
-PATCH_MINIMUM.
+PATCH_MINIMUM, IN_PROGRESS.
 """
 
 from __future__ import annotations
@@ -228,7 +230,7 @@ def find_one(root: Path, name: str) -> Path | None:
     return matches[0] if matches else None
 
 
-def read_suites(coverage_dir: Path) -> tuple[dict[str, dict[str, float | None]], dict[str, dict[str, set[int]]], list[str]]:
+def read_suites(coverage_dir: Path, in_progress: bool = False) -> tuple[dict[str, dict[str, float | None]], dict[str, dict[str, set[int]]], list[str]]:
     """Each suite's totals, the union of every line-level report, and what was missing."""
     totals: dict[str, dict[str, float | None]] = {}
     measured: dict[str, dict[str, set[int]]] = {}
@@ -238,7 +240,10 @@ def read_suites(coverage_dir: Path) -> tuple[dict[str, dict[str, float | None]],
         root = coverage_dir / artifact
         report = find_one(root, filename)
         if report is None:
-            notes.append(f"No coverage reached this report for **{label}** (`{artifact}`).")
+            if in_progress:
+                notes.append(f"No **{label}** coverage yet. This comment updates when it lands.")
+            else:
+                notes.append(f"No coverage reached this report for **{label}** (`{artifact}`).")
             continue
         try:
             if kind == "jacoco":
@@ -416,8 +421,10 @@ def changes_section(files: list[dict], rules) -> str:
     return "\n\n".join(["## Changes", "\n".join(rows), ratio])
 
 
-def coverage_section(totals, baseline, base_ref: str) -> str:
+def coverage_section(totals, baseline, base_ref: str, in_progress: bool = False) -> str:
     if not totals:
+        if in_progress:
+            return "## Coverage\n\nThe unit suites are still running."
         return "## Coverage\n\nNo coverage summary reached this report."
 
     head = "|  | " + " | ".join(METRIC_HEADS) + " |"
@@ -449,13 +456,17 @@ def coverage_section(totals, baseline, base_ref: str) -> str:
     return "\n\n".join(parts)
 
 
-def patch_section(covered: int, total: int, uncovered) -> list[str]:
+def patch_section(covered: int, total: int, uncovered, partial: bool = False) -> list[str]:
     if total == 0:
+        if partial:
+            return ["**Patch coverage:** no suite that has reported yet measures a changed line."]
         return ["**Patch coverage:** this pull request changes no line that coverage measures."]
     percent = covered / total * 100
+    so_far = " so far" if partial else ""
     headline = (
-        f"**Patch coverage: {percent:.1f}%**, "
-        f"{covered} of {total} changed lines covered."
+        f"**Patch coverage{so_far}: {percent:.1f}%**, "
+        f"{covered} of {total} changed lines covered"
+        f"{', counting only the suites that have reported' if partial else ''}."
     )
     if covered < total:
         headline += " Every changed line a unit suite measures has to run."
@@ -483,12 +494,13 @@ def patch_section(covered: int, total: int, uncovered) -> list[str]:
     return [headline, details]
 
 
-def render(files, rules, totals, baseline, base_ref, patch, notes) -> str:
+def render(files, rules, totals, baseline, base_ref, patch, notes, in_progress: bool = False) -> str:
     covered, total, uncovered = patch
+    partial = in_progress and len(totals) < len(SUITES)
     sections = [
         changes_section(files, rules),
-        coverage_section(totals, baseline, base_ref),
-        *patch_section(covered, total, uncovered),
+        coverage_section(totals, baseline, base_ref, in_progress),
+        *patch_section(covered, total, uncovered, partial),
         # One blockquote rather than one per note, so a run missing three
         # artifacts does not read as three separate complaints.
         "\n".join(f"> {note}" for note in notes),
@@ -500,8 +512,8 @@ def render(files, rules, totals, baseline, base_ref, patch, notes) -> str:
         # least load-bearing of the three.
         sections = [
             changes_section(files, rules),
-            coverage_section(totals, baseline, base_ref),
-            patch_section(covered, total, [])[0],
+            coverage_section(totals, baseline, base_ref, in_progress),
+            patch_section(covered, total, [], partial)[0],
             "> The list of uncovered lines was too long for one comment.",
             MARKER,
         ]
@@ -610,13 +622,13 @@ def command_gate(repo: str, pr: str, coverage_dir: Path, minimum: float) -> int:
 
 
 def command_render(repo: str, pr: str, coverage_dir: Path, baseline_path: str | None,
-                   base_ref: str, dry_run: bool) -> int:
+                   base_ref: str, dry_run: bool, in_progress: bool = False) -> int:
     rules = load_rules(Path(__file__).resolve().parents[1] / "pr-report-rules.yml")
     files = fetch_files(repo, pr)
-    totals, measured, notes = read_suites(coverage_dir)
+    totals, measured, notes = read_suites(coverage_dir, in_progress)
     baseline = read_baseline(baseline_path)
     patch = patch_coverage(files, measured)
-    body = render(files, rules, totals, baseline, base_ref, patch, notes)
+    body = render(files, rules, totals, baseline, base_ref, patch, notes, in_progress)
 
     if dry_run:
         print(body)
@@ -657,6 +669,7 @@ def main() -> int:
         os.environ.get("BASELINE_PATH"),
         os.environ.get("BASE_REF", "main"),
         dry_run,
+        bool(os.environ.get("IN_PROGRESS")),
     )
 
 

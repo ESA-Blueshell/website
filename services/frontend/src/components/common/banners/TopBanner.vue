@@ -1,12 +1,11 @@
 <template>
   <div
-    :style="{ height: containerHeight }"
     class="top-banner"
+    data-testid="page-banner"
   >
     <div
-      :style="md ? { 'font-size': '70px !important'} : sm ? { 'font-size': '50px !important'} : xs ? { 'font-size': '40px !important'} : {}"
-      class="text-h1 font-weight-bold text-white text-center"
-      style="letter-spacing: 1.5px !important;line-height: normal !important;"
+      class="top-banner__title"
+      data-testid="page-banner-title"
     >
       {{ uppercaseTitle }}
     </div>
@@ -15,30 +14,10 @@
 
 <script lang="ts" setup>
 import {computed} from "vue"
-import {useDisplay} from "vuetify"
 
-interface Props {
-  title: string
-  /** Desktop/tablet height (lg and up). Accepts number (px) or any CSS length (e.g., '24rem'). */
-  height?: number | string
-  /** Mobile height (md and down). Accepts number (px) or any CSS length. */
-  mHeight?: number | string
-}
+const props = defineProps<{title: string}>()
 
-const props = withDefaults(defineProps<Props>(), {
-  height: "300px",
-  mHeight: "200px",
-})
-
-const {lgAndUp, md, sm, xs} = useDisplay()
-
-const toCssSize = (v: number | string) => (typeof v === "number" ? `${v}px` : v)
-
-const containerHeight = computed(() =>
-  lgAndUp.value ? toCssSize(props.height) : toCssSize(props.mHeight),
-)
-
-const uppercaseTitle = computed(() => (props.title ?? "").toUpperCase())
+const uppercaseTitle = computed(() => props.title.toUpperCase())
 </script>
 
 <style scoped>
@@ -51,7 +30,41 @@ const uppercaseTitle = computed(() => (props.title ?? "").toUpperCase())
   background-size: cover;
   box-shadow: inset 0 -36px 48px rgba(0, 0, 0, 0.22);
   display: flex;
+  height: 200px;
   justify-content: center;
+}
+
+.top-banner__title {
+  color: #fff;
+  font-family: "Shellhouse One", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  line-height: normal;
+  text-align: center;
+}
+
+/* Vuetify's sm, md and lg widths, which the pages under the banner still lay out by. */
+@media (min-width: 600px) {
+  .top-banner__title {
+    font-size: 50px;
+  }
+}
+
+@media (min-width: 840px) {
+  .top-banner__title {
+    font-size: 70px;
+  }
+}
+
+@media (min-width: 1145px) {
+  .top-banner {
+    height: 300px;
+  }
+
+  .top-banner__title {
+    font-size: 90px;
+  }
 }
 
 /* The widths siteBanner.ts lists, picked by how wide the band is drawn: a background has no

@@ -39,7 +39,7 @@ const facts = computed(() => {
       value: `${foldedTriggerLabel(folded)} · ${folded.initiatedByDisplay} · ${formatDate(folded.at)}`,
       testid: `job-detail-folded-${index}`,
     })),
-    ...(one.forced ? [{label: "Forced", value: "Run although it would have been skipped", testid: "job-detail-forced"}] : []),
+    ...(one.forced ? [{label: "Forced", value: "It ran even though it would have been skipped", testid: "job-detail-forced"}] : []),
     {label: "Queued", value: formatDate(one.queuedAt)},
     {label: "Started", value: formatDate(one.startedAt)},
     {label: "Finished", value: formatDate(one.finishedAt)},
@@ -116,7 +116,7 @@ watch(id, load, {immediate: true})
         :href="`/management/jobs?again=${job.id}`"
         testid="job-detail-run-again"
       >
-        Run again
+        Re-run
       </cut-button>
     </template>
 
@@ -126,7 +126,7 @@ watch(id, load, {immediate: true})
       testid="job-detail-facts"
     />
 
-    <list-head title="What it concerns" />
+    <list-head title="Related to" />
     <ul
       v-if="job.relatedEntities.length"
       class="job-detail__concerns"
@@ -152,7 +152,7 @@ watch(id, load, {immediate: true})
       v-else
       class="job-detail__line job-detail__line--quiet"
     >
-      Nothing in particular.
+      Nothing.
     </p>
     <p
       v-if="payloadChips(job.payload).length"

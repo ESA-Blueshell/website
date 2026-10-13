@@ -82,7 +82,7 @@ test.describe("the Jobs filters", () => {
 })
 
 test.describe("one job", () => {
-  test("shows its failure and sends Run again to Run a job, filled in", async ({page}) => {
+  test("shows its failure and sends Re-run to Run a job, filled in", async ({page}) => {
     await installApiMocks(page)
     await loginAsAdmin(page.context())
     await page.goto("/management/jobs/700")

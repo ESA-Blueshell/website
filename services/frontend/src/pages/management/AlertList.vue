@@ -17,16 +17,16 @@ const loaded = ref(false)
 
 const COLUMNS: TableColumn<Alert>[] = [
   {key: "from", label: "From", sortBy: (alert) => alertRow(alert).from},
-  {key: "what", label: "What needs a look", wrap: true, sortBy: alertTitle},
+  {key: "what", label: "Alert", wrap: true, sortBy: alertTitle},
   {key: "since", label: "Since", newestFirst: true, sortBy: (alert) => (alert.since ? Date.parse(alert.since) : null)},
 ]
 
 const facts = computed(() => {
   const oldest = shown.value.map((one) => one.since).filter((since): since is string => !!since).sort()[0]
   return [
-    {label: "For you", value: String(shown.value.length), sub: "Each clears itself once it is dealt with"},
+    {label: "Open", value: String(shown.value.length), sub: ""},
     {label: "Oldest", value: oldest ? formatMoment(oldest) : "None", sub: ""},
-    {label: "Hidden by you", value: String(hidden.value.length), sub: "Still open, just out of your way"},
+    {label: "Hidden by you", value: String(hidden.value.length), sub: "Not fixed yet, only hidden for you"},
   ]
 })
 
@@ -52,7 +52,7 @@ onMounted(async () => {
     title="Alerts"
   >
     <template #lede>
-      What needs someone, gathered from every page in Management. Each alert clears itself once it is dealt with.
+      Problems that need someone to act. An alert goes away by itself once the problem is fixed.
     </template>
 
     <fact-list
@@ -89,7 +89,7 @@ onMounted(async () => {
         <span
           v-else
           data-testid="alert-list-empty"
-        >Nothing needs you right now.</span>
+        >No open alerts.</span>
       </template>
       <template #from="{row}">
         <span class="alerts__from">{{ alertRow(row).from }}</span>
@@ -116,7 +116,7 @@ onMounted(async () => {
           :testid="`alert-hide-${row.key}`"
           @click="toggle(row)"
         >
-          Hide for me
+          Hide
         </mini-button>
       </template>
       <template #phone="{row}">
@@ -132,7 +132,7 @@ onMounted(async () => {
               :testid="`alert-hide-${row.key}`"
               @click="toggle(row)"
             >
-              Hide for me
+              Hide
             </mini-button>
           </template>
         </management-row>
@@ -140,7 +140,7 @@ onMounted(async () => {
     </management-table>
 
     <template v-if="hidden.length > 0">
-      <list-head :title="`Hidden for you · ${hidden.length}`" />
+      <list-head :title="`Hidden · ${hidden.length}`" />
       <management-table
         :columns="COLUMNS.slice(0, 2)"
         label="Hidden alerts"
@@ -162,7 +162,7 @@ onMounted(async () => {
             :testid="`alert-show-${row.key}`"
             @click="toggle(row)"
           >
-            Show again
+            Make visible
           </mini-button>
         </template>
         <template #phone="{row}">
@@ -177,7 +177,7 @@ onMounted(async () => {
                 :testid="`alert-show-${row.key}`"
                 @click="toggle(row)"
               >
-                Show again
+                Make visible
               </mini-button>
             </template>
           </management-row>

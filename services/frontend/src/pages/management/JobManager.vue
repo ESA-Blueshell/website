@@ -164,7 +164,7 @@ onMounted(async () => {
   }
   void loadStats()
   await refresh()
-  // A job's own page sends Run again here, to the one form that queues jobs.
+  // A job's own page sends Re-run here, to the one form that queues jobs.
   const again = Number(route.query.again)
   if (Number.isInteger(again) && again > 0) {
     const job = await loadJob(again)
@@ -180,7 +180,7 @@ onMounted(async () => {
     title="Jobs"
   >
     <template #lede>
-      Work the site does in the background: sends, syncs, reconciles and Discord posts.
+      Tasks the site runs in the background, such as sending email, syncing contacts and posting to Discord.
     </template>
     <template #actions>
       <cut-button
@@ -349,7 +349,7 @@ onMounted(async () => {
           :testid="`job-run-again-btn-${row.id}`"
           @click="runAgain(row)"
         >
-          Run again
+          Re-run
         </mini-button>
       </template>
       <template #phone="{row}">

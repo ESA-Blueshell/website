@@ -101,7 +101,7 @@ watch(id, load, {immediate: true})
         testid="exception-resolve"
         @click="resolve"
       >
-        Mark resolved
+        Mark as resolved
       </cut-button>
     </template>
 
@@ -115,7 +115,7 @@ watch(id, load, {immediate: true})
       testid="exception-facts"
     />
 
-    <list-head title="What it concerned last" />
+    <list-head title="Where it last happened" />
     <p
       class="exception__line"
       data-testid="exception-concern"
@@ -137,7 +137,7 @@ watch(id, load, {immediate: true})
       class="exception__line"
       data-testid="exception-message"
     >
-      {{ fault.latestMessage || "It carried no message." }}
+      {{ fault.latestMessage || "No message." }}
     </p>
     <pre
       v-if="fault.latestStackTrace"

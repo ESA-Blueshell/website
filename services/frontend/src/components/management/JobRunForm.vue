@@ -256,7 +256,7 @@ const submit = async () => {
     >
       {{ selectedDescription }}
       <template v-if="selectedDescriptor && selectedDescriptor.payloadFields.length === 0">
-        This job takes no arguments.
+        This job needs no input.
       </template>
     </p>
 

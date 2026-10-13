@@ -62,7 +62,7 @@ onMounted(load)
     title="Exceptions"
   >
     <template #lede>
-      Every exception the api did not handle, one row per type and place however often it fired.
+      Errors the api did not handle. The same error from the same place is one row, however often it happened.
     </template>
 
     <management-table

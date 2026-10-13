@@ -143,7 +143,7 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
     testImplementation("org.springframework.modulith:spring-modulith-core")
     testImplementation("io.github.classgraph:classgraph:4.8.196")
     testImplementation("io.mockk:mockk:1.14.11")

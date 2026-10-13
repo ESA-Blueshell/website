@@ -72,6 +72,10 @@ class BrevoTargetStrategy(
         )
     }
 
+    // Brevo's ids are numbers, so one typed as 07 is list 7: matched as text it would pass for another list.
+    override fun resolve(externalId: String): ExternalTarget? =
+        externalId.trim().toLongOrNull()?.let { id -> catalog(null).firstOrNull { it.externalId == id.toString() } }
+
     /** Brevo's own folders, including the ones holding nothing. */
     override fun folders(): List<String> = lists.listFolders().values.sorted()
 

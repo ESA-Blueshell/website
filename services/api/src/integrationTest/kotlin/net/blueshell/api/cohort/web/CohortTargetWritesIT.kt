@@ -164,6 +164,13 @@ class CohortTargetWritesIT : UserTestSupport() {
             .andExpect(jsonPath("$.code").value("TargetStillLinked"))
         mvc
             .perform(
+                post("/management/cohort-targets/{system}/{externalId}/delete", "BREVO", "0$linkedId")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Members"}""")
+                    .with(signedIn(admin)),
+            ).andExpect(status().isConflict)
+        mvc
+            .perform(
                 post("/management/cohort-targets/{system}/{externalId}/delete", "BREVO", looseId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"loose"}""")

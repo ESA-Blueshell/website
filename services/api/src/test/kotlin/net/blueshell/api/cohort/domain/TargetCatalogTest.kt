@@ -313,4 +313,30 @@ class TargetCatalogTest {
 
         verify(deletions, never()).delete(any<TargetDeletion>())
     }
+
+    @Test
+    fun `a linked list is refused under any spelling of its id, and the delete is recorded under the system's own`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "7", TargetKind.LIST, "Members")
+        whenever(brevo.resolve("07")).thenReturn(external)
+        val deleting = catalogWith(brevo)
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(
+            listOf(
+                Target("BREVO", TargetKind.LIST, "Members").apply {
+                    id = 1L
+                    externalId = "7"
+                },
+            ),
+        )
+
+        assertThatThrownBy { deleting.delete(TargetSystem.BREVO, "07", "Members") }.isInstanceOf(TargetStillLinked::class.java)
+        verify(brevo, never()).delete(any())
+
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(emptyList())
+        deleting.delete(TargetSystem.BREVO, "07", "Members")
+
+        val recorded = argumentCaptor<TargetDeletion>()
+        verify(deletions).save(recorded.capture())
+        assertThat(recorded.firstValue.externalId).isEqualTo("7")
+    }
 }

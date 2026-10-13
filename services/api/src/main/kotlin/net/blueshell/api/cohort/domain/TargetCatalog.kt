@@ -116,18 +116,20 @@ class TargetCatalog(
     ) {
         val strategy = strategies.require(system)
         val external = refusedBy(system) { strategy.resolve(externalId) } ?: throw TargetNotFound(system, externalId)
-        if (linkedTargets(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
+        // The id the system answered, not the one typed: the check and the delete must mean one target.
+        val id = external.externalId
+        if (linkedTargets(system).containsKey(id)) throw TargetStillLinked(system, id)
         if (typedName != external.label) throw TargetNameMismatch(typedName)
         // Recorded first: a delete that cannot be recorded must not happen, and it cannot be undone.
         val deletion =
             deletions.save(
-                TargetDeletion(system.name, externalId, external.label, actors.currentOrSystem().userId, Instant.now()),
+                TargetDeletion(system.name, id, external.label, actors.currentOrSystem().userId, Instant.now()),
             )
         try {
             refusedBy(system) { strategy.delete(external) }
         } catch (e: RuntimeException) {
             // A call that got no answer may still have deleted it: the record goes only for a list seen to be there.
-            if (runCatching { strategy.resolve(externalId) }.getOrNull() != null) deletions.delete(deletion)
+            if (runCatching { strategy.resolve(id) }.getOrNull() != null) deletions.delete(deletion)
             throw e
         }
         // The id and name came from a request, so the log names only the row that holds them.

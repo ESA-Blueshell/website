@@ -55,6 +55,17 @@ class BrevoTargetStrategyTest {
     }
 
     @Test
+    fun `finds a list by its number however the id was typed, and nothing for an id that is no number`() {
+        whenever(lists.listFolders()).thenReturn(mapOf(1L to "Members"))
+        whenever(lists.listAll()).thenReturn(listOf(list(7L, "Guests", 1L), list(70L, "Paid", 1L)))
+
+        assertThat(strategy.resolve("07")?.externalId).isEqualTo("7")
+        assertThat(strategy.resolve(" 7 ")?.label).isEqualTo("Guests")
+        assertThat(strategy.resolve("Guests")).isNull()
+        assertThat(strategy.resolve("8")).isNull()
+    }
+
+    @Test
     fun `filters by query after fetching the bounded catalog`() {
         whenever(lists.listFolders()).thenReturn(mapOf(1L to "Members"))
         whenever(lists.listAll()).thenReturn(listOf(list(10L, "Guests", 1L), list(11L, "Paid", 1L)))

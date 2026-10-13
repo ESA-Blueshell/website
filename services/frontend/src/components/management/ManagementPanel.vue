@@ -8,7 +8,7 @@
         {{ title }}
       </h2>
       <router-link
-        v-if="to"
+        v-if="to && link"
         class="mg-panel__link"
         :data-testid="testid ? `${testid}-link` : undefined"
         :to="to"

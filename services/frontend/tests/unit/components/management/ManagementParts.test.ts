@@ -16,7 +16,7 @@ const {push} = vi.hoisted(() => ({push: vi.fn()}))
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
-  useRouter: () => ({push}),
+  useRouter: () => ({push, resolve: (to: string) => ({href: to})}),
 }))
 
 const stubs = {RouterLink: {props: ["to"], template: '<a :to="to"><slot /></a>'}}
@@ -162,6 +162,12 @@ describe("ManagementPanel", () => {
     expect(linked.get("[data-testid=panel-link]").attributes("to")).toBe("/management/events")
     expect(linked.text()).toContain("2 awaiting")
     expect(plain.find("a").exists()).toBe(false)
+  })
+
+  it("draws no link where it has a page to open but no words for the link", () => {
+    const wordless = mount(ManagementPanel, {props: {title: "Mail", to: "/management/emails"}, global: {stubs}})
+
+    expect(wordless.find("a").exists()).toBe(false)
   })
 })
 
@@ -363,7 +369,7 @@ describe("ManagementTable", () => {
     expect(push).toHaveBeenCalledWith("/management/committees/1")
   })
 
-  it("draws only the rows in its window once a list is long, and asks for more near the end", async () => {
+  it("draws only the rows in its window once a list is long", async () => {
     const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
     const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: many, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`}, slots: cells, global: {stubs}, attachTo: document.body})
 
@@ -379,13 +385,128 @@ describe("ManagementTable", () => {
     expect(wrapper.find("[data-testid=row-1]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=row-145]").exists()).toBe(true)
     expect(wrapper.findAll("tr.mg-table__gap")).toHaveLength(2)
-    expect(wrapper.emitted("more")).toBeUndefined()
 
     Object.defineProperty(box, "scrollTop", {value: 14300, configurable: true})
     await wrapper.get(".mg-table__scroll").trigger("scroll")
-    expect(wrapper.emitted("more")).toHaveLength(1)
     expect(wrapper.find("[data-testid=row-300]").exists()).toBe(true)
     wrapper.unmount()
+  })
+
+  interface Watched {root?: Element | Document | null; rootMargin?: string}
+
+  /** Stands in for the browser's observer: the test says when the end of the rows is in view. */
+  const watchingTheEnd = () => {
+    const watchers: Array<{see: (inView: boolean) => void; options: Watched; disconnect: ReturnType<typeof vi.fn>}> = []
+    vi.stubGlobal("IntersectionObserver", class {
+      disconnect = vi.fn()
+      observe = vi.fn()
+      options: Watched
+      see: (inView: boolean) => void
+      constructor(seen: (entries: Array<{isIntersecting: boolean}>) => void, options: Watched) {
+        this.options = options
+        this.see = (inView) => seen([{isIntersecting: inView}])
+        watchers.push(this)
+      }
+    })
+    return watchers
+  }
+
+  it("asks for more when the end of its rows comes near, and again where new rows leave the end in view", async () => {
+    const watchers = watchingTheEnd()
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows, rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
+
+    expect(watchers[0].options.root).toBe(wrapper.get(".mg-table__scroll").element)
+    expect(watchers[0].options.rootMargin).toBe("0px 0px 400px 0px")
+    watchers[0].see(false)
+    expect(wrapper.emitted("more")).toBeUndefined()
+    watchers[0].see(true)
+    expect(wrapper.emitted("more")).toHaveLength(1)
+
+    await wrapper.setProps({rows: [...rows, {id: 3, name: "Lancie"}]})
+    await nextTick()
+    expect(watchers[0].disconnect).toHaveBeenCalled()
+    expect(watchers).toHaveLength(2)
+    wrapper.unmount()
+    expect(watchers[1].disconnect).toHaveBeenCalled()
+  })
+
+  it("asks a phone for more against the page's own scroll, and draws only the rows near its window", async () => {
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const watchers = watchingTheEnd()
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const wrapper = mount(ManagementTable<Row>, {
+      props: {columns, rows: many, rowKey: (row: Row) => row.id},
+      slots: {...cells, phone: ({row}: {row: Row}) => h("p", {class: "as-row"}, row.name)},
+      global: {stubs},
+      attachTo: document.body,
+    })
+    const names = () => wrapper.findAll(".as-row").map((one) => one.text())
+
+    expect(watchers[0].options.root).toBeNull()
+    watchers[0].see(true)
+    expect(wrapper.emitted("more")).toHaveLength(1)
+    expect(names().length).toBeLessThan(60)
+    expect(names()[0]).toBe("Row 1")
+
+    const list = wrapper.get(".mg-rows__body").element as HTMLElement
+    vi.spyOn(list, "getBoundingClientRect").mockReturnValue({top: -7000} as DOMRect)
+    window.dispatchEvent(new Event("scroll"))
+    await nextTick()
+
+    expect(names()).not.toContain("Row 1")
+    expect(names().length).toBeLessThan(60)
+    expect(names()).toContain("Row 145")
+    wrapper.unmount()
+  })
+
+  it("draws rows for a window made taller", async () => {
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows: many, rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
+    const drawn = () => wrapper.findAll("tr[data-row]").length
+    const before = drawn()
+
+    Object.defineProperty(wrapper.get(".mg-table__scroll").element, "clientHeight", {value: 2400, configurable: true})
+    window.dispatchEvent(new Event("resize"))
+    await nextTick()
+
+    expect(drawn()).toBeGreaterThan(before + 20)
+    wrapper.unmount()
+  })
+
+  it("opens a row's page in another tab for a press that asks for one", async () => {
+    push.mockClear()
+    const opened = vi.fn()
+    vi.stubGlobal("open", opened)
+    const wrapper = mount(ManagementTable<Row>, {
+      props: {columns, rows, rowKey: (row: Row) => row.id, to: (row: Row) => `/management/committees/${row.id}`, rowTestid: (row: Row) => `row-${row.id}`},
+      slots: cells,
+      global: {stubs},
+    })
+
+    await wrapper.get("[data-testid=row-1] td").trigger("click", {metaKey: true})
+    await wrapper.get("[data-testid=row-2] td").trigger("click", {ctrlKey: true})
+
+    expect(opened.mock.calls).toEqual([["/management/committees/1", "_blank", "noopener"], ["/management/committees/2", "_blank", "noopener"]])
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  it("says what it lists, names its search after that, and counts its rows where only some are drawn", async () => {
+    const many = Array.from({length: 300}, (_, index) => ({id: index + 1, name: `Row ${index + 1}`}))
+    const props = {columns, rows: many, rowKey: (row: Row) => row.id, rowTestid: (row: Row) => `row-${row.id}`, label: "Committees", searchText: (row: Row) => row.name, testid: "table"}
+    const wrapper = mount(ManagementTable<Row>, {props, slots: cells, global: {stubs}})
+
+    expect(wrapper.get("table").attributes("aria-label")).toBe("Committees")
+    expect(wrapper.getComponent({name: "SearchBox"}).props("label")).toBe("Search committees")
+    expect(wrapper.get("table").attributes("aria-rowcount")).toBe("301")
+    expect(wrapper.get("[data-testid=row-1]").attributes("aria-rowindex")).toBe("2")
+
+    await wrapper.setProps({rows: many.slice(0, 3)})
+    expect(wrapper.get("table").attributes("aria-rowcount")).toBeUndefined()
+    expect(wrapper.get("[data-testid=row-1]").attributes("aria-rowindex")).toBeUndefined()
+
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const phone = mount(ManagementTable<Row>, {props, slots: {...cells, phone: ({row}: {row: Row}) => h("p", row.name)}, global: {stubs}})
+    expect(phone.get("[data-testid=table]").attributes()).toMatchObject({role: "group", "aria-label": "Committees"})
   })
 
   it("keeps rows in its window where the list gets shorter under a reader far down it", async () => {
@@ -421,8 +542,19 @@ describe("ManagementTable", () => {
 
     await wrapper.setProps({rows: many.slice(0, 5)})
     await nextTick()
-    expect(wrapper.find("colgroup").exists()).toBe(false)
-    expect(wrapper.get("table").classes()).not.toContain("mg-table__locked")
+    expect(wrapper.get("table").classes()).toContain("mg-table__locked")
+    measured.mockRestore()
+    wrapper.unmount()
+  })
+
+  it("holds the columns of a short list too, so a search that narrows it cannot shift them", async () => {
+    const measured = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      return {width: this.tagName === "TH" ? 150 : 0} as DOMRect
+    })
+    const wrapper = mount(ManagementTable<Row>, {props: {columns, rows, rowKey: (row: Row) => row.id}, slots: cells, global: {stubs}, attachTo: document.body})
+    await nextTick()
+
+    expect(wrapper.get("table").classes()).toContain("mg-table__locked")
     measured.mockRestore()
     wrapper.unmount()
   })

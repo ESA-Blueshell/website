@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.21.0](https://github.com/ESA-Blueshell/website/compare/v1.20.5...v1.21.0) (2026-10-12)
+
+
+### Features
+
+* **frontend:** membership sign-up is built from island parts, without the Vuetify stepper ([#2398](https://github.com/ESA-Blueshell/website/issues/2398)) ([759a140](https://github.com/ESA-Blueshell/website/commit/759a1407af0b7471173fefc593dcdf5eb3d304f1))
+* **frontend:** sign-in and sign-up pages are island task pages, form buttons sit right ([#2413](https://github.com/ESA-Blueshell/website/issues/2413)) ([08fdcf6](https://github.com/ESA-Blueshell/website/commit/08fdcf608b143ab50f454cdb634d26d4d58c829b))
+* **frontend:** six loading pages show an island spinner instead of Vuetify's ([#2390](https://github.com/ESA-Blueshell/website/issues/2390)) ([2c72c9f](https://github.com/ESA-Blueshell/website/commit/2c72c9ff754424a716abcbe58a89811c49f1c6af))
+* **frontend:** six public pages and the documents table are built from island parts, not Vuetify's ([#2397](https://github.com/ESA-Blueshell/website/issues/2397)) ([55b017f](https://github.com/ESA-Blueshell/website/commit/55b017fcdc23126984c04f04ce7441f88477dd8e))
+* **frontend:** status messages, the cookie notice and the backup codes warning show as island toasts ([#2394](https://github.com/ESA-Blueshell/website/issues/2394)) ([76697a8](https://github.com/ESA-Blueshell/website/commit/76697a8e77902ddabe52d1def78de85efc86d555))
+* **platform:** one restore script rehearses or restores every store ([#2404](https://github.com/ESA-Blueshell/website/issues/2404)) ([079716e](https://github.com/ESA-Blueshell/website/commit/079716eee14d286085e3e734e30b98aa943a3b5d))
+* **platform:** restore rehearsal script, reading from vault-v2 ([#2401](https://github.com/ESA-Blueshell/website/issues/2401)) ([b3f2aa6](https://github.com/ESA-Blueshell/website/commit/b3f2aa6b81e132577764bb523392378b1e8edcd2))
+* **platform:** Vault clients move to vault-v2, bootstrap keeps no root token ([#2396](https://github.com/ESA-Blueshell/website/issues/2396)) ([1d37452](https://github.com/ESA-Blueshell/website/commit/1d37452e743ce23f7bac718a3d73eeeb6e7ecd18))
+* **platform:** vault-v2 and a script that copies the old Vault into it ([#2395](https://github.com/ESA-Blueshell/website/issues/2395)) ([87b3659](https://github.com/ESA-Blueshell/website/commit/87b3659c755e96375f58e1651aaa0d2a79a9ad23))
+
+
+### Bug Fixes
+
+* **platform:** emergency export skips bank details when the backup has none ([#2388](https://github.com/ESA-Blueshell/website/issues/2388)) ([b02675a](https://github.com/ESA-Blueshell/website/commit/b02675adcd4483fcee6bc3128a818c2ed8be94d3))
+* **platform:** the bootstrap Job mounts the cluster CA again ([#2400](https://github.com/ESA-Blueshell/website/issues/2400)) ([96cb6c7](https://github.com/ESA-Blueshell/website/commit/96cb6c71f9a1d64728e8a4dfebb5e21b7785d316))
+* **platform:** the restore rehearsal starts from an empty scratch database ([#2403](https://github.com/ESA-Blueshell/website/issues/2403)) ([16680e3](https://github.com/ESA-Blueshell/website/commit/16680e37bc66b8ad1a36ffe6ae56b155d36341fe))
+
+
+### Refactoring
+
+* **frontend:** every page stands in the site's own main area, not Vuetify's ([#2399](https://github.com/ESA-Blueshell/website/issues/2399)) ([cf31889](https://github.com/ESA-Blueshell/website/commit/cf3188981524596ad923a5887a166f22231c8608))
+* **frontend:** pages outside Management use no Vuetify classes, theme variables or .v- style rules ([#2405](https://github.com/ESA-Blueshell/website/issues/2405)) ([79a6c08](https://github.com/ESA-Blueshell/website/commit/79a6c08677441972420ce931d556908e6efb7cb1))
+* **frontend:** the page banner sets its height and title size in CSS, without Vuetify's breakpoints ([#2393](https://github.com/ESA-Blueshell/website/issues/2393)) ([5426139](https://github.com/ESA-Blueshell/website/commit/542613980769365348ae81bd2950dfef50d2b419))
+* **frontend:** the site stores and switches the dark/light theme, Vuetify's theme follows it ([#2387](https://github.com/ESA-Blueshell/website/issues/2387)) ([8a69606](https://github.com/ESA-Blueshell/website/commit/8a6960686060d8ea841d748cf4f048e543de9cc2))
+
 ## [1.20.5](https://github.com/ESA-Blueshell/website/compare/v1.20.4...v1.20.5) (2026-10-12)
 
 

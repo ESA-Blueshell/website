@@ -1,6 +1,9 @@
 package net.blueshell.api.jobs.api
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import net.blueshell.api.exceptions.api.ExceptionConcern
+import net.blueshell.api.exceptions.api.ExceptionRecorder
+import net.blueshell.api.exceptions.api.ExceptionSource
 import net.blueshell.api.jobs.domain.JobHandler
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
@@ -22,6 +25,7 @@ import java.time.Instant
 
 class JobExecutorRetryScheduleTest {
     private val executions: JobExecutionService = mock()
+    private val recorder: ExceptionRecorder = mock()
     private val properties = JobQueueProperties(maxRetries = 3, initialBackoffMillis = 1_000)
 
     /** A handler that always fails, on its own schedule or the queue's. */
@@ -44,7 +48,7 @@ class JobExecutorRetryScheduleTest {
     ) {
         val execution = JobExecution(jobType = "failing", payload = "{}").apply { this.attempts = attempts }
         whenever(executions.markRunning(any())).thenReturn(execution)
-        JobExecutor(executions, JobHandlerRegistry(listOf(handler)), properties, SimpleMeterRegistry()).execute(execution)
+        JobExecutor(executions, JobHandlerRegistry(listOf(handler)), properties, SimpleMeterRegistry(), recorder).execute(execution)
     }
 
     private val hours = RetrySchedule(10, Duration.ofMinutes(2), 2.0, Duration.ofHours(2))
@@ -97,6 +101,14 @@ class JobExecutorRetryScheduleTest {
             any(),
             eq(true),
         )
+        verify(recorder, never()).record(any(), any())
+    }
+
+    @Test
+    fun `records a failure that does not explain itself as a fault of the job's type`() {
+        run(Failing(null), attempts = 1)
+
+        verify(recorder).record(any(), eq(ExceptionConcern(ExceptionSource.JOB, "failing", null)))
     }
 
     @Test
@@ -146,7 +158,7 @@ class JobExecutorRetryScheduleTest {
         val execution = JobExecution(jobType = "failing", payload = "{}", forced = true)
         whenever(executions.markRunning(any())).thenReturn(execution)
 
-        JobExecutor(executions, JobHandlerRegistry(listOf(skipping)), properties, SimpleMeterRegistry()).execute(execution)
+        JobExecutor(executions, JobHandlerRegistry(listOf(skipping)), properties, SimpleMeterRegistry(), recorder).execute(execution)
 
         verify(executions).markSkipped(execution, "Not due yet.")
         verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull())
@@ -169,7 +181,7 @@ class JobExecutorRetryScheduleTest {
         val execution = JobExecution(jobType = "failing", payload = "{}")
         whenever(executions.markRunning(any())).thenReturn(execution)
 
-        JobExecutor(executions, JobHandlerRegistry(listOf(done)), properties, SimpleMeterRegistry()).execute(execution)
+        JobExecutor(executions, JobHandlerRegistry(listOf(done)), properties, SimpleMeterRegistry(), recorder).execute(execution)
 
         verify(executions).markSuccess(execution, JobEffect.EDITED, "https://discord.test/m1")
         verify(executions, never()).markSkipped(any(), any())

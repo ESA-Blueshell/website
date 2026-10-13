@@ -452,6 +452,8 @@ const routes: RouteRecordRaw[] = [
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "jobs", name: "jobManager", component: () => import("@/pages/management/JobManager.vue"), meta: {title: "Jobs", requiresAdmin: true}},
       {path: "jobs/:id(\\d+)", name: "jobDetail", component: () => import("@/pages/management/JobDetail.vue"), meta: {title: "Job", requiresAdmin: true}},
+      {path: "exceptions", name: "exceptionList", component: () => import("@/pages/management/ExceptionList.vue"), meta: {title: "Exceptions", requiresAdmin: true}},
+      {path: "exceptions/:id(\\d+)", name: "exceptionDetail", component: () => import("@/pages/management/ExceptionDetail.vue"), meta: {title: "Exception", requiresAdmin: true}},
     ],
   },
   {

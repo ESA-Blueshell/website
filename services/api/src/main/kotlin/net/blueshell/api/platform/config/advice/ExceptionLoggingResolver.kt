@@ -11,8 +11,9 @@ import org.springframework.stereotype.Component
 import org.springframework.web.servlet.HandlerExceptionResolver
 import org.springframework.web.servlet.ModelAndView
 
-// Observer-only HandlerExceptionResolver that guarantees every
-// exception escaping a controller lands in the logs.
+// HandlerExceptionResolver that resolves nothing: it guarantees every
+// exception escaping a controller lands in the logs, and leaves it on
+// the request for ExceptionRecordingFilter.
 //
 // It runs first in the resolver chain (HIGHEST_PRECEDENCE), records
 // one ERROR line with the request method, URI, exception class and
@@ -48,6 +49,8 @@ class ExceptionLoggingResolver : HandlerExceptionResolver {
             sanitizeForLog(ex.message?.let(PersonalDetails::scrub)),
             ex,
         )
+        // The recording filter reads it once the response has a status, and records only a 5xx.
+        request.setAttribute(ExceptionRecordingFilter.RESOLVED_EXCEPTION, ex)
         return null
     }
 }

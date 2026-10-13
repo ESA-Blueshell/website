@@ -31,7 +31,14 @@ const GROUPS: ManagementGroup[] = [
   },
   {label: "Mail", entries: [{label: "Sent", to: "/management/emails"}]},
   {label: "Platforms", adminOnly: true, entries: [{label: "Cohorts", to: "/management/cohorts", adminOnly: true}]},
-  {label: "System", adminOnly: true, entries: [{label: "Jobs", to: "/management/jobs", adminOnly: true}]},
+  {
+    label: "System",
+    adminOnly: true,
+    entries: [
+      {label: "Jobs", to: "/management/jobs", adminOnly: true},
+      {label: "Exceptions", to: "/management/exceptions", adminOnly: true},
+    ],
+  },
 ]
 
 /** The groups and pages this reader may open, in the sidebar's order; what they cannot open is left out. */

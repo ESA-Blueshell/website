@@ -2,6 +2,7 @@ package net.blueshell.api.email.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
 import net.blueshell.api.email.domain.EmailQuery
+import net.blueshell.api.email.domain.EmailResends
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.SentEmailPreviewService
 import net.blueshell.api.email.persistence.Email
@@ -32,6 +33,7 @@ class EmailManagementController(
     private val sentEmailPreviewService: SentEmailPreviewService,
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
+    private val resends: EmailResends,
 ) {
     @GetMapping
     @BoardOnly
@@ -52,7 +54,7 @@ class EmailManagementController(
     fun getStats(): EmailStatsDTO =
         EmailStatsDTO(
             totalCount = EmailDeliveryStatus.entries.sumOf { emailService.countByStatus(it) },
-            pendingCount = emailService.countByStatus(EmailDeliveryStatus.PENDING),
+            queuedCount = emailService.countByStatus(EmailDeliveryStatus.QUEUED),
             sentCount = emailService.countByStatus(EmailDeliveryStatus.SENT),
             deliveredCount = emailService.countByStatus(EmailDeliveryStatus.DELIVERED),
             openedCount = emailService.countByStatus(EmailDeliveryStatus.OPENED),
@@ -110,6 +112,13 @@ class EmailManagementController(
         return email.toDto()
     }
 
+    /** Makes a failed or bounced email again for the person's current address, as a new email linked to this one. */
+    @PostMapping("/{id}/resend")
+    @BoardOnly
+    fun resend(
+        @PathVariable id: Long,
+    ): EmailDTO = resends.resend(id).toDto()
+
     private fun normalizePageable(pageable: Pageable): Pageable {
         val sort = if (pageable.sort.isSorted) pageable.sort else DEFAULT_SORT
         val pageNumber = if (pageable.isPaged) pageable.pageNumber else 0
@@ -124,25 +133,27 @@ class EmailManagementController(
                 Sort.Order.desc("id"),
             )
     }
-}
 
-private fun Email.toDto() =
-    EmailDTO(
-        id = this.id,
-        recipientEmail = this.recipientEmail,
-        recipientName = this.recipientName,
-        subject = this.subject,
-        emailType = this.emailType,
-        deliveryStatus = this.deliveryStatus,
-        messageId = this.messageId,
-        sentAt = this.sentAt,
-        deliveredAt = this.deliveredAt,
-        openedAt = this.openedAt,
-        errorType = this.errorType,
-        errorReason = this.errorReason,
-        attempts = this.attempts,
-        jobExecutionId = this.jobExecutionId,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt,
-        previewable = this.bodyMarkdown != null,
-    )
+    private fun Email.toDto() =
+        EmailDTO(
+            id = this.id,
+            recipientEmail = this.recipientEmail,
+            recipientName = this.recipientName,
+            subject = this.subject,
+            emailType = this.emailType,
+            deliveryStatus = this.deliveryStatus,
+            messageId = this.messageId,
+            sentAt = this.sentAt,
+            deliveredAt = this.deliveredAt,
+            openedAt = this.openedAt,
+            errorType = this.errorType,
+            errorReason = this.errorReason,
+            attempts = this.attempts,
+            jobExecutionId = this.jobExecutionId,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt,
+            previewable = this.bodyMarkdown != null,
+            resentFromId = this.resentFromId,
+            resendable = resends.mayResend(this),
+        )
+}

@@ -1,0 +1,29 @@
+# An email is on record from the moment its job is queued, as QUEUED, and one made again for a
+# person's current address names the email it was made from.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-email-queued.yaml
+      id: email-queued
+      author: blueshell
+      changes:
+        # A row still PENDING is a send that was cut off before it was marked: nothing will send it, so it failed.
+        - update:
+            tableName: emails
+            columns:
+              - column: {name: delivery_status, value: FAILED}
+              - column: {name: error_type, value: Interrupted}
+              - column: {name: error_reason, value: The send was cut off before it finished.}
+            where: delivery_status = 'PENDING'
+        - addColumn:
+            tableName: emails
+            columns:
+              - column: {name: resent_from_id, type: BIGINT}
+        # Every queue and every send finds an email by its job.
+        - createIndex:
+            tableName: emails
+            indexName: idx_emails_job_execution
+            columns:
+              - column: {name: job_execution_id}
+      rollback:
+        - dropIndex: {tableName: emails, indexName: idx_emails_job_execution}
+        - dropColumn: {tableName: emails, columnName: resent_from_id}

@@ -155,6 +155,7 @@ export const anEmail = (over: Partial<Wire<Email>> = {}): Wire<Email> => ({
   subject: "Welcome to Blueshell",
   deliveryStatus: "DELIVERED",
   previewable: true,
+  resendable: false,
   ...over,
 })
 

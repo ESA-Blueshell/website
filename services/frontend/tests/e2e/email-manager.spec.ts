@@ -19,6 +19,7 @@ const BASE_EMAILS = [
     jobExecutionId: 700,
     createdAt: "2025-01-01T09:59:00.000Z",
     previewable: true,
+    resendable: false,
   },
   {
     id: 802,
@@ -38,6 +39,7 @@ const BASE_EMAILS = [
     createdAt: "2025-01-01T11:00:00.000Z",
     // Sent before bodies were stored: there is nothing to read back.
     previewable: false,
+    resendable: false,
   },
   {
     id: 803,
@@ -54,6 +56,7 @@ const BASE_EMAILS = [
     jobExecutionId: null,
     createdAt: "2025-01-01T11:59:00.000Z",
     previewable: false,
+    resendable: false,
   },
   {
     id: 804,
@@ -70,6 +73,7 @@ const BASE_EMAILS = [
     jobExecutionId: null,
     createdAt: "2025-01-01T13:59:00.000Z",
     previewable: false,
+    resendable: false,
   },
 ] satisfies Wire<Email>[]
 

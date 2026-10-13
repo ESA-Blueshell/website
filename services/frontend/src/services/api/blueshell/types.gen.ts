@@ -1330,6 +1330,14 @@ export type Email = {
     previewable: boolean;
     recipientEmail?: string | null;
     recipientName?: string | null;
+    /**
+     * Whether this email may be made again: it failed or bounced, a job sent it and it holds no one-time link
+     */
+    resendable: boolean;
+    /**
+     * The email this one was made again from, when it was resent
+     */
+    resentFromId?: number | null;
     sentAt?: string | null;
     subject?: string | null;
     updatedAt?: string | null;
@@ -1345,7 +1353,7 @@ export type EmailChangeRequest = {
 };
 
 export enum EmailDeliveryStatus {
-    PENDING = 'PENDING',
+    QUEUED = 'QUEUED',
     SENT = 'SENT',
     DELIVERED = 'DELIVERED',
     OPENED = 'OPENED',
@@ -1358,7 +1366,7 @@ export type EmailStats = {
     deliveredCount: number;
     failedCount: number;
     openedCount: number;
-    pendingCount: number;
+    queuedCount: number;
     sentCount: number;
     totalCount: number;
 };
@@ -9176,6 +9184,49 @@ export type PreviewSentEmailResponses = {
 };
 
 export type PreviewSentEmailResponse = PreviewSentEmailResponses[keyof PreviewSentEmailResponses];
+
+export type ResendData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/emails/{id}/resend';
+};
+
+export type ResendErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ResendError = ResendErrors[keyof ResendErrors];
+
+export type ResendResponses = {
+    /**
+     * OK
+     */
+    200: Email;
+};
+
+export type ResendResponse = ResendResponses[keyof ResendResponses];
 
 export type Retry1Data = {
     body?: never;

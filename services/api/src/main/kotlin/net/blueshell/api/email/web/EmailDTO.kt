@@ -24,6 +24,10 @@ data class EmailDTO(
     val updatedAt: Instant?,
     @param:Schema(description = "Whether this email's body was stored, so it can be previewed")
     val previewable: Boolean,
+    @param:Schema(description = "The email this one was made again from, when it was resent")
+    val resentFromId: Long? = null,
+    @param:Schema(description = "Whether this email may be made again: it failed or bounced, a job sent it and it holds no one-time link")
+    val resendable: Boolean = false,
 )
 
 @Schema(name = "SentEmailPreview")
@@ -40,7 +44,7 @@ data class SentEmailPreviewDTO(
 @Schema(name = "EmailStats")
 data class EmailStatsDTO(
     val totalCount: Long,
-    val pendingCount: Long,
+    val queuedCount: Long,
     val sentCount: Long,
     val deliveredCount: Long,
     val openedCount: Long,

@@ -1,7 +1,8 @@
 package net.blueshell.api.contribution.domain
 
+import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -20,26 +21,26 @@ class ContributionReminderEmailJob(
     private val reminders: ContributionReminderService,
     private val emails: EmailSenderService,
     private val channels: PaymentChannels,
-) : AbstractJsonJobHandler<ContributionJobs.ContributionReminderPayload>(
+) : EmailJob<ContributionJobs.ContributionReminderPayload>(
         objectMapper,
         ContributionJobs.ContributionReminder,
+        emails,
+        "email.contribution-reminder",
     ) {
-    override fun handlePayload(payload: ContributionJobs.ContributionReminderPayload) {
+    override fun compose(payload: ContributionJobs.ContributionReminderPayload): EmailContent {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val stated = reminder.statedFee
-        val content =
-            if (stated == null) {
-                createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
-            } else {
-                createContributionReminderEmail(
-                    reminder.user,
-                    reminder.contributionPeriod,
-                    stated.feeType,
-                    stated.amount,
-                    stated.paymentDueDate,
-                    channels,
-                )
-            }
-        emails.send(content, "email.contribution-reminder", currentExecutionId)
+        return if (stated == null) {
+            createContributionReminderEmail(reminder.user, reminder.contributionPeriod, channels)
+        } else {
+            createContributionReminderEmail(
+                reminder.user,
+                reminder.contributionPeriod,
+                stated.feeType,
+                stated.amount,
+                stated.paymentDueDate,
+                channels,
+            )
+        }
     }
 }

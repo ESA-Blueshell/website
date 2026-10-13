@@ -450,6 +450,8 @@ const routes: RouteRecordRaw[] = [
       // No dashboard yet, so Management opens on the list of its pages.
       {path: "", name: "management", redirect: "/management/more"},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+      {path: "mail/sent", name: "sentEmails", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
+      {path: "mail/sent/:id(\\d+)", name: "sentEmail", component: () => import("@/pages/management/SentEmail.vue"), meta: {title: "Email"}},
       {path: "alerts", name: "alertList", component: () => import("@/pages/management/AlertList.vue"), meta: {title: "Alerts"}},
       {path: "jobs", name: "jobManager", component: () => import("@/pages/management/JobManager.vue"), meta: {title: "Jobs", requiresAdmin: true}},
       {path: "jobs/:id(\\d+)", name: "jobDetail", component: () => import("@/pages/management/JobDetail.vue"), meta: {title: "Job", requiresAdmin: true}},
@@ -469,12 +471,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import("@/pages/management/RecoveryManager.vue"),
     meta: {title: "Manage account recovery", requiresAuth: true, requiresBoard: true},
   },
-  {
-    path: "/management/emails",
-    name: "emailManager",
-    component: () => import("@/pages/management/EmailManager.vue"),
-    meta: {title: "Manage emails", requiresAuth: true, requiresBoard: true},
-  },
+  // The page moved into the portal; old links and bookmarks still land on it.
+  {path: "/management/emails", redirect: "/management/mail/sent"},
   {
     path: "/management/cohorts",
     name: "cohortDashboard",

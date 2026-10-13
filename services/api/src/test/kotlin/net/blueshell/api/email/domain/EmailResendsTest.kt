@@ -2,6 +2,7 @@ package net.blueshell.api.email.domain
 
 import net.blueshell.api.email.api.EmailComposer
 import net.blueshell.api.email.persistence.Email
+import net.blueshell.api.email.persistence.EmailRepository
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
@@ -38,8 +39,9 @@ class EmailResendsTest {
         override fun composeQueued(payload: String) = null
     }
 
+    private val records: EmailRepository = mock()
     private val resends =
-        EmailResends(emails, QueuedEmails(listOf(composer("signup", true), composer("recovery", false)), emails), executions, jobs)
+        EmailResends(emails, records, QueuedEmails(listOf(composer("signup", true), composer("recovery", false)), emails), executions, jobs)
 
     private fun email(
         id: Long,
@@ -82,6 +84,15 @@ class EmailResendsTest {
     }
 
     @Test
+    fun `lists the emails made again from one, oldest first`() {
+        val first = Entities.email(2)
+        val second = Entities.email(3)
+        whenever(records.findByResentFromIdOrderByIdAsc(1)).thenReturn(listOf(first, second))
+
+        assertThat(resends.madeFrom(1)).containsExactly(first, second)
+    }
+
+    @Test
     fun `refuses an email that went, since making it again would send the person a second one`() {
         val went = listOf(EmailDeliveryStatus.QUEUED, EmailDeliveryStatus.SENT, EmailDeliveryStatus.DELIVERED, EmailDeliveryStatus.OPENED)
         for (status in went) {
@@ -96,6 +107,16 @@ class EmailResendsTest {
         refusal(email(1, EmailDeliveryStatus.BOUNCED, type = "email.recovery").id!!).hasMessageContaining("personal link")
         refusal(email(2, EmailDeliveryStatus.FAILED, job = null).id!!).hasMessageContaining("cannot be resent")
         refusal(email(3, EmailDeliveryStatus.FAILED, type = "email.bulk").id!!).hasMessageContaining("cannot be resent")
+        verify(jobs, never()).runAgain(any(), any())
+    }
+
+    @Test
+    fun `refuses an email that was made again already, so a second press cannot mail the person twice`() {
+        val bounced = email(1, EmailDeliveryStatus.BOUNCED)
+        whenever(records.existsByResentFromId(1)).thenReturn(true)
+
+        assertThat(resends.mayResend(bounced)).isFalse()
+        refusal(1).hasMessageContaining("already resent")
         verify(jobs, never()).runAgain(any(), any())
     }
 

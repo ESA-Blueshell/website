@@ -88,6 +88,13 @@ class EmailManagementController(
         )
     }
 
+    /** One email, with the emails made again from it. */
+    @GetMapping("/{id}")
+    @BoardOnly
+    fun findEmail(
+        @PathVariable id: Long,
+    ): EmailDetailDTO = EmailDetailDTO(emailService.findById(id).toDto(), resends.madeFrom(id).map { it.toDto() })
+
     @PostMapping("/{id}/retry")
     @BoardOnly
     fun retry(
@@ -153,6 +160,7 @@ class EmailManagementController(
             createdAt = this.createdAt,
             updatedAt = this.updatedAt,
             previewable = this.bodyMarkdown != null,
+            initiatedByUserId = this.initiatedByUserId,
             resentFromId = this.resentFromId,
             resendable = resends.mayResend(this),
         )

@@ -13,6 +13,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -83,6 +84,16 @@ class EmailQueuedIT : UserTestSupport() {
             .andExpect(jsonPath("$.resentFromId").value(sent.id!!))
             .andExpect(jsonPath("$.recipientEmail").value("gordon@example.com"))
             .andExpect(jsonPath("$.deliveryStatus").value("QUEUED"))
+        mvc.perform(post("/management/emails/${sent.id}/resend").with(signedIn(board))).andExpect(status().isConflict)
+        mvc
+            .perform(get("/management/emails/${sent.id}").with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.email.resendable").value(false))
+            .andExpect(jsonPath("$.resends[0].deliveryStatus").value("QUEUED"))
+        mvc
+            .perform(get("/management/emails/${sent.id}").with(signedIn(createUserWithRole(Role.MEMBER))))
+            .andExpect(status().isForbidden)
+        mvc.perform(get("/management/emails/987654321").with(signedIn(board))).andExpect(status().isNotFound)
         assertThat(findJobsByType(EventJobs.EventSignUpRemoved.type)).hasSize(2)
     }
 }

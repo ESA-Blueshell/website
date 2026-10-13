@@ -12,4 +12,9 @@ interface EmailRepository : BaseRepository<Email, Long> {
     fun findTopByJobExecutionIdOrderByIdDesc(jobExecutionId: Long): Email?
 
     fun findByMessageId(messageId: String): Email?
+
+    /** The emails made again from this one, oldest first. */
+    fun findByResentFromIdOrderByIdAsc(resentFromId: Long): List<Email>
+
+    fun existsByResentFromId(resentFromId: Long): Boolean
 }

@@ -35,7 +35,33 @@ const {
   writing,
   createList,
   rename,
+  archive,
+  isArchived,
+  remove,
 } = useTargetOverview()
+
+/** The delete dialog: only for a list linked to nothing, confirmed by its name typed exactly. */
+const deleting = ref<ExternalTarget | null>(null)
+const typedName = ref("")
+
+function openDelete(target: ExternalTarget) {
+  deleting.value = target
+  typedName.value = ""
+  writeRefusal.value = null
+}
+
+async function confirmDelete() {
+  const target = deleting.value
+  if (target && await remove(TargetSystem.BREVO, target, typedName.value)) deleting.value = null
+}
+
+// A dialog's refusal goes with it; left behind, the page would show it as its own.
+function closeWriteDialogs() {
+  creating.value = false
+  renaming.value = null
+  deleting.value = null
+  writeRefusal.value = null
+}
 
 /** The new-list dialog: a name, and a folder picked or a new one named. */
 const NEW_FOLDER = "__new__"
@@ -141,6 +167,16 @@ onMounted(() => void load(TargetSystem.BREVO))
           type="error"
         >
           {{ errorMessage }}
+        </v-alert>
+
+        <v-alert
+          v-if="writeRefusal && !creating && !renaming && !deleting"
+          class="mb-3"
+          data-testid="cohort-targets-write-refusal"
+          density="compact"
+          type="error"
+        >
+          {{ writeRefusal }}
         </v-alert>
 
         <manager-card
@@ -261,11 +297,33 @@ onMounted(() => void load(TargetSystem.BREVO))
                   </span>
                   <v-btn
                     :data-testid="`cohort-target-rename-${target.externalId}`"
+                    :disabled="writing"
                     size="small"
                     variant="text"
                     @click="openRename(target)"
                   >
                     Rename
+                  </v-btn>
+                  <v-btn
+                    :data-testid="`cohort-target-archive-${target.externalId}`"
+                    :disabled="writing || isArchived(target)"
+                    size="small"
+                    variant="text"
+                    @click="archive(TargetSystem.BREVO, target)"
+                  >
+                    Archive
+                  </v-btn>
+                  <!-- Brevo cannot undo a delete, so only a list linked to nothing offers one. -->
+                  <v-btn
+                    v-if="target.linkedTargetId == null"
+                    color="error"
+                    :data-testid="`cohort-target-delete-${target.externalId}`"
+                    :disabled="writing"
+                    size="small"
+                    variant="text"
+                    @click="openDelete(target)"
+                  >
+                    Delete
                   </v-btn>
                   <v-btn
                     :data-testid="`cohort-target-move-${target.externalId}`"
@@ -307,9 +365,9 @@ onMounted(() => void load(TargetSystem.BREVO))
           show-save
           testid="cohort-target-create-dialog"
           title="New list"
-          @cancel="creating = false"
+          @cancel="closeWriteDialogs"
           @save="confirmCreate"
-          @update:model-value="(open) => { if (!open) creating = false }"
+          @update:model-value="(open) => { if (!open) closeWriteDialogs() }"
         >
           <v-text-field
             v-model="newName"
@@ -350,15 +408,47 @@ onMounted(() => void load(TargetSystem.BREVO))
           show-save
           testid="cohort-target-rename-dialog"
           :title="`Rename ${renaming?.label ?? ''}`"
-          @cancel="renaming = null"
+          @cancel="closeWriteDialogs"
           @save="confirmRename"
-          @update:model-value="(open) => { if (!open) renaming = null }"
+          @update:model-value="(open) => { if (!open) closeWriteDialogs() }"
         >
           <v-text-field
             v-model="renameTo"
             data-testid="cohort-target-rename-name"
             label="Name"
             maxlength="255"
+          />
+          <v-alert
+            v-if="writeRefusal"
+            class="mt-2"
+            data-testid="cohort-target-write-refusal"
+            density="compact"
+            type="error"
+          >
+            {{ writeRefusal }}
+          </v-alert>
+        </base-modal>
+
+        <base-modal
+          :model-value="deleting !== null"
+          :save-disabled="typedName !== deleting?.label"
+          :save-loading="writing"
+          save-label="Delete for good"
+          save-testid="cohort-target-delete-confirm"
+          show-save
+          testid="cohort-target-delete-dialog"
+          :title="`Delete ${deleting?.label ?? ''}`"
+          @cancel="closeWriteDialogs"
+          @save="confirmDelete"
+          @update:model-value="(open) => { if (!open) closeWriteDialogs() }"
+        >
+          <p class="mb-3">
+            Brevo cannot bring a deleted list back. Type <strong>{{ deleting?.label }}</strong> to delete it.
+          </p>
+          <v-text-field
+            v-model="typedName"
+            data-testid="cohort-target-delete-name"
+            label="The list's name"
           />
           <v-alert
             v-if="writeRefusal"

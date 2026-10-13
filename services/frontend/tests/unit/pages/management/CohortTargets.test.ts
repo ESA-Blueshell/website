@@ -4,8 +4,10 @@ import CohortTargets from "@/pages/management/CohortTargets.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
@@ -21,16 +23,18 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   createListInSystem: vi.fn(),
   createFolderInSystem: vi.fn(),
   renameTarget: vi.fn(),
+  archiveTarget: vi.fn(),
+  deleteTarget: vi.fn(),
 }))
 
 const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
   wrapper.findAllComponents(BaseModal).find((m) => m.props("testid") === testid)!
 
-const mountPage = async () => {
+const mountPage = async (list: {folderLabel?: string, linkedTargetId?: number | null} = {}) => {
   vi.mocked(fetchTargetDescriptors).mockResolvedValue([{system: "BREVO", kind: "LIST"}])
   vi.mocked(fetchTargetOptions).mockResolvedValue([{
     system: "BREVO", externalId: "7", kind: "LIST", label: "Guests", folderLabel: "Newsletter",
-    memberCount: 3, linkedTargetId: null, path: ["Brevo", "Newsletter"],
+    memberCount: 3, linkedTargetId: null, path: ["Brevo", "Newsletter"], ...list,
   }])
   vi.mocked(fetchTargetFolders).mockResolvedValue(["Newsletter"])
   const wrapper = mountInApp(CohortTargets)
@@ -132,5 +136,74 @@ describe("CohortTargets", () => {
     modal(wrapper, "cohort-target-rename-dialog").vm.$emit("update:modelValue", false)
     await flushPromises()
     expect(modal(wrapper, "cohort-target-rename-dialog").props("modelValue")).toBe(false)
+  })
+
+  it("deletes an unlinked list only once its name is typed exactly", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(deleteTarget).mockResolvedValue({ok: true})
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("guests")
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("saveDisabled")).toBe(true)
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("Guests")
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("saveDisabled")).toBe(false)
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(deleteTarget).toHaveBeenCalledWith("BREVO", "7", "Guests")
+    expect(wrapper.find("[data-testid=cohort-target-7]").exists()).toBe(false)
+  })
+
+  it("keeps a refused delete open with the reason, and closes it on cancel", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(deleteTarget).mockResolvedValue({ok: false, reason: "A list linked to a cohort cannot be deleted. Archive it."})
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-target-delete-name] input").setValue("Guests")
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=cohort-target-write-refusal]").text()).toBe("A list linked to a cohort cannot be deleted. Archive it.")
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("modelValue")).toBe(true)
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("cancel")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("modelValue")).toBe(false)
+    expect(wrapper.find("[data-testid=cohort-targets-write-refusal]").exists()).toBe(false)
+
+    await wrapper.get("[data-testid=cohort-target-delete-7]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-target-delete-dialog").vm.$emit("update:modelValue", false)
+    await flushPromises()
+    expect(modal(wrapper, "cohort-target-delete-dialog").props("modelValue")).toBe(false)
+  })
+
+  it("archives a list from its row, and says so when Brevo refuses", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(archiveTarget).mockResolvedValue({ok: false, reason: "Brevo refused it: down"})
+
+    await wrapper.get("[data-testid=cohort-target-archive-7]").trigger("click")
+    await flushPromises()
+
+    expect(archiveTarget).toHaveBeenCalledWith("BREVO", "7")
+    expect(wrapper.get("[data-testid=cohort-targets-write-refusal]").text()).toContain("Brevo refused it: down")
+  })
+
+  it("offers no delete on a list linked to a cohort, and no archive on one in the archive folder", async () => {
+    const wrapper = await mountPage({linkedTargetId: 4, folderLabel: "archive"})
+
+    expect(wrapper.find("[data-testid=cohort-target-delete-7]").exists()).toBe(false)
+    expect(wrapper.get("[data-testid=cohort-target-archive-7]").attributes("disabled")).toBeDefined()
+  })
+
+  it("holds rename and delete while a write is under way", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(archiveTarget).mockReturnValue(new Promise(() => {}))
+
+    await wrapper.get("[data-testid=cohort-target-archive-7]").trigger("click")
+
+    expect(wrapper.get("[data-testid=cohort-target-rename-7]").attributes("disabled")).toBeDefined()
+    expect(wrapper.get("[data-testid=cohort-target-delete-7]").attributes("disabled")).toBeDefined()
   })
 })

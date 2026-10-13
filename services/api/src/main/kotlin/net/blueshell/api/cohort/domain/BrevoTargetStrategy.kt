@@ -81,16 +81,15 @@ class BrevoTargetStrategy(
     ): ExternalTarget {
         // Brevo files by folder id, so a name has to name a folder that exists. Refusing an
         // unknown one beats silently creating a near-duplicate of a folder already there.
-        val folderId =
+        val found =
             lists
                 .listFolders()
                 .entries
                 .firstOrNull { it.value.equals(folder, ignoreCase = true) }
-                ?.key
                 ?: throw IllegalArgumentException("No folder named '$folder'")
 
-        lists.moveList(external.externalId.toBrevoId("externalId", "move"), folderId)
-        return external.copy(folderLabel = folder, path = pathTo(folder))
+        lists.moveList(external.externalId.toBrevoId("externalId", "move"), found.key)
+        return external.copy(folderLabel = found.value, path = pathTo(found.value))
     }
 
     override fun rename(

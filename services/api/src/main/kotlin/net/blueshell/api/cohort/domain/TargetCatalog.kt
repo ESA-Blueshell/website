@@ -1,18 +1,24 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.TargetDeletion
+import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.ActorProvider
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @Service
 class TargetCatalog(
     private val strategies: TargetStrategies,
     private val targets: TargetRepository,
+    private val deletions: TargetDeletionRepository,
+    private val actors: ActorProvider,
 ) {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     fun search(
@@ -78,6 +84,55 @@ class TargetCatalog(
         system: TargetSystem,
         name: String,
     ): List<String> = refusedBy(system) { strategies.require(system).createFolder(name) }
+
+    /**
+     * Move a target into the archive folder, made when it is missing. It keeps its contacts and
+     * its link to a cohort, and is moved back like any other move.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun archive(
+        system: TargetSystem,
+        externalId: String,
+    ): ExternalTarget {
+        val strategy = strategies.require(system)
+        val external = refusedBy(system) { strategy.resolve(externalId) } ?: throw TargetNotFound(system, externalId)
+        val archived =
+            refusedBy(system) {
+                strategy.createFolder(ARCHIVE_FOLDER)
+                strategy.move(external, ARCHIVE_FOLDER)
+            }
+        return archived.copy(linkedTargetId = linkedTargets(system)[archived.externalId])
+    }
+
+    /**
+     * Delete a target for good. Only one linked to no cohort, only when [typedName] is its name
+     * exactly, and every delete is recorded with who made it.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun delete(
+        system: TargetSystem,
+        externalId: String,
+        typedName: String,
+    ) {
+        val strategy = strategies.require(system)
+        val external = refusedBy(system) { strategy.resolve(externalId) } ?: throw TargetNotFound(system, externalId)
+        if (linkedTargets(system).containsKey(externalId)) throw TargetStillLinked(system, externalId)
+        if (typedName != external.label) throw TargetNameMismatch(typedName)
+        // Recorded first: a delete that cannot be recorded must not happen, and it cannot be undone.
+        val deletion =
+            deletions.save(
+                TargetDeletion(system.name, externalId, external.label, actors.currentOrSystem().userId, Instant.now()),
+            )
+        try {
+            refusedBy(system) { strategy.delete(external) }
+        } catch (e: RuntimeException) {
+            // A call that got no answer may still have deleted it: the record goes only for a list seen to be there.
+            if (runCatching { strategy.resolve(externalId) }.getOrNull() != null) deletions.delete(deletion)
+            throw e
+        }
+        // The id and name came from a request, so the log names only the row that holds them.
+        log.info("[cohort] deleted {} target, recorded as deletion {}", system, deletion.id)
+    }
 
     // The system's own reason is what the board needs to see; nothing on our side changed.
     private fun <T> refusedBy(
@@ -182,6 +237,11 @@ class TargetCatalog(
             .toMap()
 
     companion object {
+        /**
+         * Where archived lists go; Brevo cannot undo a delete, so archiving is the everyday action.
+         * The frontend's useTargetOverview spells the same name to tell an archived list.
+         */
+        const val ARCHIVE_FOLDER = "Archive"
         private val log = LoggerFactory.getLogger(TargetCatalog::class.java)
     }
 }

@@ -49,9 +49,9 @@ class BrevoListAdapter(
         try {
             // Brevo accepts a name or a folder in one call but not both, so this only moves.
             contactsApi.updateList(externalListId, UpdateListRequest(folderId = folderId))
-        } catch (e: RestClientResponseException) {
+        } catch (e: RestClientException) {
             log.error("Failed to move Brevo list {} to folder {}", externalListId, folderId, e)
-            throw ContactServiceException("Failed to move list", e)
+            throw ContactServiceException("Failed to move list: ${reasonOf(e)}", e)
         }
     }
 
@@ -88,8 +88,8 @@ class BrevoListAdapter(
         while (true) {
             val page = try {
                 fetch(CATALOG_PAGE_SIZE, offset)
-            } catch (e: RestClientResponseException) {
-                if (e.statusCode.value() == 429) log.warn("Brevo {} fetch was rate limited", kind)
+            } catch (e: RestClientException) {
+                if (e is RestClientResponseException && e.statusCode.value() == 429) log.warn("Brevo {} fetch was rate limited", kind)
                 log.error("Failed to read Brevo {}", kind, e)
                 throw ContactServiceException("Failed to read $kind", e)
             }
@@ -223,9 +223,9 @@ class BrevoListAdapter(
         log.info("Deleting Brevo list id={}", externalListId)
         try {
             contactsApi.deleteList(externalListId)
-        } catch (e: RestClientResponseException) {
+        } catch (e: RestClientException) {
             log.error("Failed to delete Brevo list id={}", externalListId, e)
-            throw ContactServiceException("Failed to delete list", e)
+            throw ContactServiceException("Failed to delete list: ${reasonOf(e)}", e)
         }
     }
 

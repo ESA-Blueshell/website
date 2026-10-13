@@ -1,24 +1,35 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetDeletion
+import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.Actor
+import net.blueshell.api.shared.tracking.ActorProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.catchThrowableOfType
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Instant
 
 class TargetCatalogTest {
     private val targets: TargetRepository = mock()
     private val strategy = RecordingStrategy()
-    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), targets)
+    private val deletions: TargetDeletionRepository = mock { on { save(any<TargetDeletion>()) } doAnswer { it.getArgument(0) } }
+    private val actors: ActorProvider = mock { on { currentOrSystem() } doReturn Actor.user(5L, Role.ADMIN) }
+    private val catalog = TargetCatalog(TargetStrategies(listOf(strategy)), targets, deletions, actors)
 
     @Test
     fun `descriptors come from registered target strategies`() {
@@ -93,7 +104,7 @@ class TargetCatalogTest {
             ExternalTarget(TargetSystem.BREVO, "10", TargetKind.LIST, "Sitecie", "Committees", path = listOf("Brevo", "Committees")),
         )
 
-        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), targets).placeOf(TargetSystem.BREVO, "10"))
+        assertThat(catalogWith(brevo).placeOf(TargetSystem.BREVO, "10"))
             .isEqualTo(TargetPlace(listOf("Brevo", "Committees"), folderKnown = true))
     }
 
@@ -102,11 +113,13 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.resolve("10")).thenThrow(IllegalStateException("Brevo is down"))
         whenever(brevo.resolve("11")).thenReturn(null)
-        val placing = TargetCatalog(TargetStrategies(listOf(brevo)), targets)
+        val placing = catalogWith(brevo)
 
         assertThat(placing.placeOf(TargetSystem.BREVO, "10")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
         assertThat(placing.placeOf(TargetSystem.BREVO, "11")).isEqualTo(TargetPlace(listOf("Brevo"), folderKnown = false))
     }
+
+    private fun catalogWith(brevo: TargetStrategy) = TargetCatalog(TargetStrategies(listOf(brevo)), targets, deletions, actors)
 
     private fun placingStrategy(): TargetStrategy =
         mock<TargetStrategy>().also {
@@ -119,7 +132,7 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.createFolder("Archief")).thenReturn(listOf("Archief", "Committees"))
 
-        assertThat(TargetCatalog(TargetStrategies(listOf(brevo)), targets).createFolder(TargetSystem.BREVO, "Archief"))
+        assertThat(catalogWith(brevo).createFolder(TargetSystem.BREVO, "Archief"))
             .containsExactly("Archief", "Committees")
     }
 
@@ -129,7 +142,7 @@ class TargetCatalogTest {
         val made = ExternalTarget(TargetSystem.BREVO, "12", TargetKind.LIST, "Pub quiz", "Committees")
         whenever(brevo.create("Pub quiz", "Committees")).thenReturn(made)
 
-        val created = TargetCatalog(TargetStrategies(listOf(brevo)), targets).create(TargetSystem.BREVO, "Pub quiz", "Committees")
+        val created = catalogWith(brevo).create(TargetSystem.BREVO, "Pub quiz", "Committees")
 
         assertThat(created.linkedTargetId).isNull()
         assertThat(created.externalId).isEqualTo("12")
@@ -149,7 +162,7 @@ class TargetCatalogTest {
         whenever(targets.findAllBySystem("BREVO")).thenReturn(listOf(linked))
         whenever(targets.findById(42L)).thenReturn(java.util.Optional.of(linked))
 
-        val renamed = TargetCatalog(TargetStrategies(listOf(brevo)), targets).rename(TargetSystem.BREVO, "2", "Members 2026")
+        val renamed = catalogWith(brevo).rename(TargetSystem.BREVO, "2", "Members 2026")
 
         assertThat(renamed.label).isEqualTo("Members 2026")
         assertThat(renamed.linkedTargetId).isEqualTo(42L)
@@ -161,7 +174,7 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.createFolder("Archief")).thenThrow(ContactServiceException("Failed to create folder: Bad Request"))
 
-        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), targets).createFolder(TargetSystem.BREVO, "Archief") }
+        assertThatThrownBy { catalogWith(brevo).createFolder(TargetSystem.BREVO, "Archief") }
             .isInstanceOf(TargetSystemRefused::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("system" to "Brevo", "reason" to "Failed to create folder: Bad Request"))
@@ -171,7 +184,7 @@ class TargetCatalogTest {
     fun `a rename the system refuses, on the read or on the write, leaves the target as it was`() {
         val brevo = placingStrategy()
         val external = ExternalTarget(TargetSystem.BREVO, "2", TargetKind.LIST, "Members")
-        val catalog = TargetCatalog(TargetStrategies(listOf(brevo)), targets)
+        val catalog = catalogWith(brevo)
         whenever(brevo.resolve("2")).thenThrow(ContactServiceException("Brevo did not answer")).thenReturn(external)
         whenever(brevo.rename(external, "Members 2026")).thenThrow(ContactServiceException("Failed to rename list: Name is taken"))
 
@@ -190,7 +203,114 @@ class TargetCatalogTest {
         val brevo = placingStrategy()
         whenever(brevo.resolve("404")).thenReturn(null)
 
-        assertThatThrownBy { TargetCatalog(TargetStrategies(listOf(brevo)), targets).rename(TargetSystem.BREVO, "404", "Gone") }
+        assertThatThrownBy { catalogWith(brevo).rename(TargetSystem.BREVO, "404", "Gone") }
             .isInstanceOf(TargetNotFound::class.java)
+    }
+
+    @Test
+    fun `archiving files a list in the archive folder, made first, and keeps its link`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "2", TargetKind.LIST, "Paid 2024", "Contribution paid")
+        whenever(brevo.resolve("2")).thenReturn(external)
+        whenever(brevo.move(external, "Archive")).thenReturn(external.copy(folderLabel = "Archive"))
+        val linked =
+            Target("BREVO", TargetKind.LIST, "Paid 2024").apply {
+                id = 7L
+                externalId = "2"
+            }
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+
+        val archived = catalogWith(brevo).archive(TargetSystem.BREVO, "2")
+
+        verify(brevo).createFolder("Archive")
+        assertThat(archived.folderLabel).isEqualTo("Archive")
+        assertThat(archived.linkedTargetId).isEqualTo(7L)
+    }
+
+    @Test
+    fun `deleting an unlinked list by its exact name deletes it and records who did`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "3", TargetKind.LIST, "Old test list")
+        whenever(brevo.resolve("3")).thenReturn(external)
+
+        catalogWith(brevo).delete(TargetSystem.BREVO, "3", "Old test list")
+
+        verify(brevo).delete(external)
+        val recorded = argumentCaptor<TargetDeletion>()
+        verify(deletions).save(recorded.capture())
+        with(recorded.firstValue) {
+            assertThat(listOf(system, externalId, name)).containsExactly("BREVO", "3", "Old test list")
+            assertThat(deletedBy).isEqualTo(5L)
+            assertThat(deletedAt).isNotNull()
+        }
+    }
+
+    @Test
+    fun `a linked list or a mistyped name is refused, and nothing is deleted`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "2", TargetKind.LIST, "Members")
+        whenever(brevo.resolve("2")).thenReturn(external)
+        val deleting = catalogWith(brevo)
+
+        assertThatThrownBy { deleting.delete(TargetSystem.BREVO, "2", "members") }.isInstanceOf(TargetNameMismatch::class.java)
+
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(
+            listOf(
+                Target("BREVO", TargetKind.LIST, "Members").apply {
+                    id = 1L
+                    externalId = "2"
+                },
+            ),
+        )
+        assertThatThrownBy { deleting.delete(TargetSystem.BREVO, "2", "Members") }.isInstanceOf(TargetStillLinked::class.java)
+
+        verify(brevo, never()).delete(any())
+        verify(deletions, never()).save(any<TargetDeletion>())
+    }
+
+    @Test
+    fun `a delete is recorded before the list goes, so one that cannot be recorded deletes nothing`() {
+        val brevo = placingStrategy()
+        whenever(brevo.resolve("3")).thenReturn(ExternalTarget(TargetSystem.BREVO, "3", TargetKind.LIST, "Old test list"))
+        whenever(deletions.save(any<TargetDeletion>())).thenThrow(IllegalStateException("the database is down"))
+
+        assertThatThrownBy { catalogWith(brevo).delete(TargetSystem.BREVO, "3", "Old test list") }
+            .isInstanceOf(IllegalStateException::class.java)
+
+        verify(brevo, never()).delete(any())
+    }
+
+    @Test
+    fun `a delete the system refuses leaves no record`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "3", TargetKind.LIST, "Old test list")
+        whenever(brevo.resolve("3")).thenReturn(external)
+        whenever(brevo.delete(external)).thenThrow(ContactServiceException("Failed to delete list: List is used by a campaign"))
+        val recorded = TargetDeletion("BREVO", "3", "Old test list", 5L, Instant.parse("2026-10-13T08:00:00Z"))
+        whenever(deletions.save(any<TargetDeletion>())).thenReturn(recorded)
+
+        assertThatThrownBy { catalogWith(brevo).delete(TargetSystem.BREVO, "3", "Old test list") }
+            .isInstanceOf(TargetSystemRefused::class.java)
+
+        verify(deletions).delete(recorded)
+    }
+
+    @Test
+    fun `a delete that fails keeps its record when the list is gone or cannot be read`() {
+        val brevo = placingStrategy()
+        val external = ExternalTarget(TargetSystem.BREVO, "3", TargetKind.LIST, "Old test list")
+        whenever(brevo.resolve("3"))
+            .thenReturn(external)
+            .thenReturn(null)
+            .thenReturn(external)
+            .thenThrow(ContactServiceException("Brevo did not answer"))
+        whenever(brevo.delete(external)).thenThrow(ContactServiceException("Failed to delete list: Brevo did not answer"))
+
+        repeat(2) {
+            assertThatThrownBy { catalogWith(brevo).delete(TargetSystem.BREVO, "3", "Old test list") }
+                .isInstanceOf(TargetSystemRefused::class.java)
+        }
+
+        verify(deletions, never()).delete(any<TargetDeletion>())
     }
 }

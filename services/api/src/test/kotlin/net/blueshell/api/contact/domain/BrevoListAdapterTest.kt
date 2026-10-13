@@ -120,6 +120,17 @@ class BrevoListAdapterTest {
     }
 
     @Test
+    fun `a catalog page Brevo does not answer is a failed read, not a crash`() {
+        doThrow(ResourceAccessException("connect timed out"))
+            .whenever(contactsApi)
+            .getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC))
+
+        assertThatThrownBy { adapter.listFolders() }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessage("Failed to read folders")
+    }
+
+    @Test
     fun `surfaces a rate-limited catalog page as a retryable failure`() {
         doThrow(error(429, ""))
             .whenever(contactsApi)
@@ -266,5 +277,24 @@ class BrevoListAdapterTest {
         assertThatThrownBy { adapter.createFolder("Archive") }
             .isInstanceOf(ContactServiceException::class.java)
             .hasMessage("Failed to create folder: error")
+    }
+
+    @Test
+    fun `a refused move or delete is reported with Brevo's reason`() {
+        whenever(contactsApi.updateList(eq(40L), any()))
+            .thenThrow(error(404, """{"code":"document_not_found","message":"Folder ID does not exist"}"""))
+        whenever(contactsApi.deleteList(40L))
+            .thenThrow(error(400, """{"code":"invalid_parameter","message":"List is used by a campaign"}"""))
+            .thenThrow(ResourceAccessException("connect timed out"))
+
+        assertThatThrownBy { adapter.moveList(40L, 9L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessage("Failed to move list: Folder ID does not exist")
+        assertThatThrownBy { adapter.deleteList(40L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessage("Failed to delete list: List is used by a campaign")
+        assertThatThrownBy { adapter.deleteList(40L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessage("Failed to delete list: Brevo did not answer")
     }
 }

@@ -17,6 +17,8 @@ export interface PageQuery {
   size: number
   /** Trimmed and dropped when empty, so a caller never has to decide what a blank search means. */
   search: string | undefined
+  /** The column the reader ordered by, or nothing for the list's own order. */
+  sort?: {key: string; descending: boolean}
 }
 
 /**
@@ -37,18 +39,26 @@ export interface Expandable {
 export interface PagedTable<T> {
   rows: Ref<T[]>
   loading: Ref<boolean>
-  /** One-based, as a `v-pagination` reads it. */
+  /** One-based; the API reads it zero-based. */
   page: Ref<number>
   totalPages: Ref<number>
   totalElements: Ref<number>
-  /** Nullable because a clearable `v-text-field` writes null, not "". */
+  /** Null reads as no search. */
   search: Ref<string | null>
   pageRangeLabel: ComputedRef<string>
   isExpanded: (row: T) => boolean
   toggleExpanded: (row: T) => void
   refresh: () => Promise<void>
+  /** Reads the next page onto the end of the rows held, for a list that grows as it is scrolled. */
+  more: () => Promise<void>
   /** Back to the first page and re-read, for a filter change or anything that adds a row. */
   resetToFirstPage: () => void
+  /** The column the rows are ordered by, "" for the list's own order. */
+  sortKey: Ref<string>
+  descending: Ref<boolean>
+  /** A head pressed: ascending, then descending, then back to the list's own order. */
+  sortBy: (key: string) => void
+  orderBy: (key: string | null, descending: boolean) => void
 }
 
 export interface PagedTableOptions {
@@ -81,6 +91,13 @@ export function usePagedTable<T extends Expandable>(
     debounceHandle = undefined
   }
 
+  const sortKey = ref("")
+  const descending = ref(false)
+  const sorted = () => (sortKey.value ? {sort: {key: sortKey.value, descending: descending.value}} : {})
+
+  // How many pages the rows hold, counted from the page they started on.
+  const held = ref(1)
+
   const pageRangeLabel = computed(() => {
     if (totalElements.value === 0 || rows.value.length === 0) return `0 of ${totalElements.value}`
     const start = (page.value - 1) * size + 1
@@ -98,11 +115,23 @@ export function usePagedTable<T extends Expandable>(
       : [...expanded.value, row.id]
   }
 
-  const refresh = async (): Promise<void> => {
+  // Only the newest read is kept: a slow answer must not land on rows a later read replaced.
+  let asked = 0
+
+  const read = async (index: number, take: (answered: PageOf<T>) => void): Promise<void> => {
+    const mine = ++asked
     loading.value = true
     try {
       const typed = (search.value ?? "").trim()
-      const answered = await load({page: Math.max(0, page.value - 1), size, search: typed || undefined})
+      const answered = await load({page: index, size, search: typed || undefined, ...sorted()})
+      if (mine === asked) take(answered)
+    } finally {
+      if (mine === asked) loading.value = false
+    }
+  }
+
+  const refresh = (): Promise<void> =>
+    read(Math.max(0, page.value - 1), (answered) => {
       totalElements.value = answered.totalElements
       totalPages.value = Math.max(1, answered.totalPages)
       // A page past the end reads the last one instead: the watch below re-reads, so the rows
@@ -112,9 +141,20 @@ export function usePagedTable<T extends Expandable>(
         return
       }
       rows.value = answered.rows
-    } finally {
-      loading.value = false
-    }
+      held.value = 1
+    })
+
+  const more = async (): Promise<void> => {
+    const next = page.value - 1 + held.value
+    if (loading.value || next >= totalPages.value) return
+    await read(next, (answered) => {
+      // A read that failed answers as an empty page, whose count of nothing is not the list's.
+      if (answered.rows.length === 0) return
+      totalElements.value = answered.totalElements
+      totalPages.value = Math.max(1, answered.totalPages)
+      rows.value = [...rows.value, ...answered.rows]
+      held.value += 1
+    })
   }
 
   const resetToFirstPage = () => {
@@ -125,6 +165,19 @@ export function usePagedTable<T extends Expandable>(
       return
     }
     void refresh()
+  }
+
+  const sortBy = (key: string) => {
+    if (sortKey.value !== key) [sortKey.value, descending.value] = [key, false]
+    else if (descending.value) [sortKey.value, descending.value] = ["", false]
+    else descending.value = true
+    resetToFirstPage()
+  }
+
+  /** Puts the rows in one order at once, as a phone's picker does; no key leaves them as the api gives them. */
+  const orderBy = (key: string | null, downwards: boolean) => {
+    [sortKey.value, descending.value] = key ? [key, downwards] : ["", false]
+    resetToFirstPage()
   }
 
   watch(page, () => {
@@ -153,6 +206,11 @@ export function usePagedTable<T extends Expandable>(
     isExpanded,
     toggleExpanded,
     refresh,
+    more,
     resetToFirstPage,
+    sortKey,
+    descending,
+    sortBy,
+    orderBy,
   }
 }

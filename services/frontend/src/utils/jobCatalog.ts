@@ -15,7 +15,7 @@ export type JobCatalogEntry = {
   title: string
   /**
    * Plain-English paragraph: what does the job do, which subsystem does
-   * it touch, and is it safe to re-run? Shown in the trigger dialog and
+   * it touch, and is it safe to re-run? Shown in Run a job and
    * as a tooltip / expanded-row caption on JobManager rows.
    */
   description: string

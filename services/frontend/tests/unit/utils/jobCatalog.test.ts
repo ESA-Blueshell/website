@@ -44,7 +44,7 @@ describe("jobCatalogEntry", () => {
   })
 
   it("leaves a job type it does not know without a description, rather than inventing one", () => {
-    // The trigger dialog and the row caption both read this, and an empty string is what they
+    // Run a job and the row caption both read this, and an empty string is what they
     // treat as nothing to say.
     expect(jobCatalogEntry("bookkeeping.close-year").description).toBe("")
   })
@@ -126,7 +126,7 @@ describe("JOB_CATALOG against the api's registered job types", () => {
     expect(registeredJobTypes().length).toBeGreaterThan(10)
   }, SWEEP_TIMEOUT_MS)
 
-  it("names every job type the api registers, so no trigger dialog explains a job by its type", () => {
+  it("names every job type the api registers, so Run a job never explains a job by its type", () => {
     const unnamed = registeredJobTypes().filter(type => !(type in JOB_CATALOG))
 
     expect(unnamed).toEqual([])

@@ -60,6 +60,6 @@ class JobManagerStatsSystemTest : PlaywrightTestBase() {
 
         page.locator("[data-testid='job-stats-runtime']").first().waitFor()
 
-        assertThat(page.locator("[data-testid='job-stats-runtime']").innerText()).contains("Since last startup")
+        assertThat(page.locator("[data-testid='job-stats-runtime']").innerText()).containsIgnoringCase("Since start-up")
     }
 }

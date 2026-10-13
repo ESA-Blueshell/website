@@ -1,14 +1,25 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
-import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
-import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
+import FoldOut from "@/components/island/FoldOut.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
+import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
+import JobRunForm, {type JobPreset} from "@/components/management/JobRunForm.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import {loadJob, loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, payloadChips, previewActorDisplay, previewTitle, retryLabel, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
-import {formatDate, formatDateNoSeconds} from "@/utils/timestamps"
+import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "JobManagerPage"})
 
@@ -17,49 +28,69 @@ const router = useRouter()
 const PAGE_SIZE = 50
 
 const stats = ref<JobStats | null>(null)
-const selectedCategory = ref<JobExecutionCategory | "all">("all")
-const selectedStatus = ref<JobExecutionStatus | "all">("all")
+const selectedCategory = ref<string | null>(null)
+// A link may name the status it is about.
+const selectedStatus = ref<string | null>(Object.values(JobExecutionStatus).find((status) => status === route.query.status) ?? null)
 const hideSkipped = ref(false)
-const showTriggerDialog = ref(false)
+const HIDDEN = "hidden"
+const runOpen = ref(false)
+const preset = ref<JobPreset | null>(null)
+const runPanel = useTemplateRef<HTMLElement>("runPanel")
 
 const loadStats = async () => {
   stats.value = await loadJobStats()
 }
 
-// Stats ride along with the rows so the panel and the table describe the same moment, and are
-// not awaited: the panel is supplementary and a slow count must not hold the table back.
+// The counts are read with the rows so both describe one moment, and not awaited: a slow count must not hold the table back.
 const loadPage = (query: PageQuery) => {
   void loadStats()
   return loadJobPage(query, {
-    ...(selectedCategory.value !== "all" ? {category: selectedCategory.value} : {}),
-    ...(selectedStatus.value !== "all" ? {status: selectedStatus.value} : {}),
+    ...(selectedCategory.value ? {category: selectedCategory.value as JobExecutionCategory} : {}),
+    ...(selectedStatus.value ? {status: selectedStatus.value as JobExecutionStatus} : {}),
     hideSkipped: hideSkipped.value,
   })
 }
 
-const asked = route.query.search
-const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE, initialSearch: typeof asked === "string" ? asked : undefined})
+const table = usePagedTable<Job>(loadPage, {pageSize: PAGE_SIZE})
 const {
   rows: executions,
   loading,
-  page,
-  totalPages,
-  totalElements,
   search: searchQuery,
   pageRangeLabel,
-  isExpanded,
-  toggleExpanded,
   refresh,
+  more,
   resetToFirstPage,
+  sortKey,
+  descending,
+  sortBy,
+  orderBy,
 } = table
 
 watch([selectedCategory, selectedStatus, hideSkipped], () => {
   resetToFirstPage()
 })
 
-/** A job just enqueued belongs at the top, which is the first page with the filters unchanged. */
-const onJobTriggered = () => {
+/** A job just queued belongs at the top, which is the first page with the filters unchanged. */
+const onJobQueued = () => {
   resetToFirstPage()
+}
+
+const filtered = computed(() => (searchQuery.value ?? "") !== "" || selectedCategory.value !== null || selectedStatus.value !== null || hideSkipped.value)
+
+const clearFilters = () => {
+  searchQuery.value = ""
+  selectedCategory.value = null
+  selectedStatus.value = null
+  hideSkipped.value = false
+}
+
+/** Opens Run a job filled in from a job already run; the list under it stays where it was. */
+const runAgain = async (execution: Pick<Job, "jobType" | "payload">) => {
+  if (!execution.jobType) return
+  preset.value = {type: execution.jobType, payload: {...execution.payload}}
+  runOpen.value = true
+  await nextTick()
+  runPanel.value?.scrollIntoView?.({block: "start"})
 }
 
 // Read once: both lists come from the generated enums, which do not change while the page is open.
@@ -67,13 +98,58 @@ const categoryOptions = jobCategoryOptions()
 const statusOptions = jobStatusOptions()
 
 const successRate = computed(() => rateOf(stats.value))
-const statusCounts = computed(() => countsOf(stats.value))
+
+// The api orders the rows. A job's kind is worked out from its type, so it reads under the name, not as a column nobody can order.
+const COLUMNS: TableColumn[] = [
+  {key: "queued", label: "Queued", sortable: true},
+  {key: "job", label: "Job", wrap: true, sortable: true},
+  {key: "by", label: "Started by", wrap: true, sortable: true},
+  {key: "status", label: "Status", wrap: true, sortable: true},
+  {key: "attempts", label: "Attempts", sortable: true},
+]
+
+const STATUS_MARKS: Record<JobExecutionStatus, StateKind> = {
+  [JobExecutionStatus.QUEUED]: "missing",
+  [JobExecutionStatus.RUNNING]: "missing",
+  [JobExecutionStatus.SUCCESS]: "in-sync",
+  [JobExecutionStatus.SKIPPED]: "not-compared",
+  [JobExecutionStatus.FAILED]: "extra",
+  [JobExecutionStatus.DEAD]: "not-created",
+}
+
+const facts = computed(() => {
+  const read = stats.value
+  if (!read) return []
+  return [
+    {label: "Total", value: String(read.totalCount), testid: "job-stats-total"},
+    {label: "Succeeded", value: String(read.successCount), sub: read.totalCount > 0 ? `${successRate.value}%` : "", testid: "job-stats-success"},
+    {label: "Failed", value: String(read.failedCount), tone: read.failedCount > 0 ? "warning" as const : undefined, testid: "job-stats-failed"},
+    {label: "Dead", value: String(read.deadCount), tone: read.deadCount > 0 ? "danger" as const : undefined, testid: "job-stats-dead"},
+    {label: "Queued", value: String(read.queuedCount), testid: "job-stats-queued"},
+    {label: "Running", value: String(read.runningCount), testid: "job-stats-running"},
+  ]
+})
+
+const sinceStartup = computed(() => {
+  const read = stats.value
+  if (!read) return []
+  return [
+    {label: "Dead", value: read.deadSinceStartup.toFixed(0), tone: read.deadSinceStartup > 0 ? "danger" as const : undefined},
+    {label: "Failed", value: read.failedSinceStartup.toFixed(0), tone: read.failedSinceStartup > 0 ? "warning" as const : undefined},
+    {label: "Average run", value: `${read.avgSuccessDurationSeconds.toFixed(2)} s`},
+    {label: "Recoveries", value: read.recoveriesSinceStartup.toFixed(0), tone: read.recoveriesSinceStartup > 0 ? "warning" as const : undefined},
+  ]
+})
+
+const markOf = (execution: Job): StateKind => (execution.status ? STATUS_MARKS[execution.status] : "not-compared")
+
+/** Who or what started a job: the run or the page that queued it, else the person. */
+const startedBy = (execution: Job) => (execution.trigger ? triggerLabel(execution) : previewActorDisplay(execution))
+const failed = (execution: Job) => execution.status === JobExecutionStatus.FAILED || execution.status === JobExecutionStatus.DEAD
 
 const retry = async (execution: Job) => {
   if (execution.id == null) return
   const retried = await retryJob(execution.id)
-  // A refused retry changed nothing, so there is nothing to re-read — and saying nothing is
-  // what made pressing Retry look like pressing nothing at all.
   if (!retried.ok) {
     store.commit("setStatusSnackbarMessage", retried.reason)
     return
@@ -88,948 +164,229 @@ onMounted(async () => {
   }
   void loadStats()
   await refresh()
+  // A job's own page sends Run again here, to the one form that queues jobs.
+  const again = Number(route.query.again)
+  if (Number.isInteger(again) && again > 0) {
+    const job = await loadJob(again)
+    if (job) await runAgain(job)
+  }
 })
 </script>
 
 <template>
-  <main class="site-main">
-    <top-banner title="Job Manager" />
-
-    <job-trigger-dialog
-      v-model="showTriggerDialog"
-      @enqueued="onJobTriggered"
-    />
-
-    <v-container>
-      <div
-        class="mx-auto my-3 job-manager-page"
+  <management-page
+    eyebrow="System"
+    testid="job-manager"
+    title="Jobs"
+  >
+    <template #lede>
+      Work the site does in the background: sends, syncs, reconciles and Discord posts.
+    </template>
+    <template #actions>
+      <cut-button
+        testid="job-run-open"
+        @click="runOpen = !runOpen"
       >
-        <v-card
-          v-if="stats !== null"
-          class="manager-card mb-4"
-          rounded="lg"
-          variant="flat"
-        >
-          <v-row
-            align="stretch"
-            class="ma-0 pa-2"
-            no-gutters
-          >
-            <v-col class="text-center px-2 py-1">
-              <p class="text-overline mb-1">
-                All-time
-              </p>
-              <v-row
-                align="center"
-                no-gutters
-              >
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-total"
-                >
-                  <div class="text-h6 font-weight-bold">
-                    {{ stats.totalCount }}
-                  </div>
-                  <div class="stats-label">
-                    Total
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-success"
-                >
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.successCount > 0 ? 'text-success' : ''"
-                  >
-                    {{ stats.successCount }}
-                    <span
-                      v-if="stats.totalCount > 0"
-                      class="text-body-2 font-weight-medium ml-1"
-                    >{{ successRate }}%</span>
-                  </div>
-                  <div class="stats-label">
-                    Succeeded
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-failed"
-                >
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.failedCount > 0 ? 'text-error' : ''"
-                  >
-                    {{ stats.failedCount }}
-                  </div>
-                  <div class="stats-label">
-                    Failed
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-dead"
-                >
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.deadCount > 0 ? 'text-error' : ''"
-                  >
-                    {{ stats.deadCount }}
-                  </div>
-                  <div class="stats-label">
-                    Dead
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-queued"
-                >
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.queuedCount > 0 ? 'text-warning' : ''"
-                  >
-                    {{ stats.queuedCount }}
-                  </div>
-                  <div class="stats-label">
-                    Queued
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col
-                  class="stats-cell"
-                  data-testid="job-stats-running"
-                >
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.runningCount > 0 ? 'text-info' : ''"
-                  >
-                    {{ stats.runningCount }}
-                  </div>
-                  <div class="stats-label">
-                    Running
-                  </div>
-                </v-col>
-              </v-row>
-            </v-col>
+        Run a job
+      </cut-button>
+      <cut-button
+        :disabled="loading"
+        testid="job-manager-refresh-btn"
+        tone="quiet"
+        @click="refresh"
+      >
+        Refresh
+      </cut-button>
+    </template>
 
-            <v-divider
-              vertical
-              class="mx-2"
-            />
-
-            <v-col
-              class="text-center px-2 py-1"
-              data-testid="job-stats-runtime"
-            >
-              <p class="text-overline mb-1">
-                Since last startup
-              </p>
-              <v-row
-                align="center"
-                no-gutters
-              >
-                <v-col class="stats-cell">
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.deadSinceStartup > 0 ? 'text-error' : ''"
-                  >
-                    {{ stats.deadSinceStartup.toFixed(0) }}
-                  </div>
-                  <div class="stats-label">
-                    Dead
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col class="stats-cell">
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.failedSinceStartup > 0 ? 'text-error' : ''"
-                  >
-                    {{ stats.failedSinceStartup.toFixed(0) }}
-                  </div>
-                  <div class="stats-label">
-                    Failed
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col class="stats-cell">
-                  <div class="text-h6 font-weight-bold">
-                    {{ stats.avgSuccessDurationSeconds.toFixed(2) }}s
-                  </div>
-                  <div class="stats-label">
-                    Avg. exec
-                  </div>
-                </v-col>
-                <v-divider vertical />
-                <v-col class="stats-cell">
-                  <div
-                    class="text-h6 font-weight-bold"
-                    :class="stats.recoveriesSinceStartup > 0 ? 'text-warning' : ''"
-                  >
-                    {{ stats.recoveriesSinceStartup.toFixed(0) }}
-                  </div>
-                  <div class="stats-label">
-                    Recoveries
-                  </div>
-                </v-col>
-              </v-row>
-            </v-col>
-          </v-row>
-        </v-card>
-
-        <v-card
-          class="manager-card mb-4"
-          rounded="lg"
-          variant="flat"
-        >
-          <div class="manager-card__header">
-            <div>
-              <p class="text-overline mb-1">
-                Execution Monitor
-              </p>
-              <h2 class="text-h6 mb-1">
-                Job overview
-              </h2>
-              <p class="text-caption text-medium-emphasis mb-0">
-                Showing {{ pageRangeLabel }}
-              </p>
-            </div>
-
-            <div class="d-flex ga-2">
-              <v-btn
-                color="primary"
-                data-testid="job-manager-trigger-btn"
-                variant="flat"
-                @click="showTriggerDialog = true"
-              >
-                Trigger job
-              </v-btn>
-              <v-btn
-                :disabled="loading"
-                data-testid="job-manager-refresh-btn"
-                variant="outlined"
-                @click="refresh"
-              >
-                Refresh
-              </v-btn>
-            </div>
-          </div>
-
-          <div class="manager-card__body">
-            <v-row class="ma-0 manager-filters">
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-select
-                  v-model="selectedCategory"
-                  :items="categoryOptions"
-                  data-testid="job-filter-category"
-                  density="comfortable"
-                  hide-details
-                  item-title="title"
-                  item-value="value"
-                  label="Category"
-                  variant="outlined"
-                >
-                  <template #item="{ props, internalItem }">
-                    <v-list-item
-                      v-bind="props"
-                      :data-testid="`job-filter-category-option-${internalItem.value}`"
-                    />
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col
-                cols="12"
-                md="3"
-                sm="6"
-              >
-                <v-select
-                  v-model="selectedStatus"
-                  :items="statusOptions"
-                  data-testid="job-filter-status"
-                  density="comfortable"
-                  hide-details
-                  item-title="title"
-                  item-value="value"
-                  label="Status"
-                  variant="outlined"
-                >
-                  <template #item="{ props, internalItem }">
-                    <v-list-item
-                      v-bind="props"
-                      :data-testid="`job-filter-status-option-${String(internalItem.value).toLowerCase()}`"
-                    />
-                  </template>
-                </v-select>
-              </v-col>
-              <v-col
-                cols="12"
-                md="2"
-                sm="4"
-              >
-                <v-switch
-                  v-model="hideSkipped"
-                  color="primary"
-                  data-testid="job-filter-hide-skipped"
-                  hide-details
-                  label="Hide skipped"
-                />
-              </v-col>
-              <v-col
-                cols="12"
-                md="4"
-                sm="8"
-              >
-                <v-text-field
-                  v-model="searchQuery"
-                  clearable
-                  data-testid="job-filter-search"
-                  density="comfortable"
-                  hide-details
-                  label="Search summary, type, actor or related entities"
-                  prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
-                />
-              </v-col>
-            </v-row>
-
-            <div class="manager-chip-row">
-              <v-chip
-                size="small"
-                variant="tonal"
-              >
-                Total {{ totalElements }}
-              </v-chip>
-              <v-chip
-                color="warning"
-                size="small"
-                variant="tonal"
-              >
-                Queued {{ statusCounts.QUEUED }}
-              </v-chip>
-              <v-chip
-                color="info"
-                size="small"
-                variant="tonal"
-              >
-                Running {{ statusCounts.RUNNING }}
-              </v-chip>
-              <v-chip
-                color="success"
-                size="small"
-                variant="tonal"
-              >
-                Success {{ statusCounts.SUCCESS }}
-              </v-chip>
-              <v-chip
-                color="grey"
-                size="small"
-                variant="tonal"
-              >
-                Skipped {{ statusCounts.SKIPPED }}
-              </v-chip>
-              <v-chip
-                color="error"
-                size="small"
-                variant="tonal"
-              >
-                Failed {{ statusCounts.FAILED }}
-              </v-chip>
-              <v-chip
-                color="error"
-                size="small"
-                variant="tonal"
-              >
-                Dead {{ statusCounts.DEAD }}
-              </v-chip>
-              <span
-                v-if="loading"
-                class="text-caption text-medium-emphasis"
-              >
-                Refreshing...
-              </span>
-            </div>
-          </div>
-        </v-card>
-
-        <v-card
-          class="manager-card"
-          rounded="lg"
-          variant="flat"
-        >
-          <v-list
-            data-testid="job-manager-table"
-            density="comfortable"
-          >
-            <v-list-item
-              v-if="executions.length === 0"
-              subtitle="Try adjusting your filters or refresh the page."
-              title="No job executions found."
-            />
-
-            <template
-              v-for="execution in executions"
-              :key="execution.id ?? undefined"
-            >
-              <v-list-item
-                :data-testid="`job-row-${execution.id}`"
-                :aria-expanded="isExpanded(execution)"
-                :aria-label="`Toggle details for job ${execution.id}`"
-                :class="['job-row', rowStatusClass(execution.status), {'job-row--expanded': isExpanded(execution)}]"
-                role="button"
-                tabindex="0"
-                @click="toggleExpanded(execution)"
-                @keydown.enter.prevent="toggleExpanded(execution)"
-                @keydown.space.prevent="toggleExpanded(execution)"
-              >
-                <template
-                  v-if="execution.category && execution.category !== 'other'"
-                  #prepend
-                >
-                  <v-chip
-                    class="mr-2 job-category-pill"
-                    size="small"
-                    variant="tonal"
-                  >
-                    {{ titleCase(execution.category) }}
-                  </v-chip>
-                </template>
-
-                <v-list-item-title class="job-row-title-slot">
-                  <div class="job-preview">
-                    <p
-                      class="job-title"
-                      :title="previewTitle(execution)"
-                    >
-                      {{ previewTitle(execution) }}
-                    </p>
-
-                    <div
-                      v-if="payloadChips(execution.payload).length"
-                      class="job-payload-chips"
-                      :data-testid="`job-row-payload-${execution.id}`"
-                    >
-                      <v-chip
-                        v-for="chip in payloadChips(execution.payload)"
-                        :key="chip.key"
-                        size="x-small"
-                        variant="tonal"
-                      >
-                        <strong>{{ chip.label }}:</strong>&nbsp;{{ chip.value }}
-                      </v-chip>
-                    </div>
-
-                    <div class="job-meta-inline">
-                      <template v-if="execution.effect">
-                        <span :data-testid="`job-row-effect-${execution.id}`">{{ effectLabel(execution) }}</span>
-                        <span class="job-meta-sep">·</span>
-                      </template>
-                      <template v-if="execution.trigger">
-                        <span :data-testid="`job-row-trigger-${execution.id}`">{{ triggerLabel(execution) }}</span>
-                        <span class="job-meta-sep">·</span>
-                      </template>
-                      <span>{{ previewActorDisplay(execution) }}</span>
-                      <span class="job-meta-sep">·</span>
-                      <span>{{ attemptsLabel(execution.attempts) }}</span>
-                      <span class="job-meta-sep">·</span>
-                      <span>{{ formatDateNoSeconds(execution.queuedAt) }}</span>
-                    </div>
-                  </div>
-                </v-list-item-title>
-
-                <template #append>
-                  <div class="job-row-actions">
-                    <v-chip
-                      :color="statusColor(execution.status)"
-                      size="small"
-                      variant="tonal"
-                    >
-                      {{ statusTitle(execution.status) }}
-                    </v-chip>
-
-                    <v-btn
-                      v-if="canRetry(execution)"
-                      :data-testid="`job-retry-btn-${execution.id}`"
-                      size="small"
-                      variant="outlined"
-                      @click.stop="retry(execution)"
-                    >
-                      {{ retryLabel(execution) }}
-                    </v-btn>
-                  </div>
-                </template>
-              </v-list-item>
-
-              <v-expand-transition>
-                <div
-                  v-if="isExpanded(execution)"
-                  :data-testid="`job-detail-${execution.id}`"
-                  class="job-detail px-4 pb-3"
-                >
-                  <p
-                    v-if="jobDescription(execution)"
-                    class="job-description-expanded text-caption text-medium-emphasis mb-3"
-                  >
-                    {{ jobDescription(execution) }}
-                  </p>
-
-                  <div class="job-detail-grid">
-                    <v-sheet
-                      class="detail-panel"
-                      rounded="md"
-                      variant="tonal"
-                    >
-                      <p class="text-caption text-medium-emphasis mb-2">
-                        Execution
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>ID:</strong> {{ execution.id }}
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Category:</strong> {{ titleCase(execution.category ?? "other") }}
-                      </p>
-                      <p class="text-body-2 mb-0">
-                        <strong>Status:</strong> {{ statusTitle(execution.status) }}
-                      </p>
-                    </v-sheet>
-
-                    <v-sheet
-                      class="detail-panel"
-                      rounded="md"
-                      variant="tonal"
-                    >
-                      <p class="text-caption text-medium-emphasis mb-2">
-                        Trigger
-                      </p>
-                      <p
-                        v-if="execution.trigger"
-                        :data-testid="`job-trigger-${execution.id}`"
-                        class="text-body-2 mb-1"
-                      >
-                        <strong>Queued by:</strong> {{ triggerLabel(execution) }}
-                      </p>
-                      <p
-                        v-for="(folded, index) in execution.foldedTriggers ?? []"
-                        :key="index"
-                        :data-testid="`job-folded-trigger-${execution.id}-${index}`"
-                        class="text-body-2 mb-1"
-                      >
-                        <strong>Also queued by:</strong> {{ foldedTriggerLabel(folded) }} · {{ folded.initiatedByDisplay }} · {{ formatDate(folded.at) }}
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Actor:</strong> {{ actorDisplay(execution) }}
-                      </p>
-                      <p
-                        v-if="execution.forced"
-                        :data-testid="`job-forced-${execution.id}`"
-                        class="text-body-2 mb-1"
-                      >
-                        <strong>Forced:</strong> Yes
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Attempts:</strong> {{ attemptsLabel(execution.attempts) }}
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Queued:</strong> {{ formatDate(execution.queuedAt) }}
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Started:</strong> {{ formatDate(execution.startedAt) }}
-                      </p>
-                      <p class="text-body-2 mb-1">
-                        <strong>Finished:</strong> {{ formatDate(execution.finishedAt) }}
-                      </p>
-                      <p
-                        v-if="execution.nextAttemptAt"
-                        class="text-body-2 mb-0"
-                      >
-                        <strong>Next attempt:</strong> {{ formatDate(execution.nextAttemptAt) }}
-                      </p>
-                    </v-sheet>
-                  </div>
-
-                  <v-sheet
-                    class="detail-panel mt-3"
-                    rounded="md"
-                    variant="tonal"
-                  >
-                    <p class="text-caption text-medium-emphasis mb-2">
-                      Related entities
-                    </p>
-                    <div
-                      v-if="(execution.relatedEntities ?? []).length"
-                      class="related-entity-list"
-                    >
-                      <div
-                        v-for="entity in execution.relatedEntities"
-                        :key="`${entity.type}-${entity.id}`"
-                        class="related-entity-row"
-                      >
-                        <span class="related-entity-type">
-                          {{ relatedEntityTypeLabel(entity.type) }}
-                        </span>
-                        <v-divider
-                          class="job-divider"
-                          vertical
-                        />
-                        <span class="related-entity-label">
-                          {{ relatedEntityLabel(entity) }}
-                        </span>
-                      </div>
-                    </div>
-                    <p
-                      v-else
-                      class="text-body-2 text-medium-emphasis mb-0"
-                    >
-                      No related entities.
-                    </p>
-                  </v-sheet>
-
-                  <v-sheet
-                    v-if="execution.effect"
-                    class="detail-panel mt-3"
-                    rounded="md"
-                    variant="tonal"
-                  >
-                    <p class="text-caption text-medium-emphasis mb-2">
-                      Outcome
-                    </p>
-                    <p class="text-body-2 mb-0">
-                      {{ effectLabel(execution) }}
-                      <a
-                        v-if="execution.effectLink"
-                        :data-testid="`job-effect-link-${execution.id}`"
-                        :href="execution.effectLink"
-                        rel="noopener"
-                        target="_blank"
-                      >Open in Discord</a>
-                    </p>
-                  </v-sheet>
-
-                  <v-sheet
-                    v-if="execution.skipReason"
-                    class="detail-panel mt-3"
-                    rounded="md"
-                    variant="tonal"
-                  >
-                    <p class="text-caption text-medium-emphasis mb-2">
-                      Skipped
-                    </p>
-                    <p
-                      :data-testid="`job-skip-reason-${execution.id}`"
-                      class="text-body-2 mb-0"
-                    >
-                      {{ execution.skipReason }}
-                    </p>
-                  </v-sheet>
-
-                  <v-sheet
-                    v-if="execution.errorType || errorSummary(execution) !== '-'"
-                    class="detail-panel mt-3"
-                    rounded="md"
-                    variant="tonal"
-                  >
-                    <p class="text-caption text-medium-emphasis mb-2">
-                      Failure detail
-                    </p>
-                    <p
-                      :data-testid="`job-error-reason-${execution.id}`"
-                      class="text-body-2 mb-2"
-                    >
-                      <strong>Message:</strong> {{ errorSummary(execution) }}
-                    </p>
-                    <pre
-                      v-if="hasStackTrace(execution)"
-                      :data-testid="`job-stacktrace-${execution.id}`"
-                      class="stacktrace"
-                    >{{ stackTrace(execution) }}</pre>
-                  </v-sheet>
-                </div>
-              </v-expand-transition>
-
-              <v-divider class="job-divider mx-4" />
-            </template>
-          </v-list>
-
-          <div class="manager-pagination">
-            <span class="text-caption text-medium-emphasis">
-              Page {{ page }} of {{ totalPages }}
-            </span>
-            <v-pagination
-              v-model="page"
-              :length="totalPages"
-              :total-visible="7"
-              data-testid="job-manager-pagination"
-            />
-          </div>
-        </v-card>
+    <template v-if="stats !== null">
+      <fact-list
+        class="jobs__facts"
+        :columns="6"
+        :facts="facts"
+      />
+      <div data-testid="job-stats-runtime">
+        <list-head title="Since start-up" />
+        <fact-list
+          class="jobs__runtime"
+          :columns="4"
+          :facts="sinceStartup"
+        />
       </div>
-    </v-container>
-  </main>
+    </template>
+
+    <div
+      ref="runPanel"
+      class="jobs__run"
+    >
+      <fold-out
+        v-model:open="runOpen"
+        label="Run a job"
+        testid="job-run"
+      >
+        <job-run-form
+          :preset="preset"
+          @queued="onJobQueued"
+        />
+      </fold-out>
+    </div>
+
+    <management-table
+      :columns="COLUMNS"
+      :descending="descending"
+      :row-key="(execution) => execution.id ?? 0"
+      :row-testid="(execution) => `job-row-${execution.id}`"
+      :rows="executions"
+      :sort-key="sortKey"
+      testid="job-manager-table"
+      :to="(execution) => `/management/jobs/${execution.id}`"
+      @more="more"
+      @order="orderBy"
+      @sort="sortBy"
+    >
+      <template #count>
+        {{ loading ? "Refreshing" : `Showing ${pageRangeLabel}` }}
+      </template>
+      <template #filters>
+        <filter-bar
+          :active="filtered"
+          testid="job-filters"
+          @clear="clearFilters"
+        >
+          <filter-picker
+            v-model="selectedStatus"
+            label="Status"
+            :options="statusOptions"
+            testid="job-filter-status"
+          />
+          <filter-picker
+            v-model="selectedCategory"
+            label="Kind"
+            :options="categoryOptions"
+            testid="job-filter-kind"
+          />
+          <filter-picker
+            any-label="Shown"
+            label="Skipped runs"
+            :model-value="hideSkipped ? HIDDEN : null"
+            :options="[{key: HIDDEN, label: 'Hidden'}]"
+            testid="job-filter-hide-skipped"
+            @update:model-value="hideSkipped = $event === HIDDEN"
+          />
+        </filter-bar>
+      </template>
+      <template #search>
+        <search-box
+          label="Search jobs"
+          :model-value="searchQuery ?? ''"
+          testid="job-filter-search"
+          @update:model-value="searchQuery = $event"
+        />
+      </template>
+      <template
+        v-if="!loading"
+        #empty
+      >
+        No jobs match. Change the filters or refresh.
+      </template>
+      <template #queued="{row}">
+        {{ formatMoment(row.queuedAt) }}
+      </template>
+      <template #job="{row}">
+        <router-link
+          class="jobs__title"
+          :data-testid="`job-open-${row.id}`"
+          :to="`/management/jobs/${row.id}`"
+        >
+          {{ previewTitle(row) }}
+        </router-link>
+        <span
+          class="mg-sub"
+          :data-testid="`job-row-kind-${row.id}`"
+        >{{ titleCase(row.category ?? "other") }}</span>
+        <span
+          v-if="payloadChips(row.payload).length"
+          class="mg-sub"
+          :data-testid="`job-row-payload-${row.id}`"
+        >{{ payloadChips(row.payload).map((chip) => `${chip.label}: ${chip.value}`).join(" · ") }}</span>
+        <span
+          v-if="row.effect"
+          class="mg-sub"
+          :data-testid="`job-row-effect-${row.id}`"
+        >{{ effectLabel(row) }}</span>
+      </template>
+      <template #by="{row}">
+        <span :data-testid="`job-row-trigger-${row.id}`">{{ startedBy(row) }}</span>
+      </template>
+      <template #status="{row}">
+        <state-mark :kind="markOf(row)">
+          {{ statusTitle(row.status) }}
+        </state-mark>
+        <span
+          v-if="failed(row) && errorSummary(row) !== '-'"
+          class="mg-why"
+          :data-testid="`job-error-reason-${row.id}`"
+        >{{ errorSummary(row) }}</span>
+        <span
+          v-if="row.skipReason"
+          class="mg-why"
+          :data-testid="`job-skip-reason-${row.id}`"
+        >{{ row.skipReason }}</span>
+      </template>
+      <template #attempts="{row}">
+        {{ attemptsLabel(row.attempts) }}
+      </template>
+      <template #acts="{row}">
+        <mini-button
+          v-if="canRetry(row)"
+          :testid="`job-retry-btn-${row.id}`"
+          @click="retry(row)"
+        >
+          {{ retryLabel(row) }}
+        </mini-button>
+        <mini-button
+          :testid="`job-run-again-btn-${row.id}`"
+          @click="runAgain(row)"
+        >
+          Run again
+        </mini-button>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${titleCase(row.category ?? 'other')} · ${startedBy(row)} · ${formatMoment(row.queuedAt)}`"
+          :name="previewTitle(row)"
+          :testid="`job-row-${row.id}`"
+          :to="`/management/jobs/${row.id}`"
+        >
+          <state-mark :kind="markOf(row)">
+            {{ statusTitle(row.status) }}
+          </state-mark>
+        </management-row>
+      </template>
+    </management-table>
+  </management-page>
 </template>
 
-<style lang="scss" scoped>
-.job-manager-page {
-  max-width: 980px;
+<style scoped>
+.jobs__facts {
+  padding: 1.1rem 0 0.4rem;
 }
 
-.stats-label {
-  font-size: 10px;
-  line-height: 1.1;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+.jobs__runtime {
+  padding-bottom: 0.4rem;
 }
 
-.stats-cell {
-  padding: 2px 6px;
+.jobs__run {
+  margin: 1.2rem 0;
 }
 
-.manager-filters {
-  row-gap: 6px;
-}
-
-.manager-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.job-row {
-  align-items: flex-start;
-  border-left: 3px solid transparent;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, outline-color 0.15s ease;
-  outline: 1px solid transparent;
-}
-
-.job-row:hover,
-.job-row:focus-visible {
-  background: rgba(var(--v-theme-on-surface), 0.035);
-  outline-color: rgba(var(--v-theme-primary), 0.35);
-}
-
-.job-row--expanded {
-  background: rgba(var(--v-theme-primary), 0.06);
-  outline-color: rgba(var(--v-theme-primary), 0.42);
-}
-
-.job-row--success {
-  border-left-color: rgba(var(--v-theme-success), 0.7);
-}
-
-.job-row--failed {
-  border-left-color: rgba(var(--v-theme-error), 0.72);
-}
-
-.job-row--running {
-  border-left-color: rgba(var(--v-theme-info), 0.7);
-}
-
-.job-row--queued {
-  border-left-color: rgba(var(--v-theme-warning), 0.7);
-}
-
-.job-row--skipped {
-  border-left-color: rgba(var(--v-theme-on-surface), 0.38);
-}
-
-.job-category-pill {
-  min-height: 28px;
-  height: 28px;
-  padding-inline: 10px;
-  font-size: 12px;
+.jobs__title {
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--color-chalk);
 }
 
-.job-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.job-title {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.2;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.job-description-expanded {
-  white-space: normal;
-}
-
-.job-payload-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-.job-meta-inline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 0;
-  font-size: 12.5px;
-  line-height: 1.2;
-  color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.job-meta-sep {
-  opacity: 0.5;
-}
-
-.job-divider {
-  border-color: rgba(var(--v-theme-success), 0.45);
-  opacity: 1;
-}
-
-.job-row-title-slot {
-  /*
-   * Vuetify's default v-list-item-title sets margin-bottom to keep
-   * space between title and subtitle. We render title + meta in a
-   * single flex stack, so collapse that gap to keep the row visually
-   * tight.
-   */
-  margin-bottom: 0 !important;
-  white-space: normal;
-}
-
-.job-row-title-slot :deep(.v-list-item-subtitle) {
-  display: none;
-}
-
-.job-row-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  min-width: 96px;
-}
-
-.job-detail {
-  margin-top: 4px;
-}
-
-.job-description-expanded {
-  font-style: italic;
-}
-
-.job-detail-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.detail-panel {
-  padding: 12px;
-  background: rgba(var(--v-theme-on-surface), 0.025);
-}
-
-.related-entity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.related-entity-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 34px;
-}
-
-.related-entity-type {
-  min-width: 128px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(var(--v-theme-on-surface), 0.65);
-}
-
-.related-entity-label {
-  font-size: 14px;
-}
-
-.manager-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px 18px;
-}
-
-.stacktrace {
-  max-height: 280px;
-  overflow: auto;
-  padding: 10px;
-  border-radius: 6px;
-  background: rgba(var(--v-theme-on-surface), 0.06);
-  color: rgb(var(--v-theme-on-surface));
-  font-size: 12px;
-  line-height: 1.35;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.stats-cell {
-  padding: 4px 8px;
-}
-
-@media (max-width: 900px) {
-  .job-preview {
-    grid-template-columns: 1fr;
-  }
-
-  .job-meta-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .job-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .job-row-actions {
-    min-width: 0;
-  }
-
-  .manager-pagination {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-@media (max-width: 640px) {
-  .job-meta-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .job-meta-cell {
-    padding: 0;
-  }
-
-  .job-meta-cell + .job-meta-cell {
-    border-left: 0;
-    border-top: 1px solid rgba(var(--v-theme-success), 0.45);
-    margin-top: 4px;
-    padding-top: 4px;
-  }
+.jobs__title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 </style>

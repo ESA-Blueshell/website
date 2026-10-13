@@ -106,7 +106,7 @@ describe("JobDetail page", () => {
     expect(mockFindJob).toHaveBeenCalledTimes(1)
   })
 
-  it("sends Run again to the one form that queues jobs", async () => {
+  it("sends Re-run to the one form that queues jobs", async () => {
     const wrapper = await mountDetail()
 
     expect(wrapper.find('[data-testid="job-detail-run-again"]').exists()).toBe(true)
@@ -121,7 +121,7 @@ describe("JobDetail page", () => {
 
     expect(wrapper.find('[data-testid="job-detail-skip-reason"]').text()).toBe("Nothing changed.")
     expect(wrapper.find('[data-testid="job-detail-failure"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain("Nothing in particular.")
+    expect(wrapper.text()).toContain("Nothing.")
   })
 
   it("says a run was forced, what else queued it, and links what it did on Discord", async () => {
@@ -134,7 +134,7 @@ describe("JobDetail page", () => {
     }})
     const wrapper = await mountDetail()
 
-    expect(wrapper.get('[data-testid="job-detail-forced"]').text()).toContain("Run although it would have been skipped")
+    expect(wrapper.get('[data-testid="job-detail-forced"]').text()).toContain("It ran even though it would have been skipped")
     expect(wrapper.get('[data-testid="job-detail-folded-0"]').text()).toContain("Also queued by")
     expect(wrapper.get('[data-testid="job-detail-folded-0"]').text()).toContain("Jane Doe (@jdoe)")
     expect(wrapper.get('[data-testid="job-detail-folded-1"]').text()).toContain("Also queued by (2)")

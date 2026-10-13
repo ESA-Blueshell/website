@@ -163,7 +163,7 @@ describe("the Exceptions pages", () => {
     const wrapper = await mount(ExceptionDetail)
 
     expect(wrapper.find('[data-testid="exception-concern"]').text()).toBe("The request GET /events/{id}")
-    expect(wrapper.find('[data-testid="exception-message"]').text()).toBe("It carried no message.")
+    expect(wrapper.find('[data-testid="exception-message"]').text()).toBe("No message.")
     expect(wrapper.find('[data-testid="exception-resolve"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="exception-facts"]').text()).toContain("Resolved")
   })

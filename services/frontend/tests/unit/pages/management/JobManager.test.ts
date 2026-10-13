@@ -273,7 +273,7 @@ describe("JobManager page", () => {
     })
   })
 
-  it("fills Run a job from a row's Run again, and queues nothing by itself", async () => {
+  it("fills Run a job from a row's Re-run, and queues nothing by itself", async () => {
     mockList.mockResolvedValue(pageOf([job({id: 1, status: "FAILED", payload: {userId: 7}})]))
     const wrapper = mountJobManager()
     await settle()
@@ -287,7 +287,7 @@ describe("JobManager page", () => {
     expect(mockList).toHaveBeenCalledTimes(1)
   })
 
-  it("opens Run a job filled in when a job's own page sends Run again", async () => {
+  it("opens Run a job filled in when a job's own page sends Re-run", async () => {
     mockRoute.query = {again: "4"}
     mockFindJob.mockResolvedValue({status: 200, data: job({id: 4, payload: {userId: 9}})})
 
@@ -299,7 +299,7 @@ describe("JobManager page", () => {
     expect((wrapper.vm as any).preset).toEqual({type: "contact.sync-user", payload: {userId: 9}})
   })
 
-  it("ignores a Run again for a job it cannot read, or one without a type", async () => {
+  it("ignores a Re-run for a job it cannot read, or one without a type", async () => {
     mockRoute.query = {again: "4"}
     mockFindJob.mockResolvedValue({status: 404, error: {detail: "Not found"}})
 

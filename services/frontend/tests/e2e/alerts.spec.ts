@@ -20,7 +20,7 @@ test.describe("Alerts in Management", () => {
     await expect(page.getByTestId("alert-open-exception-open")).toHaveAttribute("href", "/management/exceptions")
 
     await page.getByTestId("alert-hide-job-dead").click()
-    await expect(page.getByText("Hidden for you · 1")).toBeVisible()
+    await expect(page.getByText("Hidden · 1")).toBeVisible()
 
     await page.getByTestId("alert-open-exception-open").click()
     await expect(page).toHaveURL(/\/management\/exceptions$/)

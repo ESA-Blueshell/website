@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.1](https://github.com/ESA-Blueshell/website/compare/v1.21.0...v1.21.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.tngtech.archunit:archunit-junit5 to v1.5.1 ([#2150](https://github.com/ESA-Blueshell/website/issues/2150)) ([2500415](https://github.com/ESA-Blueshell/website/commit/2500415b5c6d9f5c364a4df5d49283834ee6aee8))
+
 ## [1.21.0](https://github.com/ESA-Blueshell/website/compare/v1.20.5...v1.21.0) (2026-10-12)
 
 

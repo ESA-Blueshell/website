@@ -10,10 +10,13 @@
     >
       <div
         v-for="group in groups"
-        :key="group.label"
+        :key="group.label ?? ''"
         class="mg-side__group"
       >
-        <p class="mg-side__label">
+        <p
+          v-if="group.label"
+          class="mg-side__label"
+        >
           {{ group.label }}
           <role-mark
             v-if="group.adminOnly"
@@ -34,6 +37,11 @@
             v-if="entry.adminOnly && !group.adminOnly"
             role="Admin"
           />
+          <span
+            v-if="entry.counted && count > 0"
+            class="mg-side__count"
+            :data-testid="`management-nav-${slug(entry.label)}-count`"
+          >{{ count }}<span class="mg-side__said">{{ said }}</span></span>
         </router-link>
       </div>
     </nav>
@@ -69,34 +77,48 @@
           <path :d="tab.icon" />
         </svg>
         <span>{{ tab.label }}</span>
+        <span
+          v-if="tab.count > 0"
+          class="mg-tab__count"
+          :data-testid="`management-tab-${slug(tab.label)}-count`"
+        >{{ tab.count }}<span class="mg-side__said">{{ said }}</span></span>
       </router-link>
     </nav>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {computed} from "vue"
+import {computed, onBeforeUnmount, watch} from "vue"
 import {useRoute} from "vue-router"
 import FooterBanner from "@/components/common/banners/FooterBanner.vue"
 import RoleMark from "@/components/island/RoleMark.vue"
 import {isOn, slug} from "@/components/management/managementNav"
 import {useManagementGroups} from "@/composables/useManagementGroups"
+import {useAlerts} from "@/domains/alerts"
 
 defineOptions({name: "ManagementShell"})
 
 const route = useRoute()
 const groups = useManagementGroups()
 
+// Read again on every page, so an alert dealt with on one page leaves the count on the next.
+const {count, refresh, forget} = useAlerts()
+watch(() => route.path, refresh, {immediate: true})
+onBeforeUnmount(forget)
+// What the number counts, for a reader who hears it.
+const said = computed(() => (count.value === 1 ? " alert" : " alerts"))
+
+const ALERTS_ICON = "M12 3.5a5.5 5.5 0 0 0-5.5 5.5v3.6L4.6 16.4h14.8l-1.9-3.8V9A5.5 5.5 0 0 0 12 3.5M9.8 19.2a2.3 2.3 0 0 0 4.4 0"
 const MEMBERS_ICON = "M9 4.6a3.4 3.4 0 1 1 0 6.8a3.4 3.4 0 1 1 0-6.8M2.6 19.4c0-3.4 2.9-5.6 6.4-5.6s6.4 2.2 6.4 5.6M16 5.2a3.2 3.2 0 0 1 0 6.1M18.4 14.2c1.8.8 3 2.6 3 5.2"
 const MORE_ICON = "M4 7h16M4 12h16M4 17h16"
-const TAB_LOOK = {members: {label: "Members", icon: MEMBERS_ICON}}
+const TAB_LOOK = {alerts: {label: "Alerts", icon: ALERTS_ICON}, members: {label: "Members", icon: MEMBERS_ICON}}
 
 /** The phone's bottom bar: the pages that have a tab, then More for everything else. */
 const tabs = computed(() => {
   const owned = groups.value.flatMap((group) => group.entries).flatMap((entry) => entry.tab
-    ? [{...TAB_LOOK[entry.tab], to: entry.to, on: isOn(route.path, entry)}]
+    ? [{...TAB_LOOK[entry.tab], to: entry.to, on: isOn(route.path, entry), count: entry.counted ? count.value : 0}]
     : [])
-  return [...owned, {label: "More", to: "/management/more", icon: MORE_ICON, on: !owned.some((tab) => tab.on)}]
+  return [...owned, {label: "More", to: "/management/more", icon: MORE_ICON, on: !owned.some((tab) => tab.on), count: 0}]
 })
 </script>
 
@@ -165,6 +187,29 @@ const tabs = computed(() => {
   background: color-mix(in oklab, var(--color-brand) 14%, transparent);
 }
 
+.mg-side__count {
+  min-width: 1.45rem;
+  margin-left: auto;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-void);
+  background: var(--color-warning);
+}
+
+/* The warning tone is dark on the light ground, so its count reads in white there. */
+:where([data-theme="light"]) .mg-side__count,
+:where([data-theme="light"]) .mg-tab__count {
+  color: #fff;
+}
+
+.mg-side__said {
+  position: absolute;
+  left: -9999px;
+}
+
 .mg-side__item--on::before {
   content: "";
   position: absolute;
@@ -228,6 +273,21 @@ const tabs = computed(() => {
   letter-spacing: 0.04em;
   text-decoration: none;
   color: var(--color-ash);
+}
+
+.mg-tab__count {
+  position: absolute;
+  top: 0.5rem;
+  left: calc(50% + 0.4rem);
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 9999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  text-align: center;
+  color: var(--color-void);
+  background: var(--color-warning);
 }
 
 .mg-tab svg {

@@ -6,10 +6,13 @@
   >
     <div
       v-for="group in groups"
-      :key="group.label"
+      :key="group.label ?? ''"
       class="mg-more__group"
     >
-      <list-head :title="group.label" />
+      <list-head
+        v-if="group.label"
+        :title="group.label"
+      />
       <management-row
         v-for="entry in group.entries"
         :key="entry.to"

@@ -11,17 +11,21 @@ export interface ManagementEntry {
   /** Only an admin opens it; the sidebar marks it. */
   adminOnly?: boolean
   /** Its place in the phone's bottom bar, where it has one. */
-  tab?: "members"
+  tab?: "alerts" | "members"
+  /** Carries the count of the reader's alerts beside its name. */
+  counted?: boolean
 }
 
 /** A group of pages, named for the job they share. */
 export interface ManagementGroup {
-  label: string
+  /** Nothing for the pages that stand above every group. */
+  label: string | null
   adminOnly?: boolean
   entries: ManagementEntry[]
 }
 
 const GROUPS: ManagementGroup[] = [
+  {label: null, entries: [{label: "Alerts", to: "/management/alerts", tab: "alerts", counted: true}]},
   {
     label: "Members",
     entries: [

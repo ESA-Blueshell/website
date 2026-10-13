@@ -39,6 +39,7 @@ const initial = computed(() => name.trim().charAt(0).toUpperCase())
         v-if="avatar"
         alt=""
         class="discord-user__face"
+        crossorigin="anonymous"
         :src="avatar"
       >
       <span

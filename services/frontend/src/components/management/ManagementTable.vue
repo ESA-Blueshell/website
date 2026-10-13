@@ -1,8 +1,10 @@
 <template>
   <div
     v-if="phone && $slots.phone"
+    :aria-label="label"
     class="mg-rows"
     :data-testid="testid"
+    :role="label ? 'group' : undefined"
   >
     <div
       v-if="$slots.count || $slots.filters || $slots.search || searchText || orders.length > 0"
@@ -27,7 +29,7 @@
           <search-box
             v-if="searchText"
             v-model="query"
-            :label="searchLabel"
+            :label="searchName"
             :testid="testid ? `${testid}-search` : undefined"
           />
         </slot>
@@ -67,15 +69,35 @@
         name="empty"
       />
     </p>
-    <template
-      v-for="row in ordered"
-      :key="rowKey(row)"
+    <div
+      ref="list"
+      class="mg-rows__body"
     >
-      <slot
-        name="phone"
-        :row="row"
+      <div
+        v-if="before > 0"
+        aria-hidden="true"
+        :style="{height: `${before}px`}"
       />
-    </template>
+      <template
+        v-for="row in drawn"
+        :key="rowKey(row)"
+      >
+        <slot
+          name="phone"
+          :row="row"
+        />
+      </template>
+      <div
+        v-if="after > 0"
+        aria-hidden="true"
+        :style="{height: `${after}px`}"
+      />
+    </div>
+    <div
+      ref="end"
+      aria-hidden="true"
+      class="mg-table__end"
+    />
   </div>
   <div
     v-else
@@ -96,7 +118,7 @@
           <search-box
             v-if="searchText"
             v-model="query"
-            :label="searchLabel"
+            :label="searchName"
             :testid="testid ? `${testid}-search` : undefined"
           />
         </slot>
@@ -109,7 +131,11 @@
       @scroll.passive="onScroll"
       @wheel.passive="passOn"
     >
-      <table :class="{'mg-table__locked': shares.length > 0}">
+      <table
+        :aria-label="label"
+        :aria-rowcount="windowed ? kept.length + headRows : undefined"
+        :class="{'mg-table__locked': shares.length > 0}"
+      >
         <colgroup v-if="shares.length > 0">
           <col
             v-for="(share, index) in shares"
@@ -210,8 +236,9 @@
             :style="{height: `${before}px`}"
           />
           <tr
-            v-for="row in drawn"
+            v-for="(row, index) in drawn"
             :key="rowKey(row)"
+            :aria-rowindex="windowed ? span.from + index + headRows + 1 : undefined"
             :class="{'mg-table__row--opens': to && to(row)}"
             :data-row="true"
             :data-testid="rowTestid?.(row)"
@@ -256,6 +283,11 @@
           />
         </tbody>
       </table>
+      <div
+        ref="end"
+        aria-hidden="true"
+        class="mg-table__end"
+      />
     </div>
   </div>
 </template>
@@ -264,7 +296,7 @@
 /* A Management table: flat rows a step off the page, sortable heads, a row's own acts at its end,
    and a row that has a page opens it when pressed anywhere. On a phone it hands each row to the page to draw as
    a ManagementRow, where a page gives one. */
-import {computed, nextTick, onMounted, ref, useTemplateRef, watch} from "vue"
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch} from "vue"
 import {useRouter} from "vue-router"
 import FilterPicker from "@/components/island/FilterPicker.vue"
 import SearchBox from "@/components/island/SearchBox.vue"
@@ -291,8 +323,10 @@ export interface TableColumn<T = unknown> {
 
 const {
   columns, rows, rowKey, sortKey = "", descending = false, to = undefined, height = 0, testid = undefined, rowTestid = undefined,
-  headerState = undefined, total = 0, selectedCount = 0, searchText = undefined, searchLabel = "Search", startSort = undefined,
+  headerState = undefined, total = 0, selectedCount = 0, searchText = undefined, searchLabel = undefined, startSort = undefined, label = undefined,
 } = defineProps<{
+  /** What the rows are, in a word or two: the table's name to a screen reader. */
+  label?: string
   // The rows say what a row is; a page's columns need not name it.
   columns: TableColumn<NoInfer<T>>[]
   rows: T[]
@@ -340,6 +374,7 @@ const selectionLine = computed(() => {
 
 const phone = usePhone()
 const router = useRouter()
+const searchName = computed(() => searchLabel ?? (label ? `Search ${label.toLowerCase()}` : "Search"))
 
 /* The table's own search: the rows whose text holds what is typed, whatever the case. Each row's
    text is worked out once as the rows arrive, not again for every letter typed. */
@@ -416,9 +451,12 @@ const scrolled = ref(0)
 const rowHeight = ref(50)
 const windowHeight = ref(800)
 
+const windowed = computed(() => kept.value.length > WHOLE_UP_TO)
+// The head's own rows come first in a screen reader's count of the rows.
+const headRows = computed(() => (offerAll.value || allSelected.value ? 2 : 1))
 const span = computed(() => {
   const count = kept.value.length
-  if (count <= WHOLE_UP_TO) return {from: 0, until: count}
+  if (!windowed.value) return {from: 0, until: count}
   // Never past the last row: a list that gets shorter under a reader far down it keeps rows drawn.
   const from = Math.max(0, Math.min(count - 1, Math.floor(scrolled.value / rowHeight.value) - OVERSCAN))
   const until = Math.min(count, Math.ceil((scrolled.value + windowHeight.value) / rowHeight.value) + OVERSCAN)
@@ -428,9 +466,9 @@ const drawn = computed(() => ordered.value.slice(span.value.from, span.value.unt
 const before = computed(() => span.value.from * rowHeight.value)
 const after = computed(() => (kept.value.length - span.value.until) * rowHeight.value)
 
-/* A table sizes its columns to the rows in the document, and here those change as it scrolls. So
-   the columns are measured once, off the first rows drawn, and held: each keeps its share of the
-   width whatever scrolls into view. A list short enough to be drawn whole has no need. */
+/* A table sizes its columns to the rows in the document, and those change as it scrolls and as a
+   search narrows it. So the columns are measured once, off the first rows drawn, and held: each
+   keeps its share of the width whatever comes into view. */
 const shares = ref<number[]>([])
 const hold = (box: HTMLElement) => {
   const widths = [...box.querySelectorAll<HTMLElement>("thead tr:first-child th")].map((head) => head.getBoundingClientRect().width)
@@ -438,13 +476,26 @@ const hold = (box: HTMLElement) => {
   if (whole > 0) shares.value = widths.map((one) => (one / whole) * 100)
 }
 
+// A phone's rows scroll with the page, so there the window is the browser's own.
+const list = useTemplateRef<HTMLElement>("list")
+const measureList = () => {
+  const box = list.value
+  if (!box) return
+  windowHeight.value = window.innerHeight
+  scrolled.value = Math.max(0, -box.getBoundingClientRect().top)
+  const rowsHeight = box.offsetHeight - before.value - after.value
+  if (drawn.value.length > 0 && rowsHeight > 0) rowHeight.value = rowsHeight / drawn.value.length
+}
+
 const measure = () => {
   const box = scroller.value
-  if (!box) return
+  if (!box) return measureList()
+  // A phone turned on its side becomes this table, with the page's scroll still counted.
+  scrolled.value = box.scrollTop
   if (box.clientHeight > 0) windowHeight.value = box.clientHeight
   const heights = [...box.querySelectorAll<HTMLElement>("tr[data-row]")].map((row) => row.offsetHeight).filter((one) => one > 0)
   if (heights.length > 0) rowHeight.value = heights.reduce((sum, one) => sum + one, 0) / heights.length
-  if (kept.value.length > WHOLE_UP_TO && shares.value.length === 0) hold(box)
+  if (kept.value.length > 0 && shares.value.length === 0) hold(box)
 }
 
 /* The box stops dead at either end, so the head never drags off the rows. A scroll that starts
@@ -465,16 +516,36 @@ const passOn = (event: WheelEvent) => {
 
 const onScroll = () => {
   const box = scroller.value
-  if (!box) return
-  scrolled.value = box.scrollTop
-  if (box.scrollTop + box.clientHeight >= box.scrollHeight - NEAR_END) emit("more")
+  if (box) scrolled.value = box.scrollTop
 }
 
-onMounted(measure)
-watch(() => kept.value.length, (count) => {
-  if (count <= WHOLE_UP_TO) shares.value = []
-  void nextTick(measure)
+/* The end of the rows is watched, not the scroll: a phone has no box to scroll, and rows that
+   leave room in the window never scroll at all. */
+const end = useTemplateRef<HTMLElement>("end")
+let watcher: IntersectionObserver | undefined
+const watchEnd = () => {
+  watcher?.disconnect()
+  if (!end.value) return
+  watcher = new IntersectionObserver((seen) => {
+    if (seen.some((one) => one.isIntersecting)) emit("more")
+  }, {root: scroller.value, rootMargin: `0px 0px ${NEAR_END}px 0px`})
+  watcher.observe(end.value)
+}
+
+onMounted(() => {
+  measure()
+  watchEnd()
+  window.addEventListener("scroll", measureList, {passive: true})
+  window.addEventListener("resize", measure)
 })
+onBeforeUnmount(() => {
+  watcher?.disconnect()
+  window.removeEventListener("scroll", measureList)
+  window.removeEventListener("resize", measure)
+})
+watch([() => kept.value.length, phone], () => void nextTick(measure))
+// An observer speaks only when the end comes into view, and new rows may leave it there.
+watch([() => rows, phone], () => void nextTick(watchEnd))
 // Other columns have other widths: let the table size them, then hold those.
 watch(() => columns.map((one) => one.key).join(), () => {
   shares.value = []
@@ -486,6 +557,8 @@ watch(() => columns.map((one) => one.key).join(), () => {
 const open = (row: T, event: MouseEvent) => {
   const page = to?.(row)
   if (!page || (event.target as Element).closest("a, button, input, label, select")) return
+  // A press that asks for another tab gets one, as a link would give it.
+  if (event.metaKey || event.ctrlKey || event.shiftKey) return void window.open(router.resolve(page).href, "_blank", "noopener")
   void router.push(page)
 }
 
@@ -740,8 +813,10 @@ tbody tr:hover td:first-child::before {
   text-align: right;
 }
 
+/* A row with more acts than the held column is wide stacks them, never loses one. */
 .mg-table__acts > span {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.35rem;
 }
@@ -832,10 +907,16 @@ td.mg-table__empty::before {
   left: -9999px;
 }
 
-.mg-rows {
+.mg-rows,
+.mg-rows__body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.mg-table__end {
+  height: 1px;
+  margin-top: -1px;
 }
 </style>
 

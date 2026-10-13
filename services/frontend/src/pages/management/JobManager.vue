@@ -234,6 +234,7 @@ onMounted(async () => {
     <management-table
       :columns="COLUMNS"
       :descending="descending"
+      label="Jobs"
       :row-key="(execution) => execution.id ?? 0"
       :row-testid="(execution) => `job-row-${execution.id}`"
       :rows="executions"

@@ -10,6 +10,7 @@ import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -80,5 +81,10 @@ class RecoveryEmailJobTest {
         assertThatThrownBy { run(7L, "selector.verifier", TokenPurpose.SIGNUP_CONTINUATION) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("must never be emailed")
+    }
+
+    @Test
+    fun `a recovery email is never made again, since its payload holds the link`() {
+        assertThat(job.resendable).isFalse()
     }
 }

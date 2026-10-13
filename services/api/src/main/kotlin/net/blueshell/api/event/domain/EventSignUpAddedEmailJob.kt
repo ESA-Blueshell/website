@@ -1,7 +1,8 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -13,16 +14,13 @@ class EventSignUpAddedEmailJob(
     private val eventSignUps: EventSignUpService,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
-) : AbstractJsonJobHandler<EventJobs.EventSignupPayload>(
+) : EmailJob<EventJobs.EventSignupPayload>(
         objectMapper,
         EventJobs.EventSignUpAdded,
+        emails,
     ) {
-    override fun handlePayload(payload: EventJobs.EventSignupPayload) {
+    override fun compose(payload: EventJobs.EventSignupPayload): EmailContent {
         val eventSignUp = requireExists { eventSignUps.findById(payload.eventSignUpId) }
-        emails.send(
-            createEventSignUpAddedEmail(eventSignUp, frontendUrl, payload.guestAccessToken),
-            EventJobs.EventSignUpAdded.type,
-            currentExecutionId,
-        )
+        return createEventSignUpAddedEmail(eventSignUp, frontendUrl, payload.guestAccessToken)
     }
 }

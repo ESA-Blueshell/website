@@ -2,8 +2,8 @@
 import {computed, onMounted, ref, watch} from "vue"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import EmailPreviewDialog from "@/components/common/modals/EmailPreviewDialog.vue"
-import {loadEmailPage, loadEmailStats, readSentEmail, retrySend} from "@/domains/emails"
-import {type EmailStats, type SentEmail, EmailDeliveryStatus, canRetry, deliveryRate as deliveryRateOf, openRate as openRateOf, rowStatusClass, statusColor, statusCounts as countsOf, statusOptions as emailStatusOptions} from "@/domains/emails"
+import {loadEmailPage, loadEmailStats, readSentEmail, resendEmail, retrySend} from "@/domains/emails"
+import {type EmailStats, type SentEmail, EmailDeliveryStatus, canResend, canRetry, deliveryRate as deliveryRateOf, openRate as openRateOf, rowStatusClass, statusColor, statusCounts as countsOf, statusOptions as emailStatusOptions} from "@/domains/emails"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
@@ -73,6 +73,21 @@ const retryEmail = async (email: SentEmail) => {
     // Used to fall into an empty catch, so a refused retry looked exactly like a successful one.
     if (!sent.ok) {
       store.commit("setStatusSnackbarMessage", sent.reason)
+      return
+    }
+    await table.refresh()
+  } finally {
+    retrying.value = null
+  }
+}
+
+const resendOne = async (email: SentEmail) => {
+  if (email.id == null) return
+  retrying.value = email.id
+  try {
+    const made = await resendEmail(email.id)
+    if (!made.ok) {
+      store.commit("setStatusSnackbarMessage", made.reason)
       return
     }
     await table.refresh()
@@ -297,7 +312,7 @@ onMounted(async () => {
                 size="small"
                 variant="tonal"
               >
-                Pending {{ statusCounts.PENDING }}
+                Queued {{ statusCounts.QUEUED }}
               </v-chip>
               <v-chip
                 color="info"
@@ -439,6 +454,17 @@ onMounted(async () => {
                       @click.stop="retryEmail(email)"
                     >
                       Retry
+                    </v-btn>
+
+                    <v-btn
+                      v-if="canResend(email)"
+                      :data-testid="`email-resend-btn-${email.id}`"
+                      :disabled="retrying === email.id"
+                      size="small"
+                      variant="outlined"
+                      @click.stop="resendOne(email)"
+                    >
+                      Resend
                     </v-btn>
                   </div>
                 </template>
@@ -624,7 +650,7 @@ onMounted(async () => {
   border-left-color: rgba(var(--v-theme-info), 0.7);
 }
 
-.email-row--pending {
+.email-row--queued {
   border-left-color: rgba(var(--v-theme-warning), 0.7);
 }
 

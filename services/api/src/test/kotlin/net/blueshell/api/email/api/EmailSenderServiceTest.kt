@@ -10,6 +10,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -30,7 +31,7 @@ class EmailSenderServiceTest {
 
     init {
         whenever(templates.createEmail(any(), any(), any(), any())).thenReturn("<html><body></body></html>")
-        whenever(emails.createPending(content, "welcome", null)).thenReturn(outbox)
+        whenever(emails.forSend(content, "welcome", null)).thenReturn(outbox)
     }
 
     @Test
@@ -50,5 +51,35 @@ class EmailSenderServiceTest {
 
         verify(emails).markFailed(eq(outbox), eq("MailSendException"), eq("550 <[email]> unknown"))
         assertThat(output.all).contains("Failed to send email id=5 type=welcome")
+    }
+
+    @Test
+    fun `sends into the record its job queued, with the tracking pixel in it`() {
+        val queued = Email(trackingToken = "tok")
+        whenever(emails.forSend(content, "email.test", 7)).thenReturn(queued)
+        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
+
+        sender.send(content, "email.test", 7)
+
+        verify(client).send(
+            eq("ann@example.org"),
+            eq("Ann"),
+            eq("Welcome"),
+            argThat { contains("https://api/track/email/open/tok") },
+            any(),
+            any(),
+            any(),
+        )
+        verify(emails).markSent(queued, "<m@club.test>")
+    }
+
+    @Test
+    fun `fails the email a job queued where the job broke before sending, without the address its error names`() {
+        sender.failQueued(7, IllegalStateException("No user ann@example.org"))
+        sender.failQueued(null, IllegalStateException("no job"))
+        sender.failQueued(8, IllegalStateException())
+
+        verify(emails).failQueued(7, "IllegalStateException", "No user [email]")
+        verify(emails).failQueued(8, "IllegalStateException", "Could not compose the email")
     }
 }

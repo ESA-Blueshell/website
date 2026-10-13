@@ -6,6 +6,7 @@ import {
   getStats1,
   list1,
   previewSentEmail,
+  resend,
   retry1,
   type Email,
   type EmailStats as EmailStatsDto,
@@ -77,6 +78,10 @@ export const loadEmailStats = (): Promise<EmailStats | null> => readOr(getStats1
  */
 export const retrySend = (id: number): Promise<{ok: true} | Refused> =>
   refusable(retry1({path: {id}}), "That email could not be sent again.")
+
+/** Makes the email again for the person's current address, as a new email linked to this one. */
+export const resendEmail = (id: number): Promise<{ok: true} | Refused> =>
+  refusable(resend({path: {id}}), "That email could not be made again.")
 
 /**
  * A sent email read back. The api renders it and strips its urls before answering, so what

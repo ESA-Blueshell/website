@@ -44,7 +44,7 @@ class EmailSenderService(
     ) {
         val htmlContent = renderEmailHtml(emailContent)
 
-        val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
+        val outbox = emailService.forSend(emailContent, emailType, jobExecutionId)
         val trackedHtml =
             outbox.trackingToken
                 ?.let { token -> injectTrackingPixel(htmlContent, "$appUrl/track/email/open/$token") }
@@ -68,6 +68,15 @@ class EmailSenderService(
             emailService.markFailed(outbox, e.javaClass.simpleName, PersonalDetails.scrub(e.message ?: "Send error"))
             throw IllegalStateException("Failed to send email", e)
         }
+    }
+
+    /** Marks the email a job queued as failed, where the job broke before it had an email to send. */
+    fun failQueued(
+        jobExecutionId: Long?,
+        ex: Exception,
+    ) {
+        val reason = PersonalDetails.scrub(ex.message ?: "Could not compose the email")
+        emailService.failQueued(jobExecutionId ?: return, ex.javaClass.simpleName, reason)
     }
 
     companion object {

@@ -40,4 +40,9 @@ class RoleChangeEmailJobTest {
         verify(emails).send(content.capture(), eq(UserJobs.RoleChange.type), anyOrNull())
         assertThat(content.firstValue.recipientEmail).isEqualTo("person@example.com")
     }
+
+    @Test
+    fun `may be made again for the person's current address, since its payload holds no link or token`() {
+        assertThat(job.resendable).isTrue()
+    }
 }

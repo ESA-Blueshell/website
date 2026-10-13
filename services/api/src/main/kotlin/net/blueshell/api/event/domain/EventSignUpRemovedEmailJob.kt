@@ -1,7 +1,8 @@
 package net.blueshell.api.event.domain
 
+import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
-import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.email.EmailContent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -11,15 +12,13 @@ class EventSignUpRemovedEmailJob(
     objectMapper: ObjectMapper,
     private val emails: EmailSenderService,
     @param:Value($$"${frontend.url}") private val frontendUrl: String,
-) : AbstractJsonJobHandler<EventJobs.EventSignUpRemovedPayload>(
+) : EmailJob<EventJobs.EventSignUpRemovedPayload>(
         objectMapper,
         EventJobs.EventSignUpRemoved,
+        emails,
     ) {
-    override fun handlePayload(payload: EventJobs.EventSignUpRemovedPayload) {
-        emails.send(
-            createEventSignUpRemovedEmail(payload, frontendUrl),
-            EventJobs.EventSignUpRemoved.type,
-            currentExecutionId,
-        )
-    }
+    // Its payload holds no link or token, and it is meant for the person wherever their mail now goes.
+    override val resendable = true
+
+    override fun compose(payload: EventJobs.EventSignUpRemovedPayload): EmailContent = createEventSignUpRemovedEmail(payload, frontendUrl)
 }

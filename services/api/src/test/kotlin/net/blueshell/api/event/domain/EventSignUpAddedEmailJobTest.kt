@@ -60,4 +60,9 @@ class EventSignUpAddedEmailJobTest {
     fun `two adds of the same guest are two emails, so nothing is deduplicated`() {
         assertThat(EventJobs.EventSignUpAdded.dedupKey(payload)).isNull()
     }
+
+    @Test
+    fun `is never made again, since its payload holds the guest's own link`() {
+        assertThat(job.resendable).isFalse()
+    }
 }

@@ -101,4 +101,9 @@ class ContributionReminderEmailJobTest {
         amount = amount,
         paymentDueDate = dueDate,
     )
+
+    @Test
+    fun `may be made again for the person's current address, since its payload holds no link or token`() {
+        assertThat(job.resendable).isTrue()
+    }
 }

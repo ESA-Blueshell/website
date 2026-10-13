@@ -116,7 +116,7 @@ object CohortJobs {
         override val payloadType: Class<CreateMissingCohortTargetsPayload> = CreateMissingCohortTargetsPayload::class.java
     }
 
-    /** Queued by the release before target creation moved; now creates the target like [CreateCohortTarget]. */
+    /** Creates the target like [CreateCohortTarget]; nothing queues it, and it stays for jobs stored under this type. */
     object MaterializeCohortTarget : JobDefinition<MaterializeCohortTargetPayload> {
         override val type: String = "cohort.materialize-target"
         override val payloadType: Class<MaterializeCohortTargetPayload> =

@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import ManagementShell from "@/components/management/ManagementShell.vue"
 import ManagementBar from "@/components/management/ManagementBar.vue"
 import ManagementMore from "@/pages/management/ManagementMore.vue"
@@ -8,6 +8,19 @@ import type {StoredLogin} from "@/plugins/store"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
 import {settle} from "../../helpers/testUtils"
 
+const {mockListAlerts} = vi.hoisted(() => ({mockListAlerts: vi.fn()}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  listAlerts: mockListAlerts,
+}))
+
+const anAlert = (key: string, hidden = false) => ({key, kind: "JOB_DEAD", count: 1, hidden})
+
+beforeEach(() => {
+  mockListAlerts.mockResolvedValue({status: 200, data: []})
+})
+
 const adminLogin: StoredLogin = {...boardLogin, roles: ["ADMIN", "BOARD"] as StoredLogin["roles"]}
 const memberLogin: StoredLogin = {...boardLogin, roles: ["MEMBER"] as StoredLogin["roles"]}
 
@@ -16,8 +29,9 @@ describe("Management's navigation", () => {
     const pages = (reader: {board: boolean, admin: boolean}) =>
       managementFor(reader).map((group) => [group.label, ...group.entries.map((entry) => entry.label)])
 
-    expect(pages({board: true, admin: false})).toEqual([["Members", "Users", "Account recovery"], ["Mail", "Sent"]])
+    expect(pages({board: true, admin: false})).toEqual([[null, "Alerts"], ["Members", "Users", "Account recovery"], ["Mail", "Sent"]])
     expect(pages({board: true, admin: true})).toEqual([
+      [null, "Alerts"],
       ["Members", "Users", "Account recovery"],
       ["Mail", "Sent"],
       ["Platforms", "Cohorts"],
@@ -45,13 +59,13 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar and marks the admin's own", async () => {
     const admin = await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
 
-    expect(targets(admin, "management-sidebar")).toEqual(["/user-manager", "/recovery/manage", "/management/emails", "/management/cohorts", "/management/jobs", "/management/exceptions"])
+    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/emails", "/management/cohorts", "/management/jobs", "/management/exceptions"])
     expect(admin.get("[data-testid=management-sidebar]").text()).toContain("@Admin")
 
     // The store is the app's one, so the board's sign-in replaces the admin's.
     const board = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(board, "management-sidebar")).toEqual(["/user-manager", "/recovery/manage", "/management/emails"])
+    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/emails"])
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 
@@ -62,12 +76,65 @@ describe("the Management portal", {timeout: 20_000}, () => {
     expect(wrapper.find("main footer").exists()).toBe(false)
   })
 
-  it("carries a bar of tabs for a phone, the members tab and More, and says which is open", async () => {
+  it("carries a bar of tabs for a phone, the alerts and members tabs and More, and says which is open", async () => {
     const wrapper = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(wrapper, "management-tabbar")).toEqual(["/user-manager", "/management/more"])
+    expect(targets(wrapper, "management-tabbar")).toEqual(["/management/alerts", "/user-manager", "/management/more"])
     expect(wrapper.get("[data-testid=management-tab-more]").attributes("aria-current")).toBe("page")
     expect(wrapper.get("[data-testid=management-tab-members]").attributes("aria-current")).toBeUndefined()
+  })
+
+  it("counts the reader's alerts, hidden ones left out, in the sidebar, the phone bar and the account menu", async () => {
+    mockListAlerts.mockResolvedValue({status: 200, data: [anAlert("a"), anAlert("b"), anAlert("c", true)]})
+    const shell = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+
+    expect(shell.get("[data-testid=management-nav-alerts-count]").text()).toBe("2 alerts")
+    expect(shell.get("[data-testid=management-tab-alerts-count]").text()).toBe("2 alerts")
+    expect(shell.find("[data-testid=management-tab-members-count]").exists()).toBe(false)
+
+    const bar = await mountPage(ManagementBar, {path: "/management/more", login: boardLogin})
+    await bar.get("[data-testid=management-account]").trigger("click")
+    await settle()
+    const entry = bar.findAllComponents({name: "DropdownMenuItem"})[0]!.get("[data-testid=management-account-alerts]")
+    expect(entry.attributes("to")).toBe("/management/alerts")
+    expect(entry.get("[data-testid=management-account-alerts-count]").text()).toContain("2")
+  })
+
+  it("says one alert as one", async () => {
+    mockListAlerts.mockResolvedValue({status: 200, data: [anAlert("a")]})
+    const shell = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+
+    expect(shell.get("[data-testid=management-nav-alerts-count]").text()).toBe("1 alert")
+    expect(shell.get("[data-testid=management-tab-alerts-count]").text()).toBe("1 alert")
+  })
+
+  it("shows no count while nothing needs the reader", async () => {
+    const shell = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+
+    expect(shell.find("[data-testid=management-nav-alerts-count]").exists()).toBe(false)
+    expect(shell.find("[data-testid=management-tab-alerts-count]").exists()).toBe(false)
+  })
+
+  it("forgets the alerts it held once the reader leaves Management", async () => {
+    mockListAlerts.mockResolvedValue({status: 200, data: [anAlert("a")]})
+    const shell = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+    expect(shell.find("[data-testid=management-nav-alerts-count]").exists()).toBe(true)
+
+    shell.unmount()
+    mockListAlerts.mockResolvedValue({status: 500, error: {}})
+    const next = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
+
+    expect(next.find("[data-testid=management-nav-alerts-count]").exists()).toBe(false)
+  })
+
+  it("reads the alerts again on every page", async () => {
+    await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
+    const before = mockListAlerts.mock.calls.length
+
+    await router.push("/management/jobs")
+    await settle()
+
+    expect(mockListAlerts.mock.calls.length).toBeGreaterThan(before)
   })
 
   it("lists every page on More, grouped like the sidebar", async () => {
@@ -87,7 +154,7 @@ describe("the Management portal", {timeout: 20_000}, () => {
     await wrapper.get("[data-testid=management-account]").trigger("click")
     await settle()
     expect(items().map((item) => item.find("a").exists() ? item.find("a").attributes("to") : item.text()))
-      .toEqual(["/account", "/account/security", "/account/games", "/account/addresses", "/", "Log out"])
+      .toEqual(["/management/alerts", "/account", "/account/security", "/account/games", "/account/addresses", "/", "Log out"])
     expect(items().at(-2)!.text()).toBe("Back to the site")
     await wrapper.get("[data-testid=management-log-out]").trigger("click")
     expect(wrapper.emitted("logOut")).toHaveLength(1)
@@ -120,6 +187,8 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     await router.push("/management/jobs/7")
     expect(router.currentRoute.value.name).toBe("jobDetail")
     expect(router.currentRoute.value.meta.management).toBe(true)
+    await router.push("/management/alerts")
+    expect(router.currentRoute.value.name).toBe("alertList")
 
     await mountPage(ManagementShell, {path: "/", login: boardLogin})
     await router.push("/management/jobs")

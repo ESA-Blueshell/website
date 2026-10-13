@@ -2,6 +2,9 @@ package net.blueshell.api.jobs.api
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
+import net.blueshell.api.exceptions.api.ExceptionConcern
+import net.blueshell.api.exceptions.api.ExceptionRecorder
+import net.blueshell.api.exceptions.api.ExceptionSource
 import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.ExplainedJobFailure
@@ -30,6 +33,7 @@ class JobExecutor(
     @param:Lazy private val jobHandlerRegistry: JobHandlerRegistry,
     private val properties: JobQueueProperties,
     private val meterRegistry: MeterRegistry,
+    private val exceptions: ExceptionRecorder,
 ) {
     private val logger = LoggerFactory.getLogger(JobExecutor::class.java)
 
@@ -87,6 +91,10 @@ class JobExecutor(
         val errorReason = PersonalDetails.scrub(ex.message ?: "Unknown error")
         val stackTrace = PersonalDetails.scrub(ex.stackTraceToString())
         val explained = ex is ExplainedJobFailure
+        // An explained failure is the job saying why it could not go on, not a fault in the api.
+        if (!explained) {
+            exceptions.record(ex, ExceptionConcern(ExceptionSource.JOB, execution.jobType, execution.id))
+        }
 
         if (isNonRetryable(ex)) {
             // Non-retryable means "retrying will not change the outcome", so

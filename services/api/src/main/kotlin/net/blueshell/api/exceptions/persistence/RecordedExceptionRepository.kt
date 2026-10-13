@@ -6,6 +6,13 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
+/** The open faults in sum: how many, when the oldest was first seen and when one last fired. */
+interface OpenFaults {
+    val faults: Long
+    val oldest: Instant?
+    val latest: Instant?
+}
+
 interface RecordedExceptionRepository : JpaRepository<RecordedException, Long> {
     /**
      * Counts one occurrence against its fault in one statement, so two requests failing at once
@@ -54,6 +61,13 @@ interface RecordedExceptionRepository : JpaRepository<RecordedException, Long> {
         @Param("id") id: Long,
         @Param("at") at: Instant,
     ): Int
+
+    /** Read without the faults themselves: each carries a trace. */
+    @Query(
+        "select count(r) as faults, min(r.firstSeenAt) as oldest, max(r.lastSeenAt) as latest " +
+            "from RecordedException r where r.resolvedAt is null",
+    )
+    fun openFaults(): OpenFaults
 
     @Modifying
     @Query("delete from RecordedException r where r.lastSeenAt < :cutoff")

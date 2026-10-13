@@ -9,8 +9,22 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
+/** When a job finished, or was last changed where it never did. */
+interface JobMoment {
+    val finishedAt: Instant?
+    val updatedAt: Instant
+}
+
 interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
     fun countByStatus(status: JobExecutionStatus): Long
+
+    @Query("select max(j.id) from JobExecution j where j.status = :status")
+    fun newestIdWithStatus(
+        @Param("status") status: JobExecutionStatus,
+    ): Long?
+
+    /** The oldest job in a status, read as two moments: the row itself carries its payload and its trace. */
+    fun findTopByStatusOrderByIdAsc(status: JobExecutionStatus): JobMoment?
 
     fun findByJobType(jobType: String): List<JobExecution>
 

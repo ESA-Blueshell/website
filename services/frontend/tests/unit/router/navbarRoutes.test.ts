@@ -29,6 +29,7 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
+  "/account/help",
   "/recovery/manage",
   "/user-manager",
   "/management/jobs",
@@ -44,6 +45,16 @@ describe("Navbar route targets", () => {
   it("loads the public SNTPings page", async () => {
     const load = router.getRoutes().find(one => one.name === "sntpings")?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
+  }, 20_000)
+})
+
+describe("the Help page", () => {
+  it("loads, for somebody signed in only", async () => {
+    const route = router.getRoutes().find(one => one.name === "accountHelp")!
+
+    expect(route.path).toBe("/account/help")
+    expect(route.meta.requiresAuth).toBe(true)
+    await expect((route.components?.default as () => Promise<unknown>)()).resolves.toBeDefined()
   }, 20_000)
 })
 

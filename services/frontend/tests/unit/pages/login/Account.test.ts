@@ -86,6 +86,15 @@ describe("Account page", () => {
     expect(wrapper.find("user-form-stub").exists()).toBe(true)
   })
 
+  it("leaves explaining the site to the Help page", async () => {
+    const wrapper = mountInApp(Account, {global: {stubs: {UserForm: true}}})
+
+    await settle()
+
+    expect(wrapper.text()).not.toContain("Upcoming events")
+    expect(wrapper.text()).not.toContain("committee manager")
+  })
+
   it("leaves the game handles to their own page", async () => {
     const wrapper = mountInApp(Account, {global: {stubs: {UserForm: true}}})
 

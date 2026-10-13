@@ -237,7 +237,7 @@ class CohortQueryServiceTest {
     }
 
     @Test
-    fun `detail places a mapping under the system that holds it, and the folder it is filed in`() {
+    fun `detail places a mapping under its system only, never the folder its row was created for`() {
         val cohort = cohort(26L)
         val target = target(260L).apply { folder = "Committees" }
         stubDetail(cohort, target, emptyList())
@@ -245,8 +245,8 @@ class CohortQueryServiceTest {
 
         val mapping = service.detail(26L).mappings.single()
 
-        // Outside in, and the system named the way an operator sees it rather than as an enum.
-        assertThat(mapping.path).containsExactly("Brevo", "Committees")
+        // The system named the way an operator sees it; the folder is read from Brevo by the caller.
+        assertThat(mapping.path).containsExactly("Brevo")
     }
 
     @Test

@@ -62,6 +62,7 @@ const cohort = (): Cohort => ({
     externalId: "7",
     lastReconciledAt: null,
     path: ["Brevo"],
+    folderKnown: true,
   }],
   members: [
     member({targetMemberId: 1, userId: 5, userFullName: "Ada Lovelace", sync: "ONLY_HERE"}),
@@ -165,6 +166,20 @@ describe("the cohort page", () => {
 
     expect(linkUserToExternal).toHaveBeenCalledWith(7, 9, TargetSystem.BREVO, "ext-2")
     expect(wrapper.get("[data-testid=cohort-detail-success]").text()).toBe("External id linked.")
+  })
+
+  it("says so where the system cannot say which folder a target is in", async () => {
+    const known = await withTargets()
+    expect(known.find("[data-testid=cohort-detail-target-folder-unknown-brevo]").exists()).toBe(false)
+
+    const unfiled = cohort()
+    unfiled.mappings[0]!.folderKnown = false
+    vi.mocked(fetchCohort).mockResolvedValue(unfiled)
+    const wrapper = await mountPage(CohortDetail, {path: "/management/cohort/7", login: adminLogin})
+    await wrapper.get("[data-testid=cohort-detail-targets] [data-testid=info-box-toggle]").trigger("click")
+    await settle()
+
+    expect(wrapper.get("[data-testid=cohort-detail-target-folder-unknown-brevo]").text()).toBe("Folder unknown")
   })
 
   it("goes back to the cohort's category", async () => {

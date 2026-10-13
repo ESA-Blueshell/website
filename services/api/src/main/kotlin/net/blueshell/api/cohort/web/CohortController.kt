@@ -15,6 +15,7 @@ import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
@@ -41,6 +42,7 @@ class CohortController(
     private val remediation: CohortRemediation,
     private val targeting: CohortTargeting,
     private val inboundReconcile: InboundReconcile,
+    private val catalog: TargetCatalog,
 ) {
     @GetMapping
     fun findCohorts(): List<CohortSummaryResponse> = queries.summaries().map { it.toResponse() }
@@ -54,7 +56,18 @@ class CohortController(
     @GetMapping("/{id}")
     fun findCohortById(
         @PathVariable id: Long,
-    ): CohortDetailResponse = queries.detail(id).toResponse()
+    ): CohortDetailResponse {
+        val detail = queries.detail(id).toResponse()
+        // The system is asked outside the read transaction: its answer can take seconds.
+        return detail.copy(
+            mappings =
+                detail.mappings.map { mapping ->
+                    val externalId = mapping.externalId ?: return@map mapping
+                    val place = catalog.placeOf(mapping.system, externalId)
+                    mapping.copy(path = place.path, folderKnown = place.folderKnown)
+                },
+        )
+    }
 
     @PostMapping("/{id}/drift/link-user")
     fun linkUser(
@@ -158,10 +171,11 @@ data class CohortTargetResponse(
     @param:Schema(
         description =
             "Where the target sits on its system, outside in: the system, then any " +
-                "folder holding it. Read from what was recorded when the target was linked or " +
-                "moved, so a page costs no call to the system.",
+                "folder holding it, read from the system itself.",
     )
     val path: List<String>,
+    @param:Schema(description = "False when the system could not say which folder the target is in")
+    val folderKnown: Boolean = true,
 )
 
 @Schema(name = "CohortMember")

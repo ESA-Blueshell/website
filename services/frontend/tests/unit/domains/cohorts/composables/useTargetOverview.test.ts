@@ -1,11 +1,14 @@
 import {describe, expect, it, vi} from "vitest"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {
+  createFolderInSystem,
+  createListInSystem,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
   moveTargetToFolder,
   moveTargetsToFolder,
+  renameTarget,
   type ExternalTarget,
   type TargetDescriptor,
 } from "@/domains/cohorts/adapters/cohorts"
@@ -19,6 +22,9 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
     fetchTargetFolders: vi.fn(),
     moveTargetToFolder: vi.fn(),
     moveTargetsToFolder: vi.fn(),
+    createListInSystem: vi.fn(),
+    createFolderInSystem: vi.fn(),
+    renameTarget: vi.fn(),
   }
 })
 
@@ -292,5 +298,53 @@ describe("useTargetOverview", () => {
       expect(o.rejection.value).toBeNull()
       expect(o.failedMoves.value).toEqual([])
     })
+  })
+
+  it("makes a list in a new folder, and lists both", async () => {
+    const o = await loaded([target("1", "Alpha", "Newsletter")])
+    vi.mocked(createFolderInSystem).mockResolvedValue({ok: true, saved: ["Contributions", "Newsletter", "Projects"]})
+    vi.mocked(createListInSystem).mockResolvedValue({ok: true, saved: target("9", "Pub quiz", "Projects")})
+
+    expect(await o.createList("BREVO", "Pub quiz", "Projects", true)).toBe(true)
+
+    expect(createFolderInSystem).toHaveBeenCalledWith("BREVO", "Projects")
+    expect(createListInSystem).toHaveBeenCalledWith("BREVO", "Pub quiz", "Projects")
+    expect(o.folderNames.value).toContain("Projects")
+    expect(o.targets.value.map((t) => t.externalId)).toEqual(["1", "9"])
+  })
+
+  it("keeps the dialog's reason when the system refuses the new folder, and makes no list", async () => {
+    const o = await loaded([])
+    vi.mocked(createFolderInSystem).mockResolvedValue({ok: false, reason: "Brevo refused it: Bad Request"})
+
+    expect(await o.createList("BREVO", "Pub quiz", "Projects", true)).toBe(false)
+
+    expect(o.writeRefusal.value).toBe("Brevo refused it: Bad Request")
+    expect(createListInSystem).not.toHaveBeenCalled()
+  })
+
+  it("keeps the reason when the system refuses the list itself", async () => {
+    const o = await loaded([])
+    vi.mocked(createListInSystem).mockResolvedValue({ok: false, reason: "Brevo refused it: duplicate"})
+
+    expect(await o.createList("BREVO", "Pub quiz", "Newsletter", false)).toBe(false)
+    expect(o.writeRefusal.value).toBe("Brevo refused it: duplicate")
+  })
+
+  it("renames a list and shows what the system answered", async () => {
+    const o = await loaded([target("1", "Alpha", "Newsletter")])
+    vi.mocked(renameTarget).mockResolvedValue({ok: true, saved: target("1", "Alpha 2026", "Newsletter")})
+
+    expect(await o.rename("BREVO", o.targets.value[0]!, "Alpha 2026")).toBe(true)
+    expect(o.targets.value[0]!.label).toBe("Alpha 2026")
+  })
+
+  it("keeps the reason when a rename is refused, and the old name", async () => {
+    const o = await loaded([target("1", "Alpha", "Newsletter")])
+    vi.mocked(renameTarget).mockResolvedValue({ok: false, reason: "Brevo has no list 1; reload the lists."})
+
+    expect(await o.rename("BREVO", o.targets.value[0]!, "Alpha 2026")).toBe(false)
+    expect(o.writeRefusal.value).toBe("Brevo has no list 1; reload the lists.")
+    expect(o.targets.value[0]!.label).toBe("Alpha")
   })
 })

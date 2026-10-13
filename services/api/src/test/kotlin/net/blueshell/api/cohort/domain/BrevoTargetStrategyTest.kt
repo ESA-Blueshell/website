@@ -30,6 +30,17 @@ class BrevoTargetStrategyTest {
     }
 
     @Test
+    fun `renames a list and makes a folder by name`() {
+        whenever(lists.listFolders()).thenReturn(mapOf(1L to "Archive"))
+        val paid = ExternalTarget(TargetSystem.BREVO, "99", TargetKind.LIST, "Paid")
+
+        assertThat(strategy.rename(paid, "Paid 2026").label).isEqualTo("Paid 2026")
+        assertThat(strategy.createFolder("Archive")).containsExactly("Archive")
+        verify(lists).renameList(99L, "Paid 2026")
+        verify(lists).createFolder("Archive")
+    }
+
+    @Test
     fun `says where each list sits, outside in`() {
         whenever(lists.listFolders()).thenReturn(mapOf(1L to "Committees"))
         whenever(lists.listAll()).thenReturn(listOf(list(10L, "Web Cmte", 1L), list(11L, "Loose ends", 404L)))

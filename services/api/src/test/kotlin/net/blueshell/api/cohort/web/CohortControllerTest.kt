@@ -10,7 +10,9 @@ import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
+import net.blueshell.api.cohort.domain.TargetPlace
 import net.blueshell.api.cohort.domain.TargetSummary
 import net.blueshell.api.cohort.persistence.TargetMember
 import net.blueshell.api.shared.enums.TargetMemberState
@@ -19,7 +21,10 @@ import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
@@ -29,8 +34,52 @@ class CohortControllerTest {
     private val remediation = mock<CohortRemediation>()
     private val targeting = mock<CohortTargeting>()
     private val inbound = mock<InboundReconcile>()
-    private val controller = CohortController(queries, remediation, targeting, inbound)
+    private val catalog = mock<TargetCatalog>()
+    private val controller = CohortController(queries, remediation, targeting, inbound, catalog)
     private val json = JsonMapper.builder().findAndAddModules().build()
+
+    @Test
+    fun `a linked mapping's path is read from its system, and an unlinked one is left as it is`() {
+        val linked = Entities.target(id = 1L, externalId = "10", label = "Sitecie")
+        val unlinked = Entities.target(id = 2L, label = "Nintenco")
+        whenever(queries.detail(7L)).thenReturn(
+            CohortDetail(
+                cohort = Entities.cohort(id = 7L),
+                mappings =
+                    listOf(
+                        CohortTargetRow(linked, externalId = "10", path = listOf("Brevo")),
+                        CohortTargetRow(unlinked, externalId = null, path = listOf("Brevo")),
+                    ),
+                members = emptyList(),
+                definitionKey = "COMMITTEE_MEMBERS:7",
+                orphaned = false,
+            ),
+        )
+        whenever(catalog.placeOf(TargetSystem.BREVO, "10")).thenReturn(TargetPlace(listOf("Brevo", "Committees"), folderKnown = true))
+
+        val detail = controller.findCohortById(7L)
+
+        assertThat(detail.mappings.map { it.path }).containsExactly(listOf("Brevo", "Committees"), listOf("Brevo"))
+        assertThat(detail.mappings.map { it.folderKnown }).containsExactly(true, true)
+        verify(catalog, times(1)).placeOf(any(), any())
+    }
+
+    @Test
+    fun `a mapping whose folder the system cannot say says so`() {
+        whenever(queries.detail(8L)).thenReturn(
+            CohortDetail(
+                cohort = Entities.cohort(id = 8L),
+                mappings = listOf(CohortTargetRow(Entities.target(id = 3L, externalId = "11"), externalId = "11", path = listOf("Brevo"))),
+                members = emptyList(),
+                definitionKey = null,
+                orphaned = true,
+            ),
+        )
+        whenever(catalog.placeOf(TargetSystem.BREVO, "11")).thenReturn(TargetPlace(listOf("Brevo"), folderKnown = false))
+
+        val mapping = controller.findCohortById(8L).mappings.single()
+        assertThat(mapping.folderKnown).isFalse()
+    }
 
     @Test
     fun `the listings name each cohort and each target the pickers offer`() {
@@ -84,6 +133,7 @@ class CohortControllerTest {
                 orphaned = false,
             ),
         )
+        whenever(catalog.placeOf(TargetSystem.BREVO, "7")).thenReturn(TargetPlace(listOf("Brevo", "Committees"), folderKnown = true))
 
         val page = controller.findCohortById(11L)
 

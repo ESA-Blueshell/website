@@ -176,7 +176,21 @@ class MockContactAdapter :
         lists[externalListId] = list.copy(folderName = folder)
     }
 
-    // A folder exists once a list has been filed in it, as it would have to on Brevo first.
+    override fun renameList(
+        externalListId: Long,
+        name: String,
+    ) {
+        recordTransactionState()
+        val list = lists[externalListId] ?: throw ContactServiceException("Mock: List not found: $externalListId")
+        lists[externalListId] = list.copy(listName = name)
+    }
+
+    override fun createFolder(name: String): Long {
+        recordTransactionState()
+        return requireNotNull(folderOf(name)) { "A folder needs a name" }
+    }
+
+    // A folder is made the first time it is named, whether for itself or for a list filed in it.
     private fun folderOf(name: String?): Long? =
         name?.takeIf { it.isNotBlank() }?.let { folderIds.computeIfAbsent(it) { folderIdSequence.getAndIncrement() } }
 

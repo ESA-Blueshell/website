@@ -27,6 +27,9 @@ class ContributionReminderEmailJob(
         emails,
         "email.contribution-reminder",
     ) {
+    // Its payload holds no link or token, and it is meant for the person wherever their mail now goes.
+    override val resendable = true
+
     override fun compose(payload: ContributionJobs.ContributionReminderPayload): EmailContent {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val stated = reminder.statedFee

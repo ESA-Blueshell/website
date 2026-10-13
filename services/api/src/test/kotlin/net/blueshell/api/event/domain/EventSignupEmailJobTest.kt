@@ -5,6 +5,7 @@ import io.mockk.mockk
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.testsupport.runJob
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -25,5 +26,10 @@ class EventSignupEmailJobTest {
         assertThatThrownBy {
             job.runJob(objectMapper.writeValueAsString(EventJobs.EventSignupPayload(42L, "guest-token")))
         }.isInstanceOf(NonRetryableJobException::class.java)
+    }
+
+    @Test
+    fun `is never made again, since its payload holds a guest's own link`() {
+        assertThat(job.resendable).isFalse()
     }
 }

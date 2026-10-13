@@ -11,11 +11,12 @@ interface EmailComposer {
     val emailType: String
 
     /**
-     * Whether a failed or bounced email of this job may be made again. Not one that holds a
-     * one-time link: made again, the link would go out a second time, to whatever address the
-     * person has by then.
+     * Whether a failed or bounced email of this job may be made again for the person's current
+     * address. No, unless the job says so: a payload that holds a link or a token would send it a
+     * second time, to whatever address the account has by then, and a notice meant for the address
+     * an account had would go to the one it has now. A job says yes only where neither can happen.
      */
-    val resendable: Boolean get() = true
+    val resendable: Boolean get() = false
 
     /** The email a queued job's payload will send, or null where it sends none. */
     fun composeQueued(payload: String): EmailContent?

@@ -59,6 +59,6 @@ class EmailJobTest {
         assertThatThrownBy { breaking.handle("""{"to":"a@b.nl"}""", 3, false) }.isSameAs(broken)
 
         verify(emails).failQueued(3, broken)
-        assertThat(breaking.resendable).isTrue()
+        assertThat(breaking.resendable).isFalse()
     }
 }

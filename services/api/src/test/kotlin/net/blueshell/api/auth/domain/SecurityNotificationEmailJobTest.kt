@@ -78,4 +78,9 @@ class SecurityNotificationEmailJobTest {
             ),
         ).isNull()
     }
+
+    @Test
+    fun `is never made again, since its payload holds the link that locks the account, and it is meant for the address the account had`() {
+        assertThat(job.resendable).isFalse()
+    }
 }

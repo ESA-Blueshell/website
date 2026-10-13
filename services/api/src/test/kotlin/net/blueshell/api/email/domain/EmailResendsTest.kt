@@ -92,8 +92,8 @@ class EmailResendsTest {
     }
 
     @Test
-    fun `refuses an email that holds a one-time link, one no job sent and one of a kind it does not know`() {
-        refusal(email(1, EmailDeliveryStatus.BOUNCED, type = "email.recovery").id!!).hasMessageContaining("one-time link")
+    fun `refuses an email whose job keeps it to its first send, one no job sent and one of a kind it does not know`() {
+        refusal(email(1, EmailDeliveryStatus.BOUNCED, type = "email.recovery").id!!).hasMessageContaining("personal link")
         refusal(email(2, EmailDeliveryStatus.FAILED, job = null).id!!).hasMessageContaining("cannot be resent")
         refusal(email(3, EmailDeliveryStatus.FAILED, type = "email.bulk").id!!).hasMessageContaining("cannot be resent")
         verify(jobs, never()).runAgain(any(), any())

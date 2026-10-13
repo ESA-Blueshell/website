@@ -31,6 +31,7 @@ class ContributionEmailJobsTest {
         val job = JoiningContributionEmailJob(objectMapper, reminders, emails, PaymentChannels(BankProperties(), "https://blueshell.test"))
 
         assertThat(job.jobType).isEqualTo(ContributionJobs.JoiningContribution.type)
+        assertThat(job.resendable).isTrue()
         assertThatThrownBy {
             job.runJob(objectMapper.writeValueAsString(ContributionJobs.JoiningContributionPayload(1L)))
         }.isInstanceOf(NonRetryableJobException::class.java)
@@ -43,6 +44,7 @@ class ContributionEmailJobsTest {
         val job = IncassoNotificationEmailJob(objectMapper, notifications, emails)
 
         assertThat(job.jobType).isEqualTo(ContributionJobs.IncassoNotification.type)
+        assertThat(job.resendable).isTrue()
         assertThatThrownBy {
             job.runJob(objectMapper.writeValueAsString(ContributionJobs.IncassoNotificationPayload(1L)))
         }.isInstanceOf(NonRetryableJobException::class.java)

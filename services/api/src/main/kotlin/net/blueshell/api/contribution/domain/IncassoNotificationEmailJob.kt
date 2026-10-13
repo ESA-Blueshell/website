@@ -24,6 +24,9 @@ class IncassoNotificationEmailJob(
         emails,
         "email.incasso-notification",
     ) {
+    // Its payload holds no link or token, and it is meant for the person wherever their mail now goes.
+    override val resendable = true
+
     override fun compose(payload: ContributionJobs.IncassoNotificationPayload): EmailContent {
         val notification = requireExists { notifications.findById(payload.incassoNotificationId) }
         return createIncassoNotificationEmail(

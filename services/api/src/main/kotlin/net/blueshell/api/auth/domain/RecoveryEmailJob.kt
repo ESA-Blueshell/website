@@ -22,9 +22,6 @@ class RecoveryEmailJob(
         emails,
         "email.recovery",
     ) {
-    // The payload carries the token: made again, the same link would go to whatever address the account has now.
-    override val resendable = false
-
     override fun compose(payload: AuthJobs.RecoveryPayload): EmailContent {
         val user = requireExists { users.findById(payload.userId) }
         return buildRecoveryEmail(payload.tokenPurpose, user, payload.token, frontendUrl, contacts)

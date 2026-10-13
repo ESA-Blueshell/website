@@ -47,7 +47,7 @@ class EmailResends(
         when {
             email.deliveryStatus !in FAILED_OR_BOUNCED -> "Only an email that failed or bounced can be resent."
             email.jobExecutionId == null -> "This email cannot be resent: no job sent it."
-            queued.holdsOneTimeLink(email.emailType) -> ONE_TIME_LINK
+            queued.keptToItsFirstSend(email.emailType) -> PERSONAL_LINK
             !queued.resendable(email.emailType) -> "This kind of email cannot be resent from here."
             else -> null
         }
@@ -57,7 +57,7 @@ class EmailResends(
     private companion object {
         private val FAILED_OR_BOUNCED = setOf(EmailDeliveryStatus.FAILED, EmailDeliveryStatus.BOUNCED)
         private val UNFINISHED = setOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
-        private const val ONE_TIME_LINK = "This email holds a one-time link, so it is not sent again. Ask the person to request a new one."
+        private const val PERSONAL_LINK = "This email holds a personal link or a security notice, so it is not sent again."
         private const val GONE = "The person or event this email is about no longer exists, so it cannot be resent."
     }
 }

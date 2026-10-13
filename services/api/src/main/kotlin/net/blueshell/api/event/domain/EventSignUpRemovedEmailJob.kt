@@ -17,5 +17,8 @@ class EventSignUpRemovedEmailJob(
         EventJobs.EventSignUpRemoved,
         emails,
     ) {
+    // Its payload holds no link or token, and it is meant for the person wherever their mail now goes.
+    override val resendable = true
+
     override fun compose(payload: EventJobs.EventSignUpRemovedPayload): EmailContent = createEventSignUpRemovedEmail(payload, frontendUrl)
 }

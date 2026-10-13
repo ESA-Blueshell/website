@@ -22,6 +22,7 @@ class QueuedEmailsTest {
     ) = object : EmailComposer {
         override val jobType = type
         override val emailType = "email.$type"
+        override val resendable = true
 
         override fun composeQueued(payload: String) = compose(payload)
     }
@@ -56,7 +57,7 @@ class QueuedEmailsTest {
     }
 
     @Test
-    fun `an email may be made again where its job sends one email and holds no one-time link`() {
+    fun `an email may be made again only where the one job that sends it says so`() {
         val oneTime =
             object : EmailComposer {
                 override val jobType = "recovery"
@@ -71,5 +72,8 @@ class QueuedEmailsTest {
         assertThat(queued.resendable("email.recovery")).isFalse()
         assertThat(queued.resendable("email.bulk")).isFalse()
         assertThat(queued.resendable(null)).isFalse()
+        assertThat(queued.keptToItsFirstSend("email.recovery")).isTrue()
+        assertThat(queued.keptToItsFirstSend("email.sends")).isFalse()
+        assertThat(queued.keptToItsFirstSend("email.bulk")).isFalse()
     }
 }

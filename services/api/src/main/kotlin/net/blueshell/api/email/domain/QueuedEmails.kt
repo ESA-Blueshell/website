@@ -31,12 +31,13 @@ class QueuedEmails(
     }
 
     /**
-     * Whether an email of this type may be made again. Only one a job sends by itself: run again,
-     * a job that sends many would send them all.
+     * Whether an email of this type may be made again. Only one a job sends by itself, and only
+     * where that job says so: run again, a job that sends many would send them all.
      */
     fun resendable(emailType: String?): Boolean = byEmailType[emailType]?.resendable ?: false
 
-    fun holdsOneTimeLink(emailType: String?): Boolean = byEmailType[emailType]?.resendable == false
+    /** An email one job sends by itself, which that job does not let be made again. */
+    fun keptToItsFirstSend(emailType: String?): Boolean = byEmailType[emailType]?.resendable == false
 
     private companion object {
         private val log = LoggerFactory.getLogger(QueuedEmails::class.java)

@@ -26,6 +26,9 @@ class JoiningContributionEmailJob(
         emails,
         "email.joining-contribution",
     ) {
+    // Its payload holds no link or token, and it is meant for the person wherever their mail now goes.
+    override val resendable = true
+
     override fun compose(payload: ContributionJobs.JoiningContributionPayload): EmailContent {
         val ask = requireExists { reminders.findById(payload.contributionReminderId) }
         // Written by JoiningContributionAskService, which always states a fee.

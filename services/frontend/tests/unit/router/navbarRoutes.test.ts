@@ -32,6 +32,7 @@ const navbarPaths = [
   "/recovery/manage",
   "/user-manager",
   "/management/jobs",
+  "/management/exceptions",
 ]
 
 describe("Navbar route targets", () => {

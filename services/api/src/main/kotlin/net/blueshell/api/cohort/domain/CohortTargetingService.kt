@@ -53,7 +53,7 @@ class CohortTargetingService(
         system: TargetSystem,
         externalId: String,
     ): CohortTargetRow {
-        resolveTarget(system, externalId)
+        val listed = idAsListed(system, externalId)
         val linked =
             writeTransaction.execute {
                 val cohort = requireCohort(cohortId)
@@ -71,8 +71,8 @@ class CohortTargetingService(
                         }
                         existing
                     }
-                targetExternalIds.record(target, externalId)
-                CohortTargetRow(target, externalId)
+                targetExternalIds.record(target, listed)
+                CohortTargetRow(target, listed)
             }
 
         jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(linked.target.id!!), JobTrigger.SITE_ACTION)
@@ -116,18 +116,18 @@ class CohortTargetingService(
                 val target = requireOwnedTarget(cohortId, targetId)
                 TargetSystem.valueOf(target.system)
             }
-        resolveTarget(prep, externalId)
+        val listed = idAsListed(prep, externalId)
 
         val switched =
             writeTransaction.execute {
                 val target = requireOwnedTarget(cohortId, targetId)
                 val system = TargetSystem.valueOf(target.system)
                 val previousExternalId = targetExternalIds.find(target)
-                targetExternalIds.record(target, externalId)
+                targetExternalIds.record(target, listed)
                 Switched(target, system, previousExternalId)
             }
 
-        if (deletePrevious && switched.previousExternalId != null && switched.previousExternalId != externalId) {
+        if (deletePrevious && switched.previousExternalId != null && switched.previousExternalId != listed) {
             jobs.runAsync(
                 CohortJobs.DeleteExternalTarget,
                 CohortJobs.DeleteExternalTargetPayload(switched.system.name, switched.previousExternalId),
@@ -137,7 +137,7 @@ class CohortTargetingService(
         if (reconcileNow) {
             jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(targetId), JobTrigger.SITE_ACTION)
         }
-        return CohortTargetRow(switched.target, externalId)
+        return CohortTargetRow(switched.target, listed)
     }
 
     override fun createFor(targetId: Long): CohortTargetRef {
@@ -250,12 +250,11 @@ class CohortTargetingService(
         return target
     }
 
-    private fun resolveTarget(
+    // The id as the system writes it: one typed another way would pass for a different target.
+    private fun idAsListed(
         system: TargetSystem,
         externalId: String,
-    ) {
-        outsideTransaction.execute { strategies.require(system).resolve(externalId) }
-    }
+    ): String = outsideTransaction.execute { strategies.require(system).resolve(externalId) }?.externalId ?: externalId
 
     private data class Switched(
         val target: Target,

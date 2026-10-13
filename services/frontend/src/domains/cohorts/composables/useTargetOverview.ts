@@ -1,7 +1,9 @@
 import {computed, ref} from "vue"
 import {
+  archiveTarget,
   createFolderInSystem,
   createListInSystem,
+  deleteTarget,
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
@@ -31,6 +33,9 @@ export interface TargetFolder {
  * linked to it, so this needs nothing the picker did not already fetch — it just shows all
  * of it at once instead of only what you are choosing between.
  */
+// The api's TargetCatalog.ARCHIVE_FOLDER, which archiving files a list in.
+const ARCHIVE_FOLDER = "Archive"
+
 export function useTargetOverview() {
   const loading = ref(false)
   const errorMessage = ref<string | null>(null)
@@ -188,7 +193,7 @@ export function useTargetOverview() {
     }
   }
 
-  /** The system's reason when it refused a create or a rename; nothing changed on our side. */
+  /** The system's reason when it refused a write; nothing changed on our side. */
   const writeRefusal = ref<string | null>(null)
   const writing = ref(false)
 
@@ -235,7 +240,50 @@ export function useTargetOverview() {
     }
   }
 
+  /** Whether a list sits in the archive folder already, however Brevo capitalises it. */
+  const isArchived = (target: ExternalTarget) => target.folderLabel?.toLowerCase() === ARCHIVE_FOLDER.toLowerCase()
+
+  /** File a list in the archive folder; the row shows where it went. */
+  async function archive(system: TargetSystem, target: ExternalTarget): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const archived = await archiveTarget(system, target.externalId)
+      if (!archived.ok) {
+        writeRefusal.value = archived.reason
+        return false
+      }
+      targets.value = targets.value.map((t) => (t.externalId === archived.saved.externalId ? archived.saved : t))
+      const folder = archived.saved.folderLabel
+      if (folder && !folderNames.value.includes(folder)) folderNames.value = [...folderNames.value, folder].sort()
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
+  /** Delete an unlinked list for good, by its name typed exactly. */
+  async function remove(system: TargetSystem, target: ExternalTarget, typedName: string): Promise<boolean> {
+    writing.value = true
+    writeRefusal.value = null
+    try {
+      const deleted = await deleteTarget(system, target.externalId, typedName)
+      if (!deleted.ok) {
+        writeRefusal.value = deleted.reason
+        return false
+      }
+      targets.value = targets.value.filter((t) => t.externalId !== target.externalId)
+      selection.value = new Set([...selection.value].filter((id) => id !== target.externalId))
+      return true
+    } finally {
+      writing.value = false
+    }
+  }
+
   return {
+    archive,
+    isArchived,
+    remove,
     writeRefusal,
     writing,
     createList,

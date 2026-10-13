@@ -72,6 +72,10 @@ class BrevoTargetStrategy(
         )
     }
 
+    // Brevo's ids are numbers, so one typed as 07 is list 7: matched as text it would pass for another list.
+    override fun resolve(externalId: String): ExternalTarget? =
+        externalId.trim().toLongOrNull()?.let { id -> catalog(null).firstOrNull { it.externalId == id.toString() } }
+
     /** Brevo's own folders, including the ones holding nothing. */
     override fun folders(): List<String> = lists.listFolders().values.sorted()
 
@@ -81,16 +85,15 @@ class BrevoTargetStrategy(
     ): ExternalTarget {
         // Brevo files by folder id, so a name has to name a folder that exists. Refusing an
         // unknown one beats silently creating a near-duplicate of a folder already there.
-        val folderId =
+        val found =
             lists
                 .listFolders()
                 .entries
                 .firstOrNull { it.value.equals(folder, ignoreCase = true) }
-                ?.key
                 ?: throw IllegalArgumentException("No folder named '$folder'")
 
-        lists.moveList(external.externalId.toBrevoId("externalId", "move"), folderId)
-        return external.copy(folderLabel = folder, path = pathTo(folder))
+        lists.moveList(external.externalId.toBrevoId("externalId", "move"), found.key)
+        return external.copy(folderLabel = found.value, path = pathTo(found.value))
     }
 
     override fun rename(

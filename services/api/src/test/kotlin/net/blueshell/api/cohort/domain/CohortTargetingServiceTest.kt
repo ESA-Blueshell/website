@@ -211,6 +211,19 @@ class CohortTargetingServiceTest {
     }
 
     @Test
+    fun `linkExisting records the id as the system writes it, not as it was typed`() {
+        val target = Entities.target(id = 7L, externalId = null)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(mock<net.blueshell.api.cohort.persistence.Cohort>()))
+        whenever(targetRepo.findByCohortIdAndSystem(1L, "BREVO")).thenReturn(target)
+        whenever(strategy.resolve("07")).thenReturn(ExternalTarget(TargetSystem.BREVO, "7", TargetKind.LIST, "Members"))
+
+        val row = service.linkExisting(1L, TargetSystem.BREVO, "07")
+
+        verify(targetExternalIds).record(target, "7")
+        assert(row.externalId == "7")
+    }
+
+    @Test
     fun `linkExisting allows ids that are not present in the catalog`() {
         val cohort = Cohort(CohortType.NEWSLETTER_SUBSCRIBERS, "Members")
         val saved = Entities.target(id = 7L)

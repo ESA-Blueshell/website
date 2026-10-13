@@ -46,9 +46,11 @@ class TargetFolderMoveTest {
     fun `the name is matched however it is capitalised`() {
         every { lists.listFolders() } returns mapOf(9L to "Newsletter")
 
-        strategy.move(external, "newsletter")
+        val moved = strategy.move(external, "newsletter")
 
         verify { lists.moveList(42L, 9L) }
+        assertThat(moved.folderLabel).isEqualTo("Newsletter")
+        assertThat(moved.path).containsExactly("Brevo", "Newsletter")
     }
 
     @Test

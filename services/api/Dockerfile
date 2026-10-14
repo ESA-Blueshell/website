@@ -1,26 +1,15 @@
 # syntax=docker/dockerfile:1.27
 #
-# Build context: repo root (see services/api/docker-compose.yml).
+# Packages the boot jar Gradle has already built; nothing compiles in here.
+# Build context: services/api/build/libs, after `./gradlew :services:api:bootJar`.
 
-FROM eclipse-temurin:25-jdk-alpine@sha256:3fd2d245c4e0eba615fe366a71b8bd25f5db7104f53e4026b24bf508b880bd2a AS build
+FROM eclipse-temurin:25-jre-alpine@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61 AS extract
 
-WORKDIR /src
-
-COPY . /src/
-
-RUN chmod +x gradlew
-
-# The build resolves net.blueshell.clients:{brevo,discord}-client from GitHub
-# Packages, which needs a token even though the packages are public. Mounted as
-# a BuildKit secret rather than passed as a build argument, which would record
-# it in the image history. GITHUB_ACTOR is not sensitive and rides along as an
-# argument; the registry wants a username beside the token.
-ARG GITHUB_ACTOR=""
-RUN --mount=type=cache,target=/root/.gradle \
-    --mount=type=secret,id=github_token \
-    GITHUB_TOKEN="$(cat /run/secrets/github_token 2>/dev/null || true)" \
-    GITHUB_ACTOR="${GITHUB_ACTOR}" \
-    ./gradlew --no-daemon :services:api:bootJar -x test
+WORKDIR /x
+COPY *-boot.jar app.jar
+# The extracted form: app.jar names its dependencies under lib/ on its manifest
+# Class-Path, so `java -jar /app/app.jar` still starts it.
+RUN java -Djarmode=tools -jar app.jar extract --layers --destination layers
 
 FROM eclipse-temurin:25-jre-alpine@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61 AS runtime
 
@@ -30,12 +19,15 @@ RUN addgroup -S app && adduser -S -G app app
 
 WORKDIR /app
 
-COPY --from=build --chown=app:app /src/services/api/build/libs/*.jar /app/app.jar
+# Least to most often changed, so an ordinary release moves only the last layer.
+COPY --from=extract --chown=app:app /x/layers/dependencies/ ./
+COPY --from=extract --chown=app:app /x/layers/spring-boot-loader/ ./
+COPY --from=extract --chown=app:app /x/layers/snapshot-dependencies/ ./
+COPY --from=extract --chown=app:app /x/layers/application/ ./
 
-ENV SPRING_PROFILES_ACTIVE=prod \
-    JAVA_OPTS="-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=20.0 -Dspring.aot.enabled=true"
+ENV SPRING_PROFILES_ACTIVE=prod
 
 EXPOSE 8080
 USER app
 
-ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["java", "-XX:+ExitOnOutOfMemoryError", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

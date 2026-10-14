@@ -97,12 +97,13 @@ This:
 
 ### Build Production Image
 
-```bash
-# Build locally
-./gradlew :services:api:build
+The image packages the boot jar Gradle builds.
 
-# Build Docker image, from the repository root
-docker build -f services/api/Dockerfile -t blueshell-api:latest .
+```bash
+# From the repository root. clean drops a boot jar of an earlier version, which
+# would give the Dockerfile's COPY two sources.
+./gradlew :services:api:clean :services:api:bootJar
+docker build -f services/api/Dockerfile -t blueshell-api:latest services/api/build/libs
 ```
 
 ## Database

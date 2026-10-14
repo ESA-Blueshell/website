@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.23.2](https://github.com/ESA-Blueshell/website/compare/v1.23.1...v1.23.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* **frontend:** the sign-up button sits before the organiser's actions, so those line up across agenda rows ([#2472](https://github.com/ESA-Blueshell/website/issues/2472)) ([d5df007](https://github.com/ESA-Blueshell/website/commit/d5df00746e9f1685e9884dd7c8f1702ad6b54858))
+
+
+### Performance
+
+* the api, its canary and the migrate Job boot from an AOT cache ([#2457](https://github.com/ESA-Blueshell/website/issues/2457)) ([5421174](https://github.com/ESA-Blueshell/website/commit/54211744fa36c8c65a394d19f380bf7f1444bf4c))
+
 ## [1.23.1](https://github.com/ESA-Blueshell/website/compare/v1.23.0...v1.23.1) (2026-10-14)
 
 

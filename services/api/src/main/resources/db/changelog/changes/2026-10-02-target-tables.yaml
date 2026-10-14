@@ -1,0 +1,99 @@
+# The target and target-member tables take the glossary's names: `cohort` holds targets and
+# `cohort_member` the per-target ledger, so they become `target` and `target_member`, with
+# `cohort_id` (a target) becoming `target_id` and `subject_id` (a cohort) becoming `cohort_id`.
+# Under blue/green releases the previous release runs against the same database, so each old
+# name stays behind as an updatable view with the old columns, which that release reads and
+# writes through unchanged. A later release drops the views.
+#
+# Until then a view's column list is fixed: a column added to `target` or `target_member` must be
+# nullable or have a default, or the previous release's inserts through the view fail.
+#
+# One statement per changeset: MariaDB commits each DDL statement on its own, so a run that stops
+# part way leaves the finished steps recorded and starts again at the next. RENAME COLUMN keeps
+# each column's type, nullability, keys and foreign keys, which Liquibase's renameColumn would
+# restate and could lose on MariaDB. The views check the privileges of whoever queries them, so
+# they need no account of their own.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-rename-target
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              RENAME TABLE cohort TO target;
+      rollback:
+        - sql:
+            sql: RENAME TABLE target TO cohort;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-target-cohort-id
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE target RENAME COLUMN subject_id TO cohort_id;
+      rollback:
+        - sql:
+            sql: ALTER TABLE target RENAME COLUMN cohort_id TO subject_id;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-rename-target-member
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              RENAME TABLE cohort_member TO target_member;
+      rollback:
+        - sql:
+            sql: RENAME TABLE target_member TO cohort_member;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-member-target-id
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE target_member RENAME COLUMN cohort_id TO target_id;
+      rollback:
+        - sql:
+            sql: ALTER TABLE target_member RENAME COLUMN target_id TO cohort_id;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-member-cohort-id
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE target_member RENAME COLUMN subject_id TO cohort_id;
+      rollback:
+        - sql:
+            sql: ALTER TABLE target_member RENAME COLUMN cohort_id TO subject_id;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-cohort-view
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              CREATE SQL SECURITY INVOKER VIEW cohort AS
+                SELECT id, system, kind, label, folder, cohort_id AS subject_id, version, created_at, created_by_id,
+                       updated_at, updated_by_id, deleted_at, external_id, target_claimed_at, enforced
+                FROM target;
+      rollback:
+        - sql:
+            sql: DROP VIEW cohort;
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-02-target-tables.yaml
+      id: target-tables-cohort-member-view
+      author: blueshell
+      changes:
+        - sql:
+            sql: |
+              CREATE SQL SECURITY INVOKER VIEW cohort_member AS
+                SELECT id, target_id AS cohort_id, cohort_id AS subject_id, user_id, external_user_id, synced_at,
+                       verified_at, label, version, created_at, created_by_id, updated_at, updated_by_id, deleted_at
+                FROM target_member;
+      rollback:
+        - sql:
+            sql: DROP VIEW cohort_member;

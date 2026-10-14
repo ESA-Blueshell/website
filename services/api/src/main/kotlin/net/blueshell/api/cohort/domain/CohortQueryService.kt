@@ -283,7 +283,7 @@ data class CohortTargetRow(
 /**
  * One ledger row on a cohort's page, with the joined user record
  * if the user is still active. [isUserDeleted] is true when the user
- * has been soft-deleted but the cohort_member row was retained for
+ * has been soft-deleted but the target_member row was retained for
  * historical stats — the admin UI renders these in a muted style with
  * a "Deleted" badge instead of the active user details.
  */

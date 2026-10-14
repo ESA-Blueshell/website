@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 /**
- * Single writer for `cohort_member` sync state. Every transition of
+ * Single writer for `target_member` sync state. Every transition of
  * `syncedAt` / `verifiedAt` / stranger rows goes through here, so the
  * per-member sync path and the reconcile verifier share one definition
  * of each state change instead of hand-rolling `row.apply { … }; save`.

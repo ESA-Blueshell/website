@@ -150,7 +150,7 @@ class TargetRepositoryIT : UserTestSupport() {
         targetMembers.saveAndFlush(TargetMember(target = target, userId = a.id!!, cohort = cohort))
         targetMembers.saveAndFlush(TargetMember(target = target, userId = b.id!!, cohort = cohort))
 
-        // uk_cohort_member_external is (cohort_id, external_user_id, deleted_at);
+        // uk_cohort_member_external is (target_id, external_user_id, deleted_at);
         // both rows share (cohort, NULL, sentinel) and must not collide.
         assertThat(targetMembers.findAllByTargetIdAndUserIdIsNotNull(target.id!!)).hasSize(2)
     }

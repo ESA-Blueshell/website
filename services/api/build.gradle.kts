@@ -87,6 +87,8 @@ dependencies {
     implementation(kotlin("stdlib"))
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
+    // Renders an online mandate's HTML template to PDF (api ADR-038). The maintained fork, on PDFBox 3.
+    implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.87")
     implementation("com.nimbusds:nimbus-jose-jwt:10.10")
     // Nimbus RSAKey.parseFromPEMEncodedObjects needs JcaPEMKeyConverter (bcpkix); bcprov alone is insufficient.
     runtimeOnly("org.bouncycastle:bcpkix-jdk18on:1.86")

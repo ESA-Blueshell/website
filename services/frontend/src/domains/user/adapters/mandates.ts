@@ -3,6 +3,7 @@
  * to the browser only for a board member's reveal.
  */
 import {
+  downloadMandatePdf,
   findMandate,
   findOwnMandate,
   IncassoStanding,
@@ -20,7 +21,7 @@ import {
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
-import {readOr} from "@/utils/answers"
+import {readBlobRefusal, readOr} from "@/utils/answers"
 import {MANDATE_WORDING} from "../mandateWording"
 import {accepted, reasonFor, refusable} from "../refusals"
 
@@ -45,6 +46,12 @@ export const savePaysBy = (userId: number, incasso: boolean): Promise<Saved<Mand
 export async function revealMandateIban(userId: number): Promise<Saved<string> | Refused> {
   const answered = await refusable(revealIban({path: {userId}}), "The IBAN could not be shown.")
   return answered.ok ? {ok: true, saved: answered.saved.iban} : answered
+}
+
+/** An online mandate as its PDF, filled in by the api as it answers; nothing keeps a copy. */
+export async function fetchMandatePdf(userId: number): Promise<{ok: true; file: Blob} | Refused> {
+  const answered = await refusable(readBlobRefusal(downloadMandatePdf({path: {userId}})), "The mandate's PDF could not be made.")
+  return answered.ok ? {ok: true, file: answered.saved as Blob} : answered
 }
 
 /** The reader's own mandate, masked, or nothing where it could not be read. */

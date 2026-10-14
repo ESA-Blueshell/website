@@ -13,7 +13,7 @@ import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, MandateKind, type MandateResponse, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
+import {IncassoStanding, MandateKind, type MandateResponse, fetchMandatePdf, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
 import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
@@ -59,13 +59,38 @@ const kind = computed(() => {
   return online.value ? `Online mandate, authorised on ${authorisedOn.value}` : "Paper mandate"
 })
 
+/* Only an online mandate has a PDF: a paper one is its own record, and a wiped one has nothing to print. */
+const hasPdf = computed(() => online.value && !mandate.value?.bankDetailsWiped && !!mandate.value?.reference)
 const paperNote = computed(() => {
   const held = mandate.value
   if (!held || held.kind !== MandateKind.PAPER) return ""
   const who = held.recordedByName ? ` by ${held.recordedByName}` : ""
   const when = held.recordedAt ? ` on ${formatDate(held.recordedAt)}` : ""
-  return `Paper mandate, recorded${who}${when}. The signed paper is the record.`
+  return `Paper mandate, recorded${who}${when}. The signed paper is the record, so there is no PDF.`
 })
+const pdfFailure = ref<string | null>(null)
+const fetchingPdf = ref(false)
+
+const downloadPdf = async () => {
+  if (fetchingPdf.value || !mandate.value) return
+  fetchingPdf.value = true
+  pdfFailure.value = null
+  const answered = await fetchMandatePdf(userId)
+  fetchingPdf.value = false
+  if (!answered.ok) {
+    pdfFailure.value = answered.reason
+    return
+  }
+  const url = URL.createObjectURL(answered.file)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = `mandate-${mandate.value.reference}.pdf`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  // Later rather than at once: Safari drops a download whose address is revoked before it starts.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
 const load = async () => {
   revealed.value = null
   revealFailure.value = null
@@ -187,6 +212,23 @@ watch(() => userId, load, {immediate: true})
         >
           {{ paperNote || kind }}
         </p>
+        <mini-button
+          v-if="hasPdf"
+          class="mandate__act"
+          :disabled="fetchingPdf"
+          testid="mandate-pdf"
+          @click="downloadPdf"
+        >
+          Download the mandate PDF
+        </mini-button>
+        <p
+          v-if="pdfFailure"
+          class="mandate__failure"
+          data-testid="mandate-pdf-failure"
+          role="alert"
+        >
+          {{ pdfFailure }}
+        </p>
       </div>
       <div
         v-if="mandate.recordedAt"
@@ -255,7 +297,7 @@ watch(() => userId, load, {immediate: true})
           testid="mandate-replaces-online"
           tone="warning"
         >
-          This replaces the online mandate the member authorised on {{ authorisedOn }}.
+          This replaces the online mandate the member authorised on {{ authorisedOn }}. Its PDF will no longer be available.
         </notice-box>
         <check-box
           v-model="replacesOnline"

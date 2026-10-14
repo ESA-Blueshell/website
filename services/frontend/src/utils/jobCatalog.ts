@@ -65,6 +65,14 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "The same record a contribution reminder sends, worded as a welcome rather than a " +
       "chase. Re-running sends the ask again.",
   },
+  "contribution.wipe-bank-details": {
+    title: "Wipe bank details",
+    description:
+      "Wipes the sealed IBAN, account holder and address of every mandate that is no longer " +
+      "collected from and whose last collection was 13 months ago or more, or that was never " +
+      "collected from. The mandate reference, the signing date and the masked IBAN stay as the " +
+      "record. Runs every day; running it again wipes nothing that is not due.",
+  },
   "email.incasso-notification": {
     title: "Send incasso notification",
     description:

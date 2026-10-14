@@ -2938,7 +2938,8 @@ export enum SecurityEventKind {
     ROLES_CHANGED = 'ROLES_CHANGED',
     BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED',
     IBAN_REVEALED = 'IBAN_REVEALED',
-    INCASSO_FILE_DOWNLOADED = 'INCASSO_FILE_DOWNLOADED'
+    INCASSO_FILE_DOWNLOADED = 'INCASSO_FILE_DOWNLOADED',
+    MANDATE_PDF_DOWNLOADED = 'MANDATE_PDF_DOWNLOADED'
 }
 
 export type SecurityEventPageResponse = {
@@ -14609,6 +14610,49 @@ export type RecordMandateResponses = {
 };
 
 export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
+
+export type DownloadMandatePdfData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate/pdf';
+};
+
+export type DownloadMandatePdfErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadMandatePdfError = DownloadMandatePdfErrors[keyof DownloadMandatePdfErrors];
+
+export type DownloadMandatePdfResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadMandatePdfResponse = DownloadMandatePdfResponses[keyof DownloadMandatePdfResponses];
 
 export type RevealIbanData = {
     body?: never;

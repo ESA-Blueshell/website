@@ -177,4 +177,21 @@ class AccountSecurityListenerTest {
             )
         }
     }
+
+    @Test
+    fun `a download of a mandate's PDF is logged on the member, naming who downloaded which one`() {
+        listener.onMandatePdfDownloaded(
+            net.blueshell.api.contribution.api
+                .MandatePdfDownloaded(userId = 7, reference = "BLUESHELL-7-20260901", downloadedBy = 3),
+        )
+
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.MANDATE_PDF_DOWNLOADED),
+            eq(SecurityActor.Person(3)),
+            eq("mandate BLUESHELL-7-20260901"),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
 }

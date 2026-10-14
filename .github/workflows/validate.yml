@@ -616,7 +616,6 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          # The jar api-static built, so nothing compiles inside Docker.
           - name: api
             context: services/api/build/libs
             dockerfile: services/api/Dockerfile

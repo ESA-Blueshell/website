@@ -97,11 +97,12 @@ This:
 
 ### Build Production Image
 
-The image packages the boot jar Gradle builds; nothing compiles inside Docker.
+The image packages the boot jar Gradle builds.
 
 ```bash
-# From the repository root
-./gradlew :services:api:bootJar
+# From the repository root. clean drops a boot jar of an earlier version, which
+# would give the Dockerfile's COPY two sources.
+./gradlew :services:api:clean :services:api:bootJar
 docker build -f services/api/Dockerfile -t blueshell-api:latest services/api/build/libs
 ```
 

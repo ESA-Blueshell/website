@@ -43,6 +43,7 @@ class EventUseCasesTest {
     private val fileService = mock<FileService>()
     private val games = mock<GameService>()
     private val announcements = mock<AnnouncementLedger>()
+    private val approvals = mock<EventApprovals>()
 
     // Tuesday 6 January 2026, 14:00 in Amsterdam: the next 08:00 is Wednesday's.
     private val now = Instant.parse("2026-01-06T13:00:00Z")
@@ -55,6 +56,7 @@ class EventUseCasesTest {
             fileService,
             games,
             announcements,
+            approvals,
             clock = Clock.fixed(now, ZoneOffset.UTC),
         )
 
@@ -230,6 +232,7 @@ class EventUseCasesTest {
                     fileService,
                     games,
                     announcements,
+                    approvals,
                     discordGuildId = "324",
                 )
             val everyone = listOf(PingedRoleData("324", "@everyone"))
@@ -338,6 +341,20 @@ class EventUseCasesTest {
 
             assertThat(approved.approved to approved.awaitingReapproval).isEqualTo(true to false)
             assertThat(declined.approved to declined.awaitingReapproval).isEqualTo(false to false)
+        }
+
+        @Test
+        fun `keeps what the board approves, for a later re-approval to be read against, and nothing it declines`() {
+            val approved = eventEntity().apply { id = 6L }
+            val declined = eventEntity().apply { id = 7L }
+            whenever(eventService.findById(6L)).thenReturn(approved)
+            whenever(eventService.findById(7L)).thenReturn(declined)
+
+            useCases.approve(id = 6L, approved = true, announce = NOW)
+            useCases.approve(id = 7L, approved = false)
+
+            verify(approvals).record(approved)
+            verify(approvals, never()).record(declined)
         }
     }
 

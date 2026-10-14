@@ -6,10 +6,12 @@ import jakarta.validation.Valid
 import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
+import net.blueshell.api.event.domain.EventApprovals
 import net.blueshell.api.event.domain.EventQuery
 import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.discord.DescriptionReader
 import net.blueshell.api.shared.web.BaseController
 import org.springdoc.core.annotations.ParameterObject
@@ -36,6 +38,7 @@ class EventController(
     private val useCases: EventUseCases,
     private val announcements: AnnouncementLedger,
     private val roster: EventRoster,
+    private val approvals: EventApprovals,
 ) : BaseController<EventService>(service) {
     // Only one event's answer says whether its post is out and carries its description as read: a
     // list would ask once per row.
@@ -100,6 +103,12 @@ class EventController(
     fun findEventRoster(
         @PathVariable id: Long,
     ): EventRosterResponse = roster.of(id).let { EventRosterResponse(it.people.map(::RosterPersonResponse), it.guests) }
+
+    /** Every event still to come that waits for the board, soonest first: new ones, and re-approvals with what changed. */
+    @GetMapping("/events/approval-queue")
+    @BoardOnly
+    fun listApprovalQueue(): List<QueuedEventResponse> =
+        approvals.queue().map { QueuedEventResponse(it.event.asResponse(), it.reapproval, it.changes) }
 
     @GetMapping("/events")
     @PermitAll

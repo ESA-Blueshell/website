@@ -123,6 +123,18 @@ async function confirmDelete() {
 
 <template>
   <span class="event-actions">
+    <cut-button
+      v-if="event.signUp && !manageOnly"
+      class="event-actions__sign-up"
+      :disabled="blocked !== null || signingOut"
+      :testid="`event-signup-toggle-btn-${event.id}`"
+      :title="blocked ?? undefined"
+      :tone="isSignedUp || signing ? 'plain' : 'solid'"
+      @click="pressSignUp"
+    >
+      {{ signUpLabel }}
+    </cut-button>
+
     <template v-if="manages">
       <button
         class="event-actions__approval"
@@ -175,17 +187,6 @@ async function confirmDelete() {
       </icon-button>
     </template>
 
-    <cut-button
-      v-if="event.signUp && !manageOnly"
-      :disabled="blocked !== null || signingOut"
-      :testid="`event-signup-toggle-btn-${event.id}`"
-      :title="blocked ?? undefined"
-      :tone="isSignedUp || signing ? 'plain' : 'solid'"
-      @click="pressSignUp"
-    >
-      {{ signUpLabel }}
-    </cut-button>
-
     <confirm-dialog
       confirm-label="Delete"
       :failure="failure"
@@ -213,6 +214,10 @@ async function confirmDelete() {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
+}
+
+.event-actions__sign-up {
+  margin-right: 0.35rem;
 }
 
 .event-actions__approval {

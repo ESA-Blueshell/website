@@ -95,6 +95,17 @@ export type AddressResponse = {
     zipCode?: string | null;
 };
 
+export type Addressee = {
+    id: string;
+    kind: AddresseeKind;
+};
+
+export enum AddresseeKind {
+    COHORT = 'COHORT',
+    ROLE = 'ROLE',
+    PERSON = 'PERSON'
+}
+
 export type Alert = {
     count: number;
     hidden: boolean;
@@ -208,6 +219,11 @@ export type AssociationStatisticsResponse = {
      * Teams standing this season
      */
     teamsThisSeason: number;
+};
+
+export type Audience = {
+    key: string;
+    label: string;
 };
 
 export type BackupCodesResponse = {
@@ -2281,6 +2297,22 @@ export enum QuestionType {
     DESCRIPTION = 'DESCRIPTION'
 }
 
+export type ReachRequest = {
+    to: Array<Addressee>;
+};
+
+export type ReachResponse = {
+    /**
+     * People named who never activated their account, so get nothing
+     */
+    notActivated: number;
+    recipients: number;
+    /**
+     * People named who have no email address, so get nothing
+     */
+    withoutEmail: number;
+};
+
 export type ReasonRequest = {
     reason: string;
 };
@@ -3210,6 +3242,20 @@ export type UserSummaryResponse = {
 
 export type Version = {
     version: string;
+};
+
+export type WriteEmailRequest = {
+    /**
+     * The message as the site's editor writes it, in Discord's markdown
+     */
+    message: string;
+    replyTo?: string | null;
+    subject: string;
+    to: Array<Addressee>;
+};
+
+export type WrittenResponse = {
+    sent: number;
 };
 
 export type FindAllAddressesData = {
@@ -8126,6 +8172,211 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindAudiencesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mail/audiences';
+};
+
+export type FindAudiencesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindAudiencesError = FindAudiencesErrors[keyof FindAudiencesErrors];
+
+export type FindAudiencesResponses = {
+    /**
+     * OK
+     */
+    200: Array<Audience>;
+};
+
+export type FindAudiencesResponse = FindAudiencesResponses[keyof FindAudiencesResponses];
+
+export type FindReachData = {
+    body: ReachRequest;
+    path?: never;
+    query?: never;
+    url: '/mail/reach';
+};
+
+export type FindReachErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindReachError = FindReachErrors[keyof FindReachErrors];
+
+export type FindReachResponses = {
+    /**
+     * OK
+     */
+    200: ReachResponse;
+};
+
+export type FindReachResponse = FindReachResponses[keyof FindReachResponses];
+
+export type FindReplyToOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mail/reply-to';
+};
+
+export type FindReplyToOptionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindReplyToOptionsError = FindReplyToOptionsErrors[keyof FindReplyToOptionsErrors];
+
+export type FindReplyToOptionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type FindReplyToOptionsResponse = FindReplyToOptionsResponses[keyof FindReplyToOptionsResponses];
+
+export type SendWrittenEmailData = {
+    body: WriteEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/mail/send';
+};
+
+export type SendWrittenEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendWrittenEmailError = SendWrittenEmailErrors[keyof SendWrittenEmailErrors];
+
+export type SendWrittenEmailResponses = {
+    /**
+     * OK
+     */
+    200: WrittenResponse;
+};
+
+export type SendWrittenEmailResponse = SendWrittenEmailResponses[keyof SendWrittenEmailResponses];
+
+export type SendTestEmailData = {
+    body: WriteEmailRequest;
+    path?: never;
+    query?: never;
+    url: '/mail/test';
+};
+
+export type SendTestEmailErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendTestEmailError = SendTestEmailErrors[keyof SendTestEmailErrors];
+
+export type SendTestEmailResponses = {
+    /**
+     * OK
+     */
+    200: WrittenResponse;
+};
+
+export type SendTestEmailResponse = SendTestEmailResponses[keyof SendTestEmailResponses];
 
 export type ListAlertsData = {
     body?: never;

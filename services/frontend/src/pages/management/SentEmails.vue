@@ -88,6 +88,13 @@ onMounted(refresh)
     </template>
     <template #actions>
       <cut-button
+        href="/management/mail/write"
+        testid="sent-emails-write"
+        tone="solid"
+      >
+        Write an email
+      </cut-button>
+      <cut-button
         testid="sent-emails-refresh"
         tone="quiet"
         @click="refresh"

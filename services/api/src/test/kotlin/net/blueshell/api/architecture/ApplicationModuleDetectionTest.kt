@@ -37,6 +37,7 @@ class ApplicationModuleDetectionTest {
                 "jobs",
                 "contact",
                 "email",
+                "mail",
                 "sync",
                 "discord",
                 "alerts",

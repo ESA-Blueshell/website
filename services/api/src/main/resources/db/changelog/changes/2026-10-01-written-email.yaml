@@ -1,0 +1,24 @@
+# An email the board writes on the site, sent to everybody it was addressed to: each copy is an
+# email in Sent, and this keeps what was written once.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-written-email.yaml
+      id: written-email
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: written_emails
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_written_emails, nullable: false}
+              - column: {name: subject, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: message, type: LONGTEXT, constraints: {nullable: false}}
+              - column: {name: reply_to, type: VARCHAR(255)}
+              - column: {name: written_by, type: BIGINT}
+              - column: {name: written_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: recipients, type: INT, constraints: {nullable: false}}
+      rollback:
+        - dropTable: {tableName: written_emails}

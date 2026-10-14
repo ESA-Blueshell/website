@@ -271,4 +271,8 @@ class UserService @Autowired constructor(
 
     @Transactional(readOnly = true)
     fun existsById(id: Long): Boolean = repository.existsById(id)
+
+    /** Everybody holding [role] or a role above it, such as the board for members. */
+    @Transactional(readOnly = true)
+    fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(Role.allThatInherit(role)).toSet()
 }

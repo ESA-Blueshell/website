@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.23.1](https://github.com/ESA-Blueshell/website/compare/v1.23.0...v1.23.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* production logs no longer print the database login ([#2453](https://github.com/ESA-Blueshell/website/issues/2453)) ([7d3643e](https://github.com/ESA-Blueshell/website/commit/7d3643e8a3833afe60b5bf818e01cfd2cdbdd162))
+
+
+### Refactoring
+
+* image conversion sits behind one port in the api ([#2454](https://github.com/ESA-Blueshell/website/issues/2454)) ([55c9359](https://github.com/ESA-Blueshell/website/commit/55c9359e6a09475399b038950605a34ea52ea548))
+
 ## [1.23.0](https://github.com/ESA-Blueshell/website/compare/v1.22.0...v1.23.0) (2026-10-14)
 
 

@@ -47,21 +47,24 @@ loads it.**
 - **The training run is one start of the application, as far as a refreshed context,** with
   `-Dspring.context.exit=onRefresh`: every singleton is created and nothing is started. It runs
   under the `training` profile, which turns Liquibase and Vault off, stops Hibernate reading
-  database metadata, names the dialect and gives the hardening guard placeholder keys, so it
-  reaches no database, Vault or Valkey.
+  database metadata and names the dialect, so it reaches no database, Vault or Valkey. The keys
+  the hardening guard asks for are drawn at random for the run, so no profile can start the api
+  on a key that ships in the image.
 - **A bean that reaches a remote service while the context refreshes fails the image build.**
   The training run exits non-zero and the build stops, rather than writing a cache of a start that
   went wrong.
-- **The JVM flags live in the image's entrypoint and nowhere else.** The Deployment and the
-  migrate Job set no `command`, so they start exactly as the training run did. A JVM started
-  with other flags, another GC or another classpath ignores the cache with one warning and
-  boots cold.
-- **G1, not ZGC.** The cache trained under ZGC saved less, ZGC with AlwaysPreTouch cost about
-  three seconds and twice the memory at start, and a 2 GiB pod has no pause problem for ZGC to
-  solve.
+- **The JVM flags live in the image and nowhere else.** `JDK_JAVA_OPTIONS` carries them to the
+  training run and to every start, and the Deployment and the migrate Job set no `command`. A JVM
+  whose heap is laid out differently ignores the cache with one warning and boots cold: ZGC, or a
+  heap past 32 GB, which turns compressed pointers off. So the training run's heap is sized for a
+  2 GiB pod, not for whatever host builds the image.
+- **G1, named.** The cache trained under ZGC saved less, ZGC with AlwaysPreTouch cost about three
+  seconds and twice the memory at start, and a 2 GiB pod has no pause problem for ZGC to solve.
+  It is named rather than left to the JVM, which picks Serial below 1792 MB, and the migrate Job
+  is given 1536 MiB.
 - **The build proves the cache loads.** Both the pull request image check and the main build boot
-  the built image under `-XX:AOTMode=on`, which turns an ignored cache into a failure, before
-  anything tags it.
+  the built image under `-XX:AOTMode=on`, which turns an ignored cache into a failure, in the
+  memory and CPU of the api's pod and of the migrate Job, before anything tags it.
 - **The cache is trained again on every build.** It belongs to one JDK build and one classpath,
   so a new jar or a Renovate bump of the base image retrains it without anyone asking.
 
@@ -72,6 +75,9 @@ loads it.**
 - The `training` profile has to keep refreshing without remote services. A new bean that
   connects while it is created needs its connection deferred to start, or a training-profile
   setting, or the image build fails.
+- The training run reaches neither Vault nor a database, so the classes behind the Vault config
+  import, its leases and Liquibase load cold. The migrate Job, which is mostly those, gains less
+  than the api does.
 - The training run is a start, not a workload: JEP 515's method profiles cover only what runs
   while the context refreshes. A training run that served requests would warm more, at the cost
   of a running database during the build.

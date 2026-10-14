@@ -1,6 +1,6 @@
 # The AOT cache's training run, while the image is built: the context refreshes and the JVM
-# exits, with no database, Vault or Valkey to reach (architecture ADR-013). The keys below are
-# placeholders that satisfy the hardening guard and open nothing.
+# exits, with no database, Vault or Valkey to reach (architecture ADR-013). The keys the
+# hardening guard asks for are drawn at random by the build, so none of them ships.
 spring:
   liquibase:
     enabled: false
@@ -12,12 +12,3 @@ spring:
 app:
   security:
     require-https: true
-  jwt:
-    secret: YW90LXRyYWluaW5nLXJ1bi1qd3Qtc2VjcmV0LW5vdC1hLXJlYWwta2V5LWZvci1hbnktZW52aXJvbm1lbnQhIQ==
-  two-factor:
-    key: YW90LXRyYWluaW5nLXR3by1mYWN0b3Ita2V5LTMyYnk=
-
-auth:
-  clients:
-    vault:
-      secret: aot-training-placeholder

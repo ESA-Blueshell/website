@@ -155,11 +155,7 @@ jobs:
         if: matrix.target.name == 'api'
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api@${{ steps.build.outputs.digest }}
-        run: >-
-          docker run --rm --network none
-          -e SPRING_PROFILES_ACTIVE=training
-          -e JAVA_TOOL_OPTIONS="-XX:AOTMode=on -Dspring.context.exit=onRefresh"
-          "$IMAGE"
+        run: scripts/check-aot-cache.sh "$IMAGE"
 
       - name: Export digest
         run: |

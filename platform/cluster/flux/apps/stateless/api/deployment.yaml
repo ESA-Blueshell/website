@@ -47,8 +47,8 @@ spec:
           # Tag comes from the images block in ../kustomization.yaml.
           image: ghcr.io/esa-blueshell/api
           imagePullPolicy: IfNotPresent
-          # No command: the image's entrypoint carries the JVM flags its AOT cache was trained
-          # with, and a JVM started with others ignores the cache (architecture ADR-013).
+          # No command: the image carries the JVM flags its AOT cache was trained with, and a
+          # JVM started with others ignores the cache (architecture ADR-013).
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod

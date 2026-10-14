@@ -89,7 +89,9 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - {name: api, context: ., file: services/api/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
+          # The api image packages the jar Gradle builds below, so its context is that
+          # jar's directory and nothing compiles inside Docker.
+          - {name: api, context: services/api/build/libs, file: services/api/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           - {name: frontend, context: services/frontend, file: services/frontend/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           # The apply sidecar for the Stalwart Deployment. Its Dockerfile
           # copies infra/stalwart/*, so the context is the repo root.
@@ -107,6 +109,18 @@ jobs:
       - name: Read the release version
         id: version
         run: echo "version=$(jq -er '.["."]' .release-please-manifest.json)" >> "$GITHUB_OUTPUT"
+
+      # On the runner, where setup-gradle keeps the dependency and build caches
+      # between runs; a Gradle run inside Docker started cold every time.
+      - name: Set up Java + Gradle
+        if: matrix.target.name == 'api'
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: '25'
+
+      - name: Build the api jar
+        if: matrix.target.name == 'api'
+        run: ./gradlew --no-daemon --build-cache :services:api:bootJar
 
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
@@ -131,14 +145,8 @@ jobs:
           # build arguments and sources rather than only the final result.
           provenance: mode=max
           sbom: true
-          # The api image resolves the generated clients from GitHub Packages,
-          # which requires a token. Passed as a BuildKit secret so it is not
-          # baked into the image history.
           build-args: |
-            GITHUB_ACTOR=${{ github.actor }}
             APP_VERSION=${{ steps.version.outputs.version }}
-          secrets: |
-            github_token=${{ secrets.GITHUB_TOKEN }}
 
       - name: Export digest
         run: |

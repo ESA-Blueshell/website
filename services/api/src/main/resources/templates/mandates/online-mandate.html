@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>SEPA Direct Debit Mandate</title>
+    <style>
+        @page { size: A4; margin: 18mm 20mm 16mm 20mm; }
+        body { font-family: 'Barlow', sans-serif; font-size: 10.5pt; color: #000; }
+        h1 { font-size: 15pt; margin: 0 0 9pt 0; }
+        .head { width: 100%; margin-bottom: 6pt; }
+        .head td { vertical-align: top; }
+        .logo { text-align: right; }
+        .logo img { width: 38mm; border: 1px solid #000; padding: 2mm; }
+        .box { width: 100%; border: 1px solid #000; border-collapse: collapse; margin: 6pt 0 10pt 0; }
+        .box td { padding: 4pt 6pt; vertical-align: top; }
+        .label { width: 34%; }
+        .small { font-size: 7.5pt; }
+        p { margin: 0 0 9pt 0; }
+        .signed { width: 100%; margin-top: 8pt; }
+        .signed td { padding: 3pt 0; vertical-align: top; }
+        .foot { margin-top: 26pt; border-top: 1px solid #000; width: 110mm; padding-top: 3pt; font-size: 7.5pt; color: #555; }
+    </style>
+</head>
+<body>
+<table class="head">
+    <tr>
+        <td>
+            <h1>SEPA</h1>
+            <h1>Direct Debit Mandate</h1>
+        </td>
+        <td class="logo"><img src="BSLOGO.png" alt="Blueshell Esports"/></td>
+    </tr>
+</table>
+
+<table class="box">
+    <tr><td class="label">Name:</td><td>Blueshell E-sports Vereniging Enschede</td></tr>
+    <tr><td class="label">Address:</td><td>Drienerlolaan 5</td></tr>
+    <tr><td class="label">Postal Code:</td><td>7582 NB</td></tr>
+    <tr><td class="label">City:</td><td>Enschede</td></tr>
+    <tr><td class="label">Country:</td><td>The Netherlands</td></tr>
+    <tr><td class="label">Creditor Identification:</td><td th:text="${creditorId}">NL00ZZZ000000000000</td></tr>
+    <tr>
+        <td class="label">Kenmerk Machtiging:<br/><span class="small">(Maximum 35 characters)</span></td>
+        <td th:text="${reference}">BLUESHELL-1-20260101</td>
+    </tr>
+    <tr><td class="label">In respect of contract:</td><td>Membership of Blueshell E-sports Vereniging Enschede</td></tr>
+    <tr>
+        <td class="label">Type of Payment:</td>
+        <td>
+            [X] recurrent <span class="small">(can be used more than once)</span>
+            &#160;&#160;or&#160;&#160;
+            [&#160;&#160;] one-off <span class="small">(can only be used once)</span>
+        </td>
+    </tr>
+</table>
+
+<p th:text="${wording}">The wording the member agreed to.</p>
+<p>
+    As part of your rights, you are entitled to a refund from your bank under the terms and conditions of your
+    agreement with your bank. A refund must be claimed within 8 weeks starting from the date on which your account
+    was debited.
+</p>
+<p>Your rights regarding this mandate are explained in a statement that you can obtain from your bank.</p>
+
+<table class="box">
+    <tr><td class="label">Name:</td><td th:text="${accountHolder}">Account holder</td></tr>
+    <tr><td class="label">Address:</td><td th:text="${street}">Street 1</td></tr>
+    <tr><td class="label">Postal code:</td><td th:text="${zipCode}">0000 AA</td></tr>
+    <tr><td class="label">City:</td><td th:text="${city}">City</td></tr>
+    <tr><td class="label">Country:</td><td th:text="${country}">Country</td></tr>
+    <tr><td class="label">Account number (IBAN):</td><td th:text="${iban}">NL00 BANK 0000 0000 00</td></tr>
+</table>
+
+<table class="signed">
+    <tr><td class="label">Date:</td><td th:text="${authorisedOn}">1 January 2026</td></tr>
+    <tr><td class="label">Place:</td><td>Online</td></tr>
+    <tr><td class="label">Name:</td><td th:text="${accountHolder}">Account holder</td></tr>
+    <tr>
+        <td class="label"><b>Signature</b></td>
+        <td th:text="${authorisation}">Authorised online on 1 January 2026 at 12:00 by Account holder, signed in as username</td>
+    </tr>
+</table>
+
+<div class="foot" th:text="${footer}">V2.0, October 2026</div>
+</body>
+</html>

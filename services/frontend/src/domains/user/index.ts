@@ -92,6 +92,7 @@ export {
 export {MemberType, Role, RoleSource} from "@/services/api"
 export {
   IncassoStanding,
+  fetchMandatePdf,
   readMandate,
   revealMandateIban,
   readOwnMandate,

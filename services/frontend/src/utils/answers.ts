@@ -15,3 +15,17 @@ export async function readOr<T, F>(call: Promise<Answer<T>>, fallback: F): Promi
   const res = await call
   return res.error || res.data == null ? fallback : res.data
 }
+
+/**
+ * A file download's answer with its refusal read as JSON. A file is asked for as a Blob, so a
+ * refusal arrives as a Blob too, and its code would never reach the sentence that names it.
+ */
+export async function readBlobRefusal<T>(call: Promise<Answer<T>>): Promise<Answer<T>> {
+  const res = await call
+  if (!(res.error instanceof Blob)) return res
+  try {
+    return {...res, error: JSON.parse(await res.error.text()) as unknown}
+  } catch {
+    return {...res, error: null}
+  }
+}

@@ -4,7 +4,7 @@ import MandatePanel from "@/components/management/MandatePanel.vue"
 import {IncassoStanding, MandateKind} from "@/services/api"
 import {settle} from "../../helpers/testUtils"
 
-const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn(), revealIban: vi.fn()}))
+const api = vi.hoisted(() => ({findMandate: vi.fn(), recordMandate: vi.fn(), revealIban: vi.fn(), downloadMandatePdf: vi.fn()}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -127,7 +127,8 @@ describe("the mandate panel", () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.PAPER}})
     const paper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
-    expect(paper.get('[data-testid="mandate-kind"]').text()).toMatch(/^Paper mandate, recorded on .+\. The signed paper is the record\.$/)
+    expect(paper.get('[data-testid="mandate-kind"]').text()).toMatch(/^Paper mandate, recorded on .+\. The signed paper is the record, so there is no PDF\.$/)
+    expect(paper.find('[data-testid="mandate-pdf"]').exists()).toBe(false)
     await paper.get('[data-testid="mandate-record"]').trigger("click")
     expect(paper.find('[data-testid="mandate-replaces-online"]').exists()).toBe(false)
 
@@ -137,7 +138,7 @@ describe("the mandate panel", () => {
     expect(wrapper.get('[data-testid="mandate-kind"]').text()).toContain("Online mandate, authorised on")
 
     await wrapper.get('[data-testid="mandate-record"]').trigger("click")
-    expect(wrapper.get('[data-testid="mandate-replaces-online"]').text()).toContain("This replaces the online mandate")
+    expect(wrapper.get('[data-testid="mandate-replaces-online"]').text()).toContain("Its PDF will no longer be available.")
     expect(wrapper.get('[data-testid="mandate-save"]').attributes("disabled")).toBeDefined()
 
     await wrapper.get('[data-testid="mandate-replaces-online-confirm"]').setValue(true)
@@ -147,16 +148,31 @@ describe("the mandate panel", () => {
     expect(api.recordMandate.mock.calls[0]![0].body.replacesOnline).toBe(true)
   })
 
-  it("says who recorded a paper mandate, and when an online one was authorised", async () => {
+  it("downloads an online mandate's PDF, says who recorded a paper one, and says why a download was refused", async () => {
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.PAPER, recordedByName: "Bo Ard"}})
     const paper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
     expect(paper.get('[data-testid="mandate-kind"]').text()).toContain("Paper mandate, recorded by Bo Ard on")
 
     api.findMandate.mockResolvedValue({status: 200, data: {...recorded, kind: MandateKind.ONLINE, authorisedAt: "2026-09-30T10:00:00Z"}})
-    const online = mount(MandatePanel, {props: {userId: 9}})
+    api.downloadMandatePdf.mockResolvedValue({status: 200, data: new Blob(["%PDF"])})
+    const created = vi.fn(() => "blob:mandate")
+    const revoked = vi.fn()
+    vi.stubGlobal("URL", {...URL, createObjectURL: created, revokeObjectURL: revoked})
+    const wrapper = mount(MandatePanel, {props: {userId: 9}})
     await settle()
-    expect(online.get('[data-testid="mandate-kind"]').text()).toContain("Online mandate, authorised on")
+
+    await wrapper.get('[data-testid="mandate-pdf"]').trigger("click")
+    await settle()
+    expect(api.downloadMandatePdf).toHaveBeenCalledWith({path: {userId: 9}})
+    expect(created).toHaveBeenCalled()
+    await vi.waitFor(() => expect(revoked).toHaveBeenCalledWith("blob:mandate"), {timeout: 2000})
+
+    api.downloadMandatePdf.mockResolvedValue({status: 404, error: {code: "NoOnlineMandate"}})
+    await wrapper.get('[data-testid="mandate-pdf"]').trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="mandate-pdf-failure"]').text()).toContain("authorised on the site")
+    vi.unstubAllGlobals()
   })
 
   it("says why a mandate was refused, and cancels", async () => {

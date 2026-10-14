@@ -17,7 +17,7 @@ import {
 } from "@/services/api"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
-import {readOr} from "@/utils/answers"
+import {readBlobRefusal, readOr} from "@/utils/answers"
 import {refusable} from "../refusals"
 
 export type {IncassoCandidate, IncassoCollection, IncassoRunSummary, IncassoRunView, StartIncassoRunRequest}
@@ -35,7 +35,7 @@ export const readIncassoRun = (runId: number): Promise<IncassoRunView | null> =>
 
 /** One of the run's files for ING, filled in by the api as it answers; nothing keeps a copy. */
 export async function fetchIncassoFile(runId: number, part: number): Promise<{ok: true; file: Blob} | Refused> {
-  const answered = await refusable(downloadIncassoFile({path: {runId}, query: {part}}), "The file for ING could not be made.")
+  const answered = await refusable(readBlobRefusal(downloadIncassoFile({path: {runId}, query: {part}})), "The file for ING could not be made.")
   return answered.ok ? {ok: true, file: answered.saved as Blob} : answered
 }
 

@@ -64,7 +64,7 @@ class UserErasureRestoreLifecycleTest {
         val users = mock<UserService> { on { findById(7) } doReturn user }
         val addressRows = mock<AddressRepository> { on { findById(5) } doReturn Optional.empty() }
 
-        UserErasureService(users, userRepository, deletedUsers, profiles, addresses, addressRows, mock(), 90)
+        UserErasureService(users, userRepository, deletedUsers, profiles, addresses, addressRows, mock(), mock(), 90)
             .restoreDeletedUser(7)
 
         assertThat(profile.deletedAt).isEqualTo(SoftDelete.LIVE_INSTANT)

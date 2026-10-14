@@ -34,7 +34,14 @@ func baseURL(t *testing.T) string {
 	return url
 }
 
-func convert(t *testing.T, query string, body []byte) (*http.Response, []byte) {
+// answer is what the service said: its status, its headers and its body, read in full.
+type answer struct {
+	status int
+	header http.Header
+	body   []byte
+}
+
+func convert(t *testing.T, query string, body []byte) answer {
 	t.Helper()
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL(t)+"/convert?"+query, bytes.NewReader(body))
 	if err != nil {
@@ -44,12 +51,12 @@ func convert(t *testing.T, query string, body []byte) (*http.Response, []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
-	answer, err := io.ReadAll(response.Body)
+	defer func() { _ = response.Body.Close() }()
+	read, err := io.ReadAll(response.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return response, answer
+	return answer{status: response.StatusCode, header: response.Header, body: read}
 }
 
 func photo(width, height int) *image.RGBA {
@@ -72,20 +79,20 @@ func encoded(t *testing.T, encode func(io.Writer) error) []byte {
 }
 
 // expectWebP checks the answer is a WebP of the size its headers name.
-func expectWebP(t *testing.T, response *http.Response, body []byte, width, height int) {
+func expectWebP(t *testing.T, got answer, width, height int) {
 	t.Helper()
-	if response.StatusCode != http.StatusOK {
-		t.Fatalf("answered %d: %s", response.StatusCode, body)
+	if got.status != http.StatusOK {
+		t.Fatalf("answered %d: %s", got.status, got.body)
 	}
-	config, err := webp.DecodeConfig(bytes.NewReader(body))
+	config, err := webp.DecodeConfig(bytes.NewReader(got.body))
 	if err != nil {
 		t.Fatalf("not a WebP: %v", err)
 	}
 	if config.Width != width || config.Height != height {
 		t.Fatalf("drawn at %dx%d, want %dx%d", config.Width, config.Height, width, height)
 	}
-	if response.Header.Get("Image-Width") != strconv.Itoa(width) || response.Header.Get("Image-Height") != strconv.Itoa(height) {
-		t.Fatalf("headers name %sx%s", response.Header.Get("Image-Width"), response.Header.Get("Image-Height"))
+	if got.header.Get("Image-Width") != strconv.Itoa(width) || got.header.Get("Image-Height") != strconv.Itoa(height) {
+		t.Fatalf("headers name %sx%s", got.header.Get("Image-Width"), got.header.Get("Image-Height"))
 	}
 }
 
@@ -98,7 +105,7 @@ func TestHealth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusNoContent {
 		t.Fatalf("answered %d", response.StatusCode)
 	}
@@ -106,30 +113,27 @@ func TestHealth(t *testing.T) {
 
 func TestJpegMasterIsBroughtUnderItsCeiling(t *testing.T) {
 	source := encoded(t, func(w io.Writer) error { return jpeg.Encode(w, photo(3000, 1200), nil) })
-	response, body := convert(t, "max-edge=2560&quality=82", source)
-	expectWebP(t, response, body, 2560, 1024)
+	expectWebP(t, convert(t, "max-edge=2560&quality=82", source), 2560, 1024)
 }
 
 func TestPngIconIsKeptLossless(t *testing.T) {
 	source := encoded(t, func(w io.Writer) error { return png.Encode(w, photo(300, 300)) })
-	response, body := convert(t, "max-edge=512&lossless=true", source)
-	expectWebP(t, response, body, 300, 300)
+	expectWebP(t, convert(t, "max-edge=512&lossless=true", source), 300, 300)
 }
 
 func TestWebpMasterGivesItsRenditions(t *testing.T) {
 	source := encoded(t, func(w io.Writer) error { return png.Encode(w, photo(1600, 900)) })
-	response, master := convert(t, "max-edge=2560&quality=82", source)
-	expectWebP(t, response, master, 1600, 900)
+	master := convert(t, "max-edge=2560&quality=82", source)
+	expectWebP(t, master, 1600, 900)
 	for _, width := range []int{320, 640, 1280} {
 		height := width * 9 / 16
-		response, body := convert(t, "width="+strconv.Itoa(width)+"&height="+strconv.Itoa(height)+"&quality=82", master)
-		expectWebP(t, response, body, width, height)
+		expectWebP(t, convert(t, "width="+strconv.Itoa(width)+"&height="+strconv.Itoa(height)+"&quality=82", master.body), width, height)
 	}
 }
 
 func TestBytesThatAreNoPictureAreRefused(t *testing.T) {
-	if response, body := convert(t, "max-edge=2560&quality=82", []byte("<svg onload=alert(1)>")); response.StatusCode != http.StatusUnprocessableEntity {
-		t.Fatalf("answered %d: %s", response.StatusCode, body)
+	if got := convert(t, "max-edge=2560&quality=82", []byte("<svg onload=alert(1)>")); got.status != http.StatusUnprocessableEntity {
+		t.Fatalf("answered %d: %s", got.status, got.body)
 	}
 }
 
@@ -143,17 +147,17 @@ func TestPictureClaimingTooManyPixelsIsRefusedFromItsHeader(t *testing.T) {
 	chunk := append([]byte("IHDR"), header...)
 	var bomb bytes.Buffer
 	bomb.WriteString("\x89PNG\r\n\x1a\n")
-	_ = binary.Write(&bomb, binary.BigEndian, uint32(len(header)))
+	_ = binary.Write(&bomb, binary.BigEndian, uint32(13)) // IHDR's length
 	bomb.Write(chunk)
 	_ = binary.Write(&bomb, binary.BigEndian, crc32.ChecksumIEEE(chunk))
 
-	if response, body := convert(t, "max-edge=2560&quality=82", bomb.Bytes()); response.StatusCode != http.StatusUnprocessableEntity {
-		t.Fatalf("answered %d: %s", response.StatusCode, body)
+	if got := convert(t, "max-edge=2560&quality=82", bomb.Bytes()); got.status != http.StatusUnprocessableEntity {
+		t.Fatalf("answered %d: %s", got.status, got.body)
 	}
 }
 
 func TestBodyOverTheByteLimitIsRefused(t *testing.T) {
-	if response, _ := convert(t, "max-edge=2560&quality=82", make([]byte, 21<<20)); response.StatusCode != http.StatusRequestEntityTooLarge {
-		t.Fatalf("answered %d", response.StatusCode)
+	if got := convert(t, "max-edge=2560&quality=82", make([]byte, 21<<20)); got.status != http.StatusRequestEntityTooLarge {
+		t.Fatalf("answered %d", got.status)
 	}
 }

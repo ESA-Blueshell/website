@@ -9,10 +9,11 @@ import ChipPicker from "@/components/island/ChipPicker.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
-import {renderWritten} from "@/domains/emails"
+import {SITE_SENDER, fromOptions, loadSendingAddresses, renderWritten} from "@/domains/emails"
 import {
   type Addressee,
   AddresseeKind,
@@ -22,11 +23,13 @@ import {
   addresseeOf,
   listAudiences,
   listReplyTo,
+  listSenderNames,
   readReach,
   Role,
   sendTest,
   sendWritten,
   ReplyToPicker,
+  SenderNamePicker,
 } from "@/domains/mail"
 import {type UserDetailResponse, listUsers} from "@/domains/user"
 import store from "@/plugins/store"
@@ -41,11 +44,22 @@ const router = useRouter()
 const audiences = ref<Audience[]>([])
 const people = ref<UserDetailResponse[]>([])
 const unread = ref<string[]>([])
+const fromUnread = ref(false)
 const replyOptions = ref<string[]>([])
 const to = ref<Addressee[]>([])
 const subject = ref("")
 const message = ref("")
 const replyTo = ref<string | null>(null)
+const senders = ref<ReturnType<typeof fromOptions>["options"]>([])
+const from = ref(SITE_SENDER)
+const siteNames = ref<string[]>([])
+// The picked address's own name until the writer picks or types another.
+const fromName = ref<string | null>(null)
+const addressName = computed(() => senders.value.find((one) => one.key === from.value && one.key !== SITE_SENDER)?.label ?? null)
+const names = computed(() => [...new Set([...(addressName.value ? [addressName.value] : []), ...siteNames.value])])
+watch(addressName, (now) => {
+  fromName.value = now ?? siteNames.value[0] ?? null
+})
 const reach = ref<ReachResponse | null>(null)
 const reachUnread = ref(false)
 const preview = ref<string | null>(null)
@@ -99,7 +113,15 @@ const remove = (key: string) => {
   to.value = to.value.filter((one) => addresseeKey(one) !== key)
 }
 
-const body = () => ({to: to.value, subject: subject.value, message: message.value, replyTo: replyTo.value ?? undefined})
+const body = () => ({
+  to: to.value,
+  subject: subject.value,
+  message: message.value,
+  replyTo: replyTo.value ?? undefined,
+  from: from.value === SITE_SENDER ? undefined : Number(from.value),
+  // The address's own name is the api's default, so it is sent as none.
+  fromName: fromName.value && fromName.value !== addressName.value ? fromName.value : undefined,
+})
 
 const finish = (answered: {ok: true} | {ok: false; reason: string}, done: () => void) => {
   if (!answered.ok) {
@@ -155,7 +177,14 @@ watch([subject, message], () => {
 })
 
 onMounted(async () => {
-  const [groups, everyone, replies] = await Promise.all([listAudiences(), listUsers().catch(() => null), listReplyTo()])
+  const [groups, everyone, replies, addresses, offeredNames] =
+    await Promise.all([listAudiences(), listUsers().catch(() => null), listReplyTo(), loadSendingAddresses(), listSenderNames()])
+  siteNames.value = offeredNames
+  fromName.value = siteNames.value[0] ?? null
+  fromUnread.value = addresses === null
+  const offered = fromOptions(addresses ?? [])
+  senders.value = offered.options
+  from.value = offered.start
   unread.value = [groups === null ? "groups" : null, everyone === null ? "people" : null].filter((one) => one !== null)
   audiences.value = groups ?? []
   people.value = everyone ?? []
@@ -241,6 +270,45 @@ onBeforeUnmount(() => clearTimeout(previewTimer))
               :labelled-by="labelId"
               min-height="18rem"
               testid="write-message-editor"
+            />
+          </template>
+        </form-field>
+
+        <p
+          v-if="fromUnread"
+          class="write__note"
+          data-testid="write-from-unread"
+        >
+          The sending addresses could not be loaded, so this email goes out from the site's default address.
+        </p>
+        <form-field
+          v-if="senders.length > 1"
+          label="From"
+          testid="write-from"
+        >
+          <template #default="{controlId, labelId}">
+            <search-picker
+              :control-id="controlId"
+              :labelled-by="labelId"
+              :options="senders"
+              :selected-key="from"
+              testid-prefix="write-from-picker"
+              @pick="(key: string) => from = key"
+            />
+          </template>
+        </form-field>
+
+        <form-field
+          label="From name"
+          testid="write-from-name"
+        >
+          <template #default="{controlId, labelId}">
+            <sender-name-picker
+              v-model="fromName"
+              :control-id="controlId"
+              :labelled-by="labelId"
+              :offered="names"
+              testid-prefix="write-from-name-picker"
             />
           </template>
         </form-field>

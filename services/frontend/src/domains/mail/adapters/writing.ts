@@ -9,6 +9,7 @@ import {
   findAudiences,
   findReach,
   findReplyToOptions,
+  findSenderNames,
   type ReachResponse,
   Role,
   sendTestEmail,
@@ -27,6 +28,9 @@ export {AddresseeKind, Role}
 
 /** The cohorts an email can be addressed to, or nothing where they could not be read. */
 export const listAudiences = (): Promise<Audience[] | null> => readOr(findAudiences(), null)
+
+/** The names offered to send under besides a sending address's own: the site's. None where they could not be read. */
+export const listSenderNames = (): Promise<string[]> => readOr(findSenderNames(), [])
 
 /** Where replies may go; the association's own address first. */
 export const listReplyTo = (): Promise<string[]> => readOr(findReplyToOptions(), [])

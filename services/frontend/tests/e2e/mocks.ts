@@ -2213,8 +2213,14 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/mail/audiences") {
       return answer(route, "findAudiences", [{key: "ACTIVE_MEMBERS:4", label: "Active members 2026-2027"}])
     }
+    if (method === "GET" && path === "/mail/sender-names") {
+      return answer(route, "findSenderNames", ["Blueshell"])
+    }
     if (method === "GET" && path === "/mail/reply-to") {
       return answer(route, "findReplyToOptions", ["board@esa-blueshell.nl", "mock-user@example.com"])
+    }
+    if (method === "GET" && path === "/management/sending-addresses") {
+      return answer(route, "listSendingAddresses", [])
     }
     if (method === "POST" && path === "/mail/reach") {
       const {to} = request.postDataJSON() as {to: unknown[]}

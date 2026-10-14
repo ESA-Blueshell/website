@@ -2,12 +2,15 @@ package net.blueshell.api.email.domain
 
 import jakarta.mail.Session
 import jakarta.mail.internet.MimeMessage
+import net.blueshell.api.email.persistence.MailSecurity
 import net.blueshell.api.shared.email.EmailContent
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -20,7 +23,7 @@ class SmtpEmailClientTest {
         mock<JavaMailSender>().also {
             whenever(it.createMimeMessage()).thenAnswer { MimeMessage(session) }
         }
-    private val client = SmtpEmailClient(mailSender, MockEnvironment())
+    private val client = SmtpEmailClient(mailSender, MailServers(listOf(587), listOf("smtp.b.nl")), MockEnvironment())
 
     @Test
     fun `send stamps the Message-ID header on the outgoing MimeMessage`() {
@@ -117,7 +120,7 @@ class SmtpEmailClientTest {
                     seen += password
                 }
             }
-        val smtp = SmtpEmailClient(sender, environment)
+        val smtp = SmtpEmailClient(sender, MailServers(listOf(587), emptyList()), environment)
 
         fun send() = smtp.send("to@example.com", "To", "Hi", "<p>Hi</p>", "Blueshell", "no-reply@esa-blueshell.nl", "board@example.com")
 
@@ -126,5 +129,14 @@ class SmtpEmailClientTest {
         send()
 
         assertThat(seen).containsExactly("first", "second")
+    }
+
+    @Test
+    fun `refuses to send through an added address whose server is inside the site's network`() {
+        val inside = SmtpRoute("10.0.0.5", 587, MailSecurity.STARTTLS, SmtpLogin("events", "secret"))
+
+        assertThatThrownBy { client.send("a@b.nl", "Ann", "Hi", "<p>Hi</p>", "Blueshell", "events@b.nl", "board@b.nl", emptyMap(), inside) }
+            .isInstanceOf(MailServerNotAllowed::class.java)
+        verifyNoInteractions(mailSender)
     }
 }

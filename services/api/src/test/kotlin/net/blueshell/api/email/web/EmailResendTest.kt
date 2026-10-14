@@ -30,6 +30,7 @@ class EmailResendTest {
         val answered = controller.resend(2)
 
         assertThat(answered.resentFromId).isEqualTo(2)
+        assertThat(answered.senderAddress).isNull()
         assertThat(answered.resendable).isFalse()
         assertThat(controller.getStats().queuedCount).isEqualTo(4)
     }
@@ -45,6 +46,7 @@ class EmailResendTest {
         val made =
             Entities.email(3).apply {
                 resentFromId = 2
+                senderAddress = "events@b.nl"
                 createdAt = Instant.EPOCH
                 updatedAt = Instant.EPOCH
             }

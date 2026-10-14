@@ -15,7 +15,9 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   SubjectNotOneLine: () => "Write the subject on one line.",
   MessageTooLong: (r) => `Make the message shorter: at most ${r.max} characters.`,
   InboxMessageNotFound: () => "That message is no longer in the inbox.",
+  SenderNameInvalid: (r) => `Give a sender name of one line, at most ${r.max} characters.`,
   WriterWithoutAddress: () => "Your account has no email address, so a test has nowhere to go. Add one to your account first.",
+  SendingAddressGone: () => "The address it was to go out from is removed. Pick another under From.",
   ReplyToNotAnAddress: (r) => `${r.replyTo} is not an email address. Type one address for replies, such as board@esa-blueshell.nl.`,
 }
 

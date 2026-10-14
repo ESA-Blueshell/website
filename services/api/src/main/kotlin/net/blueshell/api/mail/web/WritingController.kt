@@ -2,9 +2,11 @@ package net.blueshell.api.mail.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Size
 import net.blueshell.api.cohort.api.Audience
 import net.blueshell.api.cohort.api.CohortAudiences
 import net.blueshell.api.mail.domain.Addressee
+import net.blueshell.api.mail.domain.SENDER_NAME_LIMIT
 import net.blueshell.api.mail.domain.Writing
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.security.CurrentUserProvider
@@ -38,6 +40,11 @@ data class WriteEmailRequest(
     @param:Schema(description = "The message as the site's editor writes it, in Discord's markdown")
     val message: String = "",
     val replyTo: String? = null,
+    @param:Schema(description = "The added sending address it goes out from; none sends from the site's own")
+    val from: Long? = null,
+    @field:Size(max = SENDER_NAME_LIMIT)
+    @param:Schema(description = "The name it goes out under; none takes the sending address's own")
+    val fromName: String? = null,
 )
 
 @Schema(name = "WrittenResponse")
@@ -54,7 +61,13 @@ class WritingController(
     private val users: UserService,
     private val currentUser: CurrentUserProvider,
     @param:Value($$"${email.reply-to}") private val defaultReplyTo: String,
+    @param:Value($$"${email.from.name}") private val siteName: String,
 ) {
+    /** The names offered to send under besides each sending address's own: the site's. Any other may be typed. */
+    @BoardOnly
+    @GetMapping("/mail/sender-names")
+    fun findSenderNames(): List<String> = listOf(siteName)
+
     @BoardOnly
     @GetMapping("/mail/audiences")
     fun findAudiences(): List<Audience> = audiences.all()
@@ -74,13 +87,17 @@ class WritingController(
     @PostMapping("/mail/send")
     fun sendWrittenEmail(
         @RequestBody request: WriteEmailRequest,
-    ): WrittenResponse = WrittenResponse(writing.send(request.to, request.subject, request.message, request.replyTo, writer()))
+    ): WrittenResponse =
+        WrittenResponse(
+            writing.send(request.to, request.subject, request.message, request.replyTo, writer(), request.from, request.fromName),
+        )
 
     @BoardOnly
     @PostMapping("/mail/test")
     fun sendTestEmail(
         @RequestBody request: WriteEmailRequest,
-    ): WrittenResponse = WrittenResponse(writing.test(request.subject, request.message, request.replyTo, writer()))
+    ): WrittenResponse =
+        WrittenResponse(writing.test(request.subject, request.message, request.replyTo, writer(), request.from, request.fromName))
 
     private fun writer(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.mail.domain
 
 import net.blueshell.api.cohort.api.CohortAudiences
 import net.blueshell.api.email.api.EmailSenderService
+import net.blueshell.api.email.api.KnownSendingAddresses
 import net.blueshell.api.email.api.SiteMarkdownEmails
 import net.blueshell.api.mail.persistence.WrittenEmail
 import net.blueshell.api.mail.persistence.WrittenEmailRepository
@@ -33,7 +34,9 @@ class WritingTest {
     private val users: UserService = mock()
     private val written: WrittenEmailRepository = mock()
     private val jobs: JobQueue = mock()
-    private val writing = Writing(audiences, users, written, jobs, Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC))
+    private val known = KnownSendingAddresses { it == 4L }
+    private val clock = Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC)
+    private val writing = Writing(audiences, users, written, jobs, clock, known)
 
     private val ann = Entities.user(id = 1, username = "ann")
     private val bea = Entities.user(id = 2, username = "bea")
@@ -105,6 +108,7 @@ class WritingTest {
         // JPA's no-argument constructor, which only a load from the database calls otherwise.
         assertThat(WrittenEmail::class.java.getDeclaredConstructor().newInstance()).isNotNull
 
+        assertThatThrownBy { writing.test("Hi", "Body", null, 9, from = 5) }.isInstanceOf(SendingAddressGone::class.java)
         assertThatThrownBy { writing.test(" ", "Body", null, 9) }.isInstanceOf(SubjectMissing::class.java)
         assertThatThrownBy { writing.test("Hi", " ", null, 9) }.isInstanceOf(MessageMissing::class.java)
         whenever(users.findAllByIds(emptySet())).thenReturn(emptyList())
@@ -116,7 +120,8 @@ class WritingTest {
         val emails: EmailSenderService = mock()
         val siteMarkdown: SiteMarkdownEmails = mock()
         val job = WrittenEmailJob(JsonMapper(), emails, written, users, siteMarkdown)
-        val email = WrittenEmail("Hi", "**Body**", "board@b.nl", 9, Instant.EPOCH, 1).also { it.id = 7 }
+        val email =
+            WrittenEmail("Hi", "**Body**", "board@b.nl", 9, Instant.EPOCH, 1, senderName = "Events team").also { it.id = 7 }
         whenever(written.findById(7)).thenReturn(Optional.of(email))
         whenever(written.findById(8)).thenReturn(Optional.empty())
         whenever(users.findById(1)).thenReturn(ann)
@@ -124,9 +129,34 @@ class WritingTest {
         whenever(siteMarkdown.forEmail("**Body**")).thenReturn("<b>Body</b>")
 
         assertThat(job.composeQueued("""{"writtenEmailId":7,"userId":1}"""))
-            .isEqualTo(EmailContent(ann.email, ann.fullName, "Hi", "<b>Body</b>", replyToOverride = "board@b.nl"))
+            .isEqualTo(
+                EmailContent(
+                    ann.email,
+                    ann.fullName,
+                    "Hi",
+                    "<b>Body</b>",
+                    senderNameOverride = "Events team",
+                    replyToOverride = "board@b.nl",
+                ),
+            )
         assertThat(job.composeQueued("""{"writtenEmailId":7,"userId":3}""")).isNull()
         assertThatThrownBy { job.composeQueued("""{"writtenEmailId":8,"userId":1}""") }.isInstanceOf(NonRetryableJobException::class.java)
+    }
+
+    @Test
+    fun `keeps the name the writer sends under, one line of at most 128 characters, and none when left blank`() {
+        whenever(users.findAllByIds(setOf(1L))).thenReturn(listOf(ann))
+        whenever(written.save(any<WrittenEmail>())).thenAnswer { (it.arguments[0] as WrittenEmail).also { email -> email.id = 7 } }
+        val to = listOf(Addressee(AddresseeKind.PERSON, "1"))
+
+        writing.send(to, "Hi", "Body", null, 9, null, " Events team ")
+        writing.send(to, "Hi", "Body", null, 9, null, " ")
+        val kept = argumentCaptor<WrittenEmail>()
+        verify(written, times(2)).save(kept.capture())
+        assertThat(kept.allValues.map { it.senderName }).containsExactly("Events team", null)
+        assertThatThrownBy { writing.send(to, "Hi", "Body", null, 9, null, "Board\r\nBcc: x@y.z") }
+            .isInstanceOf(SenderNameInvalid::class.java)
+        assertThatThrownBy { writing.send(to, "Hi", "Body", null, 9, null, "x".repeat(129)) }.isInstanceOf(SenderNameInvalid::class.java)
     }
 
     @Test

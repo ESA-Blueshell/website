@@ -28,6 +28,20 @@ class MessageTooLong :
 
 class InboxMessageNotFound : MailRefusal(HttpStatus.NOT_FOUND, "InboxMessageNotFound", "There is no such message in the inbox.")
 
+class SendingAddressGone :
+    MailRefusal(HttpStatus.BAD_REQUEST, "SendingAddressGone", "The address it was to be sent from is no longer there.")
+
+class SenderNameInvalid :
+    MailRefusal(
+        HttpStatus.BAD_REQUEST,
+        "SenderNameInvalid",
+        "A sender name is one line of at most $SENDER_NAME_LIMIT characters.",
+        mapOf("max" to SENDER_NAME_LIMIT),
+    )
+
+// The sender name column's width, as an address's display name.
+const val SENDER_NAME_LIMIT = 128
+
 class WriterWithoutAddress : MailRefusal(HttpStatus.BAD_REQUEST, "WriterWithoutAddress", "The writer has no email address for a test.")
 
 // The subject column's width.

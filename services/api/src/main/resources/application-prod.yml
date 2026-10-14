@@ -40,6 +40,8 @@ spring:
     username: ""
 
 email:
+  # Never the stand-in in production: it keeps logins in one pod's memory and loses them on restart (api ADR-039).
+  sending-logins: vault
   bounce:
     imap:
       # No default: it is the api's mail login too, so a Deployment without it

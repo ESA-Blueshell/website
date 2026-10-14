@@ -18,5 +18,7 @@ interface EmailTransportClient {
         senderAddress: String,
         replyToAddress: String,
         threadHeaders: Map<String, String> = emptyMap(),
+        /** The server and login of an added sending address; none uses the site's own sender. */
+        route: SmtpRoute? = null,
     ): String
 }

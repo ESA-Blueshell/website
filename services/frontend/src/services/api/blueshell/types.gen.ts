@@ -1395,6 +1395,10 @@ export type Email = {
      * The email this one was made again from, when it was resent
      */
     resentFromId?: number | null;
+    /**
+     * The address it went out from; none for an email sent before this was kept
+     */
+    senderAddress?: string | null;
     sentAt?: string | null;
     subject?: string | null;
     updatedAt?: string | null;
@@ -1884,6 +1888,10 @@ export type InboxEntry = {
     handledBy?: number | null;
     handledByName?: string | null;
     id: number;
+    /**
+     * The address whose mailbox it was read from; absent for the site's catch-all
+     */
+    mailbox?: string | null;
     receivedAt: string;
     senderName?: string | null;
     senderUserId?: number | null;
@@ -2132,6 +2140,12 @@ export type LoginResponse = {
     userId: number;
     username: string;
 };
+
+export enum MailSecurity {
+    STARTTLS = 'STARTTLS',
+    SSL = 'SSL',
+    NONE = 'NONE'
+}
 
 export type MemberActivationRequest = {
     password: string;
@@ -2725,6 +2739,72 @@ export type SendPaymentEmailsRequest = {
      */
     paymentDueDate?: string | null;
     userIds: Array<number>;
+};
+
+export type SendingAddress = {
+    address: string;
+    /**
+     * Whether the last check could read its mailbox; absent until checked or where it is not read
+     */
+    canRead?: boolean | null;
+    /**
+     * Whether the last check could send through it; absent until checked
+     */
+    canSend?: boolean | null;
+    checkedAt?: string | null;
+    displayName: string;
+    host: string;
+    id: number;
+    /**
+     * Its IMAP server; absent where the address is not read
+     */
+    imapHost?: string | null;
+    imapPort?: number | null;
+    imapSecurity?: MailSecurity | null;
+    /**
+     * Whether it sends the site's own mail and is picked first when writing
+     */
+    isDefault: boolean;
+    /**
+     * Whether a login is kept for it; the login itself is never answered
+     */
+    loginKept: boolean;
+    port: number;
+    /**
+     * What the IMAP server said when the last check could not read
+     */
+    readFailure?: string | null;
+    security: MailSecurity;
+    /**
+     * What the SMTP server said when the last check could not send
+     */
+    sendFailure?: string | null;
+};
+
+/**
+ * An address and, when it is new, its servers move or its login changes, the login
+ */
+export type SendingAddressRequest = {
+    address: string;
+    displayName: string;
+    host: string;
+    /**
+     * Its IMAP server; left out where the address is not read
+     */
+    imapHost?: string | null;
+    imapPort?: number | null;
+    imapSecurity?: MailSecurity | null;
+    isDefault: boolean;
+    /**
+     * The password, written to Vault and never answered back; left out to keep the one there is
+     */
+    password?: string | null;
+    port: number;
+    security: MailSecurity;
+    /**
+     * The username for SMTP and IMAP alike; left out to keep the login there is
+     */
+    username?: string | null;
 };
 
 export type SentEmailPreview = {
@@ -3332,6 +3412,14 @@ export type Version = {
 };
 
 export type WriteEmailRequest = {
+    /**
+     * The added sending address it goes out from; none sends from the site's own
+     */
+    from?: number | null;
+    /**
+     * The name it goes out under; none takes the sending address's own
+     */
+    fromName?: string | null;
     /**
      * The message as the site's editor writes it, in Discord's markdown
      */
@@ -8306,6 +8394,7 @@ export type FindInboxData = {
     path?: never;
     query?: {
         search?: string;
+        mailbox?: string;
         page?: number;
         sort?: InboxSort;
         descending?: boolean;
@@ -8639,6 +8728,47 @@ export type SendWrittenEmailResponses = {
 };
 
 export type SendWrittenEmailResponse = SendWrittenEmailResponses[keyof SendWrittenEmailResponses];
+
+export type FindSenderNamesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mail/sender-names';
+};
+
+export type FindSenderNamesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindSenderNamesError = FindSenderNamesErrors[keyof FindSenderNamesErrors];
+
+export type FindSenderNamesResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type FindSenderNamesResponse = FindSenderNamesResponses[keyof FindSenderNamesResponses];
 
 export type SendTestEmailData = {
     body: WriteEmailRequest;
@@ -10332,6 +10462,217 @@ export type RetryResponses = {
 };
 
 export type RetryResponse = RetryResponses[keyof RetryResponses];
+
+export type ListSendingAddressesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/sending-addresses';
+};
+
+export type ListSendingAddressesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListSendingAddressesError = ListSendingAddressesErrors[keyof ListSendingAddressesErrors];
+
+export type ListSendingAddressesResponses = {
+    /**
+     * OK
+     */
+    200: Array<SendingAddress>;
+};
+
+export type ListSendingAddressesResponse = ListSendingAddressesResponses[keyof ListSendingAddressesResponses];
+
+export type AddSendingAddressData = {
+    body: SendingAddressRequest;
+    path?: never;
+    query?: never;
+    url: '/management/sending-addresses';
+};
+
+export type AddSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AddSendingAddressError = AddSendingAddressErrors[keyof AddSendingAddressErrors];
+
+export type AddSendingAddressResponses = {
+    /**
+     * Created
+     */
+    201: SendingAddress;
+};
+
+export type AddSendingAddressResponse = AddSendingAddressResponses[keyof AddSendingAddressResponses];
+
+export type RemoveSendingAddressData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}';
+};
+
+export type RemoveSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveSendingAddressError = RemoveSendingAddressErrors[keyof RemoveSendingAddressErrors];
+
+export type RemoveSendingAddressResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveSendingAddressResponse = RemoveSendingAddressResponses[keyof RemoveSendingAddressResponses];
+
+export type SetSendingAddressData = {
+    body: SendingAddressRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}';
+};
+
+export type SetSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetSendingAddressError = SetSendingAddressErrors[keyof SetSendingAddressErrors];
+
+export type SetSendingAddressResponses = {
+    /**
+     * OK
+     */
+    200: SendingAddress;
+};
+
+export type SetSendingAddressResponse = SetSendingAddressResponses[keyof SetSendingAddressResponses];
+
+export type CheckSendingAddressData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/sending-addresses/{id}/check';
+};
+
+export type CheckSendingAddressErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CheckSendingAddressError = CheckSendingAddressErrors[keyof CheckSendingAddressErrors];
+
+export type CheckSendingAddressResponses = {
+    /**
+     * OK
+     */
+    200: SendingAddress;
+};
+
+export type CheckSendingAddressResponse = CheckSendingAddressResponses[keyof CheckSendingAddressResponses];
 
 export type MyServicesData = {
     body?: never;

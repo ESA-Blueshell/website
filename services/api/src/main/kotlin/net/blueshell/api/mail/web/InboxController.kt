@@ -49,6 +49,7 @@ class InboxController(
     @GetMapping("/mail/inbox")
     fun findInbox(
         @RequestParam(required = false) search: String?,
+        @RequestParam(required = false) mailbox: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "RECEIVED") sort: InboxSort = InboxSort.RECEIVED,
         @RequestParam(defaultValue = "true") descending: Boolean = true,
@@ -56,7 +57,7 @@ class InboxController(
         val direction = if (descending) Sort.Direction.DESC else Sort.Direction.ASC
         // The id settles messages that tie, so a page never repeats or skips one.
         val order = Sort.by(direction, sort.property).and(Sort.by(Sort.Direction.DESC, "id"))
-        return inbox.page(search, PageRequest.of(page.coerceAtLeast(0), PAGE_SIZE, order))
+        return inbox.page(search, PageRequest.of(page.coerceAtLeast(0), PAGE_SIZE, order), mailbox)
     }
 
     @BoardOnly

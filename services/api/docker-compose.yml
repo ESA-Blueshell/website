@@ -81,6 +81,8 @@ services:
       - SMTP_AUTH=false
       - SMTP_STARTTLS=false
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_LOCALHOST=api.dev.local
+      # The dev Stalwart is on the compose network, which added sending addresses may not name otherwise.
+      - EMAIL_SENDING_INTERNAL_HOSTS=stalwart,mail.dev.local
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
     depends_on:

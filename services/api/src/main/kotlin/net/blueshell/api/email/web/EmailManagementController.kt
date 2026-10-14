@@ -186,5 +186,6 @@ class EmailManagementController(
             initiatedByUserId = this.initiatedByUserId,
             resentFromId = this.resentFromId,
             resendable = resends.mayResend(this),
+            senderAddress = this.senderAddress,
         )
 }

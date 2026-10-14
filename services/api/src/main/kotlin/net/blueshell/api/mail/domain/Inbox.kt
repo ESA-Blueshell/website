@@ -41,6 +41,8 @@ data class InboxEntry(
     val handledByName: String?,
     val handledAt: Instant?,
     val answers: AnsweredEmail?,
+    @param:Schema(description = "The address whose mailbox it was read from; absent for the site's catch-all")
+    val mailbox: String? = null,
 )
 
 /** What a conversation holds: what the site sent, what came back, and the board's replies. */
@@ -182,9 +184,10 @@ class Inbox(
     fun page(
         search: String?,
         pageable: Pageable,
+        mailbox: String?,
     ): Page<InboxEntry> {
         val typed = search?.trim()?.ifEmpty { null }
-        val found = messages.search(typed?.let { literal(it.take(SEARCH_LIMIT)) }, pageable)
+        val found = messages.search(typed?.let { literal(it.take(SEARCH_LIMIT)) }, mailbox?.trim()?.ifEmpty { null }, pageable)
         val answered = sent.byIds(found.content.mapNotNull { it.answersEmailId })
         val names =
             users
@@ -221,6 +224,7 @@ class Inbox(
         handledByName = message.handledBy?.let(names::get),
         handledAt = message.handledAt,
         answers = message.answersEmailId?.let(answered::get)?.let { AnsweredEmail(it.id, it.emailType, it.sentAt) },
+        mailbox = message.mailbox,
     )
 }
 

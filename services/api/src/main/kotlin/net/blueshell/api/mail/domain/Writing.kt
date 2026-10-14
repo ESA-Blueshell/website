@@ -2,6 +2,7 @@ package net.blueshell.api.mail.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.cohort.api.CohortAudiences
+import net.blueshell.api.email.api.KnownSendingAddresses
 import net.blueshell.api.mail.persistence.WrittenEmail
 import net.blueshell.api.mail.persistence.WrittenEmailRepository
 import net.blueshell.api.shared.enums.Role
@@ -44,6 +45,7 @@ class Writing(
     private val written: WrittenEmailRepository,
     private val jobs: JobQueue,
     private val clock: Clock,
+    private val known: KnownSendingAddresses,
 ) {
     /** Everybody the addressees name once, left out where they have no address or never activated. */
     @Transactional(readOnly = true)
@@ -74,7 +76,9 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long?,
-    ): Int = queue(reach(to).userIds, subject, message, replyTo, writer)
+        from: Long? = null,
+        fromName: String? = null,
+    ): Int = queue(reach(to).userIds, subject, message, replyTo, writer, from, fromName)
 
     /** One copy to the writer, to see it as it will arrive. */
     @Transactional
@@ -83,9 +87,11 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long,
+        from: Long? = null,
+        fromName: String? = null,
     ): Int {
         if (users.findAllByIds(setOf(writer)).none { it.email.isNotBlank() }) throw WriterWithoutAddress()
-        return queue(setOf(writer), subject, message, replyTo, writer)
+        return queue(setOf(writer), subject, message, replyTo, writer, from, fromName)
     }
 
     private fun queue(
@@ -94,17 +100,27 @@ class Writing(
         message: String,
         replyTo: String?,
         writer: Long?,
+        from: Long?,
+        fromName: String?,
     ): Int {
+        val senderName = fromName?.trim()?.ifEmpty { null }?.also(::checkSenderName)
         if (subject.isBlank()) throw SubjectMissing()
         if (subject.any { it == '\r' || it == '\n' }) throw SubjectNotOneLine()
         if (subject.trim().length > SUBJECT_LIMIT) throw SubjectTooLong()
+        if (from != null && !known.exists(from)) throw SendingAddressGone()
         if (message.isBlank()) throw MessageMissing()
         if (message.length > MESSAGE_LIMIT) throw MessageTooLong()
         if (people.isEmpty()) throw NobodyToWrite()
-        val email = written.save(WrittenEmail(subject.trim(), message, checkedReplyTo(replyTo), writer, clock.instant(), people.size))
+        val kept = WrittenEmail(subject.trim(), message, checkedReplyTo(replyTo), writer, clock.instant(), people.size, from, senderName)
+        val email = written.save(kept)
         people.sorted().forEach { userId ->
             jobs.runAsync(MailJobs.Written, MailJobs.WrittenPayload(requireNotNull(email.id), userId), JobTrigger.SITE_ACTION)
         }
         return people.size
     }
+}
+
+// A header's name: one line, and as long as an address's display name may be.
+private fun checkSenderName(name: String) {
+    if (name.length > SENDER_NAME_LIMIT || name.any { it == '\r' || it == '\n' }) throw SenderNameInvalid()
 }

@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPED_USER_IN
 import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.MAPPING_CONFLICT
 import net.blueshell.api.cohort.domain.InboundReconcileSkipReason.UNMATCHED
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.TargetMemberRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.TargetSystem
@@ -34,6 +35,7 @@ class InboundReconcile(
     private val definitions: CohortDefinitionRegistry,
     private val jobs: JobQueue,
     private val strategies: TargetStrategies,
+    private val resolutions: DriftResolutions,
     transactionManager: PlatformTransactionManager,
 ) {
     private val noTx = transactionManager.tx(TransactionDefinition.PROPAGATION_NOT_SUPPORTED)
@@ -63,11 +65,11 @@ class InboundReconcile(
             val row = byExternalId[it]
                 ?: conflict("Selected external user $it is no longer matched")
             if (!row.writable) bad("Selected external user $it is not writable")
-            CohortJobs.InboundReconcileSelectedUser(row.externalUserId, row.userId!!)
+            CohortJobs.InboundReconcileSelectedUser(row.externalUserId, row.userId!!, row.externalLabel)
         }
         val payload = CohortJobs.ApplyInboundReconcilePayload(
             inbound.cohortId, inbound.targetId, inbound.system.name, inbound.external.externalId,
-            inbound.definition.key, selected,
+            inbound.definition.key, selected, resolutions.actor(),
         )
         val skipped = current.skipped.size + current.matched.size - selected.size
         val queued = jobs.runAsync(CohortJobs.ApplyInboundReconcile, payload, JobTrigger.SITE_ACTION)
@@ -77,10 +79,21 @@ class InboundReconcile(
     fun applyJob(payload: CohortJobs.ApplyInboundReconcilePayload): List<ApplyInboundReconcileItemResult> {
         val definition = definitions.byKey(payload.definitionKey)
             ?: bad("${payload.definitionKey} names no cohort any more")
-        return payload.selected.map { selected ->
-            val status = itemTx.execute { applyOne(payload, definition, selected) }
-            ApplyInboundReconcileItemResult(selected.externalUserId, selected.userId, status)
-        }
+        val results =
+            payload.selected.map { selected ->
+                val status = itemTx.execute { applyOne(payload, definition, selected) }
+                ApplyInboundReconcileItemResult(selected.externalUserId, selected.userId, status)
+            }
+        // Only who was taken in is recorded as adopted.
+        val adopted = results.filter { it.status == MembershipWriteStatus.WRITTEN || it.status == MembershipWriteStatus.NOOP_ALREADY_TRUE }
+        val labels = payload.selected.associate { it.externalUserId to it.label }
+        resolutions.record(
+            payload.targetId,
+            DriftResolutionAction.ADOPT,
+            adopted.map { DriftResolutions.Person(it.userId, it.externalUserId, labels[it.externalUserId]) },
+            payload.resolvedBy,
+        )
+        return results
     }
 
     private fun loadTarget(cohortId: Long, targetId: Long): InboundTarget {

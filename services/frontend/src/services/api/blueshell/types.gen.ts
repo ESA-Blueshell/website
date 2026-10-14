@@ -673,6 +673,10 @@ export type CohortDetail = {
      * True when no definition produces this cohort any more
      */
     orphaned: boolean;
+    /**
+     * The latest drift resolutions across the cohort's targets, newest first
+     */
+    resolutions: Array<DriftResolutionEntry>;
     type: CohortType;
 };
 
@@ -722,6 +726,10 @@ export type CohortSummary = {
 };
 
 export type CohortTarget = {
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
     externalId?: string | null;
     /**
      * False when the system could not say which folder the target is in
@@ -737,6 +745,10 @@ export type CohortTarget = {
      * Where the target sits on its system, outside in: the system, then any folder holding it, read from the system itself.
      */
     path: Array<string>;
+    /**
+     * The target's recent reconciles, newest first; the first is its current drift
+     */
+    runs: Array<ReconcileRun>;
     /**
      * External system this mapping targets
      */
@@ -1433,6 +1445,41 @@ export type DiscordVoiceRoomResponse = {
     people: Array<DiscordVoicePersonResponse>;
 };
 
+/**
+ * How a person's drift on a target was resolved
+ */
+export enum DriftResolutionAction {
+    PUSH = 'PUSH',
+    REMOVE = 'REMOVE',
+    LINK = 'LINK',
+    ADOPT = 'ADOPT',
+    ENFORCED_REMOVE = 'ENFORCED_REMOVE'
+}
+
+export type DriftResolutionEntry = {
+    action: DriftResolutionAction;
+    externalUserId?: string | null;
+    /**
+     * The account's name, or what the target calls a person with none
+     */
+    personName?: string | null;
+    resolvedAt: string;
+    /**
+     * Who resolved it; null when the api did so on its own behalf
+     */
+    resolvedByName?: string | null;
+    system: TargetSystem;
+    targetId: number;
+    userId?: number | null;
+};
+
+export type DriftResolved = {
+    /**
+     * How many people the action resolved; anyone no longer drifting is skipped
+     */
+    resolved: number;
+};
+
 export type EarlierMail = {
     at?: string | null;
     emailId?: number | null;
@@ -1514,6 +1561,13 @@ export type EmailStats = {
     queuedCount: number;
     sentCount: number;
     totalCount: number;
+};
+
+export type EnforceTarget = {
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
 };
 
 export type EnqueueJobRequest = {
@@ -1625,6 +1679,10 @@ export type EventSignUpResponse = {
     updatedAt: string;
     user?: UserSummaryResponse | null;
     version: number;
+};
+
+export type ExternalDrift = {
+    externalUserIds: Array<string>;
 };
 
 export type ExternalTarget = {
@@ -2293,9 +2351,35 @@ export type LinkBoardMemberRequest = {
     userId?: number | null;
 };
 
+export type LinkChoice = {
+    externalUserId: string;
+    userId: number;
+};
+
+export type LinkConflict = {
+    existingUserId: number;
+    externalUserId: string;
+};
+
+export type LinkDrift = {
+    links: Array<LinkChoice>;
+};
+
 export type LinkExistingTarget = {
     externalId: string;
     system: TargetSystem;
+};
+
+export type LinkOutcome = {
+    conflicts: Array<LinkConflict>;
+    linked: number;
+};
+
+export type LinkProposal = {
+    externalUserId: string;
+    label?: string | null;
+    userFullName?: string | null;
+    userId?: number | null;
 };
 
 /**
@@ -2303,18 +2387,6 @@ export type LinkExistingTarget = {
  */
 export type LinkRosterEntryRequest = {
     userId?: number | null;
-};
-
-export type LinkUser = {
-    externalUserId: string;
-    system: TargetSystem;
-    userId: number;
-};
-
-export type LinkedUser = {
-    externalUserId: string;
-    system: TargetSystem;
-    userId: number;
 };
 
 export type LockResponse = {
@@ -2653,6 +2725,10 @@ export type PublishedLineupResponse = {
     team: TeamResponse;
 };
 
+export type PushDrift = {
+    userIds: Array<number>;
+};
+
 export type QuestionRequest = {
     choiceLabels?: Array<string> | null;
     idx: number;
@@ -2714,6 +2790,20 @@ export type ReachResponse = {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+/**
+ * One reconcile of a target and the drift it found.
+ */
+export type ReconcileRun = {
+    inSync: number;
+    oursOnly: number;
+    startedAt: string;
+    theirsOnly: number;
+    /**
+     * What queued it; null for a run queued before runs recorded it
+     */
+    trigger?: JobTrigger | null;
 };
 
 export type RecordMandateRequest = {
@@ -10185,49 +10275,6 @@ export type FindCohortByIdResponses = {
 
 export type FindCohortByIdResponse = FindCohortByIdResponses[keyof FindCohortByIdResponses];
 
-export type LinkUserData = {
-    body: LinkUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohorts/{id}/drift/link-user';
-};
-
-export type LinkUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
-
-export type LinkUserResponses = {
-    /**
-     * OK
-     */
-    200: LinkedUser;
-};
-
-export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
-
 export type LinkExistingTargetData = {
     body: LinkExistingTarget;
     path: {
@@ -10357,6 +10404,226 @@ export type SwitchTargetResponses = {
 };
 
 export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
+
+export type LinkDriftData = {
+    body: LinkDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/link';
+};
+
+export type LinkDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkDriftError = LinkDriftErrors[keyof LinkDriftErrors];
+
+export type LinkDriftResponses = {
+    /**
+     * OK
+     */
+    200: LinkOutcome;
+};
+
+export type LinkDriftResponse = LinkDriftResponses[keyof LinkDriftResponses];
+
+export type ProposeLinksData = {
+    body: ExternalDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/link/preview';
+};
+
+export type ProposeLinksErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ProposeLinksError = ProposeLinksErrors[keyof ProposeLinksErrors];
+
+export type ProposeLinksResponses = {
+    /**
+     * OK
+     */
+    200: Array<LinkProposal>;
+};
+
+export type ProposeLinksResponse = ProposeLinksResponses[keyof ProposeLinksResponses];
+
+export type PushDriftData = {
+    body: PushDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/push';
+};
+
+export type PushDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PushDriftError = PushDriftErrors[keyof PushDriftErrors];
+
+export type PushDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftResolved;
+};
+
+export type PushDriftResponse = PushDriftResponses[keyof PushDriftResponses];
+
+export type RemoveDriftData = {
+    body: ExternalDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/remove';
+};
+
+export type RemoveDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveDriftError = RemoveDriftErrors[keyof RemoveDriftErrors];
+
+export type RemoveDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftResolved;
+};
+
+export type RemoveDriftResponse = RemoveDriftResponses[keyof RemoveDriftResponses];
+
+export type EnforceTargetData = {
+    body: EnforceTarget;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/enforced';
+};
+
+export type EnforceTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EnforceTargetError = EnforceTargetErrors[keyof EnforceTargetErrors];
+
+export type EnforceTargetResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EnforceTargetResponse = EnforceTargetResponses[keyof EnforceTargetResponses];
 
 export type ApplyInboundReconcileData = {
     body: InboundReconcileApplyRequest;

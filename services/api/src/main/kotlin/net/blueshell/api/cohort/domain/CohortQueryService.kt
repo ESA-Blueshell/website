@@ -3,9 +3,13 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetMember
 import net.blueshell.api.cohort.persistence.TargetMemberRepository
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.shared.enums.TargetMemberState
@@ -33,6 +37,8 @@ class CohortQueryService(
     private val externalIds: ExternalIdMappingService,
     private val definitions: CohortDefinitionRegistry,
     private val strategies: TargetStrategies,
+    private val runs: TargetReconcileRunRepository,
+    private val resolutions: DriftResolutionRepository,
 ) {
     @Transactional(readOnly = true)
     fun summaries(): List<CohortSummary> {
@@ -142,6 +148,7 @@ class CohortQueryService(
                         // The system only: the folder is read from the system by the caller, outside
                         // this transaction, since a list moved in Brevo is somewhere its row cannot say.
                         path = listOf(runCatching { strategies.descriptor(system).system.shownName }.getOrDefault(target.system)),
+                        runs = runs.findTop10ByTargetIdOrderByStartedAtDesc(target.id!!),
                     )
                 }.sortedBy { it.target.system }
 
@@ -161,7 +168,12 @@ class CohortQueryService(
         // account that id belongs to, if any, which is what turns it into a name.
         val ownerByExternalId = resolveStrangerOwners(members, systemByTargetId)
 
-        val userIds = (members.mapNotNull { it.userId } + ownerByExternalId.values).distinct()
+        val recentResolutions = resolutions.findTop20ByTargetIdInOrderByResolvedAtDesc(systemByTargetId.keys)
+        val userIds =
+            (
+                members.mapNotNull { it.userId } + ownerByExternalId.values +
+                    recentResolutions.flatMap { listOfNotNull(it.userId, it.resolvedBy) }
+            ).distinct()
         val userById = users.findAllByIds(userIds).associateBy { it.id }
         val softDeletedIds =
             userIds
@@ -194,6 +206,15 @@ class CohortQueryService(
             // Derived rather than stored: a definition appearing or disappearing is a code
             // change, and a column recording it would be one deploy behind the truth.
             orphaned = cohort.definitionKey?.let { definitions.byKey(it) } == null,
+            resolutions =
+                recentResolutions.map { resolution ->
+                    DriftResolutionRow(
+                        resolution = resolution,
+                        system = systemByTargetId.getValue(resolution.targetId),
+                        personName = resolution.userId?.let { userById[it]?.fullName } ?: resolution.label,
+                        resolvedByName = resolution.resolvedBy?.let { userById[it]?.fullName },
+                    )
+                },
         )
     }
 
@@ -234,6 +255,17 @@ data class CohortDetail(
     val definitionKey: String?,
     /** True when no definition produces this cohort any more: a disbanded committee, say. */
     val orphaned: Boolean,
+    /** The latest drift resolutions across the cohort's targets, newest first. */
+    val resolutions: List<DriftResolutionRow> = emptyList(),
+)
+
+/** One recorded resolution, with the names of the person it concerned and of who resolved it. */
+data class DriftResolutionRow(
+    val resolution: DriftResolution,
+    val system: TargetSystem,
+    val personName: String?,
+    /** Null when the api resolved it on its own behalf, or the account is gone. */
+    val resolvedByName: String?,
 )
 
 /** One per-system mapping under a cohort, with its external id resolved. */
@@ -244,6 +276,8 @@ data class CohortTargetRow(
     val lastReconciledAt: Instant? = null,
     /** The target's place on its system, outside in: the system, then any folder holding it. */
     val path: List<String> = emptyList(),
+    /** The target's recent reconciles, newest first; the first is its current drift. */
+    val runs: List<TargetReconcileRun> = emptyList(),
 )
 
 /**

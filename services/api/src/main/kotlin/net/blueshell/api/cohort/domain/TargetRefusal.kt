@@ -50,3 +50,21 @@ class TargetNameMismatch(
         "The name typed is not the list's name.",
         mapOf("name" to name),
     )
+
+class TargetNotOfCohort(
+    targetId: Long,
+) : TargetRefusal(
+        HttpStatus.NOT_FOUND,
+        "TargetNotOfCohort",
+        "The cohort has no such target.",
+        mapOf("targetId" to targetId),
+    )
+
+class TargetNotCreated(
+    targetId: Long,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetNotCreated",
+        "The target has not been created yet.",
+        mapOf("targetId" to targetId),
+    )

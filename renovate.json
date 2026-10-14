@@ -60,6 +60,19 @@
     },
     {
       "customType": "regex",
+      "description": "The govulncheck version the imaging job runs.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yml$/"
+      ],
+      "matchStrings": [
+        "golang\\.org/x/vuln/cmd/govulncheck@(?<currentValue>v[^\\s]+)"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/vuln",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
       "description": "The Brevo and Discord clients publish only to GitHub Packages, which needs a registry token Renovate does not have, so a maven lookup returns no-result. Follow the source repositories' release tags instead.",
       "managerFilePatterns": [
         "/^services/api/build\\.gradle\\.kts$/"

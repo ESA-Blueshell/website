@@ -253,17 +253,11 @@ jobs:
           version: v2.14.0
           working-directory: services/imaging
 
+      # Run on the toolchain set up above, which is the one go.mod names. The vulnerability
+      # check's own action sets up the go directive's Go instead, and reports the standard
+      # library of a release the image never builds with.
       - name: Check for known vulnerabilities
-        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
-        with:
-          work-dir: services/imaging
-          # Empty, or setup-go takes the input's `stable` over the module's own version.
-          go-version-input: ''
-          go-version-file: services/imaging/go.mod
-          # The setup-go step above has restored the module cache already; a second restore
-          # over it fails on every file.
-          cache: false
-          repo-checkout: false
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
       - name: Lint the Dockerfile
         uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0

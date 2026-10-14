@@ -7,6 +7,7 @@ import {
   memberActivate,
   type MemberActivationRequest,
   type PasswordResetRequest,
+  lastRecoveryEmails,
   pendingActivations,
   previewRecoveryEmail,
   type RecoveryEmailPreviewResponse,
@@ -20,12 +21,19 @@ import {
 } from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 
+/** When each account was last sent an activation or a password reset, by account. Throws where it could not be read. */
+export async function listLastRecoveryEmails(): Promise<Record<number, string>> {
+  const {data} = await lastRecoveryEmails({throwOnError: true})
+  return Object.fromEntries((data?.emails ?? []).map(one => [one.userId, one.sentAt]))
+}
+
 /**
  * Which activation each account that has not been activated is waiting for, so the manager
- * offers the one that applies rather than both and a guess. Empty where the api would not say.
+ * offers the one that applies rather than both and a guess. Throws where it could not be read,
+ * since none pending would hide the activation buttons.
  */
 export async function listPendingActivations(): Promise<Record<number, TokenPurpose>> {
-  const {data} = await pendingActivations()
+  const {data} = await pendingActivations({throwOnError: true})
   return Object.fromEntries((data?.activations ?? []).map(one => [one.userId, one.purpose]))
 }
 

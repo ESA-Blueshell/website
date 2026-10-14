@@ -25,7 +25,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         RecoveryManagerHelper.open(page, frontendUrl)
         RecoveryManagerHelper.openSection(page, "inactive")
-        RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
+        RecoveryManagerHelper.searchUser(page, inactiveUser.username)
 
         pollFor("inactive user ${inactiveUser.username} visible") {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0
@@ -57,7 +57,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         RecoveryManagerHelper.open(page, frontendUrl)
         RecoveryManagerHelper.openSection(page, "active")
-        RecoveryManagerHelper.searchUser(page, "active", activeUser.username)
+        RecoveryManagerHelper.searchUser(page, activeUser.username)
 
         pollFor("active user ${activeUser.username} visible") {
             RecoveryManagerHelper.rowCount(page, "active", activeId) > 0
@@ -109,7 +109,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         RecoveryManagerHelper.open(page, frontendUrl)
         RecoveryManagerHelper.openSection(page, "deleted")
-        RecoveryManagerHelper.searchUser(page, "deleted", originalUsername)
+        RecoveryManagerHelper.searchUser(page, originalUsername)
 
         pollFor("deleted user $originalUsername in deleted pane") {
             RecoveryManagerHelper.rowCount(page, "deleted", targetId) > 0
@@ -122,7 +122,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
         }
 
         RecoveryManagerHelper.openSection(page, "active")
-        RecoveryManagerHelper.searchUser(page, "active", originalUsername)
+        RecoveryManagerHelper.searchUser(page, originalUsername)
 
         pollFor("restored user $originalUsername visible in active pane") {
             RecoveryManagerHelper.rowCount(page, "active", targetId) > 0
@@ -190,7 +190,7 @@ class RecoveryManagerPageSystemTest : PlaywrightTestBase() {
 
         RecoveryManagerHelper.open(page, frontendUrl)
         RecoveryManagerHelper.openSection(page, "inactive")
-        RecoveryManagerHelper.searchUser(page, "inactive", inactiveUser.username)
+        RecoveryManagerHelper.searchUser(page, inactiveUser.username)
 
         pollFor("inactive user ${inactiveUser.username} visible") {
             RecoveryManagerHelper.rowCount(page, "inactive", inactiveId) > 0

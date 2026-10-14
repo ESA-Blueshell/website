@@ -44,7 +44,7 @@ test.describe("the Management portal", () => {
     await expect(page.getByTestId("management-sidebar")).toBeHidden()
     await expect(page.getByTestId("management-tab-more")).toBeVisible()
     await page.getByTestId("management-more-account-recovery").click()
-    await expect(page).toHaveURL(/\/recovery\/manage$/)
+    await expect(page).toHaveURL(/\/management\/recovery$/)
   })
 
   test("a member is turned away", async ({page}) => {

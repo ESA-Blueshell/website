@@ -11,7 +11,7 @@ const signInAs = (roles: Role[]) =>
     twoFactor: {on: true, required: false, offered: false, backupCodesLeft: 0},
   })
 
-const MANAGERS = ["/management/users", "/recovery/manage"]
+const MANAGERS = ["/management/users", "/management/recovery", "/recovery/manage"]
 
 describe("the user, address and recovery managers", () => {
   afterEach(() => store.commit("setLoginState", null))
@@ -28,11 +28,11 @@ describe("the user, address and recovery managers", () => {
   it("open for the board and for an admin", async () => {
     signInAs([Role.MEMBER, Role.BOARD])
     await router.push("/recovery/manage")
-    expect(router.currentRoute.value.path).toBe("/recovery/manage")
+    expect(router.currentRoute.value.path).toBe("/management/recovery")
 
     await router.push("/")
     signInAs([Role.ADMIN])
     await router.push("/recovery/manage")
-    expect(router.currentRoute.value.path).toBe("/recovery/manage")
+    expect(router.currentRoute.value.path).toBe("/management/recovery")
   }, 20_000)
 })

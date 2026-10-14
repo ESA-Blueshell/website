@@ -4,6 +4,7 @@ import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.domain.sealing.LocalSealer
@@ -26,7 +27,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isA
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -166,6 +169,17 @@ class MandatesTest {
         assertThatThrownBy { mandates.setUpOwn(12, "nope", "Ann", online) }.isInstanceOf(InvalidIban::class.java)
         assertThatThrownBy { mandates.setUpOwn(12, "NL91ABNA0417164300", " ", online) }
             .isInstanceOf(AccountHolderMissing::class.java)
+    }
+
+    @Test
+    fun `the signup's step logs and notifies a change of bank details already on file, and not a first one`() {
+        val signup = SignupMandates(mandates)
+        signup.setUp(12, "NL91ABNA0417164300", "Ann", "2026-10", online.address)
+        verify(published, never()).publishEvent(isA<BankDetailsChanged>())
+
+        signup.setUp(12, "GB82WEST12345698765432", "Ann", "2026-10", online.address)
+
+        verify(published).publishEvent(isA<BankDetailsChanged>())
     }
 
     @Test

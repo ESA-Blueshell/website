@@ -32,6 +32,7 @@ const navbarPaths = [
   "/management/recovery",
   "/management/contributions",
   "/management/contributions/periods/new",
+  "/management/contributions/2/reminders",
   "/management/users",
   "/management/alerts",
   "/management/jobs",

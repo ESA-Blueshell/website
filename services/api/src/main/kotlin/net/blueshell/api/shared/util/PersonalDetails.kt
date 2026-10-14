@@ -5,7 +5,8 @@ package net.blueshell.api.shared.util
  *
  * The database driver and JSON parse errors quote the value they refused, so a refusal on a unique
  * email or phone number would carry that value; the quotes are emptied and the constraint or type
- * named beside them stays. Anything shaped like an email address or an IBAN is masked wherever it is.
+ * named beside them stays. Anything shaped like an email address or an IBAN is masked wherever it is,
+ * and so is the value of any `password=` parameter, as a JDBC URL carries the database login.
  */
 object PersonalDetails {
     private val quotedValues =
@@ -18,9 +19,11 @@ object PersonalDetails {
         )
     private val emailAddress = Regex("""[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}""")
     private val iban = Regex("""\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?\b""")
+    private val passwordParameter = Regex("""(?i)(password=)[^&\s]+""")
 
     fun scrub(text: String): String {
         val emptied = quotedValues.fold(text) { result, quoted -> quoted.replace(result, "$1[value]$2") }
-        return iban.replace(emailAddress.replace(emptied, "[email]"), "[iban]")
+        val masked = iban.replace(emailAddress.replace(emptied, "[email]"), "[iban]")
+        return passwordParameter.replace(masked, "$1[secret]")
     }
 }

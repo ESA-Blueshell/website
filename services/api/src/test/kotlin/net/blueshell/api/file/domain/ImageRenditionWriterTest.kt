@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -21,25 +20,21 @@ import java.nio.file.Path
 import java.util.Optional
 
 /**
- * What the ladder does when the frames will not co-operate.
+ * What the ladder writes and records, given a converter.
  *
- * The ladder itself is proven end to end against the real converters in `ImageRenditionsIT`.
- * These are the answers that need a converter which fails in a particular way, which a working
- * `cwebp` cannot be asked for: a banner is still drawn at every width, without moving, rather
- * than left to every visitor at full size.
+ * The ladder itself is proven end to end against the real converters in `ImageRenditionsIT`, and
+ * what the converter does with frames that will not co-operate in `InProcessImageConverterTest`.
  */
 class ImageRenditionWriterTest {
     @TempDir
     private lateinit var directory: Path
 
     private val files: FileRepository = mock()
-    private val webpEncoder: WebpEncoder = mock()
+    private val converter: ImageConverter = mock()
+    private val renditions: ImageConverter.Renditions = mock()
     private val blobs: BlobStore = mock()
-    private val animated: AnimatedImages = mock()
     private val scratch: ScratchSpace by lazy { ScratchSpace(directory.toString()) }
-    private val writer: ImageRenditionWriter by lazy {
-        ImageRenditionWriter(files, webpEncoder, blobs, scratch, animated)
-    }
+    private val writer: ImageRenditionWriter by lazy { ImageRenditionWriter(files, converter, blobs, scratch) }
 
     private val source =
         File(
@@ -53,73 +48,88 @@ class ImageRenditionWriterTest {
             type = FileType.EVENT_BANNER,
         )
 
-    private fun stored() {
+    private fun stored(size: ImageDimensions.Size = ImageDimensions.Size(1000, 400)) {
         whenever(blobs.exists(source.path)).thenReturn(true)
         whenever(blobs.open(source.path)).thenReturn(byteArrayOf(1, 2, 3).inputStream())
         whenever(blobs.sizeOf(any())).thenReturn(null)
         whenever(blobs.put(any(), any())).thenReturn(1)
         whenever(files.findByPath(any())).thenReturn(Optional.empty())
         whenever(files.save(any<File>())).then { it.arguments[0] as File }
-        whenever(animated.mayAnimate("image/webp")).thenReturn(true)
+        whenever(converter.renditionsOf(any(), eq("image/webp"), eq(FileType.EVENT_BANNER), any(), eq(source.path))).thenReturn(renditions)
+        whenever(renditions.size).thenReturn(size)
     }
 
-    /**
-     * A master whose frames the converter will not read is stored still, not skipped.
-     *
-     * Skipping would leave the page fetching the master at every viewport, which is the weight
-     * the ladder exists to take off a phone.
-     */
     @Test
-    fun `a master whose frames cannot be read is stored still at every width`() {
+    fun `every width up to the picture is written and recorded at its shape`() {
         stored()
-        whenever(animated.framesOf(any(), eq("image/webp"))).thenThrow(WebpConversionException())
 
         val written = writer.derive(source)
 
-        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
-        verify(webpEncoder, times(5)).encode(any(), any(), anyOrNull(), any(), anyOrNull())
-        verify(animated, never()).write(any(), any(), anyOrNull(), any(), anyOrNull())
+        assertThat(written.map { it.renditionWidth to it.height })
+            .containsExactly(160 to 64, 320 to 128, 480 to 192, 640 to 256, 960 to 384)
+        verify(renditions, times(5)).write(any(), any())
+        verify(renditions).close()
     }
 
-    /** The same answer when the working copy could not be read at all, rather than refused. */
+    /** The converter's size is believed over the record: an animation's canvas is what its widths are cut from. */
     @Test
-    fun `a master whose frames cannot be opened is stored still at every width`() {
-        stored()
-        // Answered rather than thrown: Kotlin has no checked exceptions, so the mock refuses to
-        // be told to throw one against a signature that does not declare it.
-        whenever(animated.framesOf(any(), eq("image/webp"))).thenAnswer { throw IOException("no such volume") }
+    fun `the widths follow the size the converter reads`() {
+        stored(ImageDimensions.Size(500, 200))
 
-        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
+        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480)
     }
 
-    /**
-     * One width that will not reassemble falls back to its first frame, and the rest still move.
-     *
-     * Per width rather than per picture: a converter that choked once has no say over the
-     * widths it did manage.
-     */
     @Test
-    fun `a width that will not reassemble is written as its first frame`() {
+    fun `a width the converter refuses is left out and the rest are written`() {
         stored()
-        val frames = frames()
-        whenever(animated.framesOf(any(), eq("image/webp"))).thenReturn(frames)
         val target = argumentCaptor<ImageDimensions.Size>()
-        whenever(animated.write(eq(frames), any(), anyOrNull(), any(), target.capture()))
+        whenever(renditions.write(target.capture(), any()))
             .then { if (target.lastValue.width == 640) throw WebpConversionException() else Unit }
 
-        val written = writer.derive(source)
-
-        assertThat(written.mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 640, 960)
-        // The one width that fell back, and only that one.
-        verify(webpEncoder, times(1)).encode(any(), any(), anyOrNull(), any(), anyOrNull())
+        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 480, 960)
     }
 
-    /** Frames of the source, sized so that the same three widths are below it. */
-    private fun frames(): FrameSequence =
-        FrameSequence(
-            listOf(FrameSequence.Frame(scratch.cut(".png"), 100), FrameSequence.Frame(scratch.cut(".png"), 100)),
-            ImageDimensions.Size(1000, 400),
-        )
+    @Test
+    fun `a width whose working copy cannot be written is left out`() {
+        stored()
+        val target = argumentCaptor<ImageDimensions.Size>()
+        whenever(renditions.write(target.capture(), any()))
+            .thenAnswer { if (target.lastValue.width == 480) throw IOException("disk full") else Unit }
+
+        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 640, 960)
+    }
+
+    @Test
+    fun `stored bytes with no record get their record and are not converted again`() {
+        stored()
+        whenever(blobs.sizeOf(any())).thenReturn(10)
+
+        assertThat(writer.derive(source)).hasSize(5)
+        verify(files, times(5)).save(any<File>())
+        verify(renditions, never()).write(any(), any())
+    }
+
+    @Test
+    fun `a record with no bytes has its bytes written again and keeps its record`() {
+        stored()
+        val record =
+            File(
+                name = source.name,
+                path = "event-banners/abc-160.webp",
+                uploader = source.uploader,
+                mediaType = "image/webp",
+                size = 1,
+                type = source.type,
+            )
+        whenever(files.findByPath("event-banners/abc-160.webp")).thenReturn(Optional.of(record))
+
+        val written = writer.derive(source)
+
+        assertThat(written.first()).isSameAs(record)
+        assertThat(record.width to record.height).isEqualTo(160 to 64)
+        verify(renditions, times(5)).write(any(), any())
+        verify(files, times(4)).save(any<File>())
+    }
 
     @Test
     fun `says why a picture gets no widths`() {

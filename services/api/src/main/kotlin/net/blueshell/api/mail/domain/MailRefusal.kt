@@ -26,6 +26,8 @@ class SubjectNotOneLine : MailRefusal(HttpStatus.BAD_REQUEST, "SubjectNotOneLine
 class MessageTooLong :
     MailRefusal(HttpStatus.BAD_REQUEST, "MessageTooLong", "A message is at most $MESSAGE_LIMIT characters.", mapOf("max" to MESSAGE_LIMIT))
 
+class InboxMessageNotFound : MailRefusal(HttpStatus.NOT_FOUND, "InboxMessageNotFound", "There is no such message in the inbox.")
+
 class WriterWithoutAddress : MailRefusal(HttpStatus.BAD_REQUEST, "WriterWithoutAddress", "The writer has no email address for a test.")
 
 // The subject column's width.

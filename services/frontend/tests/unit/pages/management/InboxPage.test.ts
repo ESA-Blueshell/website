@@ -41,6 +41,7 @@ describe("the Inbox page", () => {
     const wrapper = await mount()
 
     expect(wrapper.get('[data-testid="inbox-new"]').text()).toContain("3")
+    expect(wrapper.get('[data-testid="inbox-done"]').text()).toContain("142")
     expect(wrapper.get('[data-testid="inbox-facts"]').text()).toContain("Oldest from")
     expect(wrapper.get('[data-testid="inbox-automatic"]').text()).toContain("24")
     // A From line is whatever the sender wrote, so a matching address is said as that and no more.
@@ -52,13 +53,16 @@ describe("the Inbox page", () => {
     expect(wrapper.get('[data-testid="inbox-follows-2"]').text()).toBe("To partners@")
     expect(wrapper.get('[data-testid="inbox-state-3"]').text()).toBe("Automatic reply")
     expect(wrapper.find('[data-testid="inbox-member-2"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="inbox-row-4"]').text()).toContain("Alice Board")
+    expect(wrapper.get('[data-testid="inbox-open-1"]').attributes("to")).toBe("/management/mail/inbox/1")
   })
 
-  it("draws each message as a row on a phone", async () => {
+  it("draws each message as a row on a phone, opening the message", async () => {
     vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
     const wrapper = await mount()
     vi.unstubAllGlobals()
 
+    expect(wrapper.get('[data-testid="inbox-row-1-open"]').attributes("to")).toBe("/management/mail/inbox/1")
     expect(wrapper.get('[data-testid="inbox-row-1"]').text()).toContain("Lars")
     expect(wrapper.get('[data-testid="inbox-state-3"]').text()).toBe("Automatic reply")
   })

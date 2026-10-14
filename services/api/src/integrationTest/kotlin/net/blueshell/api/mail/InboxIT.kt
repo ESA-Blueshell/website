@@ -3,14 +3,19 @@ package net.blueshell.api.mail
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.email.persistence.EmailRepository
 import net.blueshell.api.mail.domain.InboxIntake
+import net.blueshell.api.mail.domain.InboxReplyJob
 import net.blueshell.api.mail.domain.ParsedInboxMessage
+import net.blueshell.api.mail.persistence.InboxReplyRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
@@ -23,6 +28,12 @@ class InboxIT : UserTestSupport() {
 
     @Autowired
     private lateinit var emails: EmailRepository
+
+    @Autowired
+    private lateinit var inboxReplies: InboxReplyRepository
+
+    @Autowired
+    private lateinit var replyJob: InboxReplyJob
 
     private fun received(
         id: String,
@@ -77,5 +88,56 @@ class InboxIT : UserTestSupport() {
             .andExpect(jsonPath("$.content[0].senderUserId").doesNotExist())
         mvc.perform(get("/mail/inbox/counts").with(signedIn(board))).andExpect(status().isOk)
         mvc.perform(get("/mail/inbox").with(signedIn(member))).andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `the board answers a message in its thread and the conversation shows it, or marks it handled, and members cannot`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val sentId = "<${UUID.randomUUID()}@blueshell>"
+        val sent =
+            emails.save(
+                Email(
+                    recipientEmail = member.email,
+                    subject = "Your contribution",
+                    emailType = "email.contribution-reminder",
+                    messageId = sentId,
+                ),
+            )
+        val stamp = UUID.randomUUID()
+        val message = intake.take(received("<reply-$stamp>", member.email, listOf(sentId)))!!
+        val other = intake.take(received("<other-$stamp>", member.email))!!
+        resetEmailClient()
+
+        mvc
+            .perform(
+                post("/mail/inbox/${message.id}/reply")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"message":"Thanks, **received**","replyTo":"board@example.com"}"""),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.message.state").value("REPLIED"))
+            .andExpect(jsonPath("$.message.handledBy").value(board.id!!.toInt()))
+            .andExpect(jsonPath("$.items[0].kind").value("SENT"))
+            .andExpect(jsonPath("$.items[0].emailId").value(sent.id!!.toInt()))
+            .andExpect(jsonPath("$.items[2].kind").value("REPLY"))
+            .andExpect(jsonPath("$.items[2].body").value("Thanks, **received**"))
+            .andExpect(jsonPath("$.earlier[0].inboxMessageId").value(other.id!!.toInt()))
+        val inSent = emails.findAll().single { it.recipientEmail == member.email && it.subject == "Re: Your contribution" }
+        assertThat(inSent.initiatedByUserId).isEqualTo(board.id)
+        val reply = inboxReplies.findByInboxMessageIdInOrderByWrittenAtAsc(listOf(message.id!!)).single()
+        replyJob.runJob("""{"inboxReplyId":${reply.id}}""")
+        val out = emailTransportClient.sentEmails.single()
+        assertThat(out.toEmail).isEqualTo(member.email)
+        assertThat(out.subject).isEqualTo("Re: Your contribution")
+        assertThat(out.replyToAddress).isEqualTo("board@example.com")
+        assertThat(out.threadHeaders).containsEntry("In-Reply-To", "<reply-$stamp>").containsEntry("References", "$sentId <reply-$stamp>")
+
+        mvc
+            .perform(post("/mail/inbox/${other.id}/handled").with(signedIn(board)))
+            .andExpect(jsonPath("$.message.state").value("HANDLED"))
+            .andExpect(jsonPath("$.items.length()").value(1))
+        mvc.perform(get("/mail/inbox/0").with(signedIn(board))).andExpect(status().isNotFound)
+        mvc.perform(post("/mail/inbox/${other.id}/handled").with(signedIn(member))).andExpect(status().isForbidden)
     }
 }

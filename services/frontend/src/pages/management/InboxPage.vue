@@ -34,11 +34,13 @@ const COLUMNS: TableColumn[] = [
   {key: "from", label: "From", wrap: true, sortable: true},
   {key: "what", label: "Subject", wrap: true, sortable: true},
   {key: "state", label: "State", sortable: true},
+  {key: "by", label: "Handled by"},
 ]
 
 const oldest = computed(() => (counts.value?.oldestNewAt ? `Oldest from ${formatMoment(counts.value.oldestNewAt)}` : "Nothing waits"))
 const facts = computed(() => [
   {label: "New", value: String(counts.value?.new ?? 0), sub: oldest.value, testid: "inbox-new"},
+  {label: "Replied or handled", value: String(counts.value?.done ?? 0), sub: "Since the inbox started", testid: "inbox-done"},
   {label: "Automatic replies", value: String(counts.value?.automatic ?? 0), sub: "Kept apart from what needs an answer", testid: "inbox-automatic"},
 ])
 // The From line as the sender wrote it: anyone can write any name there.
@@ -93,6 +95,7 @@ onMounted(refresh)
       :sort-key="sortKey"
       label="Inbox"
       testid="inbox-table"
+      :to="(entry) => `/management/mail/inbox/${entry.id}`"
       @more="more"
       @sort="sortBy"
     >
@@ -123,7 +126,13 @@ onMounted(refresh)
         >Address of member {{ row.senderName }}</span>
       </template>
       <template #what="{row}">
-        <span class="inbox__subject">{{ row.subject || "(no subject)" }}</span>
+        <router-link
+          class="inbox__subject"
+          :data-testid="`inbox-open-${row.id}`"
+          :to="`/management/mail/inbox/${row.id}`"
+        >
+          {{ row.subject || "(no subject)" }}
+        </router-link>
         <router-link
           v-if="row.answers"
           class="mg-sub inbox__answers"
@@ -146,11 +155,15 @@ onMounted(refresh)
           {{ inboxStateWord(row) }}
         </state-mark>
       </template>
+      <template #by="{row}">
+        <span :class="{'mg-quiet': !row.handledByName}">{{ row.handledByName ?? "·" }}</span>
+      </template>
       <template #phone="{row}">
         <management-row
           :meta="`${senderOf(row)} · ${formatMoment(row.receivedAt)}`"
           :name="row.subject || '(no subject)'"
           :testid="`inbox-row-${row.id}`"
+          :to="`/management/mail/inbox/${row.id}`"
         >
           <state-mark
             :kind="markOf(row)"
@@ -179,6 +192,7 @@ onMounted(refresh)
   color: var(--color-chalk);
 }
 
+.inbox__subject:hover,
 .inbox__answers:hover {
   text-decoration: underline;
   text-underline-offset: 3px;

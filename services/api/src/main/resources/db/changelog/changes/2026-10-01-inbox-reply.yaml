@@ -1,0 +1,28 @@
+# A reply the board wrote to a received message on the site: kept with the conversation, while
+# the email it became is in Sent like any other.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-inbox-reply.yaml
+      id: inbox-reply
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: inbox_replies
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_inbox_replies, nullable: false}
+              - column: {name: inbox_message_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: message, type: LONGTEXT, constraints: {nullable: false}}
+              - column: {name: reply_to, type: VARCHAR(255)}
+              - column: {name: written_by, type: BIGINT}
+              - column: {name: written_at, type: DATETIME(6), constraints: {nullable: false}}
+        - createIndex:
+            tableName: inbox_replies
+            indexName: idx_inbox_replies_message
+            columns:
+              - column: {name: inbox_message_id}
+      rollback:
+        - dropTable: {tableName: inbox_replies}

@@ -195,7 +195,7 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     expect(router.currentRoute.value.path).toBe("/")
   })
 
-  it("opens Sent, one email, Write an email and the Inbox inside the portal for the board, and sends the old address on to it", async () => {
+  it("opens Sent, one email, Write an email, the Inbox and one message inside the portal for the board, and sends the old address on to it", async () => {
     await mountPage(ManagementShell, {path: "/", login: boardLogin})
 
     await router.push("/management/mail/sent")
@@ -207,6 +207,8 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     expect(router.currentRoute.value.name).toBe("writeEmail")
     await router.push("/management/mail/inbox")
     expect(router.currentRoute.value.name).toBe("inbox")
+    await router.push("/management/mail/inbox/2")
+    expect(router.currentRoute.value.name).toBe("inboxMessage")
 
     await router.push("/management/emails")
     expect(router.currentRoute.value.path).toBe("/management/mail/sent")

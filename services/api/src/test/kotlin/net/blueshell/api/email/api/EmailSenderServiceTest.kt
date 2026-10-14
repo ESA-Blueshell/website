@@ -36,7 +36,7 @@ class EmailSenderServiceTest {
 
     @Test
     fun `a sent email is logged by its outbox id`(output: CapturedOutput) {
-        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
+        whenever(client.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
 
         sender.send(content, "welcome")
 
@@ -45,7 +45,8 @@ class EmailSenderServiceTest {
 
     @Test
     fun `a failed send records and logs the failure without the address it names`(output: CapturedOutput) {
-        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenThrow(MailSendException("550 <ann@example.org> unknown"))
+        whenever(client.send(any(), any(), any(), any(), any(), any(), any(), any()))
+            .thenThrow(MailSendException("550 <ann@example.org> unknown"))
 
         assertThatThrownBy { sender.send(content, "welcome") }.isInstanceOf(IllegalStateException::class.java)
 
@@ -57,7 +58,7 @@ class EmailSenderServiceTest {
     fun `sends into the record its job queued, with the tracking pixel in it`() {
         val queued = Email(trackingToken = "tok")
         whenever(emails.forSend(content, "email.test", 7)).thenReturn(queued)
-        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
+        whenever(client.send(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<m@club.test>")
 
         sender.send(content, "email.test", 7)
 
@@ -66,6 +67,7 @@ class EmailSenderServiceTest {
             eq("Ann"),
             eq("Welcome"),
             argThat { contains("https://api/track/email/open/tok") },
+            any(),
             any(),
             any(),
             any(),

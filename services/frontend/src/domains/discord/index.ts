@@ -17,3 +17,8 @@ export {readDiscordRooms, watchDiscordRooms, liveOf, howFull, fitting, SERVER_NA
 export {DescriptionCellAlign, DescriptionNodeKind, DescriptionTimeStyle, GameChannelCategory} from "@/services/api"
 export type {DescriptionNode, DescriptionTree, DiscordChannelResponse, DiscordEmojiResponse, DiscordMemberResponse, DiscordMentionChannelResponse, DiscordRoleResponse, PingedRoleRequest, StarboardEntryResponse} from "@/services/api"
 export {default as PeopleList, type ListedPerson} from "./island/PeopleList.vue"
+export {BotChannelProblem, readBotStanding, type BotGrant, type BotStanding} from "./adapters/bot"
+export {listKeepableChannels, listKeepableRoles, type KeptChannel, type KeptRole} from "./adapters/keeping"
+export {readBotSettings, saveBotSettings, type DiscordBotSettings} from "./adapters/settings"
+export {DISCORD_TABS, botSteps} from "./botGuide"
+export {default as ChannelMark} from "./island/ChannelMark.vue"

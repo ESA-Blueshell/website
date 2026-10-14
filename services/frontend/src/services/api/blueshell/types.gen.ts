@@ -122,7 +122,8 @@ export type AlertKeyRequest = {
 
 export enum AlertKind {
     JOB_DEAD = 'JOB_DEAD',
-    EXCEPTION_OPEN = 'EXCEPTION_OPEN'
+    EXCEPTION_OPEN = 'EXCEPTION_OPEN',
+    DISCORD_BOT_PERMISSIONS = 'DISCORD_BOT_PERMISSIONS'
 }
 
 export enum AnnounceChoice {
@@ -370,6 +371,40 @@ export type BoardResponse = {
     startDate: string;
     updatedAt: string;
     version: number;
+};
+
+export enum BotChannelProblem {
+    CANNOT_SEE = 'CANNOT_SEE',
+    CANNOT_CHANGE_ACCESS = 'CANNOT_CHANGE_ACCESS'
+}
+
+export type BotGrant = {
+    granted: boolean;
+    name: string;
+    /**
+     * What the site cannot do without it.
+     */
+    neededFor: string;
+};
+
+export type BotHiddenChannel = {
+    category?: string | null;
+    guildId: string;
+    id: string;
+    name: string;
+    problem: BotChannelProblem;
+    voice: boolean;
+};
+
+export type BotStandingResult = {
+    above: Array<DiscordRole>;
+    botRole?: DiscordRole | null;
+    claimed: Array<DiscordRole>;
+    connected: boolean;
+    hidden: Array<BotHiddenChannel>;
+    manageChannels: boolean;
+    manageRoles: boolean;
+    permissions: Array<BotGrant>;
 };
 
 export type BulkActionResult = {
@@ -1213,6 +1248,25 @@ export type DescriptionTree = {
     nodes: Array<DescriptionNode>;
 };
 
+export type DiscordBotSettings = {
+    /**
+     * The channel an event is posted in on its day, by name
+     */
+    calendarChannel: string;
+    /**
+     * The roles the role-claim bot hands out, which the site leaves alone
+     */
+    claimRoleIds: Array<string>;
+    /**
+     * The channel approved events are announced in, by name
+     */
+    infoChannel: string;
+    /**
+     * The channel the starboard bot reposts starred messages to, by name
+     */
+    starboardChannel: string;
+};
+
 /**
  * A text channel a game may live in
  */
@@ -1303,6 +1357,12 @@ export type DiscordMentionsResponse = {
  * A member or a channel of the Discord server, by the name the server shows
  */
 export type DiscordNameResponse = {
+    id: string;
+    name: string;
+};
+
+export type DiscordRole = {
+    colour?: number | null;
     id: string;
     name: string;
 };
@@ -2146,6 +2206,19 @@ export type JobTypeDescriptor = {
 export type JwtRequest = {
     password: string;
     username: string;
+};
+
+export type KeptChannel = {
+    category?: string | null;
+    id: string;
+    kind: 'TEXT' | 'VOICE' | 'CATEGORY';
+    name: string;
+};
+
+export type KeptRole = {
+    assignable: boolean;
+    id: string;
+    name: string;
 };
 
 export type LastRecoveryEmail = {
@@ -10372,6 +10445,211 @@ export type PreviewInboundReconcileResponses = {
 };
 
 export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
+
+export type FindBotStandingData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/bot';
+};
+
+export type FindBotStandingErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBotStandingError = FindBotStandingErrors[keyof FindBotStandingErrors];
+
+export type FindBotStandingResponses = {
+    /**
+     * OK
+     */
+    200: BotStandingResult;
+};
+
+export type FindBotStandingResponse = FindBotStandingResponses[keyof FindBotStandingResponses];
+
+export type ListKeptChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/channels';
+};
+
+export type ListKeptChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListKeptChannelsError = ListKeptChannelsErrors[keyof ListKeptChannelsErrors];
+
+export type ListKeptChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<KeptChannel>;
+};
+
+export type ListKeptChannelsResponse = ListKeptChannelsResponses[keyof ListKeptChannelsResponses];
+
+export type ListKeptRolesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/roles';
+};
+
+export type ListKeptRolesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListKeptRolesError = ListKeptRolesErrors[keyof ListKeptRolesErrors];
+
+export type ListKeptRolesResponses = {
+    /**
+     * OK
+     */
+    200: Array<KeptRole>;
+};
+
+export type ListKeptRolesResponse = ListKeptRolesResponses[keyof ListKeptRolesResponses];
+
+export type FindDiscordBotSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/settings/bot';
+};
+
+export type FindDiscordBotSettingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDiscordBotSettingsError = FindDiscordBotSettingsErrors[keyof FindDiscordBotSettingsErrors];
+
+export type FindDiscordBotSettingsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordBotSettings;
+};
+
+export type FindDiscordBotSettingsResponse = FindDiscordBotSettingsResponses[keyof FindDiscordBotSettingsResponses];
+
+export type SetDiscordBotSettingsData = {
+    body: DiscordBotSettings;
+    path?: never;
+    query?: never;
+    url: '/management/discord/settings/bot';
+};
+
+export type SetDiscordBotSettingsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetDiscordBotSettingsError = SetDiscordBotSettingsErrors[keyof SetDiscordBotSettingsErrors];
+
+export type SetDiscordBotSettingsResponses = {
+    /**
+     * OK
+     */
+    200: DiscordBotSettings;
+};
+
+export type SetDiscordBotSettingsResponse = SetDiscordBotSettingsResponses[keyof SetDiscordBotSettingsResponses];
 
 export type List1Data = {
     body?: never;

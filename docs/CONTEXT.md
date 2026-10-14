@@ -503,6 +503,13 @@ anchored to one, and there is nothing to act on without one.
 
 Not a "season" — that word belongs to esports and means something else.
 
+### Unpaid contribution
+
+A contribution period that overlaps one of a member's memberships and has no contribution
+recorded for them. It is what a member sees as still to pay. An announced incasso does not make
+it paid; it says when the money will be taken. A payment email does not make it owed; it is
+owed either way.
+
 ### Fee type
 
 Which of the period's three fees applies to a member: the **full-year fee**, the

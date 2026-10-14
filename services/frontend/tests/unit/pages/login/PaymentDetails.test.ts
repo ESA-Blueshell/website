@@ -63,12 +63,12 @@ describe("the Payment details page", () => {
     expect(paid.get("[data-testid=payment-details-owed]").text()).toContain("Nothing")
   })
 
-  it("lists every way to pay, and how to switch to direct debit", async () => {
+  it("lists every way to pay, with the mandate form to download", async () => {
     const page = await signedInWith({held: true, paysByIncasso: false, periods: []})
 
     expect(page.get("[data-testid=payment-details-bank]").text()).toContain("Transfer to NL00 TEST 0000 0000 00, in the name of Test Vereniging")
-    expect(page.get("[data-testid=payment-details-switch]").text()).toContain("mandate form")
-    expect(page.get("[data-testid=payment-details-switch]").text()).toContain("The mandate may not cover what you owe now")
+    expect(page.get("[data-testid=payment-details-debit]").text()).toContain("mandate form")
+    expect(page.get("[data-testid=payment-details-debit]").text()).toContain("The mandate may not cover what you owe now")
     expect(page.find("[data-testid=payment-details-incasso]").exists()).toBe(false)
     expect(page.get("[data-testid=payment-details-no-periods]").text()).toBe("No contributions to show. There is one row for each year you are a member.")
     const buttons = page.findAllComponents({name: "CutButton"})
@@ -77,13 +77,13 @@ describe("the Payment details page", () => {
     expect(buttons.at(-1)?.props("href")).toBe("mailto:board@blueshell.utwente.nl")
   })
 
-  it("says a member on direct debit pays that way, and still lists the others", async () => {
+  it("says a member on direct debit pays that way, and still lists every way", async () => {
     const page = await signedInWith({held: true, paysByIncasso: true, periods: []}, null)
 
-    expect(page.get("[data-testid=payment-details-incasso]").text()).toBe("You pay by direct debit. To stop it, email the board.")
+    expect(page.get("[data-testid=payment-details-incasso]").text()).toBe("You pay by direct debit.")
     expect(page.get("[data-testid=payment-details-method]").text()).toContain("Direct debit")
     expect(page.get("[data-testid=payment-details-bank]").text()).toContain("Could not load the account")
-    expect(page.find("[data-testid=payment-details-switch]").exists()).toBe(false)
+    expect(page.get("[data-testid=payment-details-debit]").text()).toContain("mandate form")
   })
 
   it("says so to somebody who never joined, and where the page could not be read", async () => {

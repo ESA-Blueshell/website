@@ -137,7 +137,7 @@ onMounted(async () => {
             class="payment__lead"
             data-testid="payment-details-incasso"
           >
-            You pay by direct debit. To stop it, email the board.
+            You pay by direct debit.
           </p>
           <dl class="payment__ways">
             <dt>Bank transfer</dt>
@@ -154,22 +154,20 @@ onMounted(async () => {
             <dd>
               Put cash in an envelope. On the envelope, write your name, your student number if you have one and "contribution" with the year. Drop it in postbus 49 in the Bastille.
             </dd>
-            <template v-if="!own.paysByIncasso">
-              <dt>Direct debit</dt>
-              <dd data-testid="payment-details-switch">
-                Download the mandate form. Fill it in, sign it and email it to the board. After that, the board takes your contribution from your bank account each year.
-                The mandate may not cover what you owe now. Pay that by transfer or in cash, unless the board tells you otherwise.
-                <cut-button
-                  class="payment__download"
-                  :download="MANDATE_FILE"
-                  :href="mandate"
-                  small
-                  testid="payment-details-mandate"
-                >
-                  Download the mandate form
-                </cut-button>
-              </dd>
-            </template>
+            <dt>Direct debit</dt>
+            <dd data-testid="payment-details-debit">
+              Download the mandate form. Fill it in, sign it and email it to the board. The board then collects your contribution from your bank account.
+              The mandate may not cover what you owe now. Pay that by transfer or in cash, unless the board tells you otherwise.
+              <cut-button
+                class="payment__download"
+                :download="MANDATE_FILE"
+                :href="mandate"
+                small
+                testid="payment-details-mandate"
+              >
+                Download the mandate form
+              </cut-button>
+            </dd>
           </dl>
           <cut-button
             class="payment__ask"

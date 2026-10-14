@@ -30,7 +30,7 @@ test.describe("the Payment details page", () => {
     await expect(page.getByTestId("payment-details-period-3")).toContainText("Pay by 26 September 2026")
     await expect(page.getByTestId("payment-details-period-2")).toContainText("Paid 4 March 2026")
     await expect(page.getByTestId("payment-details-bank")).toContainText("NL19 INGB 0008 0964 62")
-    await expect(page.getByTestId("payment-details-switch")).toBeVisible()
+    await expect(page.getByTestId("payment-details-mandate")).toBeVisible()
   })
 
   test("is not offered to somebody who never joined", async ({page}) => {
@@ -51,6 +51,7 @@ test.describe("the Payment details page", () => {
     await page.goto("/account/payment-details")
 
     await expect(page.getByTestId("payment-details-incasso")).toBeVisible()
+    await expect(page.getByTestId("payment-details-mandate")).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })

@@ -293,7 +293,7 @@ export const HELP: HelpSection[] = [
         body: [
           "You do not pay on the site. Payment details lists your contributions, shows which are unpaid and explains how to pay: by bank transfer, in cash or by direct debit.",
           "The board also sends you an email. It is a payment request with a due date. Or it tells you the date the amount is taken from your bank account by direct debit (incasso).",
-          "The treasurer marks your contribution as paid when the money arrives. To start or stop paying by direct debit, email the board.",
+          "The treasurer marks your contribution as paid when the money arrives. To pay by direct debit, download the mandate form on Payment details, sign it and email it to the board.",
         ],
         links: [{label: "Payment details", to: "/account/payment-details"}],
       },

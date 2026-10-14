@@ -70,7 +70,7 @@ describe("the Payment details page", () => {
     expect(page.get("[data-testid=payment-details-switch]").text()).toContain("mandate form")
     expect(page.get("[data-testid=payment-details-switch]").text()).toContain("It may not cover what you owe now")
     expect(page.find("[data-testid=payment-details-incasso]").exists()).toBe(false)
-    expect(page.find("[data-testid=payment-details-no-periods]").exists()).toBe(true)
+    expect(page.get("[data-testid=payment-details-no-periods]").text()).toBe("No contributions to show. A contribution shows here for each contribution period you are a member in.")
     expect(page.getComponent({name: "CutButton"}).props("href")).toBe("mailto:board@blueshell.utwente.nl")
   })
 

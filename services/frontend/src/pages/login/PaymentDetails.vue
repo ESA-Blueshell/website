@@ -101,7 +101,7 @@ onMounted(async () => {
             class="payment__note"
             data-testid="payment-details-no-periods"
           >
-            Nothing yet. Your first contribution shows here once the board adds this year's contribution period.
+            No contributions to show. A contribution shows here for each contribution period you are a member in.
           </p>
           <div
             v-else

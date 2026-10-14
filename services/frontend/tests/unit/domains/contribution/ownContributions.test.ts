@@ -39,6 +39,10 @@ describe("a contribution row", () => {
     expect(contributionRow(told).meta).toBe("Full-year fee · € 30.00 · Direct debit announced 12 October 2026 · Taken on 1 November 2026")
   })
 
+  it("names one year where the period is a calendar year", () => {
+    expect(contributionRow(period({startDate: "2026-01-01", endDate: "2026-12-31"})).years).toBe("2026")
+  })
+
   it("asks nothing of an honorary membership", () => {
     expect(contributionRow(period({feeType: null, fee: null}))).toEqual({
       years: "2026-2027",

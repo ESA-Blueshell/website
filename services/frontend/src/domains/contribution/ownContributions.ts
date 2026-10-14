@@ -14,7 +14,8 @@ export const euros = (amount: number): string => `€ ${amount.toFixed(2)}`
 
 /** What a member reads about one period: an honorary membership has no fee, so nothing to pay. */
 export function contributionRow(period: MemberPeriodContribution): ContributionRow {
-  const years = `${period.startDate.slice(0, 4)}-${period.endDate.slice(0, 4)}`
+  const [from, to] = [period.startDate.slice(0, 4), period.endDate.slice(0, 4)]
+  const years = from === to ? from : `${from}-${to}`
   if (!period.feeType || period.fee == null) return {years, meta: "Honorary membership", state: "Nothing to pay", tone: "quiet"}
   const fee = [feeTypeLabels[period.feeType], euros(period.fee)]
   if (period.paidAt) return {years, meta: [...fee, `Paid ${day(period.paidAt)}`].join(" · "), state: "Paid", tone: "ok"}

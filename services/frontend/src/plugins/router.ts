@@ -465,6 +465,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/UserDetail.vue"),
         meta: {title: "User"},
       },
+      {
+        path: "recovery",
+        name: "recoveryManager",
+        component: () => import("@/pages/management/RecoveryManager.vue"),
+        meta: {title: "Account recovery"},
+      },
       {path: "mail/sent", name: "sentEmails", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
       {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
       {path: "mail/inbox/:id(\\d+)", name: "inboxMessage", component: () => import("@/pages/management/InboxMessage.vue"), meta: {title: "Message"}},
@@ -526,14 +532,9 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  // The users page moved into the portal; old links and bookmarks still land on it.
+  // Bookmarks and sent emails still carry these addresses.
   {path: "/user-manager", redirect: "/management/users"},
-  {
-    path: "/recovery/manage",
-    name: "recoveryManager",
-    component: () => import("@/pages/management/RecoveryManager.vue"),
-    meta: {title: "Manage account recovery", requiresAuth: true, requiresBoard: true},
-  },
+  {path: "/recovery/manage", redirect: "/management/recovery"},
   // The page moved into the portal; old links and bookmarks still land on it.
   {path: "/management/emails", redirect: "/management/mail/sent"},
   {

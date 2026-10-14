@@ -90,6 +90,17 @@ class InProcessImageConverterTest {
     }
 
     @Test
+    fun `frames already taken apart are let go when the ladder cannot be built`() {
+        whenever(animated.mayAnimate("image/webp")).thenReturn(true)
+        val frames: FrameSequence = mock()
+        whenever(frames.frames).thenReturn(emptyList())
+        whenever(animated.framesOf(any(), eq("image/webp"))).thenReturn(frames)
+
+        assertThatThrownBy { renditions() }.isInstanceOf(NoSuchElementException::class.java)
+        verify(frames).close()
+    }
+
+    @Test
     fun `an animation is kept as one under the ceiling`() {
         whenever(animated.mayAnimate("image/gif")).thenReturn(true)
         val frames = frames(ImageDimensions.Size(4000, 1000))

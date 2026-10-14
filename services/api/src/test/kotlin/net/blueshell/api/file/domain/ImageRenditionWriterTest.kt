@@ -15,6 +15,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.IOException
 import java.nio.file.Path
 import java.util.Optional
 
@@ -89,12 +90,45 @@ class ImageRenditionWriterTest {
     }
 
     @Test
-    fun `a width already stored is not converted again`() {
+    fun `a width whose working copy cannot be written is left out`() {
+        stored()
+        val target = argumentCaptor<ImageDimensions.Size>()
+        whenever(renditions.write(target.capture(), any()))
+            .thenAnswer { if (target.lastValue.width == 480) throw IOException("disk full") else Unit }
+
+        assertThat(writer.derive(source).mapNotNull { it.renditionWidth }).containsExactly(160, 320, 640, 960)
+    }
+
+    @Test
+    fun `stored bytes with no record get their record and are not converted again`() {
         stored()
         whenever(blobs.sizeOf(any())).thenReturn(10)
 
         assertThat(writer.derive(source)).hasSize(5)
+        verify(files, times(5)).save(any<File>())
         verify(renditions, never()).write(any(), any())
+    }
+
+    @Test
+    fun `a record with no bytes has its bytes written again and keeps its record`() {
+        stored()
+        val record =
+            File(
+                name = source.name,
+                path = "event-banners/abc-160.webp",
+                uploader = source.uploader,
+                mediaType = "image/webp",
+                size = 1,
+                type = source.type,
+            )
+        whenever(files.findByPath("event-banners/abc-160.webp")).thenReturn(Optional.of(record))
+
+        val written = writer.derive(source)
+
+        assertThat(written.first()).isSameAs(record)
+        assertThat(record.width to record.height).isEqualTo(160 to 64)
+        verify(renditions, times(5)).write(any(), any())
+        verify(files, times(4)).save(any<File>())
     }
 
     @Test

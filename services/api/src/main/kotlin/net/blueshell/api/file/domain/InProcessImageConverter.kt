@@ -85,9 +85,17 @@ class InProcessImageConverter(
         name: String,
     ): ImageConverter.Renditions {
         val frames = framesOf(master, mediaType, name)
-        // A GIF is not something the still converter will read, whatever its frames did.
-        val still = frames?.frames?.first()?.bytes ?: animated.readableStillOf(master, mediaType)
-        return Ladder(type, name, frames, still ?: master, ownsStill = frames == null && still != null, size = frames?.size ?: recorded)
+        var built = false
+        try {
+            // A GIF is not something the still converter will read, whatever its frames did.
+            val still = frames?.frames?.first()?.bytes ?: animated.readableStillOf(master, mediaType)
+            val ownsStill = frames == null && still != null
+            val ladder = Ladder(type, name, frames, still ?: master, ownsStill, size = frames?.size ?: recorded)
+            built = true
+            return ladder
+        } finally {
+            if (!built) frames?.close()
+        }
     }
 
     /**

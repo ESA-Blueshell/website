@@ -1,5 +1,6 @@
 import {computed, ref} from "vue"
 import {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -7,6 +8,7 @@ import {
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   moveTargetToFolder,
   moveTargetsToFolder,
   renameTarget,
@@ -14,6 +16,7 @@ import {
   type ExternalTarget,
   type TargetDescriptor,
   type TargetSystem,
+  type TidyMove,
 } from "@/domains/cohorts/adapters/cohorts"
 import type {BulkRejection} from "@/utils/bulkRejection"
 
@@ -280,7 +283,75 @@ export function useTargetOverview() {
     }
   }
 
+  /** The folder tidy's proposal, what is ticked in it, and what the system refused when applied. */
+  const tidyMoves = ref<TidyMove[]>([])
+  const tidyFoldersToCreate = ref<string[]>([])
+  const tidyPicked = ref<Set<string>>(new Set())
+  const tidyFailures = ref<BulkTargetMoveResult["failed"]>([])
+  const tidyError = ref<string | null>(null)
+  /** The ticked moves the dialog still shows; a list already moved is no longer one. */
+  const tidyPickCount = computed(() => tidyMoves.value.filter((m) => tidyPicked.value.has(m.externalId)).length)
+
+  async function previewTidy(system: TargetSystem): Promise<void> {
+    writing.value = true
+    tidyMoves.value = []
+    tidyFoldersToCreate.value = []
+    tidyPicked.value = new Set()
+    tidyFailures.value = []
+    tidyError.value = null
+    try {
+      const plan = await fetchTidyPlan(system)
+      if (plan == null) {
+        tidyError.value = "The tidy could not be read. Try again."
+        return
+      }
+      tidyMoves.value = plan.moves
+      tidyFoldersToCreate.value = plan.foldersToCreate
+      tidyPicked.value = new Set(plan.moves.map((m) => m.externalId))
+    } finally {
+      writing.value = false
+    }
+  }
+
+  function toggleTidyPick(externalId: string): void {
+    const next = new Set(tidyPicked.value)
+    if (!next.delete(externalId)) next.add(externalId)
+    tidyPicked.value = next
+  }
+
+  /** Moves what is ticked; the rows show where each list went, and refusals stay listed. */
+  async function applyTidyPicks(system: TargetSystem): Promise<boolean> {
+    writing.value = true
+    tidyError.value = null
+    try {
+      const picks = tidyMoves.value.filter((m) => tidyPicked.value.has(m.externalId)).map((m) => m.externalId)
+      const answer = await applyTidy(system, picks)
+      if (!answer.ok) {
+        tidyError.value = answer.reason
+        return false
+      }
+      const {moved, failed} = answer.saved
+      const byId = new Map(moved.map((target) => [target.externalId, target]))
+      targets.value = targets.value.map((target) => byId.get(target.externalId) ?? target)
+      tidyFailures.value = failed
+      tidyMoves.value = tidyMoves.value.filter((m) => !byId.has(m.externalId))
+      tidyPicked.value = new Set([...tidyPicked.value].filter((id) => !byId.has(id)))
+      return failed.length === 0
+    } finally {
+      writing.value = false
+    }
+  }
+
   return {
+    tidyMoves,
+    tidyFoldersToCreate,
+    tidyPicked,
+    tidyPickCount,
+    tidyFailures,
+    tidyError,
+    previewTidy,
+    toggleTidyPick,
+    applyTidyPicks,
     archive,
     isArchived,
     remove,

@@ -4,6 +4,7 @@ import CohortTargets from "@/pages/management/CohortTargets.vue"
 import ManagerCard from "@/components/common/cards/ManagerCard.vue"
 import BaseModal from "@/components/common/modals/BaseModal.vue"
 import {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -11,6 +12,7 @@ import {
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   renameTarget,
 } from "@/domains/cohorts/adapters/cohorts"
 import {mountInApp} from "../helpers"
@@ -25,6 +27,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => ({
   renameTarget: vi.fn(),
   archiveTarget: vi.fn(),
   deleteTarget: vi.fn(),
+  fetchTidyPlan: vi.fn(),
+  applyTidy: vi.fn(),
 }))
 
 const modal = (wrapper: Awaited<ReturnType<typeof mountPage>>, testid: string) =>
@@ -205,5 +209,83 @@ describe("CohortTargets", () => {
 
     expect(wrapper.get("[data-testid=cohort-target-rename-7]").attributes("disabled")).toBeDefined()
     expect(wrapper.get("[data-testid=cohort-target-delete-7]").attributes("disabled")).toBeDefined()
+  })
+
+  it("shows the tidy's proposal and the folders it would make", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({
+      moves: [{externalId: "7", label: "Guests", from: "Newsletter", to: "Members"}],
+      foldersToCreate: ["Members"],
+    })
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-move-7]").text()).toContain("Newsletter → Members")
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-folders]").text()).toContain("Members")
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("saveLabel")).toBe("Move 1")
+  })
+
+  it("says so when every linked list is already in its folder", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [], foldersToCreate: []})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+
+    expect(wrapper.find("[data-testid=cohort-targets-tidy-nothing]").exists()).toBe(true)
+  })
+
+  it("moves the picked lists, keeps the dialog open over a failure, and closes it when all moved", async () => {
+    const wrapper = await mountPage()
+    const move = {externalId: "7", label: "Guests", from: "Newsletter", to: "Members"}
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [move], foldersToCreate: []})
+    vi.mocked(applyTidy)
+      .mockResolvedValueOnce({ok: true, saved: {moved: [], failed: [{externalId: "7", label: "Guests", message: "Brevo said no"}]}})
+      .mockResolvedValueOnce({ok: true, saved: {moved: [], failed: []}})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    await wrapper.get("[data-testid=cohort-targets-tidy-pick-7] input").setValue(false)
+    await wrapper.get("[data-testid=cohort-targets-tidy-pick-7] input").setValue(true)
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("save")
+    await flushPromises()
+
+    expect(applyTidy).toHaveBeenCalledWith("BREVO", ["7"])
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-failures]").text()).toBe("Guests: Brevo said no")
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(true)
+
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("save")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
+  })
+
+  it("shows why the tidy could not be read, in the dialog", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue(null)
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=cohort-targets-tidy-error]").text()).toBe("The tidy could not be read. Try again.")
+    expect(wrapper.find("[data-testid=cohort-targets-tidy-nothing]").exists()).toBe(false)
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("saveLabel")).toBe("Move 0")
+  })
+
+  it("closes the tidy on cancel and when dismissed", async () => {
+    const wrapper = await mountPage()
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [], foldersToCreate: []})
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("cancel")
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
+
+    await wrapper.get("[data-testid=cohort-targets-tidy]").trigger("click")
+    await flushPromises()
+    modal(wrapper, "cohort-targets-tidy-dialog").vm.$emit("update:modelValue", false)
+    await flushPromises()
+    expect(modal(wrapper, "cohort-targets-tidy-dialog").props("modelValue")).toBe(false)
   })
 })

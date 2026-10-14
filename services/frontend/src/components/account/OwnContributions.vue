@@ -73,7 +73,7 @@ onMounted(async () => {
           v-if="row.fee != null"
           :kind="row.paid ? 'in-sync' : 'extra'"
         >
-          {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid yet" }}
+          {{ row.paid ? `Paid${row.paidOn ? ` ${formatDay(row.paidOn)}` : ""}` : "Not paid yet" }}
         </state-mark>
       </template>
     </management-table>

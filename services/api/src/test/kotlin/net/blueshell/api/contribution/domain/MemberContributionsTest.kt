@@ -56,7 +56,7 @@ class MemberContributionsTest {
                 Entities.membership(user = ann, startDate = LocalDate.of(2025, 9, 1)).apply { memberType = MemberType.ALUMNI },
             ),
         )
-        val paid = Entities.contribution(user = ann, period = older).apply { createdAt = Instant.parse("2024-11-01T10:00:00Z") }
+        val paid = Entities.contribution(user = ann, period = older).apply { paidOn = LocalDate.of(2024, 11, 1) }
         whenever(contributions.findByIdUserId(7)).thenReturn(listOf(paid))
         val asked = Instant.parse("2025-10-01T10:00:00Z")
         whenever(reminders.findByUser_Id(7)).thenReturn(
@@ -77,7 +77,7 @@ class MemberContributionsTest {
                 feeType = BulkFeeType.FULL_YEAR_FEE,
                 fee = 45.0,
                 paid = false,
-                paidAt = null,
+                paidOn = null,
                 lastEmailAt = asked,
                 lastEmailKind = ContributionEmailKind.INCASSO_NOTIFICATION,
             ),
@@ -92,7 +92,7 @@ class MemberContributionsTest {
             "\"endDate\":\"2025-08-31\"",
             "\"fee\":",
             "\"paid\":true",
-            "\"paidAt\":",
+            "\"paidOn\":\"2024-11-01\"",
             "\"lastEmailAt\":null",
             "\"lastEmailKind\":null",
         )

@@ -84,7 +84,7 @@ class SealedBankDetailsIT : UserTestSupport() {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
                             """{"userIds":[${member.id}],"collectionDate":"${LocalDate.now().plusDays(
-                                7,
+                                14,
                             )}","statementText":"Contributie"}""",
                         ),
                 ).andExpect(status().isCreated)

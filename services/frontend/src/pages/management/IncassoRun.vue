@@ -5,6 +5,7 @@
    run's id, the page shows that run's last step. */
 import {computed, onMounted, ref} from "vue"
 import {useRoute, useRouter} from "vue-router"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import DateInput from "@/components/island/DateInput.vue"
 import FormField from "@/components/island/FormField.vue"
@@ -45,6 +46,7 @@ import {
   readIncassoRun,
   readOneEmail,
   renamedForIng,
+  saveStorno,
   saveSubmitted,
   startIncasso,
 } from "@/domains/contribution"
@@ -109,7 +111,9 @@ const DONE_COLUMNS: TableColumn<IncassoRunView["collections"][number]>[] = [
   byMandate,
   {key: "amount", label: "Amount", sortBy: (one) => one.amount},
 ]
-const tomorrow = localDay(1)
+// TWIN: `NOTICE_DAYS` in the api's IncassoRuns; members are told at least this long ahead.
+const NOTICE_DAYS = 14
+const earliest = localDay(NOTICE_DAYS)
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
 
 const collectable = computed(() => candidates.value.filter((one) => !one.leftOut))
@@ -125,7 +129,7 @@ const amountOf = (one: IncassoCandidate) =>
   (fees.value[one.userId] ? effectiveAmount(feeOf(one), period.value) : one.amount) ?? 0
 const total = computed(() => chosen.value.reduce((sum, one) => sum + amountOf(one), 0))
 const renamed = computed(() => renamedForIng(chosen.value))
-const dateValid = computed(() => collectionDate.value >= tomorrow)
+const dateValid = computed(() => collectionDate.value >= earliest)
 const textValid = computed(() => statementText.value.trim() !== "" && statementText.value.length <= STATEMENT_TEXT_MAX)
 const withMandate = computed(() => candidates.value.filter((one) => one.ibanLastTwo).length)
 /* A member left out for want of bank details gets them here, from their paper mandate, and is
@@ -205,6 +209,23 @@ const download = async (part: number) => {
   anchor.remove()
   // Later rather than at once: Safari drops a download whose address is revoked before it starts.
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/* A storno is recorded once the bank took a collection back; the member owes it again. */
+const stornoFor = ref<IncassoRunView["collections"][number] | null>(null)
+const recordingStorno = ref(false)
+const storno = async () => {
+  if (!run.value || !stornoFor.value || recordingStorno.value) return
+  recordingStorno.value = true
+  doneFailure.value = null
+  const answered = await saveStorno(run.value.id, stornoFor.value.userId)
+  recordingStorno.value = false
+  stornoFor.value = null
+  if (!answered.ok) {
+    doneFailure.value = answered.reason
+    return
+  }
+  run.value = answered.saved
 }
 
 const submitted = async () => {
@@ -424,7 +445,7 @@ const leftOutPairs = computed(() => [
       <div class="incasso__fields">
         <form-field
           v-slot="field"
-          :error="collectionDate && !dateValid ? 'The collection date has to be after today.' : ''"
+          :error="collectionDate && !dateValid ? `Members get the notice at least ${NOTICE_DAYS} days before the collection, so pick ${dayName(earliest)} or later.` : ''"
           label="Collection date"
           testid="incasso-run-date"
         >
@@ -432,7 +453,7 @@ const leftOutPairs = computed(() => [
             v-model="collectionDate"
             :control-id="field.controlId"
             :invalid="field.invalid"
-            :min="tomorrow"
+            :min="earliest"
           />
         </form-field>
         <form-field
@@ -603,9 +624,38 @@ const leftOutPairs = computed(() => [
           {{ row.mandateReference }} · signed {{ dayName(row.mandateSignedOn) }}
         </template>
         <template #amount="{row}">
-          {{ euro(row.amount) }}
+          <state-mark
+            v-if="row.stornoOn"
+            kind="extra"
+            :testid="`incasso-run-storno-${row.userId}`"
+          >
+            Storno on {{ dayName(row.stornoOn) }}
+          </state-mark>
+          <template v-else>
+            {{ euro(row.amount) }}
+          </template>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            v-if="run.submittedAt && !row.stornoOn"
+            :testid="`incasso-run-storno-btn-${row.userId}`"
+            @click="stornoFor = row"
+          >
+            Record storno
+          </mini-button>
         </template>
       </management-table>
+      <confirm-dialog
+        confirm-label="Record storno"
+        :open="stornoFor !== null"
+        :question="stornoFor ? `The bank took back the collection from ${stornoFor.name}. They owe the contribution again, and their incasso stays on. You can send them a payment reminder.` : ''"
+        testid="incasso-run-storno-dialog"
+        title="Record a storno?"
+        :working="recordingStorno"
+        working-label="Recording"
+        @confirm="storno"
+        @update:open="(open) => { if (!open) stornoFor = null }"
+      />
 
       <div class="incasso__acts">
         <cut-button

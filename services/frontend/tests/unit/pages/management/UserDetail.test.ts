@@ -65,7 +65,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const period = (periodId: number, paid: boolean) => ({
   periodId, startDate: `202${periodId}-09-01`, endDate: `202${periodId + 1}-08-31`,
-  feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, paid, paidAt: paid ? "2025-10-01T10:00:00Z" : null,
+  feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, paid, paidOn: paid ? "2025-10-01" : null,
   lastEmailAt: paid ? null : "2025-09-20T10:00:00Z", lastEmailKind: paid ? null : ContributionEmailKind.REMINDER,
 })
 
@@ -359,7 +359,7 @@ describe("one user's page", () => {
 
     expect(overview).toContain("Ended 31 Aug 2021")
     expect(overview).toContain("Contribution 2024")
-    expect(overview).toContain("Recorded 1 Oct 2025")
+    expect(overview).toContain("Paid 1 Oct 2025")
   })
 
   it("shows roles to an admin only, as the api reads and changes them for an admin only", async () => {

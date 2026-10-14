@@ -12,6 +12,7 @@ import {
   markIncassoRunSubmitted,
   type IncassoRunView,
   planIncasso,
+  recordStorno,
   startIncassoRun,
   type StartIncassoRunRequest,
 } from "@/services/api"
@@ -42,3 +43,7 @@ export async function fetchIncassoFile(runId: number, part: number): Promise<{ok
 /** The board put the run in ING and confirmed it there. */
 export const saveSubmitted = (runId: number): Promise<Saved<IncassoRunView> | Refused> =>
   refusable(markIncassoRunSubmitted({path: {runId}}), "The incasso could not be marked as submitted.")
+
+/** The bank took this member's collection back: the contribution is unpaid again, and the mandate stays. */
+export const saveStorno = (runId: number, userId: number): Promise<Saved<IncassoRunView> | Refused> =>
+  refusable(recordStorno({path: {runId, userId}}), "The storno could not be recorded.")

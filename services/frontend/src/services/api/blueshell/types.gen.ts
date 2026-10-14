@@ -2199,6 +2199,7 @@ export type IncassoCollection = {
     mandateReference?: string | null;
     mandateSignedOn?: string | null;
     name: string;
+    stornoOn?: string | null;
     userId: number;
 };
 
@@ -2605,7 +2606,7 @@ export type MemberPeriodContribution = {
     lastEmailAt?: string | null;
     lastEmailKind?: ContributionEmailKind | null;
     paid: boolean;
-    paidAt?: string | null;
+    paidOn?: string | null;
     periodId: number;
     startDate: string;
 };
@@ -2797,7 +2798,7 @@ export type PeriodMember = {
     lastEmailKind?: ContributionEmailKind | null;
     name: string;
     paid: boolean;
-    paidAt?: string | null;
+    paidOn?: string | null;
     userId: number;
     username: string;
 };
@@ -9228,6 +9229,50 @@ export type FindIncassoRunResponses = {
 };
 
 export type FindIncassoRunResponse = FindIncassoRunResponses[keyof FindIncassoRunResponses];
+
+export type RecordStornoData = {
+    body?: never;
+    path: {
+        runId: number;
+        userId: number;
+    };
+    query?: never;
+    url: '/incassoRuns/{runId}/collections/{userId}/storno';
+};
+
+export type RecordStornoErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RecordStornoError = RecordStornoErrors[keyof RecordStornoErrors];
+
+export type RecordStornoResponses = {
+    /**
+     * OK
+     */
+    200: IncassoRunView;
+};
+
+export type RecordStornoResponse = RecordStornoResponses[keyof RecordStornoResponses];
 
 export type DownloadIncassoFileData = {
     body?: never;

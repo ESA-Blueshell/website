@@ -1,0 +1,22 @@
+# An incasso run's collections count as paid on its collection date once it is sent to the bank,
+# and the treasurer can record that the bank took one back (api ADR-040). Every contribution on
+# record counts as paid on the day it was recorded. The default keeps the inserts of the previous
+# release, which writes no paid_on, valid while it still serves.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-14-storno-and-paid-on.yaml
+      id: storno-and-paid-on
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: contributions
+            columns:
+              - column: {name: paid_on, type: DATE, defaultValueComputed: CURRENT_DATE, constraints: {nullable: false}}
+        - update:
+            tableName: contributions
+            columns:
+              - column: {name: paid_on, valueComputed: DATE(created_at)}
+        - addColumn:
+            tableName: incasso_notifications
+            columns:
+              - column: {name: storno_on, type: DATE}

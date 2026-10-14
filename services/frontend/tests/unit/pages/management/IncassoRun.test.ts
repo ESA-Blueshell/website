@@ -13,6 +13,7 @@ const api = vi.hoisted(() => ({
   readContributionEmail: vi.fn(),
   downloadIncassoFile: vi.fn(),
   markIncassoRunSubmitted: vi.fn(),
+  recordStorno: vi.fn(),
 }))
 const {mockRoute, mockReplace, mockHandleNetworkError} = vi.hoisted(() => ({
   mockRoute: {params: {periodId: "2"} as Record<string, string>},
@@ -39,13 +40,13 @@ const candidate = (userId: number, name: string, fields: Record<string, unknown>
   leftOut: null, lastNotifiedOn: null, ...fields,
 })
 
-const later = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10)
+const later = new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10)
 
 const run = {
   id: 11, contributionPeriodId: 2, collectionDate: later, statementText: "Contributie 2025-2026 ESA Blueshell", total: 30,
   createdAt: "2026-09-30T10:00:00Z", submittedAt: null, fileParts: 1,
   collections: [{userId: 1, name: "Mila Vries", ingName: "Mila Vries", ibanCountry: "NL", ibanLastTwo: "11", mandateReference: "BLUESHELL-1",
-    mandateSignedOn: "2025-09-03", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30}],
+    mandateSignedOn: "2025-09-03", feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30, stornoOn: null}],
 }
 
 describe("the incasso task", () => {
@@ -178,7 +179,7 @@ describe("the incasso task", () => {
   })
 
   it("leaves out who is unticked, and says why a run was refused", async () => {
-    api.startIncassoRun.mockResolvedValue({status: 400, error: {code: "CollectionDateNotAhead"}})
+    api.startIncassoRun.mockResolvedValue({status: 400, error: {code: "CollectionDateTooSoon", earliest: "2026-10-28"}})
     const wrapper = await mount()
 
     await wrapper.get('[data-testid="incasso-run-tick-2"]').setValue(false)
@@ -199,7 +200,40 @@ describe("the incasso task", () => {
     await settle()
 
     expect(api.startIncassoRun).toHaveBeenCalledWith({path: {periodId: 2}, body: expect.objectContaining({userIds: [1], feeTypeOverrides: {}})})
-    expect(wrapper.get('[data-testid="incasso-run-failure"]').text()).toBe("The collection date has to be after today.")
+    expect(wrapper.get('[data-testid="incasso-run-failure"]').text()).toContain("get the notice at least 14 days before the collection")
+  })
+
+  it("records a storno for a member of a run sent to the bank, or says why it could not", async () => {
+    mockRoute.params = {periodId: "2", runId: "11"}
+    api.findIncassoRun.mockResolvedValue({status: 200, data: {...run, submittedAt: "2026-10-20T10:00:00Z"}})
+    api.recordStorno.mockResolvedValueOnce({status: 409, error: {code: "StornoBeforeSubmitted"}})
+    api.recordStorno.mockResolvedValueOnce({status: 400, error: {code: "NotInRun"}})
+    api.recordStorno.mockResolvedValueOnce({status: 200, data: {
+      ...run, submittedAt: "2026-10-20T10:00:00Z", total: 0, collections: [{...run.collections[0], stornoOn: "2026-10-25"}],
+    }})
+    const wrapper = await mount()
+
+    const confirm = async () => {
+      await wrapper.get('[data-testid="incasso-run-storno-btn-1"]').trigger("click")
+      await settle()
+      wrapper.findComponent({name: "ConfirmDialog"}).vm.$emit("confirm")
+      await settle()
+    }
+    await confirm()
+    expect(wrapper.get('[data-testid="incasso-run-done-failure"]').text()).toContain("only once the incasso is sent to ING")
+    await confirm()
+    expect(wrapper.get('[data-testid="incasso-run-done-failure"]').text()).toBe("This member is not part of this incasso.")
+
+    await wrapper.get('[data-testid="incasso-run-storno-btn-1"]').trigger("click")
+    await settle()
+    wrapper.findComponent({name: "ConfirmDialog"}).vm.$emit("update:open", false)
+    await settle()
+    expect(wrapper.findComponent({name: "ConfirmDialog"}).props("open")).toBe(false)
+
+    await confirm()
+    expect(api.recordStorno).toHaveBeenLastCalledWith({path: {runId: 11, userId: 1}})
+    expect(wrapper.get('[data-testid="incasso-run-storno-1"]').text()).toContain("Storno on")
+    expect(wrapper.find('[data-testid="incasso-run-storno-btn-1"]').exists()).toBe(false)
   })
 
   it("opens a run on its last step, and says when nobody pays by incasso", async () => {

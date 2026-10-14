@@ -50,7 +50,7 @@ class IncassoRunIT : UserTestSupport() {
             .andExpect(jsonPath("$[?(@.userId == ${withMandate.id})].ibanLastTwo").value("00"))
             .andExpect(jsonPath("$[?(@.userId == ${without.id})].leftOut").value("NO_BANK_DETAILS"))
 
-        val collectionDate = LocalDate.now().plusDays(7)
+        val collectionDate = LocalDate.now().plusDays(14)
         val answer =
             mvc
                 .perform(
@@ -113,7 +113,7 @@ class IncassoRunIT : UserTestSupport() {
                 post("/contributionPeriods/${period.id}/incassoRuns")
                     .with(signedIn(member))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"userIds":[1],"collectionDate":"${LocalDate.now().plusDays(7)}"}"""),
+                    .content("""{"userIds":[1],"collectionDate":"${LocalDate.now().plusDays(14)}"}"""),
             ).andExpect(status().isForbidden)
     }
 
@@ -122,7 +122,7 @@ class IncassoRunIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val period = createContributionPeriodFixture()
         val withMandate = onIncasso(board, "NL91ABNA0417164300")
-        val nextWeek = LocalDate.now().plusDays(7)
+        val inTwoWeeks = LocalDate.now().plusDays(14)
         val answer =
             mvc
                 .perform(
@@ -130,7 +130,7 @@ class IncassoRunIT : UserTestSupport() {
                         .with(signedIn(board))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(
-                            """{"userIds":[${withMandate.id}],"collectionDate":"$nextWeek","statementText":"Contributie"}""",
+                            """{"userIds":[${withMandate.id}],"collectionDate":"$inTwoWeeks","statementText":"Contributie"}""",
                         ),
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.fileParts").value(1))
@@ -164,5 +164,65 @@ class IncassoRunIT : UserTestSupport() {
         mvc
             .perform(get("/contributionPeriods/${period.id}/members").with(signedIn(board)))
             .andExpect(jsonPath("$.incassoRuns[0].submittedAt").isNotEmpty)
+    }
+
+    @Test
+    fun `a collection date under 14 days ahead is refused, saying the earliest`() {
+        val board = createUserWithRole(Role.BOARD)
+        val tooSoon = LocalDate.now().plusDays(13)
+        val period = createContributionPeriodFixture()
+        val withMandate = onIncasso(board, "NL91ABNA0417164300")
+
+        mvc
+            .perform(
+                post("/contributionPeriods/${period.id}/incassoRuns")
+                    .with(signedIn(board))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"userIds":[${withMandate.id}],"collectionDate":"$tooSoon","statementText":"Contributie"}"""),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.code").value("CollectionDateTooSoon"))
+            .andExpect(jsonPath("$.earliest").value(LocalDate.now(java.time.ZoneOffset.UTC).plusDays(14).toString()))
+    }
+
+    @Test
+    fun `a run sent to the bank pays each collection on its date, and a storno makes one unpaid while the mandate stays`() {
+        val board = createUserWithRole(Role.BOARD)
+        val period = createContributionPeriodFixture()
+        val withMandate = onIncasso(board, "NL91ABNA0417164300")
+        val collection = LocalDate.now().plusDays(20)
+        val answer =
+            mvc
+                .perform(
+                    post("/contributionPeriods/${period.id}/incassoRuns")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""{"userIds":[${withMandate.id}],"collectionDate":"$collection","statementText":"Contributie"}"""),
+                ).andExpect(status().isCreated)
+                .andReturn()
+                .response.contentAsString
+        val runId = Regex("\"id\":(\\d+)").find(answer)!!.groupValues[1]
+
+        mvc
+            .perform(post("/incassoRuns/$runId/collections/${withMandate.id}/storno").with(signedIn(board)))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("StornoBeforeSubmitted"))
+        mvc.perform(post("/incassoRuns/$runId/submitted").with(signedIn(board))).andExpect(status().isOk)
+        mvc
+            .perform(get("/contributionPeriods/${period.id}/members").with(signedIn(board)))
+            .andExpect(jsonPath("$.members[?(@.userId == ${withMandate.id})].paid").value(true))
+            .andExpect(jsonPath("$.members[?(@.userId == ${withMandate.id})].paidOn").value(collection.toString()))
+
+        mvc
+            .perform(post("/incassoRuns/$runId/collections/${withMandate.id}/storno").with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.collections[0].stornoOn").isNotEmpty)
+            .andExpect(jsonPath("$.total").value(0.0))
+        mvc
+            .perform(get("/contributionPeriods/${period.id}/members").with(signedIn(board)))
+            .andExpect(jsonPath("$.members[?(@.userId == ${withMandate.id})].paid").value(false))
+            .andExpect(jsonPath("$.members[?(@.userId == ${withMandate.id})].incasso").value(true))
+        mvc
+            .perform(post("/incassoRuns/$runId/collections/${withMandate.id}/storno").with(signedIn(createUserWithRole(Role.MEMBER))))
+            .andExpect(status().isForbidden)
     }
 }

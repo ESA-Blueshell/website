@@ -70,4 +70,20 @@ class ContributionServiceTest {
         assertThat(created).isFalse()
         verify(exactly = 1) { service.create(any()) }
     }
+
+    @Test
+    fun `a storno withdraws only the payment its own collection made`() {
+        val period = ContributionPeriod(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-12-31"), LocalDate.parse("2026-07-01"))
+        val collected = Contribution(user = Entities.user(), contributionPeriod = period).apply { paidOn = LocalDate.parse("2026-10-01") }
+        every { repository.findById(Contribution.Id(7L, 12L)) } returns java.util.Optional.of(collected)
+        every { repository.findById(Contribution.Id(8L, 12L)) } returns java.util.Optional.empty()
+        every { service.deleteById(any()) } returns Unit
+
+        service.withdraw(7L, 12L, LocalDate.parse("2026-09-15"))
+        service.withdraw(8L, 12L, LocalDate.parse("2026-10-01"))
+        verify(exactly = 0) { service.deleteById(any()) }
+
+        service.withdraw(7L, 12L, LocalDate.parse("2026-10-01"))
+        verify { service.deleteById(Contribution.Id(7L, 12L)) }
+    }
 }

@@ -58,4 +58,11 @@ class IncassoRunControllerTest {
         assertThat(answer.headers.cacheControl).isEqualTo("no-store")
         assertThat(controller.markIncassoRunSubmitted(11)).isEqualTo(view)
     }
+
+    @Test
+    fun `hands a storno through for the member it was recorded for`() {
+        whenever(runs.storno(11, 7)).thenReturn(view)
+
+        assertThat(controller.recordStorno(11, 7)).isEqualTo(view)
+    }
 }

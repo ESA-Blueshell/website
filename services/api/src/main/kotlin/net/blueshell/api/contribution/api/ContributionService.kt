@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
 
 @Service
 class ContributionService
@@ -97,10 +98,25 @@ class ContributionService
             periodId: Long,
         ): Boolean = repository.existsById(Contribution.Id(userId, periodId))
 
+        /**
+         * Makes the period unpaid for the user again where it was paid on [paidOn], as a storno does
+         * for its own collection; a payment recorded another way, such as a transfer, stays.
+         */
+        @Transactional
+        fun withdraw(
+            userId: Long,
+            periodId: Long,
+            paidOn: LocalDate,
+        ) {
+            val id = Contribution.Id(userId, periodId)
+            if (repository.findById(id).orElse(null)?.paidOn == paidOn) deleteById(id)
+        }
+
         @Transactional
         fun ensurePaid(
             userId: Long,
             periodId: Long,
+            paidOn: LocalDate? = null,
         ): Boolean {
             if (existsByUserIdAndPeriodId(userId, periodId)) return false
             try {
@@ -108,7 +124,7 @@ class ContributionService
                     Contribution(
                         user = users.findById(userId),
                         contributionPeriod = periodService.findById(periodId),
-                    ),
+                    ).apply { paidOn?.let { this.paidOn = it } },
                 )
             } catch (ex: DataIntegrityViolationException) {
                 if (existsByUserIdAndPeriodId(userId, periodId)) return false

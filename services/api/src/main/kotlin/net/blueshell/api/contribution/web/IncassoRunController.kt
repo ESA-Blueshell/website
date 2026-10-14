@@ -111,6 +111,14 @@ class IncassoRunController(
         @PathVariable runId: Long,
     ): IncassoRunView = runs.markSubmitted(runId, currentUser.currentUser()?.id)
 
+    /** The bank took this member's collection back; the contribution is unpaid again and the mandate stays. */
+    @BoardOnly
+    @PostMapping("/incassoRuns/{runId}/collections/{userId}/storno")
+    fun recordStorno(
+        @PathVariable runId: Long,
+        @PathVariable userId: Long,
+    ): IncassoRunView = runs.storno(runId, userId)
+
     private companion object {
         const val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     }

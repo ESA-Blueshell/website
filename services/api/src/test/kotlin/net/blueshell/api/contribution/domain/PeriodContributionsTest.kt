@@ -49,9 +49,9 @@ class PeriodContributionsTest {
         whenever(payments.of(setOf(1L, 2L, 3L))).thenReturn(
             mapOf(1L to PersonPayment(true, null), 2L to PersonPayment(false, null), 3L to PersonPayment(false, null)),
         )
-        val paidAt = Instant.parse("2025-10-01T10:00:00Z")
+        val paidOn = LocalDate.of(2025, 10, 1)
         whenever(contributions.findByIdContributionPeriodId(4)).thenReturn(
-            mutableListOf(Entities.contribution(user = bea, period = period).apply { createdAt = paidAt }),
+            mutableListOf(Entities.contribution(user = bea, period = period).apply { this.paidOn = paidOn }),
         )
         val sent = Instant.parse("2025-09-20T10:00:10Z")
         whenever(reminders.findByContributionPeriod_Id(4)).thenReturn(
@@ -70,7 +70,7 @@ class PeriodContributionsTest {
         val (annRow, beaRow, honRow) = view.members
         assertThat(annRow.feeType).isEqualTo(BulkFeeType.HALF_YEAR_FEE)
         assertThat(annRow.lastEmailKind).isEqualTo(ContributionEmailKind.REMINDER)
-        assertThat(beaRow.paidAt).isEqualTo(paidAt)
+        assertThat(beaRow.paidOn).isEqualTo(paidOn)
         assertThat(beaRow.incasso).isTrue()
         assertThat(honRow.fee).isNull()
         assertThat(view.runs).containsExactly(

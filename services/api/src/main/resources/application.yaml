@@ -262,6 +262,8 @@ logging:
         hibernate: INFO
         security: INFO
         liquibase: INFO
+      # Its HHH10001005 start-up line prints the JDBC URL, which the MariaDB driver writes the login into.
+      hibernate.orm.connections.pooling: WARN
 
 management:
   server:

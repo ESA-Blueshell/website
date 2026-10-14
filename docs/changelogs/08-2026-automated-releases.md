@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.22.0](https://github.com/ESA-Blueshell/website/compare/v1.21.1...v1.22.0) (2026-10-14)
+
+
+### Features
+
+* **frontend:** a Help tab on the account pages explains the site by role, with a search ([#2429](https://github.com/ESA-Blueshell/website/issues/2429)) ([84bc8e1](https://github.com/ESA-Blueshell/website/commit/84bc8e11ba5ab5be2ae3373521565da2d012a9bc))
+
 ## [1.21.1](https://github.com/ESA-Blueshell/website/compare/v1.21.0...v1.21.1) (2026-10-13)
 
 

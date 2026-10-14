@@ -4,6 +4,7 @@ import {useDriftResolution} from "@/domains/cohorts/composables/useDriftResoluti
 import {
   TargetKind,
   TargetSystem,
+  adoptPeople,
   linkDriftPeople,
   proposeDriftLinks,
   pushDriftPeople,
@@ -17,6 +18,7 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
   return {
     ...actual,
     pushDriftPeople: vi.fn(),
+    adoptPeople: vi.fn(),
     removeDriftPeople: vi.fn(),
     proposeDriftLinks: vi.fn(),
     linkDriftPeople: vi.fn(),
@@ -184,15 +186,22 @@ describe("useDriftResolution", () => {
     expect(await drift.linkOne(row({externalUserId: "d", system: TargetSystem.GOOGLE_CALENDAR}), 7)).toBeNull()
   })
 
-  it("clears an earlier refusal once a link goes through", async () => {
-    vi.mocked(linkDriftPeople)
-      .mockResolvedValueOnce({ok: false, reason: "Refused."})
-      .mockResolvedValueOnce({ok: true, saved: {linked: 1, conflicts: []}})
-    const {drift} = setup()
+  it("takes in an extra person who has an account, and says why where it could not", async () => {
+    const {drift, reload} = setup()
+    const extra = row({userId: 9, externalUserId: "e9", sync: "ONLY_EXTERNAL"})
+    expect(drift.canResolve("adopt", extra)).toBe(true)
+    expect(drift.canResolve("adopt", theirsOnly("x"))).toBe(false)
 
-    await drift.linkOne(theirsOnly("a"), 5)
-    await drift.linkOne(theirsOnly("a"), 5)
+    vi.mocked(adoptPeople).mockResolvedValue({ok: true, saved: 1})
+    await drift.prepare("adopt", [extra])
+    await drift.confirm()
+    expect(adoptPeople).toHaveBeenCalledWith(3, 40, ["e9"])
+    expect(drift.message.value).toBe("1 queued to be taken in.")
+    expect(reload).toHaveBeenCalled()
 
-    expect(drift.error.value).toBeNull()
+    vi.mocked(adoptPeople).mockResolvedValue({ok: false, reason: "None of them can be taken in from Brevo."})
+    await drift.prepare("adopt", [extra])
+    await drift.confirm()
+    expect(drift.error.value).toBe("None of them can be taken in from Brevo.")
   })
 })

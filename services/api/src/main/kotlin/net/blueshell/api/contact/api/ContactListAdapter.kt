@@ -51,6 +51,9 @@ interface ContactListAdapter {
     /** Every folder, as id to name. */
     fun listFolders(): Map<Long, String> = emptyMap()
 
+    /** Removes a folder. The system removes the lists in it too, so the caller makes sure it holds none. */
+    fun deleteFolder(folderId: Long)
+
     /**
      * Every list on the system, whoever it belongs to: the catalogue an operator picks from.
      * A system that cannot be browsed answers with nothing rather than failing.

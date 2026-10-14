@@ -43,3 +43,15 @@ data class ApplyTidyRequest(
     @field:Size(max = 500, message = "Pick at most 500 lists at a time")
     val externalIds: List<String>,
 )
+
+@Schema(name = "CreateMissingTargetsRequest", description = "The missing lists to create, by target; none creates every one.")
+data class CreateMissingTargetsRequest(
+    @field:Size(max = 500, message = "Name at most 500 lists at a time")
+    val targetIds: List<Long> = emptyList(),
+)
+
+@Schema(name = "CreateMissingTargetsResponse")
+data class CreateMissingTargetsResponse(
+    @param:Schema(description = "How many lists are queued to be created")
+    val queued: Int,
+)

@@ -91,7 +91,7 @@ class CohortQueryServiceTest {
         every { targetExternalIds.find(calendar) } returns null
 
         assertThat(service.summaries().single().targets).containsExactly(
-            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true),
+            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true, "7"),
             SummaryTarget(TargetSystem.GOOGLE_CALENDAR, "Sitecie", false),
         )
         verify(exactly = 1) { targets.findAllByCohortIdIsNotNull() }

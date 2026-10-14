@@ -259,4 +259,22 @@ class MockContactAdapterTest {
         assertThat(adapter.createFolder("Archive")).isEqualTo(first)
         assertThat(adapter.listFolders()).containsEntry(first, "Archive")
     }
+
+    @Test
+    fun `removing a folder removes the lists in it, as Brevo does, and refuses a folder it lacks`() {
+        val list = adapter.createList("Old", "Archive")
+        val folder =
+            adapter
+                .listFolders()
+                .entries
+                .single { it.value == "Archive" }
+                .key
+        assertThat(adapter.listAll().single { it.externalListId == list }.folderId).isEqualTo(folder)
+
+        adapter.deleteFolder(folder)
+
+        assertThat(adapter.listFolders().values).doesNotContain("Archive")
+        assertThat(adapter.listAll().map { it.externalListId }).doesNotContain(list)
+        assertThatThrownBy { adapter.deleteFolder(folder) }.isInstanceOf(ContactServiceException::class.java)
+    }
 }

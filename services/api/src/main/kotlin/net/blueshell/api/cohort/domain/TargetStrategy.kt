@@ -78,6 +78,9 @@ interface TargetStrategy {
      */
     fun folders(): List<String> = emptyList()
 
+    /** The system's folders as things of their own, where it has folders to keep. */
+    val folderKeeper: FolderKeeper? get() = null
+
     /**
      * File a target under another folder, and answer with where it ended up.
      *

@@ -271,7 +271,7 @@ class CohortControllerTest {
 
         val entry = controller.findCohortById(10L).resolutions.single()
 
-        assertThat(listOf(entry.personName, entry.resolvedByName)).containsExactly("c@example.com", "Board Member")
+        assertThat(listOf(entry.personName, entry.resolvedByName, entry.resolvedById)).containsExactly("c@example.com", "Board Member", 4L)
 
         assertThat(entry).isEqualTo(
             DriftResolutionResponse(
@@ -282,6 +282,7 @@ class CohortControllerTest {
                 externalUserId = "ext-1",
                 personName = "c@example.com",
                 resolvedByName = "Board Member",
+                resolvedById = 4L,
                 resolvedAt = at,
             ),
         )

@@ -8,21 +8,24 @@ import {
   applyInboundReconcile,
   archiveExternalTarget,
   createExternalTarget,
-  createTarget,
+  createMissingTargets,
   createTargetFolder,
+  type FolderMerge,
+  type FolderState,
+  listTargetFolderStates,
+  mergeTargetFolders,
+  removeTargetFolder,
   deleteExternalTarget,
   enforceTarget,
-  evaluateUser,
-  enqueue,
   findCohortById,
   findCohorts,
+  findListedTarget,
+  findTargetOverview,
   listTargetOptions,
   linkExistingTarget,
   linkDrift,
   listCohortTargetFolders,
-  listCohortTargetSystems,
   moveCohortTarget,
-  moveCohortTargets,
   previewFolderTidy,
   previewInboundReconcile,
   reconcileTarget,
@@ -30,8 +33,6 @@ import {
   pushDrift,
   removeDrift,
   renameExternalTarget,
-  searchCohortTargets,
-  switchTarget,
 } from "@/services/api"
 import type {
   CohortTarget as ApiCohortTarget,
@@ -42,15 +43,16 @@ import type {
   ExternalTarget as ApiExternalTarget,
   InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
   InboundReconcilePreview as ApiInboundReconcilePreview,
-  TargetDescriptor as ApiTargetDescriptor,
+  ListedTarget,
+  MissingTarget,
   SummaryTarget,
+  TargetOverviewResult,
 } from "@/services/api"
 import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
-import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
 import {accepted, refusable} from "@/domains/cohorts/refusals"
-import {readOr} from "@/utils/answers"
 
 /*
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
@@ -63,12 +65,6 @@ export type {SummaryTarget}
 export async function triggerReconcile(cohortId: number, targetId: number): Promise<{ok: true} | Refused> {
   return accepted(reconcileTarget({path: {id: cohortId, targetId}}), "The reconcile could not be queued.")
 }
-
-/** Queue a fresh look at which cohorts somebody belongs to. */
-export async function evaluateMember(userId: number): Promise<{ok: true} | Refused> {
-  return accepted(evaluateUser({path: {userId}}), "The member could not be looked at again.")
-}
-
 
 /** A theirs-only contact, and the account holding the address the target calls them by. */
 export type LinkProposal = {externalUserId: string; label: string | null; userId: number | null; userFullName: string | null}
@@ -144,21 +140,16 @@ export type TargetMapping = {
   enforced: boolean
 }
 
-/** One reconcile of a target: how many were in step, missing from it and extra on it. */
+/** One reconcile of a target: how many were in sync, missing from it and extra on it. */
 export type ReconcileRun = {
   startedAt: string
   trigger: string | null
-  inStep: number
+  inSync: number
   missing: number
   extra: number
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
-
-export type TargetDescriptor = {
-  system: TargetSystem
-  kind: ApiTargetDescriptor["kind"]
-}
 
 // Mirrors the API's ExternalTarget. A field added there has to be added here too.
 export type ExternalTarget = {
@@ -189,7 +180,7 @@ function toTargetMapping(raw: ApiCohortTarget): TargetMapping {
     runs: raw.runs.map((run) => ({
       startedAt: run.startedAt,
       trigger: run.trigger ?? null,
-      inStep: run.inSync,
+      inSync: run.inSync,
       missing: run.oursOnly,
       extra: run.theirsOnly,
     })),
@@ -202,7 +193,7 @@ function asConflict(err: unknown): AddTargetResult | null {
   return status === 409 ? { type: "conflict" } : null
 }
 
-/** Maps the cohort's target on one system to an external target that already exists. */
+/** Maps the cohort's per-system cohort to an external target that already exists. */
 export async function linkExistingTargetForCohort(
   cohortId: number,
   system: TargetSystem,
@@ -220,41 +211,6 @@ export async function linkExistingTargetForCohort(
   }
 }
 
-/** Creates a fresh external target and maps the cohort's target on that system to it. */
-export async function createTargetForCohort(
-  cohortId: number,
-  system: TargetSystem,
-  label: string,
-  folderHint: string | null,
-): Promise<AddTargetResult> {
-  try {
-    const res = await createTarget({
-      path: { id: cohortId },
-      body: { system, label, folderHint: folderHint ?? undefined },
-      throwOnError: true,
-    })
-    return { type: "ok", mapping: toTargetMapping(res.data!) }
-  } catch (err: unknown) {
-    return asConflict(err) ?? Promise.reject(err)
-  }
-}
-
-/** Repoints an existing cohort mapping at a different external target. */
-export async function switchCohortTarget(
-  cohortId: number,
-  targetId: number,
-  externalId: string,
-  deletePrevious: boolean,
-  reconcileNow: boolean,
-): Promise<TargetMapping> {
-  const res = await switchTarget({
-    path: { id: cohortId, targetId },
-    body: { externalId, deletePrevious, reconcileNow },
-    throwOnError: true,
-  })
-  return toTargetMapping(res.data!)
-}
-
 /*
  * The four reads below throw rather than answering with nothing.
  *
@@ -262,16 +218,6 @@ export async function switchCohortTarget(
  * give — so a read that failed has to be told apart from one that came back empty, or the page
  * states an emptiness nobody confirmed.
  */
-export async function fetchTargetDescriptors(): Promise<TargetDescriptor[]> {
-  const res = await listCohortTargetSystems({throwOnError: true})
-  return (res.data ?? []).map(toTargetDescriptor)
-}
-
-export async function fetchTargetOptions(system: TargetSystem): Promise<ExternalTarget[]> {
-  const res = await searchCohortTargets({path: {system}, throwOnError: true})
-  return (res.data ?? []).map(toExternalTarget)
-}
-
 /** Every folder the system has, including the ones holding nothing. */
 export async function fetchTargetFolders(system: TargetSystem): Promise<string[]> {
   const res = await listCohortTargetFolders({path: {system}, throwOnError: true})
@@ -288,13 +234,13 @@ export async function moveTargetToFolder(
   return toExternalTarget(res.data)
 }
 
-/** Adds a list linked to no cohort, in a folder; answers it as the system has it. */
+/** Make a list linked to no cohort, in [folder] or at the top level; answers it as the system has it. */
 export async function createListInSystem(
   system: TargetSystem,
   name: string,
   folder: string,
 ): Promise<Saved<ExternalTarget> | Refused> {
-  const answer = await refusable(createExternalTarget({path: {system}, body: {name, folder}}), "The list could not be added.")
+  const answer = await refusable(createExternalTarget({path: {system}, body: {name, folder}}), "The list could not be made.")
   return answer.ok ? {ok: true, saved: toExternalTarget(answer.saved)} : answer
 }
 
@@ -308,9 +254,9 @@ export async function renameTarget(
   return answer.ok ? {ok: true, saved: toExternalTarget(answer.saved)} : answer
 }
 
-/** Adds a folder, or finds the one already called that; answers every folder. */
+/** Make a folder, or find the one already called that; answers every folder. */
 export async function createFolderInSystem(system: TargetSystem, name: string): Promise<Saved<string[]> | Refused> {
-  return refusable(createTargetFolder({path: {system}, body: {name}}), "The folder could not be added.")
+  return refusable(createTargetFolder({path: {system}, body: {name}}), "The folder could not be made.")
 }
 
 /** File a list in the archive folder; it keeps its contacts and its link. */
@@ -324,31 +270,31 @@ export async function deleteTarget(system: TargetSystem, externalId: string, nam
   return accepted(deleteExternalTarget({path: {system, externalId}, body: {name}}), "The list could not be deleted.")
 }
 
-/** One linked list the tidy would move into its cohort type's folder. */
-export type TidyMove = {externalId: string; label: string; from: string | null; to: string}
+/** One list the tidy would move into its cohort type's folder; one matched only by its name is offered unticked. */
+export type TidyMove = {externalId: string; label: string; from: string | null; to: string; byName: boolean}
 
-/** What the folder tidy would do: its moves, and the folders it would make. */
-export type TidyPlan = {moves: TidyMove[]; foldersToCreate: string[]}
+/** The newest applied tidy: when, by whom, and what it moved. */
+export type LastTidy = {appliedAt: string; appliedByName: string | null; moved: number; failed: number}
 
-/** The tidy's proposal, or nothing where it could not be read. Changes nothing. */
-export async function fetchTidyPlan(system: TargetSystem): Promise<TidyPlan | null> {
-  const plan = await readOr(previewFolderTidy({path: {system}}), null)
-  return plan && {
-    moves: (plan.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to})),
-    foldersToCreate: plan.foldersToCreate ?? [],
+export type TidyPlan = {moves: TidyMove[]; foldersToCreate: string[]; lastApplied: LastTidy | null}
+
+/** What the folder tidy would do: its moves, the folders it would make and the last one applied. Changes nothing. */
+export async function fetchTidyPlan(system: TargetSystem): Promise<TidyPlan> {
+  const res = await previewFolderTidy({path: {system}, throwOnError: true})
+  const last = res.data.lastApplied
+  return {
+    moves: (res.data.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to, byName: m.byName})),
+    foldersToCreate: res.data.foldersToCreate ?? [],
+    lastApplied: last ? {appliedAt: last.appliedAt, appliedByName: last.appliedByName ?? null, moved: last.moved, failed: last.failed} : null,
   }
 }
 
 /** Apply the tidy to the lists picked; answers what moved and what the system refused. */
-export async function applyTidy(system: TargetSystem, externalIds: string[]): Promise<Saved<BulkTargetMoveResult> | Refused> {
-  const answer = await refusable(applyFolderTidy({path: {system}, body: {externalIds}}), "The tidy could not be applied.")
-  if (!answer.ok) return answer
+export async function applyTidy(system: TargetSystem, externalIds: string[]): Promise<BulkTargetMoveResult> {
+  const res = await applyFolderTidy({path: {system}, body: {externalIds}, throwOnError: true})
   return {
-    ok: true,
-    saved: {
-      moved: (answer.saved.moved ?? []).map(toExternalTarget),
-      failed: (answer.saved.failed ?? []).map((row) => ({externalId: row.externalId, label: row.label, message: row.message})),
-    },
+    moved: (res.data.moved ?? []).map(toExternalTarget),
+    failed: (res.data.failed ?? []).map((row) => ({externalId: row.externalId, label: row.label, message: row.message})),
   }
 }
 
@@ -364,50 +310,6 @@ export type BulkTargetMoveResult = {
   failed: FailedTargetMove[]
 }
 
-/**
- * What came back from a bulk move: either the api took the selection, or it refused the whole
- * of it. The two are different enough to the operator — one lists what happened, the other why
- * nothing did — that they are separate outcomes rather than a result with an error beside it.
- */
-export type BulkTargetMoveOutcome =
-  | {status: "moved"; result: BulkTargetMoveResult}
-  | {status: "refused"; rejection: BulkRejection}
-
-/**
- * File several targets under one folder.
- *
- * A `moved` outcome may still name failures: the selection was valid, but past that point the
- * moves are separate calls to a system that cannot roll them back.
- */
-export async function moveTargetsToFolder(
-  system: TargetSystem,
-  externalIds: string[],
-  folder: string,
-): Promise<BulkTargetMoveOutcome> {
-  const res = await moveCohortTargets({path: {system}, body: {externalIds, folder}})
-  const refused = parseBulkRejection(res)
-  if (refused) return {status: "refused", rejection: refused}
-  if (res.error || !res.data) throw new Error("The move could not be sent.")
-  return {
-    status: "moved",
-    result: {
-      moved: (res.data.moved ?? []).map(toExternalTarget),
-      failed: (res.data.failed ?? []).map((row) => ({
-        externalId: row.externalId,
-        label: row.label,
-        message: row.message,
-      })),
-    },
-  }
-}
-
-function toTargetDescriptor(raw: ApiTargetDescriptor): TargetDescriptor {
-  return {
-    system: raw.system,
-    kind: raw.kind,
-  }
-}
-
 function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
   return {
     system: raw.system,
@@ -421,7 +323,7 @@ function toExternalTarget(raw: ApiExternalTarget): ExternalTarget {
   }
 }
 
-export async function fetchInboundReconcilePreview(
+async function fetchInboundReconcilePreview(
   cohortId: number,
   targetId: number,
 ): Promise<InboundReconcilePreview> {
@@ -429,7 +331,7 @@ export async function fetchInboundReconcilePreview(
   return res.data as InboundReconcilePreview
 }
 
-export async function applyInboundReconcileSelection(
+async function applyInboundReconcileSelection(
   cohortId: number,
   targetId: number,
   previewToken: string,
@@ -446,7 +348,7 @@ export async function applyInboundReconcileSelection(
 /*
  * The cohort reads.
  *
- * A cohort arrives as a transport record with half its fields optional; what a page
+ * A cohort cohort arrives as a transport record with half its fields optional; what a page
  * draws is the shape below, with every absence already decided. Unlike the target reads above
  * these answer with nothing rather than throwing, because that is what their pages have always
  * shown for a cohort the api would not give.
@@ -495,8 +397,12 @@ export type DriftResolutionEntry = {
   system: TargetSystem
   action: DriftResolutionAction
   personName: string | null
+  /** The person's account, where they have one. */
+  userId: number | null
   /** Null when the api resolved it on its own behalf. */
   resolvedByName: string | null
+  /** The account that resolved it, where it still exists. */
+  resolvedById: number | null
   resolvedAt: string
 }
 
@@ -513,7 +419,7 @@ export type CohortSummary = {
   targets: SummaryTarget[]
 }
 
-/** One target a picker offers, named by where it lives as much as by what it is called. */
+/** One cohort a picker offers, named by where it lives as much as by what it is called. */
 export type TargetOption = {
   id: number
   label: string
@@ -572,7 +478,9 @@ function toCohort(raw: ApiCohortDetail): Cohort {
       system: r.system,
       action: r.action,
       personName: r.personName ?? null,
+      userId: r.userId ?? null,
       resolvedByName: r.resolvedByName ?? null,
+      resolvedById: r.resolvedById ?? null,
       resolvedAt: r.resolvedAt,
     })),
   }
@@ -597,7 +505,7 @@ export async function fetchCohorts(): Promise<CohortSummary[]> {
   return (res.data ?? []).map(toCohortSummary)
 }
 
-/** Every cohort, or nothing where they could not be read, as for a board member who is no admin. */
+/** Every cohort, or nothing where they could not be read. */
 export async function readCohorts(): Promise<CohortSummary[] | null> {
   const res = await findCohorts()
   return res.error || res.data == null ? null : res.data.map(toCohortSummary)
@@ -610,7 +518,7 @@ export async function fetchCohort(id: number): Promise<Cohort | null> {
 }
 
 /**
- * The targets a picker offers, by system and then by name.
+ * The cohorts a picker offers, by system and then by name.
  *
  * Sorted here because the order is the same wherever one is picked, and a picker that sorts for
  * itself is a picker that can sort differently from the next one.
@@ -631,20 +539,52 @@ export async function fetchCohortTargets(): Promise<TargetOption[]> {
     })
 }
 
-/** A job one of the cohort pages asks for by hand, and the id it was queued under. */
-export type CohortJobQueued = {ok: true; jobId: number | null} | {ok: false}
+export type {ListedTarget, MissingTarget}
+export type TargetOverview = TargetOverviewResult
+
+/** Every list on the system with the cohort it follows and its drift, and the missing ones; nothing where it could not be read. */
+export const readTargetOverview = (system: TargetSystem): Promise<TargetOverview | null> => readOr(findTargetOverview({path: {system}}), null)
+
+/** Queues a create for each missing list named, or every one when none are; answers how many. */
+export async function createMissingLists(system: TargetSystem, targetIds: number[]): Promise<Saved<number> | Refused> {
+  const answer = await refusable(createMissingTargets({path: {system}, body: {targetIds}}), "The lists could not be created.")
+  return answer.ok ? {ok: true, saved: answer.saved.queued} : answer
+}
+
+/** One list on the system with the cohort it follows; nothing where the system does not have it. */
+export async function readListedTarget(system: TargetSystem, externalId: string): Promise<ListedTarget | "gone" | null> {
+  const res = await findListedTarget({path: {system, externalId}})
+  if (!res.error && res.data != null) return res.data
+  return res.response?.status === 404 ? "gone" : null
+}
 
 /**
- * Queues one of the cohort engine's jobs.
- *
- * Answers rather than throwing: the pages that press these buttons report a refusal in their own
- * words beside the button, which a thrown error would replace with a network notice.
+ * Takes the contacts named into the cohort where its data can, which for a paid cohort is recording
+ * their contribution; answers how many are queued. Those the preview cannot take in are left alone.
  */
-export async function queueCohortJob(
-  jobType: string,
-  payload: Record<string, unknown> = {},
-): Promise<CohortJobQueued> {
-  const res = await enqueue({body: {jobType, payload}})
-  if (res.status !== 200 || !res.data) return {ok: false}
-  return {ok: true, jobId: res.data.id ?? null}
+export async function adoptPeople(cohortId: number, targetId: number, externalUserIds: string[]): Promise<Saved<number> | Refused> {
+  try {
+    const preview = await fetchInboundReconcilePreview(cohortId, targetId)
+    const wanted = new Set(externalUserIds)
+    const picked = preview.matched.filter((row) => row.writable && wanted.has(row.externalUserId)).map((row) => row.externalUserId)
+    if (!preview.writerSupported || picked.length === 0) return {ok: false, reason: "None of them can be taken in from Brevo."}
+    const applied = await applyInboundReconcileSelection(cohortId, targetId, preview.previewToken, picked)
+    return {ok: true, saved: applied.acceptedCount}
+  } catch {
+    return {ok: false, reason: "They could not be taken in."}
+  }
 }
+
+export type {FolderMerge, FolderState}
+
+/** Every folder with how many lists it holds, two of one name apart; nothing where the system cannot be read. */
+export const readFolderStates = (system: TargetSystem): Promise<FolderState[] | null> =>
+  readOr(listTargetFolderStates({path: {system}}), null)
+
+/** Files everything under the oldest of the folders sharing a name, and removes the emptied others. */
+export const mergeFolders = (system: TargetSystem): Promise<Saved<FolderMerge> | Refused> =>
+  refusable(mergeTargetFolders({path: {system}}), "The folders could not be merged.")
+
+/** Removes a folder that holds nothing. */
+export const removeFolder = (system: TargetSystem, id: string): Promise<{ok: true} | Refused> =>
+  accepted(removeTargetFolder({path: {system, folderId: id}}), "The folder could not be removed.")

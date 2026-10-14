@@ -1,6 +1,7 @@
 package net.blueshell.api.cohort.persistence
 
 import net.blueshell.api.shared.repository.BaseRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 /**
@@ -45,4 +46,25 @@ interface TargetMemberRepository : BaseRepository<TargetMember, Long> {
     ): TargetMember?
 
     fun findAllByCohortId(cohortId: Long): List<TargetMember>
+
+    /** Per target, the people wanted on it and not pushed yet. TWIN: `TargetMember.state` is DESIRED. */
+    @Query(
+        "SELECT m.target.id AS targetId, COUNT(m) AS people FROM TargetMember m " +
+            "WHERE m.userId IS NOT NULL AND m.syncedAt IS NULL AND m.verifiedAt IS NULL GROUP BY m.target.id",
+    )
+    fun countDesiredByTarget(): List<TargetCount>
+
+    /** Per target, the people on it nobody here wants there. TWIN: `TargetMember.state` is STRANGER. */
+    @Query(
+        "SELECT m.target.id AS targetId, COUNT(m) AS people FROM TargetMember m " +
+            "WHERE m.userId IS NULL AND m.externalUserId IS NOT NULL AND m.externalUserId <> '' AND m.verifiedAt IS NOT NULL " +
+            "GROUP BY m.target.id",
+    )
+    fun countStrangersByTarget(): List<TargetCount>
+}
+
+/** How many ledger rows of one kind a target has. */
+interface TargetCount {
+    val targetId: Long
+    val people: Long
 }

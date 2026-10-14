@@ -15,15 +15,17 @@ interface InboxMessageRepository : JpaRepository<InboxMessage, Long> {
     @Query(
         """
         select m from InboxMessage m
-        where :search is null
+        where (:mailbox is null or m.mailbox = :mailbox)
+          and (:search is null
            or lower(m.fromAddress) like lower(concat('%', :search, '%')) escape '!'
            or lower(coalesce(m.fromName, '')) like lower(concat('%', :search, '%')) escape '!'
            or lower(coalesce(m.toAddress, '')) like lower(concat('%', :search, '%')) escape '!'
-           or lower(m.subject) like lower(concat('%', :search, '%')) escape '!'
+           or lower(m.subject) like lower(concat('%', :search, '%')) escape '!')
         """,
     )
     fun search(
         @Param("search") search: String?,
+        @Param("mailbox") mailbox: String?,
         pageable: Pageable,
     ): Page<InboxMessage>
 

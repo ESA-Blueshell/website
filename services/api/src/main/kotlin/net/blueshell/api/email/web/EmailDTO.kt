@@ -31,6 +31,8 @@ data class EmailDTO(
     val resentFromId: Long? = null,
     @param:Schema(description = "Whether this email may be made again: it failed or bounced, a job sent it and it holds no one-time link")
     val resendable: Boolean = false,
+    @param:Schema(description = "The address it went out from; none for an email sent before this was kept")
+    val senderAddress: String? = null,
 )
 
 @Schema(name = "EmailDetail")

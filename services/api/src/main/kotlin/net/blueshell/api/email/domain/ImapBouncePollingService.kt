@@ -55,9 +55,7 @@ class ImapBouncePollingService(
                 store.connect(host, port, username, password.current())
                 store.getFolder(folder).use { mailbox ->
                     mailbox.open(Folder.READ_WRITE)
-                    val unseen = mailbox.search(FlagTerm(Flags(Flags.Flag.SEEN), false))
-                    log.debug("IMAP bounce poller: {} unseen messages in {}", unseen.size, folder)
-                    unseen.forEach { processOne(it) }
+                    takeBounces(emailService, mailbox)
                 }
             }
         } catch (e: Exception) {
@@ -65,26 +63,7 @@ class ImapBouncePollingService(
         }
     }
 
-    internal fun processOne(message: Message) {
-        try {
-            val parsed = BounceMessageParser.parse(message)
-            if (parsed == null) {
-                log.debug("Skipping a message that is no delivery report")
-                message.setFlag(Flags.Flag.SEEN, true)
-                return
-            }
-            val outbox = emailService.findByMessageId(parsed.originalMessageId)
-            if (outbox == null) {
-                log.info("Bounce for a message the outbox does not hold; marking it seen anyway")
-            } else {
-                emailService.markBounced(outbox, parsed.describe())
-                log.info("Marked email id={} as BOUNCED", outbox.id)
-            }
-            message.setFlag(Flags.Flag.SEEN, true)
-        } catch (e: Exception) {
-            log.error("Failed to process bounce message: {}", e.message, e)
-        }
-    }
+    internal fun processOne(message: Message) = takeBounce(emailService, message)
 
     private inline fun <R> jakarta.mail.Store.use(block: (jakarta.mail.Store) -> R): R =
         try {
@@ -104,3 +83,38 @@ class ImapBouncePollingService(
         private val log = LoggerFactory.getLogger(ImapBouncePollingService::class.java)
     }
 }
+
+/** Takes every unseen delivery report in [mailbox], open for writing, marking each seen once read. */
+internal fun takeBounces(
+    emailService: EmailService,
+    mailbox: Folder,
+) {
+    mailbox.search(FlagTerm(Flags(Flags.Flag.SEEN), false)).forEach { takeBounce(emailService, it) }
+}
+
+/** Marks the outbox record a delivery report names bounced; anything else is only marked seen. */
+internal fun takeBounce(
+    emailService: EmailService,
+    message: Message,
+) {
+    try {
+        val parsed = BounceMessageParser.parse(message)
+        if (parsed == null) {
+            bounceLog.debug("Skipping a message that is no delivery report")
+            message.setFlag(Flags.Flag.SEEN, true)
+            return
+        }
+        val outbox = emailService.findByMessageId(parsed.originalMessageId)
+        if (outbox == null) {
+            bounceLog.info("Bounce for a message the outbox does not hold; marking it seen anyway")
+        } else {
+            emailService.markBounced(outbox, parsed.describe())
+            bounceLog.info("Marked email id={} as BOUNCED", outbox.id)
+        }
+        message.setFlag(Flags.Flag.SEEN, true)
+    } catch (e: Exception) {
+        bounceLog.error("Failed to process bounce message: {}", e.message, e)
+    }
+}
+
+private val bounceLog = LoggerFactory.getLogger(ImapBouncePollingService::class.java)

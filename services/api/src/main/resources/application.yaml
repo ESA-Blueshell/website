@@ -240,6 +240,13 @@ spring.mail:
     mail.smtp.writetimeout: 30000
 
 email:
+  # Where an added sending address keeps its SMTP login: vault in production (api ADR-039), stand-in elsewhere.
+  sending-logins: ${EMAIL_SENDING_LOGINS:stand-in}
+  sending:
+    # The ports and servers an added sending address may name. A server on the cluster's own network
+    # is refused unless listed in internal-hosts, so an address cannot be used to reach other services.
+    ports: ${EMAIL_SENDING_PORTS:25,465,587,2525,143,993}
+    internal-hosts: ${EMAIL_SENDING_INTERNAL_HOSTS:}
   from:
     name: ${EMAIL_FROM_NAME:Blueshell}
     address: ${EMAIL_FROM_ADDRESS:no-reply@esa-blueshell.nl}

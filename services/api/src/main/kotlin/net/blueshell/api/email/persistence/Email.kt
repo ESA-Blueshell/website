@@ -51,6 +51,8 @@ class Email(
         name = "initiated_by_type",
         nullable = false,
     ) var initiatedByType: ActionActorType = ActionActorType.SYSTEM,
+    /** The address it went out from: the site's own or an added sending address. */
+    @Column(name = "sender_address") var senderAddress: String? = null,
     /** The email this one was made again from, for the person's current address. */
     @Column(name = "resent_from_id") var resentFromId: Long? = null,
 ) : AuditedAutoIdEntity()

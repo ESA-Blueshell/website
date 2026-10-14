@@ -27,6 +27,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [034](ADR-034-the-schema-starts-from-a-baseline.md) | The Schema Starts From a Baseline, Owned by Liquibase | Accepted | Baseline plus YAML changesets, each with a rollback |
 | [036](ADR-036-a-membership-is-pending-until-its-first-contribution.md) | A Membership Is Pending Until Its First Contribution | Accepted | Signup starts a pending membership; the first paid contribution activates it until the board ends it; honorary is active at once |
 | [038](ADR-038-private-details-are-sealed-by-vault-transit.md) | Private Details Are Sealed by Vault Transit | Accepted | Address and bank details sealed by Transit under a derived key, bound to the member; refused, never plaintext, when Vault is down |
+| [039](ADR-039-sending-addresses-keep-their-logins-in-vault.md) | Sending Addresses Keep Their Logins in Vault | Accepted | The board keeps addresses that send and are read; one login per address, tested, written to Vault and never answered back; only an admin sets the default, which sends the site's own mail |
 | [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Query-object driven dynamic filtering |
 
 ### Validation and Mapping

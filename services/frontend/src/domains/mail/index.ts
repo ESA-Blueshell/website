@@ -5,6 +5,7 @@ export {
   AddresseeKind,
   listAudiences,
   listReplyTo,
+  listSenderNames,
   readReach,
   Role,
   sendTest,
@@ -16,6 +17,7 @@ export {
 } from "./adapters/writing"
 export {addresseeKey, addresseeOf} from "./addressees"
 export {default as ReplyToPicker} from "./island/ReplyToPicker.vue"
+export {default as SenderNamePicker} from "./island/SenderNamePicker.vue"
 export {
   ConversationKind,
   InboxState,

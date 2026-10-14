@@ -22,7 +22,7 @@ class WritingControllerTest {
     private val audiences: CohortAudiences = mock()
     private val users: UserService = mock()
     private val currentUser: CurrentUserProvider = mock()
-    private val controller = WritingController(writing, audiences, users, currentUser, "board@b.nl")
+    private val controller = WritingController(writing, audiences, users, currentUser, "board@b.nl", "Blueshell")
     private val to = listOf(Addressee(AddresseeKind.PERSON, "1"))
 
     @Test
@@ -41,6 +41,9 @@ class WritingControllerTest {
         assertThat(controller.sendWrittenEmail(WriteEmailRequest(to, "Hi", "Body", "board@b.nl")).sent).isEqualTo(1)
         assertThat(controller.sendTestEmail(WriteEmailRequest(subject = "Hi", message = "Body")).sent).isEqualTo(1)
         assertThat(ReachRequest().to).isEmpty()
+        assertThat(controller.findSenderNames()).containsExactly("Blueshell")
+        whenever(writing.send(to, "Hi", "Body", null, 9, 5, "Events team")).thenReturn(2)
+        assertThat(controller.sendWrittenEmail(WriteEmailRequest(to, "Hi", "Body", from = 5, fromName = "Events team")).sent).isEqualTo(2)
 
         whenever(currentUser.currentUser()).thenReturn(null)
         assertThatThrownBy { controller.sendTestEmail(WriteEmailRequest()) }.isInstanceOf(ResponseStatusException::class.java)

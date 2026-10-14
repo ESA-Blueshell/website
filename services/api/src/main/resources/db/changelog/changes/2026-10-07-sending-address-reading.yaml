@@ -1,0 +1,28 @@
+# A sending address is also read: its own IMAP server beside the SMTP one, logging in with the same
+# login kept in Vault (api ADR-039), and what the last check of both found.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-07-sending-address-reading.yaml
+      id: sending-address-reading
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: sending_address
+            columns:
+              - column: {name: imap_host, type: VARCHAR(255)}
+              - column: {name: imap_port, type: INT}
+              - column: {name: imap_security, type: VARCHAR(16)}
+              - column: {name: can_send, type: BOOLEAN}
+              - column: {name: can_read, type: BOOLEAN}
+              - column: {name: send_failure, type: VARCHAR(300)}
+              - column: {name: read_failure, type: VARCHAR(300)}
+              - column: {name: checked_at, type: DATETIME(6)}
+      rollback:
+        - dropColumn: {tableName: sending_address, columnName: checked_at}
+        - dropColumn: {tableName: sending_address, columnName: read_failure}
+        - dropColumn: {tableName: sending_address, columnName: send_failure}
+        - dropColumn: {tableName: sending_address, columnName: can_read}
+        - dropColumn: {tableName: sending_address, columnName: can_send}
+        - dropColumn: {tableName: sending_address, columnName: imap_security}
+        - dropColumn: {tableName: sending_address, columnName: imap_port}
+        - dropColumn: {tableName: sending_address, columnName: imap_host}

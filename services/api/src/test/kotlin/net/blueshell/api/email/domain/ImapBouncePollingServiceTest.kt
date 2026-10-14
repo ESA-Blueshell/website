@@ -1,16 +1,24 @@
 package net.blueshell.api.email.domain
 
+import jakarta.mail.Flags
+import jakarta.mail.Folder
+import jakarta.mail.Message
+import jakarta.mail.MessagingException
 import jakarta.mail.Provider
 import jakarta.mail.Session
 import jakarta.mail.Store
 import jakarta.mail.URLName
 import jakarta.mail.internet.MimeMessage
+import jakarta.mail.search.SearchTerm
 import net.blueshell.api.email.persistence.Email
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -32,7 +40,7 @@ class ImapBouncePollingServiceTest {
             }
         }
 
-    /** Records the password each connect offers and has no folders, so a poll stops there. */
+    /** Records the password each connect offers, and holds one empty folder for a poll to search. */
     class RecordingStore(
         session: Session,
         url: URLName?,
@@ -49,12 +57,13 @@ class ImapBouncePollingServiceTest {
 
         override fun getDefaultFolder() = throw UnsupportedOperationException()
 
-        override fun getFolder(name: String?) = throw UnsupportedOperationException()
+        override fun getFolder(name: String?): Folder = inbox
 
         override fun getFolder(url: URLName?) = throw UnsupportedOperationException()
 
         companion object {
             val logins = mutableListOf<String>()
+            val inbox: Folder = mock { on { search(any<SearchTerm>()) } doReturn emptyArray() }
         }
     }
 
@@ -74,6 +83,7 @@ class ImapBouncePollingServiceTest {
         poller.pollBounces()
 
         assertThat(RecordingStore.logins).containsExactly("first", "second")
+        verify(RecordingStore.inbox, times(2)).open(Folder.READ_WRITE)
         verifyNoInteractions(emailService)
     }
 
@@ -85,10 +95,13 @@ class ImapBouncePollingServiceTest {
         poller.processOne(bounce("<known@club.test>"))
         poller.processOne(bounce("<unknown@club.test>"))
         poller.processOne(MimeMessage(Session.getInstance(Properties()), "Subject: ann@example.org\r\n\r\nHello".byteInputStream()))
+        // A message that cannot be marked seen is logged, and the poll goes on.
+        val stuck = mock<Message> { on { setFlag(Flags.Flag.SEEN, true) } doThrow MessagingException("read-only") }
+        poller.processOne(stuck)
 
         verify(emailService).markBounced(any(), any())
         assertThat(output.all)
-            .contains("Marked email id=5 as BOUNCED", "Bounce for a message the outbox does not hold")
+            .contains("Marked email id=5 as BOUNCED", "Bounce for a message the outbox does not hold", "Failed to process bounce message")
             .doesNotContain("ann@example.org")
     }
 

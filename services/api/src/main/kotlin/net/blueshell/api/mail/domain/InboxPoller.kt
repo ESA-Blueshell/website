@@ -1,12 +1,8 @@
 package net.blueshell.api.mail.domain
 
 import jakarta.mail.Folder
-import jakarta.mail.Message
 import jakarta.mail.Session
 import jakarta.mail.Store
-import jakarta.mail.UIDFolder
-import net.blueshell.api.mail.persistence.InboxCursor
-import net.blueshell.api.mail.persistence.InboxCursorRepository
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
@@ -15,21 +11,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import java.time.Clock
 import java.util.Properties
-import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Reads the catch-all mailbox into the inbox. The folder is opened read-only and read past the last
- * UID taken, so nothing in the mailbox is deleted, moved or marked; the bounce poller keeps its own
- * flags on the same messages.
- */
+/** Reads the configured catch-all mailbox into the inbox, opened read-only; each address's own is [AddressInboxPoller]'s. */
 @Service
 @WhenCredentialsSet(Credentials.IMAP_HOST, Credentials.IMAP_USERNAME, Credentials.IMAP_PASSWORD)
 class InboxPoller(
-    private val intake: InboxIntake,
-    private val cursors: InboxCursorRepository,
-    private val clock: Clock,
+    private val reading: MailboxReading,
     // The bounce mailbox's account and nothing else: its password goes only to its own host.
     @param:Value($$"${email.bounce.imap.host:}") private val host: String,
     @param:Value($$"${email.bounce.imap.port:993}") private val port: Int,
@@ -39,9 +27,6 @@ class InboxPoller(
     environment: Environment,
 ) {
     private val password = RotatingSecret(environment, Credentials.IMAP_PASSWORD)
-
-    // Per pod; a restart gives a failing message its tries again.
-    private val failures = ConcurrentHashMap<Long, Int>()
 
     internal var sessionFor: (String) -> Session = { protocol ->
         Session.getInstance(Properties().apply { setProperty("mail.store.protocol", protocol) })
@@ -60,41 +45,11 @@ class InboxPoller(
         }
     }
 
+    // The catch-all keeps its place under its folder's name, as it always has.
     internal fun read(mailbox: Folder) {
         mailbox.open(Folder.READ_ONLY)
-        val uids = mailbox as UIDFolder
-        val validity = uids.uidValidity
-        val cursor = cursors.findById(folder).orElse(null)?.takeIf { it.uidValidity == validity } ?: InboxCursor(folder, validity, 0)
-        val fresh = uids.getMessagesByUID(cursor.lastUid + 1, UIDFolder.MAXUID)
-        // A backlog is read over several polls, each saving its place message by message.
-        for (message in fresh.take(PER_POLL)) {
-            val uid = uids.getUID(message)
-            if (uid <= cursor.lastUid) continue
-            if (!kept(message, uid, validity)) return
-            cursor.lastUid = uid
-            cursors.save(cursor)
-        }
+        reading.read(mailbox, folder)
     }
-
-    // A message that cannot be read is passed. One that fails to be kept, as when the database is
-    // away, is tried again next poll, and passed only after that has failed three times, so one
-    // message never holds up the ones after it.
-    private fun kept(
-        message: Message,
-        uid: Long,
-        validity: Long,
-    ): Boolean =
-        try {
-            InboxMessageParser.parse(message, "<uid-$validity-$uid@inbox.local>", clock.instant())?.let(intake::take)
-            true
-        } catch (e: UnreadableMessage) {
-            log.warn("Inbox passed message {} in {}: {}", uid, folder, e.message)
-            true
-        } catch (e: Exception) {
-            val tries = failures.merge(uid, 1, Int::plus) ?: 1
-            log.error("Inbox could not keep message {} in {} (try {}): {}", uid, folder, tries, e.javaClass.simpleName)
-            (tries >= TRIES).also { if (it) failures.remove(uid) }
-        }
 
     private inline fun <R> Store.use(block: (Store) -> R): R =
         try {
@@ -111,8 +66,6 @@ class InboxPoller(
         }
 
     private companion object {
-        private const val PER_POLL = 200
-        private const val TRIES = 3
         private val log = LoggerFactory.getLogger(InboxPoller::class.java)
     }
 }

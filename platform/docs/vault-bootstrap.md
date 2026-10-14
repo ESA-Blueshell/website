@@ -252,6 +252,16 @@ only encrypt, decrypt and rewrap with it (`transit/encrypt/api-address`,
 `transit/decrypt/api-address`, `transit/rewrap/api-address`). Nothing else may read the key, which
 never leaves Vault. The api uses it once `PRIVACY_SEALING` is `vault`, as the deployment sets it.
 
+### Sending-address logins (handled by the bootstrap Job)
+
+The board adds the addresses the site sends from and reads, each with its own login for SMTP and
+IMAP (api ADR-039). The api writes each login to `secret/data/api/sending/<id>` and reads it when it
+sends, reads or checks that address.
+The `api` policy may create, read, update and delete under `secret/data/api/sending/` and delete
+under `secret/metadata/api/sending/`, so removing an address leaves no versions behind; every other
+path the api reads stays read-only. The deployment sets `EMAIL_SENDING_LOGINS` to `vault`. Run the
+bootstrap Job before the release that brings sending addresses, so the policy is in place.
+
 After a release that adds sealing, run the `user.seal-addresses` job once from Jobs in Management.
 It seals every address still in plaintext, soft-deleted ones included, and empties the plaintext.
 It is safe to run again. A database backup taken after it ran shows no address without Vault, and

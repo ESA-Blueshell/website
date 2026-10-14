@@ -122,6 +122,9 @@ spec:
               value: vault
             - name: VAULT_ADDR
               value: http://vault-v2.data-system.svc.cluster.local:8200
+            # Sending addresses keep their SMTP logins in Vault, never in the database (api ADR-039).
+            - name: EMAIL_SENDING_LOGINS
+              value: vault
           ports:
             - containerPort: 8080
               name: http

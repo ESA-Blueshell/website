@@ -12,6 +12,8 @@ const api = vi.hoisted(() => ({
   sendTestEmail: vi.fn(),
   render: vi.fn(),
   findUsers: vi.fn(),
+  listSendingAddresses: vi.fn(),
+  findSenderNames: vi.fn(),
 }))
 const {mockPush, mockStore} = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -56,6 +58,8 @@ describe("writing an email", () => {
     api.sendTestEmail.mockResolvedValue({status: 200, data: {sent: 1}})
     api.render.mockResolvedValue({status: 200, data: {subject: "LAN night", html: "<p>Hi</p>"}})
     api.findUsers.mockResolvedValue({status: 200, data: {content: [aUser({id: 7, fullName: "Ann Vos", username: "ann"})]}})
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: []})
+    api.findSenderNames.mockResolvedValue({status: 200, data: ["Blueshell"]})
   })
 
   afterEach(() => {
@@ -77,7 +81,7 @@ describe("writing an email", () => {
     expect(api.render).toHaveBeenCalledWith({body: {subject: "LAN night", message: "**Hi** 🎮", recipientName: "Member"}})
     expect(wrapper.get('[data-testid="write-preview"]').attributes("srcdoc")).toContain("Hi")
 
-    wrapper.findComponent({name: "SearchPicker"}).vm.$emit("pick", "writer@b.nl")
+    wrapper.findComponent({name: "ReplyToPicker"}).findComponent({name: "SearchPicker"}).vm.$emit("pick", "writer@b.nl")
     await wrapper.get('[data-testid="write-test"]').trigger("click")
     await settle()
     expect(api.sendTestEmail).toHaveBeenCalledWith({body: expect.objectContaining({replyTo: "writer@b.nl"})})
@@ -87,6 +91,7 @@ describe("writing an email", () => {
     await settle()
     expect(api.sendWrittenEmail).toHaveBeenCalledWith({body: {
       to: [{kind: "COHORT", id: "ACTIVE_MEMBERS:4"}, {kind: "PERSON", id: "7"}], subject: "LAN night", message: "**Hi** 🎮", replyTo: "writer@b.nl",
+      from: undefined, fromName: "Blueshell",
     }})
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Queued 215 emails.")
     expect(mockPush).toHaveBeenCalledWith("/management/mail/sent")
@@ -114,6 +119,57 @@ describe("writing an email", () => {
     expect(wrapper.get('[data-testid="write-test"]').attributes("disabled")).toBeDefined()
   })
 
+  it("sends under the address's own name, the site's, or one the writer types", async () => {
+    const events = {id: 5, address: "events@b.nl", displayName: "Events", host: "smtp.b.nl", port: 587, security: "STARTTLS", isDefault: true, loginKept: true}
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: [events]})
+    const wrapper = await mount()
+    await fill(wrapper)
+
+    const names = wrapper.findComponent({name: "SenderNamePicker"})
+    expect(names.props("offered")).toEqual(["Events", "Blueshell"])
+    expect(names.props("modelValue")).toBe("Events")
+    await wrapper.get('[data-testid="write-test"]').trigger("click")
+    await settle()
+    expect(api.sendTestEmail.mock.lastCall![0].body.fromName).toBeUndefined()
+
+    names.vm.$emit("update:modelValue", "Events team")
+    await settle()
+    await wrapper.get('[data-testid="write-test"]').trigger("click")
+    await settle()
+    expect(api.sendTestEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 5, fromName: "Events team"})})
+  })
+
+  it("says when the sending addresses could not be loaded, and that the email goes out from the default one", async () => {
+    api.listSendingAddresses.mockResolvedValue({status: 500, error: {}})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="write-from-unread"]').text())
+      .toBe("The sending addresses could not be loaded, so this email goes out from the site's default address.")
+    expect(wrapper.find('[data-testid="write-from"]').exists()).toBe(false)
+  })
+
+  it("goes out from the default sending address unless another is picked, and says when it is gone", async () => {
+    const address = (id: number, displayName: string, isDefault: boolean) =>
+      ({id, address: `${displayName.toLowerCase()}@b.nl`, displayName, host: "smtp.b.nl", port: 587, security: "STARTTLS", isDefault, loginKept: true})
+    api.listSendingAddresses.mockResolvedValue({status: 200, data: [address(3, "Board", false), address(5, "Events", true)]})
+    const wrapper = await mount()
+    await fill(wrapper)
+
+    const from = wrapper.get('[data-testid="write-from"]').findComponent({name: "SearchPicker"})
+    expect((from.props("options") as Array<{key: string}>).map((one) => one.key)).toEqual(["5", "3"])
+    expect(from.props("selectedKey")).toBe("5")
+    await wrapper.get('[data-testid="write-test"]').trigger("click")
+    await settle()
+    expect(api.sendTestEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 5})})
+
+    from.vm.$emit("pick", "3")
+    api.sendWrittenEmail.mockResolvedValue({status: 400, error: {code: "SendingAddressGone"}})
+    await wrapper.get('[data-testid="write-send"]').trigger("click")
+    await settle()
+    expect(api.sendWrittenEmail).toHaveBeenLastCalledWith({body: expect.objectContaining({from: 3})})
+    expect(wrapper.get('[data-testid="write-failure"]').text()).toBe("The address it was to go out from is removed. Pick another under From.")
+  })
+
   it("says why a test was refused, and says which lists could not be read", async () => {
     api.findUsers.mockRejectedValue(new Error("500"))
     api.findAudiences.mockResolvedValue({status: 500, error: {}})
@@ -136,7 +192,7 @@ describe("writing an email", () => {
     const wrapper = await mount()
     await fill(wrapper)
     const said = async (code: string) => {
-      api.sendTestEmail.mockResolvedValue({status: 400, error: {code, max: code === "SubjectTooLong" ? 255 : 50000}})
+      api.sendTestEmail.mockResolvedValue({status: 400, error: {code, max: {SubjectTooLong: 255, SenderNameInvalid: 128}[code] ?? 50000}})
       await wrapper.get('[data-testid="write-test"]').trigger("click")
       await settle()
       return wrapper.get('[data-testid="write-failure"]').text()
@@ -144,6 +200,7 @@ describe("writing an email", () => {
     expect(await said("SubjectTooLong")).toBe("Make the subject shorter: at most 255 characters.")
     expect(await said("SubjectNotOneLine")).toBe("Write the subject on one line.")
     expect(await said("MessageTooLong")).toBe("Make the message shorter: at most 50000 characters.")
+    expect(await said("SenderNameInvalid")).toBe("Give a sender name of one line, at most 128 characters.")
     expect(await said("WriterWithoutAddress")).toBe("Your account has no email address, so a test has nowhere to go. Add one to your account first.")
   })
 

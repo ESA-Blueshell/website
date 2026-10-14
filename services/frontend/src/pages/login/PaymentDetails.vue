@@ -132,13 +132,6 @@ onMounted(async () => {
           <h2 class="payment__title">
             How to pay
           </h2>
-          <p
-            v-if="own.paysByIncasso"
-            class="payment__lead"
-            data-testid="payment-details-incasso"
-          >
-            You pay by direct debit.
-          </p>
           <dl class="payment__ways">
             <dt>Bank transfer</dt>
             <dd data-testid="payment-details-bank">
@@ -214,11 +207,6 @@ onMounted(async () => {
 
 .payment__section .payment__note {
   margin-top: 0.9rem;
-}
-
-.payment__lead {
-  margin-top: 0.9rem;
-  font-weight: 600;
 }
 
 .payment__ways {

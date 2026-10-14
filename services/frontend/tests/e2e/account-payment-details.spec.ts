@@ -50,7 +50,7 @@ test.describe("the Payment details page", () => {
 
     await page.goto("/account/payment-details")
 
-    await expect(page.getByTestId("payment-details-incasso")).toBeVisible()
+    await expect(page.getByTestId("payment-details-method")).toContainText("Direct debit")
     await expect(page.getByTestId("payment-details-mandate")).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)

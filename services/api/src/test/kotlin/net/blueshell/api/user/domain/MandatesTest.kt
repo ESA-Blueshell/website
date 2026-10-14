@@ -255,12 +255,16 @@ class MandatesTest {
     }
 
     @Test
-    fun `a sealed account does not open for another member`() {
+    fun `a sealed account does not open for another member, and many open in one call`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
         val held = details.mandate!!
 
         assertThatThrownBy { mandates.bankDetailsOf(details.userId + 1, held) }.isInstanceOf(BankDetailsUnopenable::class.java)
         assertThat(controller.findMandate(12).accountHolder).isEqualTo("Ann Vos")
+
+        val opened = mandates.bankDetailsOf(listOf(details.userId to held, details.userId to held))
+        assertThat(opened.map { it.accountHolder }).containsExactly("Ann Vos", "Ann Vos")
+        verify(sealer).open(eq("api-bank-details"), argThat { size == 4 })
     }
 
     @Test

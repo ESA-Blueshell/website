@@ -26,8 +26,11 @@ class PeriodContributionsTest {
     private val reminders: ContributionReminderRepository = mock()
     private val notifications: IncassoNotificationRepository = mock()
     private val payments: PaymentDirectory = mock()
+    private val incassoRuns: IncassoRuns = mock()
     private val controller =
-        PeriodContributionsController(PeriodContributions(periods, memberships, contributions, reminders, notifications, payments))
+        PeriodContributionsController(
+            PeriodContributions(periods, memberships, contributions, reminders, notifications, payments, incassoRuns),
+        )
 
     @Test
     fun `lists the period's members with their fee, payment and last email, and groups the emails into runs`() {

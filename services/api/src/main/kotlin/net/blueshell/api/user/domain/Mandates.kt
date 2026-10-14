@@ -37,7 +37,7 @@ data class OnlineAuthorisation(
     val address: AddressFields,
 )
 
-/** A person's bank details opened, for the few places the full number may go. */
+/** A person's bank details opened, for the few places the full number may go: a reveal and ING's file. */
 data class BankDetails(
     val iban: Iban,
     val accountHolder: String,
@@ -246,6 +246,10 @@ class Mandates(
         userId: Long,
         mandate: IncassoMandate,
     ): BankDetails = sealing.open(listOf(held(userId, mandate))).single()
+
+    /** The full bank details of every mandate, opened in one call, for ING's batch file and nothing else. */
+    fun bankDetailsOf(mandates: List<Pair<Long, IncassoMandate>>): List<BankDetails> =
+        sealing.open(mandates.map { (userId, mandate) -> held(userId, mandate) })
 
     private fun held(
         userId: Long,

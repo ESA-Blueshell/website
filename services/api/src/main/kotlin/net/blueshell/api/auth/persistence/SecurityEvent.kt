@@ -97,4 +97,7 @@ enum class SecurityEventKind(
 
     /** A board member opened the person's full IBAN. */
     IBAN_REVEALED(false),
+
+    /** The person downloaded one of an incasso run's files for ING, which holds full account numbers. */
+    INCASSO_FILE_DOWNLOADED(false),
 }

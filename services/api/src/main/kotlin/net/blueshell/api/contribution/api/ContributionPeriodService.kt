@@ -43,6 +43,12 @@ class ContributionPeriodService
         @Transactional(readOnly = true)
         fun findAll(): List<ContributionPeriod> = repository.findAll()
 
+        /** The period, held until the caller's transaction ends. */
+        @Transactional
+        fun findByIdForUpdate(id: Long): ContributionPeriod =
+            repository.findByIdForUpdate(id)
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "ContributionPeriod not found with id: $id")
+
         @Transactional(readOnly = true)
         fun existsById(id: Long): Boolean = repository.existsById(id)
 

@@ -75,9 +75,9 @@ export async function resendActivation(username: string): Promise<ResendResult> 
  * Spends an account activation token. Says whether a membership started with it, which the page
  * tells the reader. Throws on a refusal.
  */
-export async function activateUser(token: string): Promise<{membershipStarted: boolean}> {
+export async function activateUser(token: string): Promise<{membershipStarted: boolean; collectedByIncasso: boolean}> {
   const {data} = await userActivate({body: {token}, throwOnError: true})
-  return {membershipStarted: data!.membershipStarted}
+  return {membershipStarted: data!.membershipStarted, collectedByIncasso: data!.collectedByIncasso}
 }
 
 /** Spends a membership activation token. Throws with the refusal the form reads its fields from. */

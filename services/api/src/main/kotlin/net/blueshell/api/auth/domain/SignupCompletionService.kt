@@ -54,7 +54,11 @@ class SignupCompletionService(
         signupTokens.retire(userId)
         // Only a membership that started here: a board member starting one on somebody's
         // behalf is doing administration, not joining, and must not mail them a bill.
-        joiningAsk.askOnJoining(userId, startDate)
-        return SignupOutcome(emailConfirmed = true, membershipStarted = true)
+        val collectedByIncasso = joiningAsk.askOnJoining(userId, startDate)
+        return SignupOutcome(
+            emailConfirmed = true,
+            membershipStarted = true,
+            collectedByIncasso = collectedByIncasso,
+        )
     }
 }

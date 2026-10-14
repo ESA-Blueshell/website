@@ -226,14 +226,15 @@ class SignupControllerTest {
     @Nested
     inner class Apply {
         @Test
-        fun `reports both halves of the outcome`() {
+        fun `reports the outcome, including whether the next incasso run collects the first contribution`() {
             whenever(signupUseCases.submitApplication(TOKEN, true))
-                .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true))
+                .thenReturn(SignupOutcome(emailConfirmed = true, membershipStarted = true, collectedByIncasso = true))
 
             val response = controller.apply(TOKEN, SignupApplicationRequest(conditionsAccepted = true))
 
             assertThat(response.emailConfirmed).isTrue()
             assertThat(response.membershipStarted).isTrue()
+            assertThat(response.collectedByIncasso).isTrue()
         }
 
         // An unconfirmed address is the normal case here, so the applicant is told the

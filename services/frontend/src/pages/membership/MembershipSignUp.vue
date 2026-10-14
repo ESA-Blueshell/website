@@ -164,7 +164,18 @@
         <p class="site-lead">
           Welcome to Blueshell
         </p>
-        <p class="site-muted">
+        <p
+          v-if="collectedByIncasso"
+          class="site-muted"
+          data-testid="membership-complete-incasso"
+        >
+          Your membership has started and is pending until your first contribution is paid. We collect it by incasso
+          with the next collection, and email you at least 14 days before. You become a member once it is collected.
+        </p>
+        <p
+          v-else
+          class="site-muted"
+        >
           Your membership has started and is pending until your first contribution is paid. You become a member once
           the treasurer records it.
         </p>
@@ -259,6 +270,8 @@ const submitting = ref(false)
 // overwrite whatever they had typed into it.
 const preparing = ref(false)
 const finished = ref(false)
+// Set up incasso while signing up: the next run collects the first contribution, so nobody asks by transfer.
+const collectedByIncasso = ref(false)
 const applicationSubmitted = ref(false)
 // Set when another tab confirms the address, which is what retires the step that
 // asks for it.
@@ -372,6 +385,7 @@ const submitApplication = () => withSubmitting(async () => {
 function settleOutcome(outcome: SignupOutcomeResponse) {
   if (outcome.membershipStarted) {
     forgetToken()
+    collectedByIncasso.value = outcome.collectedByIncasso === true
     finished.value = true
     return
   }

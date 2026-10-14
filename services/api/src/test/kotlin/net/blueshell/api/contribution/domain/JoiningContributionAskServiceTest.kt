@@ -6,7 +6,10 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -19,6 +22,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -29,7 +33,12 @@ class JoiningContributionAskServiceTest {
     private val users = mock<UserService>()
     private val reminders = mock<ContributionReminderService>()
     private val jobs = mock<JobQueue>()
-    private val service = JoiningContributionAskService(periods, users, reminders, jobs)
+    private val payments = mock<PaymentDirectory>()
+    private val service = JoiningContributionAskService(periods, users, reminders, jobs, payments)
+
+    init {
+        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(false, null)))
+    }
 
     private val member =
         User(
@@ -122,6 +131,29 @@ class JoiningContributionAskServiceTest {
             anyOrNull(),
         )
     }
+
+    @Test
+    fun `asks a member who set up incasso while signing up for nothing, since the next run collects it`() {
+        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(sealedIban = "sealed"))))
+
+        assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isTrue()
+
+        verify(reminders, never()).create(any())
+        verifyNoInteractions(jobs)
+    }
+
+    @Test
+    fun `asks by transfer a member without incasso, or whose mandate has no bank details to collect from`() {
+        givenAPeriod()
+
+        assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isFalse()
+        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(sealedIban = null))))
+        assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isFalse()
+        verify(reminders, org.mockito.kotlin.times(2)).create(any())
+    }
+
+    private fun mandate(sealedIban: String?) =
+        IncassoMandate(sealedIban, sealedIban, null, "BLUESHELL-$USER_ID-20251001", LocalDate.of(2025, 10, 1), null, Instant.EPOCH)
 
     // Nothing to quote and nothing to record it against, so the member simply joins.
     @Test

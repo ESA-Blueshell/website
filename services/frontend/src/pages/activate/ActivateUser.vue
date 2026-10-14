@@ -23,9 +23,11 @@
       >
         <done-tick />
         <p>
-          {{ membershipStarted
-            ? "Account confirmed and your membership has started. You will be redirected to the login page."
-            : "Account confirmed! You will be redirected to the login page." }}
+          {{ !membershipStarted
+            ? "Account confirmed! You will be redirected to the login page."
+            : collectedByIncasso
+              ? "Account confirmed and your membership has started. We collect your first contribution by incasso and email you at least 14 days before. You will be redirected to the login page."
+              : "Account confirmed and your membership has started. You will be redirected to the login page." }}
         </p>
       </div>
 
@@ -63,6 +65,7 @@ const router = useRouter()
 const loading = ref(true)
 const succeeded = ref(false)
 const membershipStarted = ref(false)
+const collectedByIncasso = ref(false)
 const errorMessage =
   "We couldn’t verify your activation link. It may be invalid, expired, or already used."
 const RECOVERY_TOKEN_STORAGE_KEY = "recovery:user-activation:token"
@@ -88,6 +91,7 @@ onMounted(async () => {
     clearStoredRecoveryToken(RECOVERY_TOKEN_STORAGE_KEY)
     succeeded.value = true
     membershipStarted.value = activated.membershipStarted
+    collectedByIncasso.value = activated.collectedByIncasso
     // A signup form left open in another tab is holding a token this just spent.
     announceAccountActivation()
     window.setTimeout(() => router.push({name: "login"}), 1500)

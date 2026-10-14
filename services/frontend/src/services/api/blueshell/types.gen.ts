@@ -16,6 +16,10 @@ export enum ActionActorType {
 }
 
 export type ActivationResponse = {
+    /**
+     * The first contribution is collected by the next incasso run, so no transfer was asked.
+     */
+    collectedByIncasso: boolean;
     membershipStarted: boolean;
 };
 
@@ -3457,6 +3461,10 @@ export type SignupMandateRequest = {
 };
 
 export type SignupOutcomeResponse = {
+    /**
+     * The first contribution is collected by the next incasso run, so no transfer was asked.
+     */
+    collectedByIncasso: boolean;
     emailConfirmed: boolean;
     membershipStarted: boolean;
 };

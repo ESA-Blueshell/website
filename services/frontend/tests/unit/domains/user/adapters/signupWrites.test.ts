@@ -179,10 +179,10 @@ describe("readMemberProfile", () => {
 
 describe("the membership writes", () => {
   it("applies on the token the applicant holds, and answers with what came of it", async () => {
-    vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: false, membershipStarted: false}))
+    vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: false, membershipStarted: false, collectedByIncasso: false}))
 
     await expect(applyForMembership("sel.ver", true))
-      .resolves.toEqual({emailConfirmed: false, membershipStarted: false})
+      .resolves.toEqual({emailConfirmed: false, membershipStarted: false, collectedByIncasso: false})
     expect(apply).toHaveBeenCalledWith({
       headers: {[SIGNUP_TOKEN_HEADER]: "sel.ver"},
       body: {conditionsAccepted: true},
@@ -191,9 +191,9 @@ describe("the membership writes", () => {
   })
 
   it("applies as a signed-in account", async () => {
-    vi.mocked(createMembership).mockResolvedValue(answer(createMembership, {emailConfirmed: true, membershipStarted: true}))
+    vi.mocked(createMembership).mockResolvedValue(answer(createMembership, {emailConfirmed: true, membershipStarted: true, collectedByIncasso: false}))
 
-    await expect(startOwnMembership(true)).resolves.toEqual({emailConfirmed: true, membershipStarted: true})
+    await expect(startOwnMembership(true)).resolves.toEqual({emailConfirmed: true, membershipStarted: true, collectedByIncasso: false})
     expect(createMembership).toHaveBeenCalledWith({
       body: {conditionsAccepted: true},
       throwOnError: true,

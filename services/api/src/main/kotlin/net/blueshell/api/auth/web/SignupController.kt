@@ -84,7 +84,7 @@ class SignupController(
         @Valid @RequestBody request: SignupApplicationRequest,
     ): SignupOutcomeResponse {
         val outcome = signupUseCases.submitApplication(signupToken, request.conditionsAccepted)
-        return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
+        return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted, outcome.collectedByIncasso)
     }
 
     @PatchMapping("/details")

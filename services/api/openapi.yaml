@@ -20,9 +20,13 @@ components:
       type: string
     ActivationResponse:
       properties:
+        collectedByIncasso:
+          description: The first contribution is collected by the next incasso run, so no transfer was asked.
+          type: boolean
         membershipStarted:
           type: boolean
       required:
+      - collectedByIncasso
       - membershipStarted
       type: object
     Actor:
@@ -6777,11 +6781,15 @@ components:
       type: object
     SignupOutcomeResponse:
       properties:
+        collectedByIncasso:
+          description: The first contribution is collected by the next incasso run, so no transfer was asked.
+          type: boolean
         emailConfirmed:
           type: boolean
         membershipStarted:
           type: boolean
       required:
+      - collectedByIncasso
       - emailConfirmed
       - membershipStarted
       type: object

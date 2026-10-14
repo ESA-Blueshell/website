@@ -5,4 +5,6 @@ package net.blueshell.api.shared.model
 data class SignupOutcome(
     val emailConfirmed: Boolean,
     val membershipStarted: Boolean,
+    /** The first contribution is collected by the next incasso run rather than asked by transfer. */
+    val collectedByIncasso: Boolean = false,
 )

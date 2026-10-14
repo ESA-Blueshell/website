@@ -2649,7 +2649,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "POST" && path === "/signup/apply") {
       if (signupInProgress) signupInProgress.conditionsAccepted = true
-      return answer(route, "apply", {emailConfirmed: false, membershipStarted: false})
+      return answer(route, "apply", {emailConfirmed: false, membershipStarted: false, collectedByIncasso: false})
     }
     if (method === "PATCH" && path === "/signup/details") {
       return route.fulfill({status: 204, body: ""})
@@ -2702,7 +2702,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "pendingActivations", {activations: []})
     }
     if (method === "POST" && path === "/recovery/user/activate") {
-      return answer(route, "userActivate", {membershipStarted: false})
+      return answer(route, "userActivate", {membershipStarted: false, collectedByIncasso: false})
     }
     if (method === "DELETE" && /^\/events\/signups\/\d+$/.test(path)) {
       return route.fulfill({status: 204, contentType: "application/json", body: ""})

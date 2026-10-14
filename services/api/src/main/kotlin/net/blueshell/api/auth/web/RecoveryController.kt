@@ -50,7 +50,7 @@ class RecoveryController(
         @Valid @RequestBody request: UserActivationRequest,
     ): ActivationResponse {
         val outcome = useCases.activateUser(request.token)
-        return ActivationResponse(outcome.membershipStarted)
+        return ActivationResponse(outcome.membershipStarted, outcome.collectedByIncasso)
     }
 
     @PostMapping("/member/activate")

@@ -8,4 +8,7 @@ import org.springframework.stereotype.Repository
 interface IncassoNotificationRepository : BaseRepository<IncassoNotification, Long> {
     /** Every notification sent for this period. A member may appear more than once. */
     fun findByContributionPeriod_Id(contributionPeriodId: Long): MutableList<IncassoNotification>
+
+    /** Every notification sent to this person, for any period, in no particular order. */
+    fun findByUser_Id(userId: Long): List<IncassoNotification>
 }

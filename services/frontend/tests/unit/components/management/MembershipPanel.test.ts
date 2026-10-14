@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {mount} from "@vue/test-utils"
-import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
+import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import {MemberType} from "@/services/api"
-import {settle} from "../../../pages/helpers"
+import {settle, sortByEveryHead} from "../../pages/helpers"
 
 // ── Hoisted mocks ─────────────────────────────────────────────────────────────
 
@@ -25,8 +25,9 @@ const {
 }))
 
 vi.mock("@/domains/user", async () => {
-  const {MemberType} = await import("@/services/api")
+  const {IncassoStanding, MemberType} = await import("@/services/api")
   return {
+    IncassoStanding,
     MemberType,
     listMembershipsFor: mockListMembershipsFor,
     listDeletedMembershipsFor: mockListDeletedMembershipsFor,
@@ -41,13 +42,13 @@ vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
-// Stub MembershipForm — create/update API calls are tested in MembershipForm.test.ts
-vi.mock("@/components/form/MembershipForm.vue", () => ({
+// The form's own saving is tested in MembershipFields.test.ts.
+vi.mock("@/components/management/MembershipFields.vue", () => ({
   default: {
-    name: "MembershipForm",
-    props: ["modelValue", "userId", "submitTestId", "showSubmit", "submitText"],
-    emits: ["submitted", "update:modelValue"],
-    template: "<div class='membership-form-stub' />",
+    name: "MembershipFields",
+    props: ["userId", "membership", "submitText", "submitTestid"],
+    emits: ["saved"],
+    template: "<div class='membership-fields-stub' />",
   },
 }))
 
@@ -93,25 +94,18 @@ function makeMembership(overrides: {
 
 // ── Shared mount helper ───────────────────────────────────────────────────────
 
-function mountDialog(props: {userId?: number; userName?: string; isAdmin?: boolean} = {}) {
+function mountDialog(props: {userId?: number; isAdmin?: boolean} = {}) {
   mockStore.getters.isAdmin = props.isAdmin ?? false
-  return mount(ManageMembershipDialog, {
+  return mount(MembershipPanel, {
     props: {
-      modelValue: true,
       userId: props.userId ?? 42,
-      userName: props.userName ?? "Alice",
-    },
-    global: {
-      stubs: {
-        MembershipForm: true,
-      },
     },
   })
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("ManageMembershipDialog", () => {
+describe("MembershipPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockListMembershipsFor.mockResolvedValue([])
@@ -122,7 +116,7 @@ describe("ManageMembershipDialog", () => {
     mockRestoreOneMembership.mockResolvedValue(undefined)
   })
 
-  it("loads memberships on open (watch modelValue=true)", async () => {
+  it("loads the memberships of the person it is given", async () => {
     mountDialog()
     await settle()
     expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
@@ -140,6 +134,7 @@ describe("ManageMembershipDialog", () => {
     await settle()
 
     expect((wrapper.vm as any).memberships.map((one: {id: number}) => one.id)).toEqual([2, 3, 1])
+    expect(await sortByEveryHead(wrapper)).toBe(3)
   })
 
   it("does NOT call findDeletedMemberships when not admin", async () => {
@@ -209,68 +204,6 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("onCreateSubmitted(true) reloads memberships and emits changed", async () => {
-    const wrapper = mountDialog()
-    await settle()
-
-    vi.clearAllMocks()
-    mockListMembershipsFor.mockResolvedValue([])
-
-    await (wrapper.vm as any).onCreateSubmitted(true)
-
-    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
-    expect(wrapper.emitted("changed")).toBeTruthy()
-  })
-
-  it("onCreateSubmitted(false) does NOT reload memberships or emit changed", async () => {
-    const wrapper = mountDialog()
-    await settle()
-
-    vi.clearAllMocks()
-
-    await (wrapper.vm as any).onCreateSubmitted(false)
-
-    expect(mockListMembershipsFor).not.toHaveBeenCalled()
-    expect(wrapper.emitted("changed")).toBeFalsy()
-  })
-
-  it("onEditSubmitted(m, true) closes inline edit, reloads memberships and emits changed", async () => {
-    const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
-    mockListMembershipsFor.mockResolvedValue([m])
-
-    const wrapper = mountDialog()
-    await settle()
-
-    ;(wrapper.vm as any).toggleInlineEdit(m)
-    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
-
-    vi.clearAllMocks()
-    mockListMembershipsFor.mockResolvedValue([m])
-
-    await (wrapper.vm as any).onEditSubmitted(m, true)
-
-    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(false)
-    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
-    expect(wrapper.emitted("changed")).toBeTruthy()
-  })
-
-  it("onEditSubmitted(m, false) does NOT close inline edit or emit changed", async () => {
-    const m = makeMembership({id: 40, userId: 42, startDate: "2025-01-01", version: 3})
-    mockListMembershipsFor.mockResolvedValue([m])
-
-    const wrapper = mountDialog()
-    await settle()
-
-    ;(wrapper.vm as any).toggleInlineEdit(m)
-    vi.clearAllMocks()
-
-    await (wrapper.vm as any).onEditSubmitted(m, false)
-
-    expect((wrapper.vm as any).editingIds.has(m.id)).toBe(true)
-    expect(mockListMembershipsFor).not.toHaveBeenCalled()
-    expect(wrapper.emitted("changed")).toBeFalsy()
-  })
-
   it("restoreMembership calls correct SDK fn and emits changed (admin)", async () => {
     const deletedM = makeMembership({id: 99, userId: 42, startDate: "2024-01-01", endDate: "2024-06-01"})
     mockListDeletedMembershipsFor.mockResolvedValue([deletedM])
@@ -283,12 +216,26 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.emitted("changed")).toBeTruthy()
   })
 
-  it("close emits update:modelValue false", async () => {
-    const wrapper = mountDialog()
+  it("reports an end, resume, delete or restore that fails, and says nothing changed", async () => {
+    const ended = makeMembership({id: 30, userId: 42, startDate: "2024-01-01", endDate: "2024-12-31"})
+    mockListMembershipsFor.mockResolvedValue([ended])
+    const refusal = new Error("refused")
+    for (const action of [mockEndOneMembership, mockReopenOneMembership, mockDeleteOneMembership, mockRestoreOneMembership]) {
+      action.mockRejectedValue(refusal)
+    }
+    const wrapper = mountDialog({isAdmin: true})
     await settle()
+    const vm = wrapper.vm as any
 
-    ;(wrapper.vm as any).close()
-    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([false])
+    await vm.onEnd(ended)
+    await vm.onReopen(ended)
+    vm.onDelete(ended)
+    await vm.onDeleteConfirmed()
+    await vm.onRestore(ended)
+
+    expect(mockHandleNetworkError).toHaveBeenCalledTimes(4)
+    expect(mockHandleNetworkError).toHaveBeenCalledWith(refusal)
+    expect(wrapper.emitted("changed")).toBeFalsy()
   })
 
   it("hasActive is true when any membership has no endDate", async () => {
@@ -353,13 +300,13 @@ describe("ManageMembershipDialog", () => {
     expect(wrapper.find("[data-testid^='manage-membership-row-']").exists()).toBe(false)
   })
 
-  it("title contains 'Manage memberships: Alice' (colon, not em-dash)", async () => {
-    const wrapper = mountDialog({userName: "Alice"})
+  it("loads again for another person", async () => {
+    const wrapper = mountDialog()
     await settle()
 
-    // The BaseModal receives the title prop — check the computed prop string
-    const baseModal = wrapper.findComponent({name: "BaseModal"})
-    expect(baseModal.props("title")).toBe("Manage memberships: Alice")
+    await wrapper.setProps({userId: 43})
+    await settle()
+    expect(mockListMembershipsFor).toHaveBeenLastCalledWith(43)
   })
 
   it("edit pane (manage-membership-edit-pane) appears when toggling inline edit", async () => {
@@ -386,5 +333,77 @@ describe("ManageMembershipDialog", () => {
     await settle()
 
     expect(wrapper.find("[data-testid='manage-membership-add-pane']").exists()).toBe(true)
+  })
+
+  it("ends, resumes, edits, deletes and restores a membership from its own row", async () => {
+    const active = makeMembership({id: 50, userId: 42, startDate: "2025-01-01"})
+    const ended = makeMembership({id: 30, userId: 42, startDate: "2023-01-01", endDate: "2023-12-31"})
+    const deleted = makeMembership({id: 99, userId: 42, startDate: "2022-01-01", endDate: "2022-06-01"})
+    mockListMembershipsFor.mockResolvedValue([active, ended])
+    mockListDeletedMembershipsFor.mockResolvedValue([deleted])
+    const wrapper = mountDialog({isAdmin: true})
+    await settle()
+
+    expect(wrapper.get("[data-testid='manage-membership-row-50']").text()).toContain("1 Jan 2025")
+    expect(wrapper.get("[data-testid='manage-membership-row-50']").text()).toContain("Active")
+    expect(wrapper.get("[data-testid='manage-membership-row-30']").text()).toContain("31 Dec 2023")
+
+    await wrapper.get("[data-testid='manage-membership-edit-btn-50']").trigger("click")
+    const form = wrapper.getComponent({name: "MembershipFields"})
+    expect(form.props()).toMatchObject({userId: 42, membership: active, submitTestid: "manage-membership-save-btn-50"})
+    expect(wrapper.text()).not.toContain("Incasso")
+    mockListMembershipsFor.mockClear()
+    form.vm.$emit("saved", active)
+    await settle()
+    expect(wrapper.find("[data-testid='manage-membership-edit-pane']").exists()).toBe(false)
+    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
+    expect(wrapper.emitted("changed")).toHaveLength(1)
+
+    await wrapper.get("[data-testid='manage-membership-end-btn-50']").trigger("click")
+    await settle()
+    expect(mockEndOneMembership).toHaveBeenCalled()
+    await wrapper.get("[data-testid='manage-membership-reopen-btn-30']").trigger("click")
+    await wrapper.get("[data-testid='manage-membership-restore-btn-99']").trigger("click")
+    await settle()
+    expect(mockRestoreOneMembership).toHaveBeenCalledWith(99)
+
+    await wrapper.get("[data-testid='manage-membership-delete-btn-30']").trigger("click")
+    const dialog = wrapper.getComponent({name: "ConfirmDialog"})
+    expect(dialog.props("open")).toBe(true)
+    dialog.vm.$emit("update:open", false)
+    await settle()
+    expect(dialog.props("open")).toBe(false)
+  })
+
+  it("resumes an ended membership from its row while none is running", async () => {
+    mockListMembershipsFor.mockResolvedValue([makeMembership({id: 30, userId: 42, startDate: "2023-01-01", endDate: "2023-12-31"})])
+    const wrapper = mountDialog()
+    await settle()
+
+    await wrapper.get("[data-testid='manage-membership-reopen-btn-30']").trigger("click")
+    await settle()
+    expect(mockReopenOneMembership).toHaveBeenCalled()
+  })
+
+  it("folds the add form out from its button, and closes it once a membership is added", async () => {
+    mockListMembershipsFor.mockResolvedValue([])
+    const wrapper = mountDialog()
+    await settle()
+
+    expect(wrapper.get("[data-testid='manage-membership-empty']").text()).toContain("No memberships yet")
+    await wrapper.get("[data-testid='manage-membership-add-toggle']").trigger("click")
+    await wrapper.get("[data-testid='manage-membership-add-toggle']").trigger("click")
+    expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(false)
+
+    await wrapper.get("[data-testid='manage-membership-add-toggle']").trigger("click")
+    const form = wrapper.getComponent({name: "MembershipFields"})
+    expect(form.props()).toMatchObject({userId: 42, membership: undefined, submitTestid: "manage-membership-create-btn"})
+    mockListMembershipsFor.mockClear()
+    form.vm.$emit("saved", makeMembership({id: 7, userId: 42, startDate: "2026-01-01"}))
+    await settle()
+
+    expect(wrapper.find("[data-testid='manage-membership-create']").exists()).toBe(false)
+    expect(mockListMembershipsFor).toHaveBeenCalledWith(42)
+    expect(wrapper.emitted("changed")).toHaveLength(1)
   })
 })

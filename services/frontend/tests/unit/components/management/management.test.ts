@@ -60,13 +60,13 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar and marks the admin's own", async () => {
     const admin = await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
 
-    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/cohorts", "/management/jobs", "/management/exceptions"])
+    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/recovery/manage", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/cohorts", "/management/jobs", "/management/exceptions"])
     expect(admin.get("[data-testid=management-sidebar]").text()).toContain("@Admin")
 
     // The store is the app's one, so the board's sign-in replaces the admin's.
     const board = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses"])
+    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/recovery/manage", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses"])
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 
@@ -80,7 +80,7 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("carries a bar of tabs for a phone, the alerts and members tabs and More, and says which is open", async () => {
     const wrapper = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(wrapper, "management-tabbar")).toEqual(["/management/alerts", "/user-manager", "/management/more"])
+    expect(targets(wrapper, "management-tabbar")).toEqual(["/management/alerts", "/management/users", "/management/more"])
     expect(wrapper.get("[data-testid=management-tab-more]").attributes("aria-current")).toBe("page")
     expect(wrapper.get("[data-testid=management-tab-members]").attributes("aria-current")).toBeUndefined()
   })

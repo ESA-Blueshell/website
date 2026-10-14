@@ -1,9 +1,18 @@
 import {MemberType, type MembershipResponse} from "@/services/api"
-import {deriveLatestMembership, deriveMemberSince} from "@/composables/useUserRows"
 
-// Re-exported at the name its callers already use. The rule lives beside the other row
-// derivations in useUserRows, so an edit to it cannot reach only half the pages that read it.
-export {deriveLatestMembership}
+/** The earliest start date, which is the day somebody first joined. */
+export function deriveMemberSince(ums: MembershipResponse[]): string | null {
+  if (ums.length === 0) return null
+  const first = ums[0]!
+  return ums.reduce((min, m) => (m.startDate < min ? m.startDate : min), first.startDate)
+}
+
+/** The membership with the latest start date, which is the one every action is judged against. */
+export function deriveLatestMembership(ums: MembershipResponse[]): MembershipResponse | null {
+  if (ums.length === 0) return null
+  const first = ums[0]!
+  return ums.reduce<MembershipResponse>((latest, m) => (m.startDate > latest.startDate ? m : latest), first)
+}
 
 /**
  * A selected user, with everything a bulk contribution preview needs already worked out.

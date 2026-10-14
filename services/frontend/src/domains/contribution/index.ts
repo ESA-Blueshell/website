@@ -17,35 +17,7 @@ export {
   type ReadEmailQuery,
   type SendPaymentEmailsBody,
 } from "./adapters/paymentEmails"
-export {recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
+export {listPaidUserIds, recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
 export {readFirstContribution, type FirstContribution} from "./adapters/firstContribution"
-export {
-  changedFeeTypes,
-  changedKinds,
-  contributionEmailItems,
-  contributionEmailLabels,
-  countByKind,
-  forcedUserIds,
-  isReCharged,
-  isSelectable,
-  isSwitched,
-  kindFor,
-  lastAskedOn,
-  lastSentOfKind,
-  PERIOD_OVERHANG_MONTHS,
-  paymentDateProblem,
-  periodDateWindow,
-  reChargedDescription,
-  reapplyChoices,
-  seedChoices,
-  seedSendTo,
-  summarise,
-  switchedDescription,
-  switchedNote,
-  toBulkRow,
-  toBulkRows,
-  willSend,
-  type FlaggedMember,
-  type PaymentEmailChoices,
-  type PaymentEmailSummary,
-} from "./paymentEmail"
+export {listMemberContributions, recordPayment, withdrawPayment, type MemberPeriodContribution} from "./adapters/memberContributions"
+export {contributionEmailLabels} from "./paymentEmail"

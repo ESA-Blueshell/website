@@ -452,6 +452,19 @@ const routes: RouteRecordRaw[] = [
       // No dashboard yet, so Management opens on the list of its pages.
       {path: "", name: "management", redirect: "/management/more"},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
+      {path: "users", name: "userManager", component: () => import("@/pages/management/UserManager.vue"), meta: {title: "Users"}},
+      {
+        path: "users/bulk/:action(start|end|paid|unpaid)",
+        name: "bulkTask",
+        component: () => import("@/pages/management/BulkTask.vue"),
+        meta: {title: "Many members"},
+      },
+      {
+        path: "users/:id(\\d+)/:tab(membership|contributions|profile|address|account|roles)?",
+        name: "userDetail",
+        component: () => import("@/pages/management/UserDetail.vue"),
+        meta: {title: "User"},
+      },
       {path: "mail/sent", name: "sentEmails", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
       {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
       {path: "mail/inbox/:id(\\d+)", name: "inboxMessage", component: () => import("@/pages/management/InboxMessage.vue"), meta: {title: "Message"}},
@@ -513,12 +526,8 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  {
-    path: "/user-manager",
-    name: "userManager",
-    component: () => import("@/pages/management/UserManager.vue"),
-    meta: {title: "Manage users", requiresAuth: true, requiresBoard: true},
-  },
+  // The users page moved into the portal; old links and bookmarks still land on it.
+  {path: "/user-manager", redirect: "/management/users"},
   {
     path: "/recovery/manage",
     name: "recoveryManager",

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import type {BulkActionResult, BulkMembershipPreview} from "@/domains/user"
@@ -37,11 +38,6 @@ const emit = defineEmits<{
   /** The api refused the selection because the table is out of date. */
   (e: "stale"): void
 }>()
-
-const open = computed({
-  get: () => props.modelValue,
-  set: (v) => emit("update:modelValue", v),
-})
 
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
@@ -93,9 +89,8 @@ const configMap: Record<MembershipAction, DialogConfig> = {
         "Gives every included member a membership beginning on the date shown. Members who "
         + "are already active are skipped. Somebody who was a member before comes back on a "
         + "new membership rather than their old one reopened, so their history reads as two "
-        + "stays — and \"member since\" still shows the day they first joined. Their member "
-        + "type carries over from their last membership; incasso does not, and is set per "
-        + "member afterwards.",
+        + "stays, and \"member since\" still shows the day they first joined. Their member "
+        + "type carries over from their last membership.",
     },
   },
 }
@@ -207,27 +202,19 @@ watch(
 
 <template>
   <bulk-dialog-scaffold
-    v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
     :confirm-label="config.confirmLabel"
     :counts="counts"
-    :help="config.help"
-    :icon="config.icon"
     :included-count="includedUserIds.length"
-    info-box-label="Effective date"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting || loading"
-    :title="config.title"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
     <template #info-box>
-      <div
-        class="text-body-2"
-        data-testid="bulk-membership-effective-date"
-      >
+      <p data-testid="bulk-membership-effective-date">
         <template v-if="effectiveDate">
           {{ config.dateSentence }} {{ formatBulkDate(effectiveDate) }}, the server's date.
         </template>
@@ -237,56 +224,37 @@ watch(
         <template v-else-if="!rejection">
           Working out what this would do…
         </template>
-      </div>
-
-      <v-alert
+      </p>
+      <notice-box
         v-if="previewFailed"
-        class="mt-2 mb-0"
-        data-testid="bulk-membership-preview-failed"
-        density="compact"
-        type="error"
-        variant="tonal"
+        testid="bulk-membership-preview-failed"
+        tone="danger"
       >
-        Nothing has been changed. Close this and try again.
-      </v-alert>
-
-      <v-alert
+        Nothing has been changed. Go back and try again.
+      </notice-box>
+      <notice-box
         v-if="rejection"
-        class="mt-2 mb-0"
-        data-testid="bulk-membership-rejection"
-        density="compact"
-        type="warning"
-        variant="tonal"
+        testid="bulk-membership-rejection"
+        title="Nothing was changed"
+        tone="warning"
       >
-        <div class="font-weight-medium mb-1">
-          Nothing was changed.
-        </div>
-        <div
+        <p
           v-for="reason in rejection.reasons"
           :key="reason.code"
-          class="text-body-2"
         >
           {{ reason.message }}
-          <span v-if="reason.userIds.length"> {{ namesFor(reason.userIds) }}</span>
-        </div>
-        <div
-          v-if="rejection.requiresReload"
-          class="text-body-2 mt-1"
-        >
-          The list has been reloaded; check the selection and try again.
-        </div>
-      </v-alert>
-
-      <v-alert
+          <span v-if="reason.userIds.length">{{ namesFor(reason.userIds) }}</span>
+        </p>
+        <p v-if="rejection.requiresReload">
+          The list has been reloaded. Check the selection and try again.
+        </p>
+      </notice-box>
+      <notice-box
         v-if="result"
-        class="mt-2 mb-0"
-        data-testid="bulk-membership-result"
-        density="compact"
-        type="success"
-        variant="tonal"
+        testid="bulk-membership-result"
       >
         {{ result.applied }} {{ config.appliedVerb }}, {{ result.skipped }} skipped.
-      </v-alert>
+      </notice-box>
     </template>
   </bulk-dialog-scaffold>
 </template>

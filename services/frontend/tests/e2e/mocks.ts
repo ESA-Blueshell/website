@@ -612,6 +612,8 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const baseMemberships: Wire<MembershipResponse>[] = fixtures.memberships ?? [
     aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01"}),
   ]
+  // The periods a payment was recorded for on a person's own page.
+  const paidPeriods = new Set<number>()
 
   const basePeriods: Wire<ContributionPeriodResponse>[] = fixtures.contributionPeriods ?? [
     aContributionPeriod({id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 7, version: 3}),
@@ -896,6 +898,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/users/me/email") {
       return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})
     }
+    if (method === "GET" && /^\/users\/\d+\/account-security$/.test(path)) {
+      return answer(route, "accountStanding", {twoFactorOn: false, awaitingReenrolment: false, locked: false})
+    }
+    if (method === "GET" && /^\/users\/\d+\/security-events$/.test(path)) {
+      return answer(route, "securityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
+    }
     if (method === "GET" && path === "/users/me/security-events") {
       return answer(route, "mySecurityEvents", {events: [], page: 0, totalPages: 0, totalElements: 0})
     }
@@ -978,7 +986,23 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
     if (method === "GET" && path === "/memberships") {
-      return answer(route, "findMemberships", baseMemberships)
+      const userId = url.searchParams.get("userId")
+      return answer(route, "findMemberships", userId ? baseMemberships.filter((one) => String(one.userId) === userId) : baseMemberships)
+    }
+    if (method === "GET" && /^\/users\/\d+\/contributions$/.test(path)) {
+      return answer(route, "findMemberContributions", [{
+        periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", feeType: "FULL_YEAR_FEE", fee: 30,
+        paid: paidPeriods.has(1), paidAt: paidPeriods.has(1) ? "2025-10-01T10:00:00.000Z" : null,
+        lastEmailAt: "2025-09-20T10:00:00.000Z", lastEmailKind: "REMINDER",
+      }])
+    }
+    if (method === "POST" && path === "/contributions") {
+      paidPeriods.add((request.postDataJSON() as {contributionPeriodId: number}).contributionPeriodId)
+      return route.fulfill({status: 201, contentType: "application/json", body: "{}"})
+    }
+    if (method === "DELETE" && /^\/contributionPeriods\/\d+\/users\/\d+\/contributions$/.test(path)) {
+      paidPeriods.delete(Number(path.split("/")[2]))
+      return route.fulfill({status: 204})
     }
     // The bulk membership actions ask the api what they would do before doing it, so the
     // preview decides the rows here the way the server would: a member with an open

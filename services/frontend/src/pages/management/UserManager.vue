@@ -1,960 +1,463 @@
 <script lang="ts" setup>
+/* Everyone with an account, in one full-length list: one search over every field, three filters
+   and sortable columns. Money is not here; it lives in Contributions. */
+import {countOf} from "@/utils/countOf"
 import {computed, onMounted, ref} from "vue"
-import {useSubmitFeedback} from "@/composables/formUtils"
-import {useDisplay} from "vuetify"
-import TopBanner from "@/components/common/banners/TopBanner.vue"
-import ContributionPeriodList from "@/components/common/lists/ContributionPeriodList.vue"
-import DeletionConfirmationDialog from "@/components/common/modals/DeletionConfirmationDialog.vue"
-import ManageMembershipDialog from "@/components/common/modals/ManageMembershipDialog.vue"
-import BaseModal from "@/components/common/modals/BaseModal.vue"
+import {useRoute, useRouter} from "vue-router"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
+import RoleMark from "@/components/island/RoleMark.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
+import StateMark, {type StateKind} from "@/components/island/StateMark.vue"
+import ModalDialog from "@/components/island/ModalDialog.vue"
+import SubmitButton from "@/components/form/SubmitButton.vue"
 import UserForm from "@/components/form/UserForm.vue"
-
-import {deleteUser, listMemberships, listUsers, type MembershipResponse, readUser, type RoleStanding} from "@/domains/user"
-import {toEditableUser, type EditableUser} from "@/utils/editableUser"
-import {useUserRows, type MemberRow} from "@/composables/useUserRows"
-import {useUserFilters, type SortKey} from "@/composables/useUserFilters"
-import {usePaidToggle} from "@/composables/usePaidToggle"
-import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import ManagementHead from "@/components/management/ManagementHead.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
 import {useUserSelection} from "@/composables/useUserSelection"
-import {computeBulkTargets} from "@/utils/bulkTarget"
-import BulkActionsMenu from "@/components/common/BulkActionsMenu.vue"
-import UserManagerMobileRow from "@/components/common/rows/UserManagerMobileRow.vue"
-import UserManagerRow from "@/components/common/rows/UserManagerRow.vue"
-import UserRolesDialog from "@/domains/user/components/UserRolesDialog.vue"
-import {AccountSecurityDialog} from "@/domains/auth"
-import store from "@/plugins/store"
-import PaidStatusDialog from "@/components/common/modals/bulk/PaidStatusDialog.vue"
-import MembershipStatusDialog from "@/components/common/modals/bulk/MembershipStatusDialog.vue"
-import PaymentEmailWizard from "@/components/common/modals/bulk/paymentEmail/PaymentEmailWizard.vue"
-
-export type {MemberRow}
+import {type Committee, listCommittees} from "@/domains/committees"
+import {readCurrentPeriod} from "@/domains/contribution"
+import {
+  MEMBERSHIP_WORDS,
+  MemberType,
+  type MembershipResponse,
+  type MembershipState,
+  NEEDS_LOOK_WORDS,
+  type NeedsLook,
+  type PersonRow,
+  type UserDetailResponse,
+  filterPeople,
+  listMemberships,
+  listUsers,
+  peopleRows,
+  membershipRank,
+} from "@/domains/user"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import type {EditableUser} from "@/utils/editableUser"
+import {formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "UserManagerPage"})
 
-const {height: viewportHeight, lgAndUp} = useDisplay()
-const toolbarDensity = computed(() => (lgAndUp.value ? "comfortable" : "compact"))
-
-// A virtual scroller places rows by arithmetic, so every row has to be exactly this tall —
-// which is what `density="comfortable"` already renders, and what the row component pins.
-const ROW_HEIGHT = 44
-
-// Column widths are declared because the table is laid out fixed: under `table-layout: auto`
-// the widths come from whichever rows happen to be mounted, so they would shift as the
-// window scrolls. A fixed column never grows to fit its content, so the two columns that hold
-// controls are sized in pixels from what they hold. The weighted data columns split a share
-// of the table that leaves room for those at its narrowest, 936px at lg, and Name and Username
-// split what is left: a fixed table hands its spare width to the columns without one, and
-// would otherwise widen the pixel columns. A `calc()` width would say this directly, but a
-// table column treats one as `auto`.
-const CHECKBOX_COLUMN_WIDTH = 44
-const WEIGHTED_COLUMNS_PERCENT = 50
-// Matches the row's action buttons and its cell padding.
-const ACTION_BUTTON_WIDTH = 28
-const ACTION_GAP = 4
-const CELL_PADDING = 8
-
-const HEADER_COLUMNS: ReadonlyArray<{
-  label: string
-  weight?: number
-  sortKey?: SortKey
-  testid?: string
-  thClass?: string
-}> = [
-  {label: "Name", sortKey: "name", testid: "member-manager-header-name"},
-  {label: "Username", sortKey: "username", testid: "member-manager-header-username"},
-  {label: "Role", weight: 8.4, sortKey: "role", testid: "member-manager-header-role", thClass: "text-right"},
-  {label: "Membership status", weight: 10.4, sortKey: "status", testid: "member-manager-header-status", thClass: "mm-th-multiline"},
-  {label: "Member since", weight: 10.4, sortKey: "memberSince", testid: "member-manager-header-member-since"},
-  {label: "Member in period", weight: 7.3, sortKey: "wasMemberInPeriod", testid: "member-manager-header-period-member", thClass: "mm-th-multiline mm-th-period"},
-  {label: "Paid in period", weight: 8, sortKey: "paid", testid: "member-manager-header-paid", thClass: "mm-th-multiline mm-th-period"},
-  {label: "Type / Incasso", weight: 8.4},
-]
-const TOTAL_WEIGHT = HEADER_COLUMNS.reduce((sum, column) => sum + (column.weight ?? 0), 0)
-// The table counts its columns from these, not from the header slot. Left to count the row's
-// fields, it spans its spacer rows across more columns than the header has, and those empty
-// columns take the width the declared ones leave over.
-const TABLE_COLUMNS = [
-  {key: "select"},
-  ...HEADER_COLUMNS.map((column) => ({key: column.label})),
-  {key: "actions"},
-]
-
-const users = ref<EditableUser[]>([])
+const users = ref<UserDetailResponse[]>([])
 const memberships = ref<MembershipResponse[]>([])
-const paidUserIds = ref<Set<number>>(new Set())
+const committees = ref<Committee[]>([])
+const loaded = ref(false)
 
-const deleteDialog = ref(false)
-const pendingDeleteUser = ref<EditableUser | null>(null)
+// A link can open the list already searched, as ?search=<username>.
+const route = useRoute()
+const router = useRouter()
+const search = ref(typeof route.query.search === "string" ? route.query.search : "")
+const membership = ref<string | null>(null)
+const type = ref<string | null>(null)
+const needs = ref<string | null>(null)
 
-const addDialog = ref(false)
+const MEMBERSHIP_MARKS: Record<MembershipState, StateKind> = {current: "in-sync", pending: "missing", former: "not-compared", never: "not-compared"}
+const MEMBERSHIP_SHORT: Record<MembershipState, string> = {current: "Active", pending: "Pending", former: "Former", never: "Never a member"}
+const NEEDS_MARKS: Record<NeedsLook, StateKind> = {"locked": "not-created", "role-waiting": "unreachable", "no-discord": "unreachable", "no-address": "unreachable"}
+const MARKED_ROLES = ["admin", "board", "treasurer"]
+
+const COLUMNS: TableColumn<PersonRow>[] = [
+  {key: "name", label: "Name", wrap: true, testid: "member-manager-header-name", sortBy: (row) => row.fullName},
+  {key: "membership", label: "Membership", wrap: true, testid: "member-manager-header-status", sortBy: membershipRank},
+  {key: "committees", label: "Committees", wrap: true, sortBy: (row) => row.committees.map((one) => one.name).join(", ")},
+  {key: "discord", label: "Discord", sortBy: (row) => row.discord},
+  {key: "needs", label: "Needs a look", wrap: true, sortBy: (row) => row.needs.map((one) => NEEDS_LOOK_WORDS[one]).join(", ")},
+]
+const membershipOptions = (Object.keys(MEMBERSHIP_WORDS) as MembershipState[]).map((key) => ({key, label: MEMBERSHIP_WORDS[key]}))
+// Picker values come from the generated SDK; NONE is no type anybody holds.
+const typeOptions = Object.values(MemberType).filter((one) => one !== MemberType.NONE)
+  .map((key) => ({key, label: key.charAt(0) + key.slice(1).toLowerCase()}))
+const needsOptions = [
+  {key: "any", label: "Any reason"},
+  ...(Object.keys(NEEDS_LOOK_WORDS) as NeedsLook[]).map((key) => ({key, label: NEEDS_LOOK_WORDS[key]})),
+]
+
+const rows = computed(() => peopleRows(users.value, memberships.value, committees.value))
+const shown = computed(() => filterPeople(rows.value, {
+  search: search.value,
+  membership: membership.value as MembershipState | null,
+  type: type.value as MemberType | null,
+  needs: needs.value as NeedsLook | "any" | null,
+}))
+
+const filtered = computed(() => search.value !== "" || membership.value !== null || type.value !== null || needs.value !== null)
+
+const clearFilters = () => {
+  search.value = ""
+  membership.value = null
+  type.value = null
+  needs.value = null
+}
+
+const typeName = (type: MemberType): string => type.charAt(0) + type.slice(1).toLowerCase()
+
+/** "Regular · since 1 Sep 2024", or nothing for someone never a member. */
+const standingOf = (row: PersonRow): string =>
+  (row.type && row.memberSince ? `${typeName(row.type)} · since ${formatDay(row.memberSince)}` : "")
+
+const periodStart = ref<string | null>(null)
+
+const facts = computed(() => {
+  const members = rows.value.filter((row) => row.membership === "current").length
+  const pending = rows.value.filter((row) => row.membership === "pending").length
+  const looked = rows.value.filter((row) => row.needs.length > 0)
+  const reasons = (Object.keys(NEEDS_LOOK_WORDS) as NeedsLook[]).filter((reason) => looked.some((row) => row.needs.includes(reason)))
+  const start = periodStart.value
+  // What needs somebody comes first, and is quiet when nobody is waiting.
+  return [
+    {label: "Pending their first contribution", value: String(pending), sub: countOf(members, "member", "members"), quiet: pending === 0, testid: "member-manager-fact-members"},
+    {label: "Needs a look", value: countOf(looked.length, "person", "people"), sub: reasons.map((reason) => NEEDS_LOOK_WORDS[reason]).join(", "), quiet: looked.length === 0},
+    start
+      ? {label: "New this period", value: String(rows.value.filter((row) => row.memberSince !== null && row.memberSince >= start).length), sub: `Since ${formatDay(start)}`}
+      : {label: "Accounts", value: String(rows.value.length), sub: "Members or not"},
+  ]
+})
+
+const displayedIds = computed(() => shown.value.map((row) => row.id))
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} = useUserSelection(displayedIds)
+
+/** The task page takes the selection by id and says what will happen before anything does. */
+const openBulk = (action: "start" | "end") =>
+  router.push({path: `/management/users/bulk/${action}`, query: {ids: selectedIdsArray.value.join(","), back: "/management/users"}})
+
+const load = async () => {
+  try {
+    const [people, held, groups] = await Promise.all([listUsers(), listMemberships(), listCommittees()])
+    users.value = people
+    memberships.value = held
+    committees.value = groups
+  } catch (error) {
+    $handleNetworkError(error)
+  } finally {
+    loaded.value = true
+  }
+  // Only a fact reads it, so the list stands without one.
+  periodStart.value = await readCurrentPeriod().then((period) => period?.startDate ?? null, () => null)
+}
+
+const addOpen = ref(false)
 const addModel = ref<EditableUser>(blankUser())
-const addFormRef = ref<InstanceType<typeof UserForm> | null>(null)
-const addFormSaving = ref(false)
-const {submitState: addSubmitState, showSubmitStatus: addShowStatus, setSubmitResult: addSetResult} =
-  useSubmitFeedback()
-
-const editDialog = ref(false)
-const editModel = ref<EditableUser | null>(null)
-const editFormRef = ref<InstanceType<typeof UserForm> | null>(null)
-const editFormSaving = ref(false)
-const {submitState: editSubmitState, showSubmitStatus: editShowStatus, setSubmitResult: editSetResult} =
-  useSubmitFeedback()
-
-const manageDialog = ref(false)
-const manageUserId = ref<number | null>(null)
-const manageUserName = ref("")
-
-const rolesDialog = ref(false)
-const rolesUserId = ref<number | null>(null)
-const rolesUserName = ref("")
-// Board members reach the rest of this page; only an admin may change what somebody reaches.
-const mayEditRoles = computed(() => store.getters.isAdmin === true)
-
-// Paid, memberships, profile and delete, plus roles and account security for an admin.
-const actionsColumnWidth = computed(() => {
-  const buttons = mayEditRoles.value ? 6 : 4
-  return buttons * ACTION_BUTTON_WIDTH + (buttons - 1) * ACTION_GAP + 2 * CELL_PADDING
-})
-const columnStyle = (weight?: number) =>
-  weight === undefined ? undefined : `width: ${(weight / TOTAL_WEIGHT) * WEIGHTED_COLUMNS_PERCENT}%`
-
-if ("scrollRestoration" in globalThis.history) {
-  globalThis.history.scrollRestoration = "manual"
-}
-
-const {
-  isDisabled: toggleDisabled,
-  isSaving,
-  togglePaid,
-  contributionPeriodChanged,
-  selectedPeriod,
-  paidKnown,
-  loadFailure: paidLoadFailure,
-  saveFailure: paidSaveFailure,
-} = usePaidToggle(paidUserIds)
-
-const {userSearchIndex, rows} =
-  useUserRows(users, memberships, paidUserIds, selectedPeriod, paidKnown)
-
-const {
-  searchInput,
-  // search is accessed by unit tests via wrapper.vm; keep it in scope.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  search,
-  sortKey,
-  sortAsc,
-  memberFilter,
-  paidFilter,
-  incassoFilter,
-  periodMemberFilter,
-  discordFilter,
-  filteredRows,
-  toggleSort,
-  sortIcon,
-} = useUserFilters(rows, userSearchIndex)
-
-// Selection follows the rows on screen, so the header checkbox means "these" rather than
-// "everyone", and a filter change never silently drops somebody from the set.
-const displayedIds = computed(() => filteredRows.value.map((row) => row.id))
-const {
-  selectedIdsArray,
-  isSelected,
-  toggle: toggleSelected,
-  toggleHeader,
-  headerChecked,
-  headerIndeterminate,
-  hasSelection,
-  clear: clearSelection,
-} = useUserSelection(displayedIds)
-
-/**
- * Which bulk dialog is up. The contribution actions are booked against the selected
- * period; the membership ones are not, so the menu offers them whether or not one is
- * picked.
- */
-type BulkAction = "paid" | "unpaid" | "end" | "start"
-
-const bulkAction = ref<BulkAction | null>(null)
-const bulkDialogOpen = ref(false)
-
-const paymentEmailsOpen = ref(false)
-
-const membershipsByUserId = computed(() => {
-  const byUser = new Map<number, typeof memberships.value>()
-  for (const membership of memberships.value) {
-    const list = byUser.get(membership.userId) ?? []
-    list.push(membership)
-    byUser.set(membership.userId, list)
-  }
-  return byUser
-})
-
-const usersById = computed(
-  () => new Map(users.value.filter((user) => user.id != null).map((user) => [user.id as number, user])),
-)
-
-const bulkTargets = computed(() =>
-  computeBulkTargets(selectedIdsArray.value, membershipsByUserId.value, paidUserIds.value, usersById.value),
-)
-
-function openBulkAction(action: BulkAction) {
-  bulkAction.value = action
-  bulkDialogOpen.value = true
-}
-
-/** The chosen action when it is one the membership dialog handles, else null. */
-const membershipAction = computed<"end" | "start" | null>(() =>
-  bulkAction.value === "end" || bulkAction.value === "start" ? bulkAction.value : null,
-)
-
-/** The action applied, so the rows it touched are refetched and the selection is spent. */
-async function onBulkDone() {
-  clearSelection()
-  await refreshAfterBulk()
-}
-
-/** The api refused the selection because the table was stale: refresh, keep the selection. */
-async function onBulkStale() {
-  await refreshAfterBulk()
-}
-
-/** Reloading the period is what repopulates the paid set, so it stands in for a paid refetch. */
-async function refreshAfterBulk() {
-  await Promise.all([
-    getUsers(),
-    getMemberships(),
-    contributionPeriodChanged(selectedPeriod.value ?? undefined),
-  ])
-}
-
-// Height of the sticky header row, so a short list can be measured exactly.
-const HEADER_HEIGHT = 48
-
-// Banner, period picker, card heading and toolbar, measured above the table.
-const CHROME_ABOVE_TABLE = 420
-
-// The scroller needs a bounded height to virtualize at all. It takes what the window leaves,
-// but never more than the rows actually need — otherwise a filtered-down table reserves a
-// screenful of empty space below its last row. A number rather than a CSS length on purpose:
-// the scroller falls back to parsing this prop when it cannot measure its container.
-const tableHeight = computed(() => {
-  const available = Math.max(360, viewportHeight.value - CHROME_ABOVE_TABLE)
-  const needed = Math.max(160, filteredRows.value.length * ROW_HEIGHT) + HEADER_HEIGHT
-  return Math.min(available, needed)
-})
-
-function ariaSort(key: SortKey) {
-  if (sortKey.value !== key) return "none"
-  return sortAsc.value ? "ascending" : "descending"
-}
-
-// Users count badge: show "shown / total" when a filter/search narrows the
-// list, otherwise just the total.
-const userCountLabel = computed(() =>
-  filteredRows.value.length === rows.value.length
-    ? `${rows.value.length}`
-    : `${filteredRows.value.length} / ${rows.value.length}`,
-)
-
-const getUsers = async () => {
-  try {
-    users.value = (await listUsers()).map((u) => toEditableUser(u))
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  }
-}
-
-const getMemberships = async () => {
-  try {
-    memberships.value = await listMemberships()
-  } catch (error: unknown) {
-    $handleNetworkError(error)
-  }
-}
-
-const updateUser = (user: EditableUser) => {
-  const index = users.value.findIndex((u) => u.id === user.id)
-  if (index === -1) {
-    users.value = [...users.value, user]
-  } else {
-    users.value = [
-      ...users.value.slice(0, index),
-      user,
-      ...users.value.slice(index + 1),
-    ]
-  }
-}
+const addForm = ref<InstanceType<typeof UserForm> | null>(null)
+const addSaving = ref(false)
 
 function blankUser(): EditableUser {
   return {
-    discord: "",
-    email: "",
-    phoneNumber: "",
-    initials: "",
-    firstName: "",
-    lastName: "",
-    username: "",
-    newsletter: true,
-    consentPrivacy: false,
-    photoConsent: false,
-    password: "",
+    discord: "", email: "", phoneNumber: "", initials: "", firstName: "", lastName: "", username: "",
+    newsletter: true, consentPrivacy: false, photoConsent: false, password: "",
   }
 }
 
-function openAddUser() {
+function openAdd() {
   addModel.value = blankUser()
-  addDialog.value = true
-}
-
-async function openEditProfile(row: MemberRow) {
-  const found = await readUser(row.id)
-  if (found) {
-    editModel.value = toEditableUser(found)
-    editDialog.value = true
-  }
-}
-
-function onUserSaved(ok: boolean) {
-  if (ok) {
-    addDialog.value = false
-    getUsers()
-  }
+  addOpen.value = true
 }
 
 async function onAddSave() {
-  addFormSaving.value = true
-  const result = await addFormRef.value?.save()
-  addFormSaving.value = false
-  addSetResult(result != null)
+  addSaving.value = true
+  await addForm.value?.save()
+  addSaving.value = false
 }
 
-function onProfileSaved(ok: boolean) {
-  if (ok) {
-    editDialog.value = false
-    getUsers()
-  }
+function onSaved(ok: boolean) {
+  if (!ok) return
+  addOpen.value = false
+  void load()
 }
 
-async function onEditSave() {
-  editFormSaving.value = true
-  const result = await editFormRef.value?.save()
-  editFormSaving.value = false
-  editSetResult(result != null)
-}
-
-function openManageMembership(row: MemberRow) {
-  manageUserId.value = row.id
-  manageUserName.value = row.fullName
-  manageDialog.value = true
-}
-
-const securityDialog = ref(false)
-const securityTarget = ref<{ id: number; name: string } | null>(null)
-
-function openAccountSecurity(row: MemberRow) {
-  securityTarget.value = {id: row.id, name: row.fullName}
-  securityDialog.value = true
-}
-
-function openEditRoles(row: MemberRow) {
-  rolesUserId.value = row.id
-  rolesUserName.value = row.fullName
-  rolesDialog.value = true
-}
-
-/** The row's role column is read off the roles the save answered with. */
-function onRolesChanged(standing: RoleStanding) {
-  const user = usersById.value.get(standing.userId)
-  if (user) updateUser({...user, roles: standing.roles})
-}
-
-async function onMembershipChanged() {
-  await getMemberships()
-  if (manageUserId.value === null) return
-  const found = await readUser(manageUserId.value)
-  if (found) updateUser(toEditableUser(found))
-}
-
-onMounted(async () => {
-  try {
-    await Promise.all([getUsers(), getMemberships()])
-  } catch (error) {
-    console.error("Error fetching data:", error)
-  }
-})
-
-function openDeleteUser(user: EditableUser) {
-  pendingDeleteUser.value = user
-  deleteDialog.value = true
-}
-
-function openDeleteRow(row: MemberRow) {
-  const user = usersById.value.get(row.id)
-  if (user) openDeleteUser(user)
-}
-
-async function confirmDeleteUser() {
-  if (!pendingDeleteUser.value) return
-  deleteDialog.value = false
-  try {
-    await deleteUser(pendingDeleteUser.value.id as number)
-    users.value = users.value.filter((u) => u.id !== pendingDeleteUser.value!.id)
-  } catch (error) {
-    // The row stays in the table: the account is still there.
-    $handleNetworkError(error)
-  } finally {
-    pendingDeleteUser.value = null
-  }
-}
+onMounted(load)
 </script>
 
 <template>
-  <main class="site-main">
-    <top-banner title="User Manager" />
+  <div
+    class="people"
+    data-testid="member-manager-table"
+  >
+    <management-head
+      eyebrow="Members"
+      title="Users"
+    >
+      Everyone with an account: who they are, their membership and whether their account is set up. Money lives in
+      Contributions.
+      <template #actions>
+        <cut-button
+          testid="member-manager-add-user-btn"
+          @click="openAdd"
+        >
+          Add a user
+        </cut-button>
+      </template>
+    </management-head>
 
-    <v-container>
-      <div
-        class="mx-auto my-3"
-        style="max-width: 1400px"
+    <div class="people__body">
+      <fact-list
+        class="people__facts"
+        :facts="facts"
+      />
+
+      <management-table
+        :columns="COLUMNS"
+        :row-key="(row) => row.id"
+        :row-testid="(row) => `member-manager-row-${row.id}`"
+        :rows="shown"
+        :start-sort="{key: 'name'}"
+        testid="member-manager-list"
+        :header-state="headerState"
+        :selected-count="selectedIdsArray.length"
+        :total="rows.length"
+        :to="(row) => `/management/users/${row.id}`"
+        @clear-selection="clearSelection"
+        @select-all="selectMany(rows.map((row) => row.id))"
+        @toggle-shown="toggleHeader"
       >
-        <contribution-period-list @update:contribution-period="contributionPeriodChanged" />
-
-        <v-alert
-          v-if="paidLoadFailure"
-          class="mt-3"
-          data-testid="member-manager-paid-unknown"
-          type="warning"
-          variant="tonal"
+        <template #count>
+          <span data-testid="member-manager-count"><b>{{ shown.length }}</b> of {{ rows.length }} people</span>
+        </template>
+        <template #filters>
+          <filter-bar
+            :active="filtered"
+            testid="member-manager-filters"
+            @clear="clearFilters"
+          >
+            <filter-picker
+              v-model="membership"
+              label="Membership"
+              :options="membershipOptions"
+              testid="member-manager-filter-membership"
+            />
+            <filter-picker
+              v-model="type"
+              label="Type"
+              :options="typeOptions"
+              testid="member-manager-filter-type"
+            />
+            <filter-picker
+              v-model="needs"
+              any-label="Anybody"
+              label="Needs a look"
+              :options="needsOptions"
+              testid="member-manager-filter-needs"
+            />
+          </filter-bar>
+        </template>
+        <template #search>
+          <search-box
+            v-model="search"
+            label="Search for a user"
+            testid="member-manager-search-input"
+          />
+        </template>
+        <template
+          v-if="loaded"
+          #empty
         >
-          {{ paidLoadFailure }}
-        </v-alert>
-
-        <v-alert
-          v-if="paidSaveFailure"
-          class="mt-3"
-          data-testid="member-manager-paid-refused"
-          type="warning"
-          variant="tonal"
-        >
-          {{ paidSaveFailure }}
-        </v-alert>
-
-        <v-card
-          class="mt-3"
-          data-testid="member-manager-table"
-        >
-          <v-card-text>
-            <div class="d-flex align-center mb-4">
-              <v-badge
-                :content="userCountLabel"
-                color="primary"
-              >
-                <h2 class="ma-0">
-                  Users
-                </h2>
-              </v-badge>
-            </div>
-
-            <!-- Toolbar: search + filters, spanning the full width. A deliberate
-                 responsive layout (no ragged flex-wrap): desktop = one row; mobile =
-                 search on its own line and filters in equal-width rows. -->
-            <div class="member-manager-toolbar mb-3">
-              <v-text-field
-                v-model="searchInput"
-                class="mm-search"
-                clearable
-                data-testid="member-manager-search-input"
-                :density="toolbarDensity"
-                hide-details
-                label="Search users"
-                prepend-inner-icon="mdi-magnify"
+          <span data-testid="member-manager-empty">Nobody matches.</span>
+        </template>
+        <template #check="{row}">
+          <row-check
+            :checked="isSelected(row.id)"
+            :label="`Select ${row.fullName}`"
+            :testid="`member-manager-checkbox-${row.id}`"
+            @toggle="toggle(row.id)"
+          />
+        </template>
+        <template #name="{row}">
+          <router-link
+            class="mg-name"
+            :data-testid="`member-manager-open-${row.id}`"
+            :to="`/management/users/${row.id}`"
+          >
+            {{ row.fullName }}
+          </router-link>
+          <role-mark
+            v-if="MARKED_ROLES.includes(row.role)"
+            class="people__role"
+            :role="row.role.charAt(0).toUpperCase() + row.role.slice(1)"
+          />
+          <span class="mg-sub">{{ row.username }}</span>
+        </template>
+        <template #membership="{row}">
+          <state-mark
+            :kind="MEMBERSHIP_MARKS[row.membership]"
+            :testid="`member-manager-status-${row.id}`"
+          >
+            {{ MEMBERSHIP_SHORT[row.membership] }}
+          </state-mark>
+          <span class="mg-sub">{{ standingOf(row) }}</span>
+        </template>
+        <template #committees="{row}">
+          <span
+            v-if="row.committees.length > 0"
+            class="people__committees"
+          >
+            <router-link
+              v-for="committee in row.committees"
+              :key="committee.slug"
+              class="people__committee"
+              :data-testid="`member-manager-committee-${row.id}-${committee.slug}`"
+              :to="`/management/committees/${committee.slug}`"
+              @click.stop
+            >{{ committee.name }}</router-link>
+          </span>
+          <span
+            v-else
+            class="mg-quiet"
+          >·</span>
+        </template>
+        <template #discord="{row}">
+          <span
+            v-if="row.discord"
+            :data-testid="`member-manager-discord-${row.id}`"
+          >@{{ row.discord }}</span>
+          <span
+            v-else
+            class="mg-quiet"
+          >·</span>
+        </template>
+        <template #needs="{row}">
+          <span
+            class="people__needs"
+            :data-testid="`member-manager-needs-${row.id}`"
+          >
+            <state-mark
+              v-for="reason in row.needs"
+              :key="reason"
+              :kind="NEEDS_MARKS[reason]"
+            >
+              {{ NEEDS_LOOK_WORDS[reason] }}
+            </state-mark>
+            <span
+              v-if="row.needs.length === 0"
+              class="mg-quiet"
+            >·</span>
+          </span>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="[standingOf(row), ...row.committees.map((one) => one.name)].filter(Boolean).join(' · ')"
+            :name="row.fullName"
+            :testid="`member-manager-row-${row.id}`"
+            :to="`/management/users/${row.id}`"
+          >
+            <template #check>
+              <row-check
+                :checked="isSelected(row.id)"
+                :label="`Select ${row.fullName}`"
+                :testid="`member-manager-checkbox-${row.id}`"
+                @toggle="toggle(row.id)"
               />
-              <div class="mm-filters">
-                <v-select
-                  v-model="memberFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'Pending',value:'pending'},{title:'No',value:'no'}]"
-                  data-testid="member-manager-filter-membership"
-                  :density="toolbarDensity"
-                  hide-details
-                  label="Membership"
-                />
-                <v-select
-                  v-model="paidFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                  data-testid="member-manager-filter-paid"
-                  :density="toolbarDensity"
-                  hide-details
-                  label="Paid"
-                />
-                <v-select
-                  v-model="incassoFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                  data-testid="member-manager-filter-incasso"
-                  :density="toolbarDensity"
-                  hide-details
-                  label="Incasso"
-                />
-                <v-select
-                  v-model="periodMemberFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                  data-testid="member-manager-filter-period-member"
-                  :density="toolbarDensity"
-                  hide-details
-                  label="Member in period"
-                />
-                <v-select
-                  v-model="discordFilter"
-                  :items="[{title:'All',value:'all'},{title:'Yes',value:'yes'},{title:'No',value:'no'}]"
-                  data-testid="member-manager-filter-discord"
-                  :density="toolbarDensity"
-                  hide-details
-                  label="Discord"
-                />
-              </div>
-            </div>
-
-            <!-- Desktop table (lg and up). Virtualized: only the rows in the window are
-                 mounted, so the table costs the same whether the association has 200
-                 members or 2000. -->
-            <v-data-table-virtual
-              v-if="lgAndUp"
-              class="manager-table member-manager-vtable"
-              density="comfortable"
-              disable-sort
-              fixed-header
-              :headers="TABLE_COLUMNS"
-              :height="tableHeight"
-              item-value="id"
-              :item-height="ROW_HEIGHT"
-              :items="filteredRows"
+            </template>
+            <state-mark
+              v-if="row.needs.length === 0"
+              :kind="MEMBERSHIP_MARKS[row.membership]"
             >
-              <template #headers>
-                <tr>
-                  <!-- Selects the rows on screen, so a filter never hides part of the selection. -->
-                  <th
-                    class="mm-select-cell mm-th-checkbox"
-                    :style="`width: ${CHECKBOX_COLUMN_WIDTH}px`"
-                  >
-                    <v-checkbox-btn
-                      data-testid="member-manager-header-checkbox"
-                      density="compact"
-                      :indeterminate="headerIndeterminate"
-                      :model-value="headerChecked"
-                      @update:model-value="toggleHeader"
-                    />
-                  </th>
-
-                  <th
-                    v-for="column in HEADER_COLUMNS"
-                    :key="column.label"
-                    :aria-sort="column.sortKey ? ariaSort(column.sortKey) : undefined"
-                    :class="[column.sortKey && 'sortable-header', column.thClass]"
-                    :data-testid="column.testid"
-                    :role="column.sortKey ? 'button' : undefined"
-                    :style="columnStyle(column.weight)"
-                    :tabindex="column.sortKey ? 0 : undefined"
-                    @click="column.sortKey && toggleSort(column.sortKey)"
-                    @keydown.enter="column.sortKey && toggleSort(column.sortKey)"
-                    @keydown.space.prevent="column.sortKey && toggleSort(column.sortKey)"
-                  >
-                    {{ column.label }}
-                    <v-icon
-                      v-if="column.sortKey"
-                      :icon="sortIcon(column.sortKey)"
-                      size="16"
-                    />
-                  </th>
-
-                  <th
-                    class="mm-th-actions"
-                    :style="`width: ${actionsColumnWidth}px`"
-                  >
-                    <div class="mm-th-actions__inner">
-                      <span>Actions</span>
-                      <bulk-actions-menu
-                        :has-selection="hasSelection"
-                        :no-period="!selectedPeriod || !paidKnown"
-                        @add-user="openAddUser"
-                        @mark-paid="openBulkAction('paid')"
-                        @mark-unpaid="openBulkAction('unpaid')"
-                        @send-payment-emails="paymentEmailsOpen = true"
-                        @end-membership="openBulkAction('end')"
-                        @start-membership="openBulkAction('start')"
-                      />
-                    </div>
-                  </th>
-                </tr>
-              </template>
-
-              <!-- Re-evaluated for every row entering the window while scrolling, so the
-                   bindings stay cheap: no per-row work beyond the lookups below. -->
-              <template #item="{item, index}">
-                <user-manager-row
-                  :key="(item as MemberRow).id"
-                  :class="index % 2 === 0 ? 'mm-row--odd' : undefined"
-                  :row="(item as MemberRow)"
-                  :saving="isSaving((item as MemberRow).id)"
-                  :selected="isSelected((item as MemberRow).id)"
-                  :may-edit-roles="mayEditRoles"
-                  :toggle-disabled="toggleDisabled"
-                  @toggle-selection="toggleSelected"
-                  @toggle-paid="togglePaid"
-                  @manage-membership="openManageMembership"
-                  @edit-roles="openEditRoles"
-                  @account-security="openAccountSecurity"
-                  @edit-profile="openEditProfile"
-                  @delete="openDeleteRow"
-                />
-              </template>
-
-              <template #no-data>
-                <div class="text-center text-medium-emphasis py-6">
-                  No users found.
-                </div>
-              </template>
-            </v-data-table-virtual>
-
-            <!-- Mobile list (below lg) — list idiom matching Address/Recovery/Contribution managers -->
-            <div
+              {{ MEMBERSHIP_SHORT[row.membership] }}
+            </state-mark>
+            <state-mark
               v-else
-              data-testid="member-manager-mobile-list"
+              :kind="NEEDS_MARKS[row.needs[0]!]"
             >
-              <!-- The table header carries the select-all and the bulk actions, and there is
-                   no header here, so the list states both above itself instead. -->
-              <div class="member-manager-mobile-bar">
-                <v-checkbox-btn
-                  aria-label="Select every member shown"
-                  data-testid="member-manager-mobile-header-checkbox"
-                  density="compact"
-                  :indeterminate="headerIndeterminate"
-                  :model-value="headerChecked"
-                  @update:model-value="toggleHeader"
-                />
-                <span class="text-caption text-medium-emphasis flex-grow-1">
-                  {{ selectedIdsArray.length ? `${selectedIdsArray.length} selected` : "Select all" }}
-                </span>
-                <bulk-actions-menu
-                  :has-selection="hasSelection"
-                  :no-period="!selectedPeriod || !paidKnown"
-                  @add-user="openAddUser"
-                  @mark-paid="openBulkAction('paid')"
-                  @mark-unpaid="openBulkAction('unpaid')"
-                  @send-payment-emails="paymentEmailsOpen = true"
-                  @end-membership="openBulkAction('end')"
-                  @start-membership="openBulkAction('start')"
-                />
-              </div>
+              {{ NEEDS_LOOK_WORDS[row.needs[0]!] }}
+            </state-mark>
+          </management-row>
+        </template>
+      </management-table>
 
-              <v-list
-                v-if="filteredRows.length > 0"
-                density="compact"
-              >
-                <template
-                  v-for="(row, index) in filteredRows"
-                  :key="row.id"
-                >
-                  <user-manager-mobile-row
-                    :row="row"
-                    :saving="isSaving(row.id)"
-                    :selected="isSelected(row.id)"
-                    :toggle-disabled="toggleDisabled"
-                    @toggle-selection="toggleSelected"
-                    @toggle-paid="togglePaid"
-                    @manage-membership="openManageMembership"
-                    @edit-profile="openEditProfile"
-                    @delete="openDeleteRow"
-                  />
-                  <v-divider v-if="index < filteredRows.length - 1" />
-                </template>
-              </v-list>
+      <selection-bar
+        always
+        :count="selectedIdsArray.length"
+        testid="member-manager-selection"
+        @clear="clearSelection"
+      >
+        <cut-button
+          small
+          testid="bulk-action-start-membership"
+          tone="solid"
+          @click="openBulk('start')"
+        >
+          Start membership
+        </cut-button>
+        <cut-button
+          small
+          testid="bulk-action-end-membership"
+          @click="openBulk('end')"
+        >
+          End membership
+        </cut-button>
+      </selection-bar>
+    </div>
 
-              <div
-                v-else
-                class="text-center text-medium-emphasis py-6"
-              >
-                No users found.
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </div>
-    </v-container>
-
-    <!-- Delete confirmation dialog -->
-    <deletion-confirmation-dialog
-      v-model="deleteDialog"
-      :message="pendingDeleteUser ? `Are you sure you want to delete ${pendingDeleteUser.fullName} (${pendingDeleteUser.username})?` : ''"
-      title="Confirm User Deletion"
-      @confirm="confirmDeleteUser"
-    />
-
-    <!-- Add user dialog -->
-    <base-modal
-      v-model="addDialog"
+    <modal-dialog
+      v-model:open="addOpen"
+      cancel-testid="member-manager-add-user-cancel"
       testid="member-manager-add-user-dialog"
       title="Add user"
-      show-save
-      save-label="Create user"
-      save-testid="user-form-submit-btn"
-      save-icon="mdi-content-save"
-      :save-loading="addFormSaving"
-      :save-submit-state="addSubmitState"
-      :save-show-status="addShowStatus"
-      show-cancel
-      cancel-label="Cancel"
-      @save="onAddSave"
-      @cancel="addDialog = false"
+      wide
     >
       <user-form
-        ref="addFormRef"
+        ref="addForm"
         v-model="addModel"
         :show-password="true"
         :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
-        @submitted="onUserSaved"
+        @submitted="onSaved"
       />
-    </base-modal>
-
-    <!-- Edit profile dialog -->
-    <base-modal
-      v-if="editModel"
-      v-model="editDialog"
-      testid="member-manager-edit-profile-dialog"
-      title="Edit profile"
-      show-save
-      save-label="Save"
-      save-testid="user-form-submit-btn"
-      save-icon="mdi-content-save-edit"
-      :save-loading="editFormSaving"
-      :save-submit-state="editSubmitState"
-      :save-show-status="editShowStatus"
-      show-cancel
-      cancel-label="Cancel"
-      @save="onEditSave"
-      @cancel="editDialog = false"
-    >
-      <user-form
-        ref="editFormRef"
-        v-model="editModel"
-        :options="{includeMemberProfile: true, updateKind: 'board', createVia: 'board'}"
-        @submitted="onProfileSaved"
-      />
-    </base-modal>
-
-    <account-security-dialog
-      v-if="securityTarget !== null"
-      v-model="securityDialog"
-      :user-id="securityTarget.id"
-      :user-name="securityTarget.name"
-    />
-
-    <!-- Roles dialog -->
-    <user-roles-dialog
-      v-if="rolesUserId !== null"
-      v-model="rolesDialog"
-      :user-id="rolesUserId"
-      :user-name="rolesUserName"
-      @changed="onRolesChanged"
-    />
-
-    <!-- Manage membership dialog -->
-    <manage-membership-dialog
-      v-if="manageUserId !== null"
-      v-model="manageDialog"
-      :user-id="manageUserId"
-      :user-name="manageUserName"
-      @changed="onMembershipChanged"
-    />
-    <paid-status-dialog
-      v-if="bulkAction === 'paid' || bulkAction === 'unpaid'"
-      v-model="bulkDialogOpen"
-      :contribution-period-id="selectedPeriod?.id ?? null"
-      :target-state="bulkAction"
-      :targets="bulkTargets"
-      @done="onBulkDone"
-      @stale="onBulkStale"
-    />
-    <!-- Mounted only while chosen: opening it is what asks the api for its preview. -->
-    <membership-status-dialog
-      v-if="membershipAction"
-      v-model="bulkDialogOpen"
-      :target-state="membershipAction"
-      :targets="bulkTargets"
-      @done="onBulkDone"
-      @stale="onBulkStale"
-    />
-    <payment-email-wizard
-      v-model="paymentEmailsOpen"
-      :period="selectedPeriod"
-      :user-ids="selectedIdsArray"
-      @done="onBulkDone"
-    />
-  </main>
+      <template #footer>
+        <submit-button
+          data-testid="user-form-submit-btn"
+          :loading="addSaving"
+          text="Create user"
+          working-text="Creating"
+          @click="onAddSave"
+        />
+      </template>
+    </modal-dialog>
+  </div>
 </template>
 
-<style lang="scss" scoped>
-// Every header label sits on the same baseline, whatever its cell holds: a one-line label, a
-// label wrapped onto three lines, or the select-all checkbox.
-.member-manager-vtable :deep(thead th) {
-  vertical-align: bottom;
+<style scoped>
+.people__committees {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
 }
 
-// The row's cell padding, which the column widths are sized from.
-.member-manager-vtable :deep(thead th:not(.mm-select-cell)) {
-  padding-inline: 8px !important;
+.people__committee {
+  color: var(--color-chalk);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--color-chalk) 35%, transparent);
+  text-underline-offset: 3px;
 }
 
-// Without this the control keeps its own minimum height and pushes the checkbox a line above
-// the header labels beside it.
-.mm-th-checkbox :deep(.v-selection-control) {
-  min-height: 0;
+.people__committee:hover {
+  color: var(--color-brand);
 }
 
-// The menu sits at the trailing edge of the header row, above the per-row action icons and
-// opposite the select-all checkbox. The label keeps the baseline it has in every other cell,
-// so the taller button must not centre it.
-.mm-th-actions {
-  .mm-th-actions__inner {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-  }
+.people__body {
+  padding: 0 2.4rem 3rem;
 }
 
-// Long column headers ("Membership status", "Member in period") wrap onto two
-// lines instead of forcing the whole table wider.
-.mm-th-multiline {
-  white-space: normal;
-  max-width: 6.5rem;
-  line-height: 1.15;
+.people__facts {
+  padding: 1.1rem 0 1.2rem;
 }
 
-// "Member in period" is a short-value (Yes/No) column — keep it narrow so the
-// header wraps cleanly instead of reserving a wide column.
-.mm-th-period {
-  max-width: 4.5rem;
+.people__role {
+  margin-left: 0.4rem;
+  vertical-align: 0.1em;
 }
 
-.member-manager-vtable {
-  :deep(table) {
-    table-layout: fixed;
-  }
-
-  :deep(thead th) {
-    background: rgb(var(--v-theme-surface));
-  }
-
-  // The sticky header rides the scroller's rubber band: a fling to the top slides the whole
-  // table down, so the header leaves its edge and the rows behind it show above it. Chrome
-  // ties the bounce to overscroll chaining, so `none` is what removes it — the page scrolls
-  // from a gesture outside the table instead of from one that ran the table out of rows.
-  :deep(.v-table__wrapper) {
-    overscroll-behavior: none;
-  }
-}
-
-// Same reason as the header hover: a black stripe on the dark theme sinks into the background
-// rather than separating the rows. Keyed off the row's index in the list rather than
-// `:nth-child`, because a virtual scroller reuses row elements and CSS parity would describe
-// the window instead of the list.
-tbody tr.mm-row--odd {
-  background: rgba(var(--v-theme-on-surface), 0.02);
-}
-
-.member-manager-mobile-bar {
+.people__needs {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-inline: 8px;
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  flex-wrap: wrap;
+  gap: 0.1rem 0.9rem;
 }
 
-tbody tr.mm-row--selected > td {
-  background: rgba(var(--v-theme-primary), 0.14);
-}
-
-.gap-1 {
-  gap: 4px;
-}
-
-.gap-3 {
-  gap: 12px;
-}
-
-// Toolbar: one row on desktop; deliberate stacking (no ragged wrap) on mobile.
-.member-manager-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  // Search takes a third and the filters split the rest, so the row spans the
-  // card rather than leaving the trailing edge empty.
-  .mm-search {
-    flex: 1 1 0;
-    min-width: 180px;
-  }
-
-  .mm-filters {
-    display: flex;
-    flex: 2 1 0;
-    gap: 12px;
-
-    > * {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-  }
-}
-
-// Below the lg breakpoint (where the table becomes the mobile list): stack the
-// toolbar into search / equal-width filter rows.
-@media (max-width: 1279px) {
-  .member-manager-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-
-    .mm-search {
-      flex: 0 0 auto;
-      width: 100%;
-    }
-  }
-}
-
-// A phone has no room for five filters on one line, so they pair up; an odd one out spans both.
-@media (max-width: 599px) {
-  .member-manager-toolbar .mm-filters {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-
-    > :last-child:nth-child(odd) {
-      grid-column: 1 / -1;
-    }
-  }
-}
-
-// Compact, single-line mobile rows (table-like, not tall).
-.member-manager-mobile-row {
-  min-height: 40px;
-
-  .mm-username {
-    min-width: 0;
-  }
-}
-
-.btn-tight {
-  padding-inline: 6px !important;
-  min-width: auto !important;
-}
-
-// The checkbox column carries no label and should not take room from the ones that do. Header
-// and body share the column, so they share the centring — otherwise the two rows of checkboxes
-// sit a few pixels apart.
-.mm-select-cell {
-  width: 44px;
-  padding-inline: 4px !important;
-  text-align: center;
-
-  :deep(.v-selection-control) {
-    justify-content: center;
+@media (--phone) {
+  .people__body {
+    padding: 0 1.1rem 2rem;
   }
 }
 </style>

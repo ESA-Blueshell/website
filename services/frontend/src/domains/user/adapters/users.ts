@@ -102,6 +102,14 @@ export async function readUser(userId: number): Promise<UserDetailResponse | nul
   return res.data ?? null
 }
 
+/** One account in full, or null where there is no such account. Throws where it could not be read. */
+export async function readUserOrNobody(userId: number): Promise<UserDetailResponse | null> {
+  const res = await findUserById({path: {userId}})
+  if (res.status === 404) return null
+  if (res.error) throw res.error
+  return res.data ?? null
+}
+
 /** Accounts that were deleted and are still inside their restore window. */
 export async function listDeletedUsers(): Promise<UserDetailResponse[]> {
   const res = await findDeletedUsers({throwOnError: true})

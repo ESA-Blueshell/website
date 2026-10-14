@@ -145,7 +145,7 @@
       ]
     },
     {
-      "description": "The go directive is the oldest Go the module builds with, not the toolchain it runs on: the golang image is that, and moves by its own digest and tag. Raising the floor is a decision, not an upgrade.",
+      "description": "The go directive is the oldest Go the module builds with, and raising it is a decision, not an upgrade. The toolchain directive is the Go that CI lints, scans and builds with and stays on, so a patch release that fixes the standard library reaches govulncheck.",
       "matchManagers": [
         "gomod"
       ],

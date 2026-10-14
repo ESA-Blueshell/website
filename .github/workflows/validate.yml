@@ -260,7 +260,9 @@ jobs:
           # Empty, or setup-go takes the input's `stable` over the module's own version.
           go-version-input: ''
           go-version-file: services/imaging/go.mod
-          cache-dependency-path: services/imaging/go.sum
+          # The setup-go step above has restored the module cache already; a second restore
+          # over it fails on every file.
+          cache: false
           repo-checkout: false
 
       - name: Lint the Dockerfile

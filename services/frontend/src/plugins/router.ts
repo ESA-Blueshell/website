@@ -451,6 +451,7 @@ const routes: RouteRecordRaw[] = [
       {path: "", name: "management", redirect: "/management/more"},
       {path: "more", name: "managementMore", component: () => import("@/pages/management/ManagementMore.vue"), meta: {title: "Management"}},
       {path: "mail/sent", name: "sentEmails", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
+      {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
       {path: "mail/write", name: "writeEmail", component: () => import("@/pages/management/WriteEmail.vue"), meta: {title: "Write an email"}},
       {path: "mail/sent/:id(\\d+)", name: "sentEmail", component: () => import("@/pages/management/SentEmail.vue"), meta: {title: "Email"}},
       {path: "alerts", name: "alertList", component: () => import("@/pages/management/AlertList.vue"), meta: {title: "Alerts"}},

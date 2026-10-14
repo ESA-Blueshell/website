@@ -1,0 +1,186 @@
+<script lang="ts" setup>
+/* Mail to an @esa-blueshell.nl address with no mailbox of its own, replies to the site's emails
+   among it, newest first. Bounces show on the email that bounced, not here. */
+import {computed, onMounted, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import {emailTypeLabel} from "@/domains/emails"
+import {type InboxCounts, type InboxEntry, InboxState, followsOf, inboxStateWord, loadInboxPage, readInboxCounts} from "@/domains/mail"
+import {usePagedTable} from "@/composables/usePagedTable"
+import {formatMoment} from "@/utils/timestamps"
+
+defineOptions({name: "InboxPage"})
+
+const counts = ref<InboxCounts | null>(null)
+const countsFailed = ref(false)
+
+const table = usePagedTable<InboxEntry>((query) => {
+  void readInboxCounts().then((read) => {
+    counts.value = read
+    countsFailed.value = read === null
+  })
+  return loadInboxPage(query)
+}, {pageSize: 50})
+const {rows, search, pageRangeLabel, refresh, more, sortKey, descending, sortBy} = table
+
+// The inbox is read a page at a time, so the server orders it.
+const COLUMNS: TableColumn[] = [
+  {key: "received", label: "Received", sortable: true},
+  {key: "from", label: "From", wrap: true, sortable: true},
+  {key: "what", label: "Subject", wrap: true, sortable: true},
+  {key: "state", label: "State", sortable: true},
+]
+
+const oldest = computed(() => (counts.value?.oldestNewAt ? `Oldest from ${formatMoment(counts.value.oldestNewAt)}` : "Nothing waits"))
+const facts = computed(() => [
+  {label: "New", value: String(counts.value?.new ?? 0), sub: oldest.value, testid: "inbox-new"},
+  {label: "Automatic replies", value: String(counts.value?.automatic ?? 0), sub: "Kept apart from what needs an answer", testid: "inbox-automatic"},
+])
+// The From line as the sender wrote it: anyone can write any name there.
+const senderOf = (entry: InboxEntry) => entry.fromName ?? entry.fromAddress
+const markOf = (entry: InboxEntry) => (entry.automatic ? "not-compared" : entry.state === InboxState.NEW ? "not-created" : "in-sync")
+const follows = (entry: InboxEntry) => followsOf(entry, emailTypeLabel)
+
+onMounted(refresh)
+</script>
+
+<template>
+  <management-page
+    eyebrow="Mail"
+    testid="inbox"
+    title="Inbox"
+  >
+    <template #lede>
+      Mail sent to an @esa-blueshell.nl address that has no mailbox of its own, including replies to the site's emails.
+      Bounces are not here: they show on the email that bounced.
+    </template>
+    <template #actions>
+      <cut-button
+        testid="inbox-refresh"
+        tone="quiet"
+        @click="refresh"
+      >
+        Refresh
+      </cut-button>
+    </template>
+
+    <fact-list
+      v-if="counts"
+      class="inbox__facts"
+      data-testid="inbox-facts"
+      :facts="facts"
+    />
+    <p
+      v-else-if="countsFailed"
+      class="inbox__failed"
+      data-testid="inbox-counts-failed"
+      role="alert"
+    >
+      The counts could not be loaded. Press Refresh to try again.
+    </p>
+
+    <management-table
+      :columns="COLUMNS"
+      :descending="descending"
+      :row-key="(entry) => entry.id"
+      :row-testid="(entry) => `inbox-row-${entry.id}`"
+      :rows="rows"
+      :sort-key="sortKey"
+      label="Inbox"
+      testid="inbox-table"
+      @more="more"
+      @sort="sortBy"
+    >
+      <template #count>
+        {{ pageRangeLabel }}
+      </template>
+      <template #search>
+        <search-box
+          label="Search the inbox"
+          :model-value="search ?? ''"
+          testid="inbox-search"
+          @update:model-value="search = $event"
+        />
+      </template>
+      <template #empty>
+        <span data-testid="inbox-empty">Nothing has arrived.</span>
+      </template>
+      <template #received="{row}">
+        {{ formatMoment(row.receivedAt) }}
+      </template>
+      <template #from="{row}">
+        <span>{{ row.fromName ?? "Unknown sender" }}</span>
+        <span class="mg-sub">{{ row.fromAddress }}</span>
+        <span
+          v-if="row.senderName"
+          class="mg-sub"
+          :data-testid="`inbox-member-${row.id}`"
+        >Address of member {{ row.senderName }}</span>
+      </template>
+      <template #what="{row}">
+        <span class="inbox__subject">{{ row.subject || "(no subject)" }}</span>
+        <router-link
+          v-if="row.answers"
+          class="mg-sub inbox__answers"
+          :data-testid="`inbox-follows-${row.id}`"
+          :to="`/management/mail/sent/${row.answers.emailId}`"
+        >
+          {{ follows(row) }}
+        </router-link>
+        <span
+          v-else-if="follows(row)"
+          class="mg-sub"
+          :data-testid="`inbox-follows-${row.id}`"
+        >{{ follows(row) }}</span>
+      </template>
+      <template #state="{row}">
+        <state-mark
+          :kind="markOf(row)"
+          :testid="`inbox-state-${row.id}`"
+        >
+          {{ inboxStateWord(row) }}
+        </state-mark>
+      </template>
+      <template #phone="{row}">
+        <management-row
+          :meta="`${senderOf(row)} · ${formatMoment(row.receivedAt)}`"
+          :name="row.subject || '(no subject)'"
+          :testid="`inbox-row-${row.id}`"
+        >
+          <state-mark
+            :kind="markOf(row)"
+            :testid="`inbox-state-${row.id}`"
+          >
+            {{ inboxStateWord(row) }}
+          </state-mark>
+        </management-row>
+      </template>
+    </management-table>
+  </management-page>
+</template>
+
+<style scoped>
+.inbox__facts {
+  padding: 1.1rem 0 1.2rem;
+}
+
+.inbox__failed {
+  padding: 1.1rem 0 1.2rem;
+  color: var(--color-danger);
+}
+
+.inbox__subject {
+  font-weight: 600;
+  color: var(--color-chalk);
+}
+
+.inbox__answers:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+</style>

@@ -29,11 +29,11 @@ describe("Management's navigation", () => {
     const pages = (reader: {board: boolean, admin: boolean}) =>
       managementFor(reader).map((group) => [group.label, ...group.entries.map((entry) => entry.label)])
 
-    expect(pages({board: true, admin: false})).toEqual([[null, "Alerts"], ["Members", "Users", "Account recovery"], ["Mail", "Sent"]])
+    expect(pages({board: true, admin: false})).toEqual([[null, "Alerts"], ["Members", "Users", "Account recovery"], ["Mail", "Sent", "Inbox"]])
     expect(pages({board: true, admin: true})).toEqual([
       [null, "Alerts"],
       ["Members", "Users", "Account recovery"],
-      ["Mail", "Sent"],
+      ["Mail", "Sent", "Inbox"],
       ["Platforms", "Cohorts"],
       ["System", "Jobs", "Exceptions"],
     ])
@@ -59,13 +59,13 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar and marks the admin's own", async () => {
     const admin = await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
 
-    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent", "/management/cohorts", "/management/jobs", "/management/exceptions"])
+    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent", "/management/mail/inbox", "/management/cohorts", "/management/jobs", "/management/exceptions"])
     expect(admin.get("[data-testid=management-sidebar]").text()).toContain("@Admin")
 
     // The store is the app's one, so the board's sign-in replaces the admin's.
     const board = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent"])
+    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent", "/management/mail/inbox"])
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 
@@ -195,7 +195,7 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     expect(router.currentRoute.value.path).toBe("/")
   })
 
-  it("opens Sent, one email and Write an email inside the portal for the board, and sends the old address on to it", async () => {
+  it("opens Sent, one email, Write an email and the Inbox inside the portal for the board, and sends the old address on to it", async () => {
     await mountPage(ManagementShell, {path: "/", login: boardLogin})
 
     await router.push("/management/mail/sent")
@@ -205,6 +205,8 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     expect(router.currentRoute.value.meta.management).toBe(true)
     await router.push("/management/mail/write")
     expect(router.currentRoute.value.name).toBe("writeEmail")
+    await router.push("/management/mail/inbox")
+    expect(router.currentRoute.value.name).toBe("inbox")
 
     await router.push("/management/emails")
     expect(router.currentRoute.value.path).toBe("/management/mail/sent")

@@ -146,6 +146,12 @@ export type AnswerResponse = {
     version: number;
 };
 
+export type AnsweredEmail = {
+    emailId: number;
+    emailType: string;
+    sentAt?: string | null;
+};
+
 /**
  * Problem Details for HTTP APIs including validation errors.
  */
@@ -1831,6 +1837,43 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export type InboxCounts = {
+    automatic: number;
+    done: number;
+    new: number;
+    oldestNewAt?: string | null;
+};
+
+export type InboxEntry = {
+    answers?: AnsweredEmail | null;
+    automatic: boolean;
+    fromAddress: string;
+    fromName?: string | null;
+    handledAt?: string | null;
+    handledBy?: number | null;
+    handledByName?: string | null;
+    id: number;
+    receivedAt: string;
+    senderName?: string | null;
+    senderUserId?: number | null;
+    state: InboxState;
+    subject: string;
+    toAddress?: string | null;
+};
+
+export enum InboxSort {
+    RECEIVED = 'RECEIVED',
+    FROM = 'FROM',
+    SUBJECT = 'SUBJECT',
+    STATE = 'STATE'
+}
+
+export enum InboxState {
+    NEW = 'NEW',
+    REPLIED = 'REPLIED',
+    HANDLED = 'HANDLED'
+}
+
 export enum JobEffect {
     MADE = 'MADE',
     EDITED = 'EDITED',
@@ -2140,6 +2183,11 @@ export type PagedModelEmail = {
 
 export type PagedModelEventResponse = {
     content?: Array<EventResponse>;
+    page?: PageMetadata;
+};
+
+export type PagedModelInboxEntry = {
+    content?: Array<InboxEntry>;
     page?: PageMetadata;
 };
 
@@ -8213,6 +8261,93 @@ export type FindAudiencesResponses = {
 };
 
 export type FindAudiencesResponse = FindAudiencesResponses[keyof FindAudiencesResponses];
+
+export type FindInboxData = {
+    body?: never;
+    path?: never;
+    query?: {
+        search?: string;
+        page?: number;
+        sort?: InboxSort;
+        descending?: boolean;
+    };
+    url: '/mail/inbox';
+};
+
+export type FindInboxErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindInboxError = FindInboxErrors[keyof FindInboxErrors];
+
+export type FindInboxResponses = {
+    /**
+     * OK
+     */
+    200: PagedModelInboxEntry;
+};
+
+export type FindInboxResponse = FindInboxResponses[keyof FindInboxResponses];
+
+export type FindInboxCountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/mail/inbox/counts';
+};
+
+export type FindInboxCountsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindInboxCountsError = FindInboxCountsErrors[keyof FindInboxCountsErrors];
+
+export type FindInboxCountsResponses = {
+    /**
+     * OK
+     */
+    200: InboxCounts;
+};
+
+export type FindInboxCountsResponse = FindInboxCountsResponses[keyof FindInboxCountsResponses];
 
 export type FindReachData = {
     body: ReachRequest;

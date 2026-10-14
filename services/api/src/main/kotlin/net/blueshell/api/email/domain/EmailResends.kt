@@ -1,6 +1,7 @@
 package net.blueshell.api.email.domain
 
 import net.blueshell.api.email.persistence.Email
+import net.blueshell.api.email.persistence.EmailRepository
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.shared.enums.EmailDeliveryStatus
 import net.blueshell.api.shared.enums.JobExecutionStatus
@@ -18,10 +19,14 @@ import org.springframework.web.server.ResponseStatusException
 @Service
 class EmailResends(
     private val emails: EmailService,
+    private val records: EmailRepository,
     private val queued: QueuedEmails,
     private val executions: JobExecutionService,
     private val jobs: JobQueue,
 ) {
+    @Transactional(readOnly = true)
+    fun madeFrom(id: Long): List<Email> = records.findByResentFromIdOrderByIdAsc(id)
+
     /** Whether the log offers to make this email again. Whether its job has finished is checked when it is asked for. */
     fun mayResend(email: Email): Boolean = refusal(email) == null
 
@@ -49,6 +54,8 @@ class EmailResends(
             email.jobExecutionId == null -> "This email cannot be resent: no job sent it."
             queued.keptToItsFirstSend(email.emailType) -> PERSONAL_LINK
             !queued.resendable(email.emailType) -> "This kind of email cannot be resent from here."
+            // Once made again, what happens next is the new email's: a second resend of this one would mail the person twice.
+            email.id?.let(records::existsByResentFromId) == true -> ALREADY_RESENT
             else -> null
         }
 
@@ -58,6 +65,7 @@ class EmailResends(
         private val FAILED_OR_BOUNCED = setOf(EmailDeliveryStatus.FAILED, EmailDeliveryStatus.BOUNCED)
         private val UNFINISHED = setOf(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)
         private const val PERSONAL_LINK = "This email holds a personal link or a security notice, so it is not sent again."
+        private const val ALREADY_RESENT = "This email was already resent. Open the resend to see what happened to it."
         private const val GONE = "The person or event this email is about no longer exists, so it cannot be resent."
     }
 }

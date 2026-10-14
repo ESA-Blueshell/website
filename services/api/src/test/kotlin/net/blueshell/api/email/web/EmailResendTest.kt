@@ -33,4 +33,27 @@ class EmailResendTest {
         assertThat(answered.resendable).isFalse()
         assertThat(controller.getStats().queuedCount).isEqualTo(4)
     }
+
+    @Test
+    fun `answers one email with the emails made again from it, and who queued it where a person did`() {
+        val first =
+            Entities.email(2).apply {
+                initiatedByUserId = 7
+                createdAt = Instant.EPOCH
+                updatedAt = Instant.EPOCH
+            }
+        val made =
+            Entities.email(3).apply {
+                resentFromId = 2
+                createdAt = Instant.EPOCH
+                updatedAt = Instant.EPOCH
+            }
+        whenever(emails.findById(2)).thenReturn(first)
+        whenever(resends.madeFrom(2)).thenReturn(listOf(made))
+
+        val detail = controller.findEmail(2)
+
+        assertThat(detail.email.initiatedByUserId).isEqualTo(7)
+        assertThat(detail.resends.map { it.id }).containsExactly(3)
+    }
 }

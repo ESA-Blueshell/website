@@ -59,13 +59,13 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar and marks the admin's own", async () => {
     const admin = await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
 
-    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/emails", "/management/cohorts", "/management/jobs", "/management/exceptions"])
+    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent", "/management/cohorts", "/management/jobs", "/management/exceptions"])
     expect(admin.get("[data-testid=management-sidebar]").text()).toContain("@Admin")
 
     // The store is the app's one, so the board's sign-in replaces the admin's.
     const board = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/emails"])
+    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/user-manager", "/recovery/manage", "/management/mail/sent"])
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 
@@ -193,6 +193,19 @@ describe("the ways into Management", {timeout: 20_000}, () => {
     await mountPage(ManagementShell, {path: "/", login: boardLogin})
     await router.push("/management/jobs")
     expect(router.currentRoute.value.path).toBe("/")
+  })
+
+  it("opens Sent and one email inside the portal for the board, and sends the old address on to it", async () => {
+    await mountPage(ManagementShell, {path: "/", login: boardLogin})
+
+    await router.push("/management/mail/sent")
+    expect(router.currentRoute.value.name).toBe("sentEmails")
+    await router.push("/management/mail/sent/7")
+    expect(router.currentRoute.value.name).toBe("sentEmail")
+    expect(router.currentRoute.value.meta.management).toBe(true)
+
+    await router.push("/management/emails")
+    expect(router.currentRoute.value.path).toBe("/management/mail/sent")
   })
 
   it("opens Exceptions and one exception inside the portal for the admin, and turns the board away", async () => {

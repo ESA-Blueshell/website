@@ -33,7 +33,7 @@ const GROUPS: ManagementGroup[] = [
       {label: "Account recovery", to: "/recovery/manage"},
     ],
   },
-  {label: "Mail", entries: [{label: "Sent", to: "/management/emails"}]},
+  {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}]},
   {label: "Platforms", adminOnly: true, entries: [{label: "Cohorts", to: "/management/cohorts", adminOnly: true}]},
   {
     label: "System",

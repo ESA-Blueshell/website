@@ -165,7 +165,7 @@ describe("ManagementPanel", () => {
   })
 
   it("draws no link where it has a page to open but no words for the link", () => {
-    const wordless = mount(ManagementPanel, {props: {title: "Mail", to: "/management/emails"}, global: {stubs}})
+    const wordless = mount(ManagementPanel, {props: {title: "Mail", to: "/management/mail/sent"}, global: {stubs}})
 
     expect(wordless.find("a").exists()).toBe(false)
   })

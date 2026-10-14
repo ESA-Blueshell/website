@@ -3,12 +3,14 @@
  * (frontend ADR-002). Everything else imports from here.
  */
 import {
+  findEmail,
   getStats1,
   list1,
   previewSentEmail,
   resend,
   retry1,
   type Email,
+  type EmailDetail,
   type EmailStats as EmailStatsDto,
   EmailDeliveryStatus,
 } from "@/services/api"
@@ -22,6 +24,7 @@ import {refusalReader} from "@/utils/refusals"
 export type {Refused}
 
 export type SentEmail = Email
+export type {EmailDetail}
 export type EmailStats = EmailStatsDto
 export {EmailDeliveryStatus}
 
@@ -31,13 +34,15 @@ export {EmailDeliveryStatus}
  */
 const {refusable} = refusalReader({})
 
-/** What the manager narrows a page of emails by. None set is the whole outbox. */
-export interface EmailFilter {
-  deliveryStatus?: EmailDeliveryStatus
-}
-
 /** Newest first, which is the order an outbox is read in. */
 const EMAIL_SORT = ["createdAt,desc"]
+/** What the api orders each of the table's columns by. */
+const EMAIL_SORTS: Record<string, string> = {when: "createdAt", what: "subject", to: "recipientEmail", status: "deliveryStatus", attempts: "attempts"}
+
+const sortOf = (sort: PageQuery["sort"]): string[] => {
+  const field = sort ? EMAIL_SORTS[sort.key] : undefined
+  return field ? [`${field},${sort?.descending ? "desc" : "asc"}`, "id,desc"] : EMAIL_SORT
+}
 
 /**
  * One page of the outbox.
@@ -45,16 +50,12 @@ const EMAIL_SORT = ["createdAt,desc"]
  * A page that could not be read answers as an empty one: the manager's job is to show what the
  * api will say, and a table of nothing is the honest reading of an api that said nothing.
  */
-export async function loadEmailPage(
-  query: PageQuery,
-  filter: EmailFilter = {},
-): Promise<PageOf<SentEmail>> {
+export async function loadEmailPage(query: PageQuery): Promise<PageOf<SentEmail>> {
   const page = await readOr(list1({
     query: {
       page: query.page,
       size: query.size,
-      sort: EMAIL_SORT,
-      ...(filter.deliveryStatus ? {deliveryStatus: filter.deliveryStatus} : {}),
+      sort: sortOf(query.sort),
       ...(query.search ? {search: query.search} : {}),
     },
   }), null)
@@ -83,10 +84,15 @@ export const retrySend = (id: number): Promise<{ok: true} | Refused> =>
 export const resendEmail = (id: number): Promise<{ok: true} | Refused> =>
   refusable(resend({path: {id}}), "That email could not be made again.")
 
+/** One email with the emails made again from it. `missing` is the api saying it has none, which a read that failed is not. */
+export async function readEmail(id: number): Promise<{detail: EmailDetail | null; missing: boolean}> {
+  const res = await findEmail({path: {id}})
+  return {detail: res.error || res.data == null ? null : res.data, missing: res.status === 404}
+}
+
 /**
  * A sent email read back. The api renders it and strips its urls before answering, so what
- * arrives here has no link in it to follow. Nothing where it could not be rendered, which is what
- * the preview dialog turns into its own sentence.
+ * arrives here has no link in it to follow. Nothing where it could not be rendered.
  */
 export const readSentEmail = (id: number): Promise<RenderedEmailPreview | null> =>
   readOr(previewSentEmail({path: {id}}), null)

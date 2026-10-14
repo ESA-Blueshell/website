@@ -1,6 +1,8 @@
 import {describe, expect, it, vi} from "vitest"
 import {
   applyInboundReconcileSelection,
+  applyTidy,
+  fetchTidyPlan,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -19,6 +21,7 @@ import {
   triggerReconcile,
 } from "@/domains/cohorts/adapters/cohorts"
 import {
+  applyFolderTidy,
   applyInboundReconcile,
   archiveExternalTarget,
   createExternalTarget,
@@ -31,6 +34,7 @@ import {
   linkDrift,
   moveCohortTarget,
   moveCohortTargets,
+  previewFolderTidy,
   proposeLinks,
   pushDrift,
   removeDrift,
@@ -45,6 +49,8 @@ import {TargetKind, TargetSystem} from "@/services/api"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   applyInboundReconcile: vi.fn(),
+  applyFolderTidy: vi.fn(),
+  previewFolderTidy: vi.fn(),
   archiveExternalTarget: vi.fn(),
   deleteExternalTarget: vi.fn(),
   createExternalTarget: vi.fn(),
@@ -402,5 +408,41 @@ describe("archiving and deleting lists", () => {
     vi.mocked(deleteExternalTarget).mockResolvedValue(emptyAnswer(deleteExternalTarget))
 
     await expect(deleteTarget(TargetSystem.BREVO, "18", "Loose")).resolves.toEqual({ok: true})
+  })
+})
+
+describe("the folder tidy", () => {
+  it("reads the proposal, with a list at the top level as no folder", async () => {
+    vi.mocked(previewFolderTidy).mockResolvedValue(answer(previewFolderTidy, {
+      moves: [{externalId: "7", label: "Sitecie", to: "Committees"}],
+      foldersToCreate: ["Committees"],
+    }))
+
+    await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toEqual({
+      moves: [{externalId: "7", label: "Sitecie", from: null, to: "Committees"}],
+      foldersToCreate: ["Committees"],
+    })
+
+    vi.mocked(previewFolderTidy).mockResolvedValue(refusal(previewFolderTidy, {code: "TargetSystemRefused"}, 502))
+    await expect(fetchTidyPlan(TargetSystem.BREVO)).resolves.toBeNull()
+  })
+
+  it("answers what moved and what was refused", async () => {
+    vi.mocked(applyFolderTidy).mockResolvedValue(answer(applyFolderTidy, {
+      moved: [target({externalId: "7", folderLabel: "Committees"})],
+      failed: [{externalId: "8", label: "Board", message: "Brevo said no"}],
+    }))
+
+    const result = await applyTidy(TargetSystem.BREVO, ["7", "8"])
+
+    if (!result.ok) throw new Error("refused")
+    expect(result.saved.moved.map((t) => t.externalId)).toEqual(["7"])
+    expect(result.saved.failed).toEqual([{externalId: "8", label: "Board", message: "Brevo said no"}])
+  })
+
+  it("answers a refused tidy with its reason", async () => {
+    vi.mocked(applyFolderTidy).mockResolvedValue(refusal(applyFolderTidy, {code: "TargetSystemRefused", system: "Brevo", reason: "down"}, 502))
+
+    await expect(applyTidy(TargetSystem.BREVO, ["7"])).resolves.toEqual({ok: false, reason: "Brevo refused it: down"})
   })
 })

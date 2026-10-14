@@ -4,6 +4,7 @@
  * it through `index.ts`.
  */
 import {
+  applyFolderTidy,
   applyInboundReconcile,
   archiveExternalTarget,
   createExternalTarget,
@@ -21,6 +22,7 @@ import {
   listCohortTargetSystems,
   moveCohortTarget,
   moveCohortTargets,
+  previewFolderTidy,
   previewInboundReconcile,
   proposeLinks,
   pushDrift,
@@ -46,6 +48,7 @@ import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
 import {accepted, refusable} from "@/domains/cohorts/refusals"
+import {readOr} from "@/utils/answers"
 
 /*
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
@@ -315,6 +318,34 @@ export async function archiveTarget(system: TargetSystem, externalId: string): P
 /** Delete a list linked to no cohort for good, confirmed by its name typed exactly. */
 export async function deleteTarget(system: TargetSystem, externalId: string, name: string): Promise<{ok: true} | Refused> {
   return accepted(deleteExternalTarget({path: {system, externalId}, body: {name}}), "The list could not be deleted.")
+}
+
+/** One linked list the tidy would move into its cohort type's folder. */
+export type TidyMove = {externalId: string; label: string; from: string | null; to: string}
+
+/** What the folder tidy would do: its moves, and the folders it would make. */
+export type TidyPlan = {moves: TidyMove[]; foldersToCreate: string[]}
+
+/** The tidy's proposal, or nothing where it could not be read. Changes nothing. */
+export async function fetchTidyPlan(system: TargetSystem): Promise<TidyPlan | null> {
+  const plan = await readOr(previewFolderTidy({path: {system}}), null)
+  return plan && {
+    moves: (plan.moves ?? []).map((m) => ({externalId: m.externalId, label: m.label, from: m.from ?? null, to: m.to})),
+    foldersToCreate: plan.foldersToCreate ?? [],
+  }
+}
+
+/** Apply the tidy to the lists picked; answers what moved and what the system refused. */
+export async function applyTidy(system: TargetSystem, externalIds: string[]): Promise<Saved<BulkTargetMoveResult> | Refused> {
+  const answer = await refusable(applyFolderTidy({path: {system}, body: {externalIds}}), "The tidy could not be applied.")
+  if (!answer.ok) return answer
+  return {
+    ok: true,
+    saved: {
+      moved: (answer.saved.moved ?? []).map(toExternalTarget),
+      failed: (answer.saved.failed ?? []).map((row) => ({externalId: row.externalId, label: row.label, message: row.message})),
+    },
+  }
 }
 
 /** One target an external system would not move, and what it said about it. */

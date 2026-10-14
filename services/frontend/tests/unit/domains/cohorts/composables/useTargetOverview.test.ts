@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest"
 import {useTargetOverview} from "@/domains/cohorts/composables/useTargetOverview"
 import {
+  applyTidy,
   archiveTarget,
   createFolderInSystem,
   createListInSystem,
@@ -8,6 +9,7 @@ import {
   fetchTargetDescriptors,
   fetchTargetFolders,
   fetchTargetOptions,
+  fetchTidyPlan,
   moveTargetToFolder,
   moveTargetsToFolder,
   renameTarget,
@@ -29,6 +31,8 @@ vi.mock("@/domains/cohorts/adapters/cohorts", async (importOriginal) => {
     renameTarget: vi.fn(),
     archiveTarget: vi.fn(),
     deleteTarget: vi.fn(),
+    fetchTidyPlan: vi.fn(),
+    applyTidy: vi.fn(),
   }
 })
 
@@ -389,5 +393,51 @@ describe("useTargetOverview", () => {
     await o.remove("BREVO", o.targets.value[0]!, "Alpha")
 
     expect(o.selectedIds.value).toEqual(["2"])
+  })
+
+  it("ticks every proposed move, moves what stays ticked, and keeps the refusals", async () => {
+    const o = await loaded([target("1", "Alpha", null), target("2", "Beta", null)])
+    vi.mocked(fetchTidyPlan).mockResolvedValue({
+      moves: [{externalId: "1", label: "Alpha", from: null, to: "Committees"}, {externalId: "2", label: "Beta", from: null, to: "Committees"}],
+      foldersToCreate: [],
+    })
+    vi.mocked(applyTidy).mockResolvedValue({ok: true, saved: {moved: [target("1", "Alpha", "Committees")], failed: []}})
+
+    await o.previewTidy("BREVO")
+    expect([...o.tidyPicked.value]).toEqual(["1", "2"])
+    o.toggleTidyPick("2")
+
+    expect(await o.applyTidyPicks("BREVO")).toBe(true)
+    expect(applyTidy).toHaveBeenCalledWith("BREVO", ["1"])
+    expect(o.targets.value[0]!.folderLabel).toBe("Committees")
+    expect(o.tidyMoves.value.map((m) => m.externalId)).toEqual(["2"])
+    expect(o.tidyPickCount.value).toBe(0)
+    expect([...o.tidyPicked.value]).toEqual([])
+  })
+
+  it("says why a tidy could not be read or applied, and drops the earlier proposal", async () => {
+    const o = await loaded([target("1", "Alpha", null)])
+    vi.mocked(fetchTidyPlan).mockResolvedValueOnce({moves: [{externalId: "1", label: "Alpha", from: null, to: "Committees"}], foldersToCreate: []})
+    await o.previewTidy("BREVO")
+    vi.mocked(applyTidy).mockResolvedValue({ok: false, reason: "Brevo refused it: down"})
+
+    expect(await o.applyTidyPicks("BREVO")).toBe(false)
+    expect(o.tidyError.value).toBe("Brevo refused it: down")
+
+    vi.mocked(fetchTidyPlan).mockResolvedValueOnce(null)
+    await o.previewTidy("BREVO")
+    expect(o.tidyMoves.value).toEqual([])
+    expect(o.tidyPickCount.value).toBe(0)
+    expect(o.tidyError.value).toBe("The tidy could not be read. Try again.")
+  })
+
+  it("reports a refused tidy move and keeps the dialog", async () => {
+    const o = await loaded([target("1", "Alpha", null)])
+    vi.mocked(fetchTidyPlan).mockResolvedValue({moves: [{externalId: "1", label: "Alpha", from: null, to: "Committees"}], foldersToCreate: ["Committees"]})
+    vi.mocked(applyTidy).mockResolvedValue({ok: true, saved: {moved: [], failed: [{externalId: "1", label: "Alpha", message: "Brevo said no"}]}})
+
+    await o.previewTidy("BREVO")
+    expect(await o.applyTidyPicks("BREVO")).toBe(false)
+    expect(o.tidyFailures.value).toEqual([{externalId: "1", label: "Alpha", message: "Brevo said no"}])
   })
 })

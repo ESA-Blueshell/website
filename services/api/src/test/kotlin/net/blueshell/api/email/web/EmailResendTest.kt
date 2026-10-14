@@ -13,7 +13,7 @@ import java.time.Instant
 class EmailResendTest {
     private val emails: EmailService = mock()
     private val resends: EmailResends = mock()
-    private val controller = EmailManagementController(emails, mock(), mock(), mock(), resends)
+    private val controller = EmailManagementController(emails, mock(), mock(), mock(), resends, mock(), mock())
 
     @Test
     fun `answers the email made again, linked to the one it came from, and counts what is queued`() {

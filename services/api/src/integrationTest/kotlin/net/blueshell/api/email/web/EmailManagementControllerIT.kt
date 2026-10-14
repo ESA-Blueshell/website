@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -356,6 +357,34 @@ class EmailManagementControllerIT : UserTestSupport() {
                         .with(signedIn(admin)),
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.content[?(@.id == ${outbox.id})]").isNotEmpty)
+        }
+    }
+
+    @Nested
+    inner class Render {
+        private val body = """{"subject":"Hello","message":"**Hi** 🎉 <:gg:123456789012345678>"}"""
+
+        @Test
+        fun `the board reads an editor's message as the email it becomes, and members cannot`() {
+            val html =
+                mvc
+                    .perform(
+                        post("/management/emails/render")
+                            .with(signedIn(createUserWithRole(Role.BOARD)))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body),
+                    ).andExpect(status().isOk)
+                    .andExpect(jsonPath("$.subject").value("Hello"))
+                    .andReturn()
+                    .response.contentAsString
+            assertThat(html).contains("1f389.png", "cdn.discordapp.com/emojis/123456789012345678.png")
+            mvc
+                .perform(
+                    post("/management/emails/render")
+                        .with(signedIn(createUserWithRole(Role.MEMBER)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isForbidden)
         }
     }
 }

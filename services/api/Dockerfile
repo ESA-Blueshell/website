@@ -25,9 +25,17 @@ COPY --from=extract --chown=app:app /x/layers/spring-boot-loader/ ./
 COPY --from=extract --chown=app:app /x/layers/snapshot-dependencies/ ./
 COPY --from=extract --chown=app:app /x/layers/application/ ./
 
+# The AOT cache (architecture ADR-013): one start as far as a refreshed context, under the
+# training profile, which reaches nothing. Its flags and classpath are the entrypoint's; a JVM
+# started with others ignores the cache rather than failing, which the build's smoke boot catches.
+RUN SPRING_PROFILES_ACTIVE=training STORAGE_LOCATION=/tmp/training-storage \
+    java -XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=75 \
+      -XX:AOTCacheOutput=/app/app.aot -Dspring.context.exit=onRefresh -jar /app/app.jar \
+ && find /tmp -mindepth 1 -delete
+
 ENV SPRING_PROFILES_ACTIVE=prod
 
 EXPOSE 8080
 USER app
 
-ENTRYPOINT ["java", "-XX:+ExitOnOutOfMemoryError", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:+ExitOnOutOfMemoryError", "-XX:MaxRAMPercentage=75", "-XX:AOTCache=/app/app.aot", "-jar", "/app/app.jar"]

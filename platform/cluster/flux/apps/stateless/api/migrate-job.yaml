@@ -33,11 +33,7 @@ spec:
             - name: migrate
               image: ghcr.io/esa-blueshell/api
               imagePullPolicy: IfNotPresent
-              command:
-                - java
-                - -XX:MaxRAMPercentage=75
-                - -jar
-                - /app/app.jar
+              # The image's entrypoint, as the api runs it, so the Job boots from the AOT cache too.
               env:
                 - name: SPRING_PROFILES_ACTIVE
                   # prod first: the Job runs the configuration production runs,

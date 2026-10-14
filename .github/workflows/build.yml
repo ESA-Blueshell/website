@@ -149,6 +149,18 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.version.outputs.version }}
 
+      # Before the merge job names it, so an image whose cache would be ignored never gets a tag
+      # (architecture ADR-013).
+      - name: Boot the api image from its AOT cache
+        if: matrix.target.name == 'api'
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api@${{ steps.build.outputs.digest }}
+        run: >-
+          docker run --rm --network none
+          -e SPRING_PROFILES_ACTIVE=training
+          -e JAVA_TOOL_OPTIONS="-XX:AOTMode=on -Dspring.context.exit=onRefresh"
+          "$IMAGE"
+
       - name: Export digest
         run: |
           set -euo pipefail

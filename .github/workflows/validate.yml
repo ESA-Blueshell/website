@@ -650,6 +650,16 @@ jobs:
             --cache-to "type=gha,mode=max,scope=${{ matrix.service.name }}" \
             "${{ matrix.service.context }}"
 
+      # A JVM whose flags differ from the training run's ignores the AOT cache and boots cold
+      # without a word; AOTMode=on makes that a failure (architecture ADR-013).
+      - name: Boot the api image from its AOT cache
+        if: matrix.service.name == 'api'
+        run: >-
+          docker run --rm --network none
+          -e SPRING_PROFILES_ACTIVE=training
+          -e JAVA_TOOL_OPTIONS="-XX:AOTMode=on -Dspring.context.exit=onRefresh"
+          blueshell-website/api:ci
+
       # The system tests serve the bundle with vite preview, so only the image runs the SSI.
       - name: Check link previews
         if: matrix.service.name == 'frontend'

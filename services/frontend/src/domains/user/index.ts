@@ -24,6 +24,7 @@ export {
   loadMemberAccounts,
   readAddress,
   readUser,
+  readUserOrNobody,
   saveNameOnRosters,
   findMemberAccounts,
   searchMemberAccounts,
@@ -74,4 +75,18 @@ export {
   type SaveRolesResult,
 } from "./adapters/roles"
 export {highestRole, highestRoleLabel} from "./roles"
+export {
+  MEMBERSHIP_WORDS,
+  membershipStateOf,
+  NEEDS_LOOK_WORDS,
+  filterPeople,
+  fold,
+  needsLookOf,
+  peopleRows,
+  membershipRank,
+  type MembershipState,
+  type NeedsLook,
+  type PeopleFilter,
+  type PersonRow,
+} from "./peopleList"
 export {MemberType, Role, RoleSource} from "@/services/api"

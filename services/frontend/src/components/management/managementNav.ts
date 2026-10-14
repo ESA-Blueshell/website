@@ -29,7 +29,7 @@ const GROUPS: ManagementGroup[] = [
   {
     label: "Members",
     entries: [
-      {label: "Users", to: "/user-manager", tab: "members"},
+      {label: "Users", to: "/management/users", tab: "members"},
       {label: "Account recovery", to: "/recovery/manage"},
     ],
   },

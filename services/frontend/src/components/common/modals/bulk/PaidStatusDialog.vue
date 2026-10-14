@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import BulkDialogScaffold from "./BulkDialogScaffold.vue"
+import NoticeBox from "@/components/island/NoticeBox.vue"
 import {useBulkPreview} from "@/composables/useBulkPreview"
 import {useSubmitFeedback} from "@/composables/formUtils"
 import {recordPaid, recordUnpaid, type BulkContributionCall} from "@/domains/contribution"
@@ -30,11 +31,6 @@ const emit = defineEmits<{
   /** The api refused the selection because the table is out of date. */
   (e: "stale"): void
 }>()
-
-const open = computed({
-  get: () => props.modelValue,
-  set: (v) => emit("update:modelValue", v),
-})
 
 const {rows, counts, includedUserIds, reincludeOverrides, submitting, setRows, submit, reset} =
   useBulkPreview()
@@ -87,7 +83,7 @@ const configMap: Record<"paid" | "unpaid", DialogConfig> = {
 // so this lookup can never return undefined — no runtime guard needed.
 const config = computed(() => configMap[props.targetState])
 
-const canConfirm = computed(() => includedUserIds.value.length > 0 && !submitting.value)
+const canConfirm = computed(() => includedUserIds.value.length > 0 && props.contributionPeriodId != null && !submitting.value)
 
 const rejection = ref<BulkRejection | null>(null)
 
@@ -102,7 +98,7 @@ function namesFor(userIds: number[]): string {
 const computedRows = computed(() => config.value.computeRows(props.targets))
 
 async function onConfirm() {
-  if (!canConfirm.value || props.contributionPeriodId == null) return
+  if (!canConfirm.value) return
   rejection.value = null
   const ok = await submit(async () => {
     const resp = await config.value.submitApi({
@@ -152,18 +148,15 @@ watch(computedRows, (newRows) => {
 
 <template>
   <bulk-dialog-scaffold
-    v-model="open"
     v-model:reinclude-overrides="reincludeOverrides"
     :confirm-label="config.confirmLabel"
+    :confirmable="contributionPeriodId != null"
     :counts="counts"
-    :help="config.help"
-    :icon="config.icon"
     :included-count="includedUserIds.length"
     :rows="rows"
     :show-submit-status="showSubmitStatus"
     :submit-state="submitState"
     :submitting="submitting"
-    :title="config.title"
     @cancel="emit('update:modelValue', false)"
     @confirm="onConfirm"
   >
@@ -171,31 +164,22 @@ watch(computedRows, (newRows) => {
       v-if="rejection"
       #info-box
     >
-      <v-alert
-        class="mb-0"
-        data-testid="bulk-paid-rejection"
-        density="compact"
-        type="warning"
-        variant="tonal"
+      <notice-box
+        testid="bulk-paid-rejection"
+        title="Nothing was changed"
+        tone="warning"
       >
-        <div class="font-weight-medium mb-1">
-          Nothing was changed.
-        </div>
-        <div
+        <p
           v-for="reason in rejection.reasons"
           :key="reason.code"
-          class="text-body-2"
         >
           {{ reason.message }}
-          <span v-if="reason.userIds.length"> {{ namesFor(reason.userIds) }}</span>
-        </div>
-        <div
-          v-if="rejection.requiresReload"
-          class="text-body-2 mt-1"
-        >
-          The list has been reloaded; check the selection and try again.
-        </div>
-      </v-alert>
+          <span v-if="reason.userIds.length">{{ namesFor(reason.userIds) }}</span>
+        </p>
+        <p v-if="rejection.requiresReload">
+          The list has been reloaded. Check the selection and try again.
+        </p>
+      </notice-box>
     </template>
   </bulk-dialog-scaffold>
 </template>

@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest"
 import {MemberType, type MembershipResponse} from "@/services/api"
-import {computeBulkTargets, deriveLatestMembership} from "@/utils/bulkTarget"
+import {computeBulkTargets, deriveLatestMembership, deriveMemberSince} from "@/utils/bulkTarget"
 
 function membership(overrides: Partial<MembershipResponse> & {userId: number; startDate: string}): MembershipResponse {
   return {
@@ -21,6 +21,20 @@ function byUser(...ms: MembershipResponse[]): Map<number, MembershipResponse[]> 
   for (const m of ms) map.set(m.userId, [...(map.get(m.userId) ?? []), m])
   return map
 }
+
+describe("deriveMemberSince", () => {
+  it("has no day when the member holds no membership", () => {
+    expect(deriveMemberSince([])).toBeNull()
+  })
+
+  it("takes the earliest start across every membership", () => {
+    expect(deriveMemberSince([
+      membership({id: 1, userId: 1, startDate: "2022-06-01"}),
+      membership({id: 2, userId: 1, startDate: "2020-01-01"}),
+      membership({id: 3, userId: 1, startDate: "2024-01-01"}),
+    ])).toBe("2020-01-01")
+  })
+})
 
 describe("deriveLatestMembership", () => {
   it("has no membership to name when the member holds none", () => {

@@ -48,7 +48,7 @@ export {
 } from "./securityEvents"
 export {SECURITY_CRUMB, SECURITY_PAGES} from "./securityPages"
 export {useStepUp} from "./composables/useStepUp"
-export {default as AccountSecurityDialog} from "./components/AccountSecurityDialog.vue"
+export {default as AccountSecurityPanel} from "./components/AccountSecurityPanel.vue"
 export {default as BackupCodes} from "./components/BackupCodes.vue"
 export {default as BackupCodesBanner} from "./components/BackupCodesBanner.vue"
 export {default as SecurityGlyph} from "./components/SecurityGlyph.vue"

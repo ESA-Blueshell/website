@@ -8,33 +8,45 @@ object UserManagerHelper {
         page: Page,
         frontendUrl: String,
     ) {
-        page.navigate("$frontendUrl/user-manager")
-        page.waitForURL("**/user-manager**")
+        page.navigate("$frontendUrl/management/users")
+        page.waitForURL("**/management/users**")
     }
 
     fun search(
         page: Page,
         query: String,
     ) {
-        UserListHelper.searchUser(page, query, searchTestId = "member-manager-search-input")
+        TestIdLocatorHelper.byTestId(page, "member-manager-search-input").fill(query)
     }
 
     fun clickAddUser(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "bulk-actions-menu-btn").click()
         TestIdLocatorHelper.byTestId(page, "member-manager-add-user-btn").click()
     }
 
-    fun clickEditRoles(
+    /** Opens one of a person's tabs from their name on the list. */
+    fun openTab(
         page: Page,
         userId: Long,
+        tab: String,
     ) {
-        TestIdLocatorHelper.byTestId(page, "member-manager-edit-roles-btn-$userId").click()
+        TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+        page.waitForURL("**/management/users/$userId")
+        TestIdLocatorHelper.byTestId(page, "user-tab-$tab").click()
+        page.waitForURL("**/management/users/$userId/$tab")
     }
 
+    /** Deleting lives on a person's own page: opens it from the list and answers its Delete button. */
     fun deleteButton(
         page: Page,
         userId: Long,
-    ): Locator = TestIdLocatorHelper.byTestId(page, "member-manager-delete-btn-$userId")
+    ): Locator {
+        val button = TestIdLocatorHelper.byTestId(page, "user-delete")
+        if (!button.isVisible) {
+            TestIdLocatorHelper.byTestId(page, "member-manager-open-$userId").click()
+            page.waitForURL("**/management/users/$userId")
+        }
+        return button
+    }
 
     fun clickDeleteUser(
         page: Page,
@@ -43,7 +55,9 @@ object UserManagerHelper {
         deleteButton(page, userId).click()
     }
 
+    /** Confirms, then waits for the list: the person's page only goes back there once the account is gone. */
     fun confirmDelete(page: Page) {
-        TestIdLocatorHelper.byTestId(page, "deletion-confirmation-confirm-btn").click()
+        TestIdLocatorHelper.byTestId(page, "confirm-go").click()
+        page.waitForURL("**/management/users")
     }
 }

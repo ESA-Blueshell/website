@@ -15,4 +15,6 @@ interface ContributionRepository : BaseRepository<Contribution, Contribution.Id>
     )
 
     fun findByIdContributionPeriodId(contributionPeriodId: Long): MutableList<Contribution>
+
+    fun findByIdUserId(userId: Long): List<Contribution>
 }

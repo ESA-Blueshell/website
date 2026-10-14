@@ -19,20 +19,19 @@ vi.mock("@/services/api/blueshell/sdk.gen", () => ({
   markUnpaid: mockMarkUnpaid,
 }))
 
-/** Unpaid regular member (incasso: true mirrors the original local fixture default). */
+/** Unpaid regular member. */
 function unpaidRegularTarget(userId: number) {
   return target(userId, {
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: true,
     },
   })
 }
 
 describe("PaidStatusDialog (Mark as paid)", () => {
-  it("renders the dialog with paid title and confirm button", () => {
+  it("draws the paid task with its confirm button", () => {
     const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
@@ -43,7 +42,23 @@ describe("PaidStatusDialog (Mark as paid)", () => {
     })
 
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain("Mark as paid")
+    expect(wrapper.get('[data-testid="bulk-action-confirm-btn"]').text()).toBe("Mark paid")
+  })
+
+  it("cannot be confirmed without a period to record the payments against", async () => {
+    const wrapper = mount(PaidStatusDialog, {
+      props: {
+        modelValue: true,
+        targetState: "paid",
+        targets: [unpaidRegularTarget(1)],
+        contributionPeriodId: null,
+      },
+    })
+    await settle()
+
+    expect(wrapper.get('[data-testid="bulk-action-confirm-btn"]').attributes("disabled")).toBeDefined()
+    await wrapper.get('[data-testid="bulk-action-confirm-btn"]').trigger("click")
+    expect(mockMarkPaid).not.toHaveBeenCalled()
   })
 
   it("shows preview table with single unpaid member marked INCLUDED", async () => {
@@ -112,7 +127,6 @@ describe("PaidStatusDialog (Mark as paid)", () => {
               type: MemberType.ALUMNI,
               startDate: "2024-09-15",
               endDate: null,
-              incasso: true,
             },
           }),
         ],
@@ -229,7 +243,7 @@ describe("PaidStatusDialog (Mark as paid)", () => {
 })
 
 describe("PaidStatusDialog (Mark as unpaid)", () => {
-  it("renders the dialog with unpaid title and confirm button", () => {
+  it("draws the unpaid task with its confirm button", () => {
     const wrapper = mount(PaidStatusDialog, {
       props: {
         modelValue: true,
@@ -240,7 +254,7 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
     })
 
     expect(wrapper.find('[data-testid="bulk-action-dialog"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain("Mark as unpaid")
+    expect(wrapper.get('[data-testid="bulk-action-confirm-btn"]').text()).toBe("Mark unpaid")
   })
 
   it("marks paid member as INCLUDED", async () => {
@@ -330,7 +344,6 @@ describe("PaidStatusDialog (Mark as unpaid)", () => {
               type: MemberType.ALUMNI,
               startDate: "2023-06-01",
               endDate: null,
-              incasso: false,
             },
             mostRecentContribution: {paid: true},
           }),

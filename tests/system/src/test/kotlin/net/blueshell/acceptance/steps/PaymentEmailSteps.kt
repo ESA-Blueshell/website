@@ -169,9 +169,24 @@ class PaymentEmailSteps(
     ): TestHelper.RegisteredUser {
         val user = TestHelper.registerAndActivate()
         world.createdUsernames += user.username
-        TestHelper.attachMembership(user.username, memberType = memberType, incasso = incasso)
+        TestHelper.attachMembership(user.username, memberType = memberType, incasso = false)
+        if (incasso) recordMandate(idOf(user))
         selection += idOf(user)
         return user
+    }
+
+    /** How somebody pays stands on them; a mandate on file is what puts them on incasso. */
+    private fun recordMandate(userId: Long) {
+        val response =
+            TestHelper
+                .givenCsrfApi()
+                .baseUri(TestEnvironment.apiUrl)
+                .cookie(TestEnvironment.authCookieName, world.authCookiesOrFail().auth)
+                .contentType(ContentType.JSON)
+                .body("""{"iban":"NL91ABNA0417164300","accountHolder":"Test Member","signedOn":"${LocalDate.now().minusDays(1)}"}""")
+                .`when`()
+                .put("/users/$userId/mandate")
+        check(response.statusCode == 200) { "Recording a mandate answered ${response.statusCode}: ${response.asString()}" }
     }
 
     private fun post(

@@ -28,15 +28,14 @@ class MembershipControllerIT : UserTestSupport() {
     private fun boardCreatePayload(
         userId: Long,
         startDate: LocalDate = LocalDate.now().minusDays(1),
-    ): String = """{"userId":$userId,"memberType":"REGULAR","startDate":"$startDate","incasso":true}"""
+    ): String = """{"userId":$userId,"memberType":"REGULAR","startDate":"$startDate"}"""
 
     private fun updatePayload(
         userId: Long,
         version: Long,
         startDate: LocalDate = LocalDate.now().minusDays(7),
         endDate: LocalDate = LocalDate.now().minusDays(1),
-    ): String =
-        """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","incasso":false,"version":$version}"""
+    ): String = """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","version":$version}"""
 
     @Nested
     inner class FindMemberships {
@@ -182,7 +181,6 @@ class MembershipControllerIT : UserTestSupport() {
                 ).andExpect(status().isCreated)
                 .andExpect(jsonPath("$.userId").value(user.id))
                 .andExpect(jsonPath("$.memberType").value("REGULAR"))
-                .andExpect(jsonPath("$.incasso").value(true))
 
             assertThat(membershipRepository.existsByUser_Id(user.id!!)).isTrue()
         }
@@ -218,11 +216,9 @@ class MembershipControllerIT : UserTestSupport() {
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.userId").value(membership.userId))
                 .andExpect(jsonPath("$.memberType").value("ALUMNI"))
-                .andExpect(jsonPath("$.incasso").value(false))
 
             val updated = membershipRepository.findById(membership.id!!).orElseThrow()
             assertThat(updated.memberType).isEqualTo(MemberType.ALUMNI)
-            assertThat(updated.incasso).isFalse()
         }
 
         @Test

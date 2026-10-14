@@ -16,7 +16,6 @@ class MembershipResponseMappingsTest {
         val memberType = MemberType.REGULAR
         val startDate = LocalDate.of(2024, 1, 1)
         val endDate = LocalDate.of(2024, 12, 31)
-        val incasso = true
         val version = 3L
         val createdAt = Instant.parse("2024-01-01T00:00:00Z")
         val updatedAt = Instant.parse("2024-06-01T00:00:00Z")
@@ -24,7 +23,6 @@ class MembershipResponseMappingsTest {
         val membership =
             Entities.membership(id = id, user = Entities.user(id = userId), startDate = startDate, endDate = endDate).also {
                 it.memberType = memberType
-                it.incasso = incasso
                 it.version = version
                 it.createdAt = createdAt
                 it.updatedAt = updatedAt
@@ -37,7 +35,6 @@ class MembershipResponseMappingsTest {
         assertThat(response.memberType).isEqualTo(memberType)
         assertThat(response.startDate).isEqualTo(startDate)
         assertThat(response.endDate).isEqualTo(endDate)
-        assertThat(response.incasso).isEqualTo(incasso)
         assertThat(response.version).isEqualTo(version)
         assertThat(response.createdAt).isEqualTo(createdAt)
         assertThat(response.updatedAt).isEqualTo(updatedAt)

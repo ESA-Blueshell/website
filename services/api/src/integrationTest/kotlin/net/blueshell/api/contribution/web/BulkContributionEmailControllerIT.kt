@@ -10,6 +10,7 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -48,6 +49,9 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
     private val dueDate = LocalDate.now().plusMonths(1)
     private val debitDate = LocalDate.now().plusMonths(1).plusDays(14)
 
+    @Autowired
+    private lateinit var mandates: Mandates
+
     private fun period(): ContributionPeriod =
         contributionFactory.createPeriod(
             startDate = periodStart,
@@ -74,6 +78,8 @@ class BulkContributionEmailControllerIT : UserTestSupport() {
             endDate = endDate,
             incasso = incasso,
         )
+        // Only somebody with bank details on file is told of a collection rather than asked to pay.
+        if (incasso) mandates.record(user.id!!, "NL91ABNA0417164300", user.fullName, LocalDate.now().minusDays(3), null)
         return user
     }
 

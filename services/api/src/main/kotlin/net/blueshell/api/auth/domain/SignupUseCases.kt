@@ -11,6 +11,7 @@ import net.blueshell.api.user.api.MemberProfileService
 import net.blueshell.api.user.api.MembershipConditions
 import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.SignupDetailsData
+import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.api.completenessFor
 import net.blueshell.api.user.api.upsertInto
@@ -37,8 +38,25 @@ class SignupUseCases(
     private val jobs: JobQueue,
     private val validator: Validator,
     private val sealedAddresses: SealedAddresses,
+    private val mandates: SignupMandates,
 ) {
     fun issueSession(userId: Long): SignupSession = signupTokens.issue(users.findById(userId))
+
+    /**
+     * The optional incasso step: the bank details wait for the membership this signup starts. The
+     * mandate takes the address the signup has just taken as its own record of it.
+     */
+    @Transactional
+    fun setUpMandate(
+        signupToken: String,
+        iban: String,
+        accountHolder: String,
+        wordingVersion: String,
+    ) {
+        val account = signupTokens.resolveAccount(signupToken)
+        val address = users.findById(account.id).address?.let(sealedAddresses::open) ?: AddressFields(null, null, null, null, null)
+        mandates.setUp(account.id, iban, accountHolder, wordingVersion, address)
+    }
 
     /**
      * The signup a token is still holding open, so a tab that lost the form can put it

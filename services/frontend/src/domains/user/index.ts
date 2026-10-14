@@ -90,3 +90,18 @@ export {
   type PersonRow,
 } from "./peopleList"
 export {MemberType, Role, RoleSource} from "@/services/api"
+export {
+  IncassoStanding,
+  readMandate,
+  revealMandateIban,
+  readOwnMandate,
+  saveMandate,
+  savePaysBy,
+  setUpIncasso,
+  type MandateAddressRequest,
+  MandateKind,
+  type MandateResponse,
+  type OwnMandateResponse,
+  type RecordMandateRequest,
+} from "./adapters/mandates"
+export {MANDATE_WORDING} from "./mandateWording"

@@ -2,8 +2,7 @@ import type {BulkTarget} from "@/utils/bulkTarget"
 import {MemberType, type ContributionPeriodResponse} from "@/services/api"
 
 /**
- * Create a minimal BulkTarget. incasso defaults false; pass {incasso: true} for dialogs
- * where the base roster is incasso-payers (Incasso, PaidStatus, EndMembership).
+ * Create a minimal BulkTarget.
  */
 export function target(userId: number, overrides?: Partial<BulkTarget>): BulkTarget {
   return {
@@ -15,7 +14,6 @@ export function target(userId: number, overrides?: Partial<BulkTarget>): BulkTar
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: false,
     },
     mostRecentContribution: {
       paid: false,
@@ -44,7 +42,7 @@ export function period(overrides?: Partial<ContributionPeriodResponse>): Contrib
   }
 }
 
-// ── Reminder / incasso-email preset helpers (base: incasso: false) ─────────────
+// ── Reminder / incasso-email preset helpers ─────────────
 
 /** Honorary member — EXCLUDED in reminder/incasso actions, SKIPPED in paid-status/end/resume. */
 export function honoraryTarget(userId: number): BulkTarget {
@@ -54,20 +52,18 @@ export function honoraryTarget(userId: number): BulkTarget {
       type: MemberType.HONORARY,
       startDate: "2024-01-01",
       endDate: null,
-      incasso: false,
     },
   })
 }
 
 /** Member whose contribution is already paid. */
-export function alreadyPaidTarget(userId: number, incasso = false): BulkTarget {
+export function alreadyPaidTarget(userId: number): BulkTarget {
   return target(userId, {
     mostRecentContribution: {paid: true},
     mostRecentMembership: {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: null,
-      incasso,
     },
   })
 }
@@ -87,7 +83,6 @@ export function endedMemberTarget(userId: number): BulkTarget {
       type: MemberType.REGULAR,
       startDate: "2024-01-01",
       endDate: "2024-12-31",
-      incasso: false,
     },
   })
 }

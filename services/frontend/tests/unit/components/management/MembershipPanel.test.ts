@@ -76,7 +76,6 @@ function makeMembership(overrides: {
   startDate: string
   endDate?: string
   memberType?: MemberType
-  incasso?: boolean
   version?: number
 }): import("@/services/api").MembershipResponse {
   return {
@@ -85,7 +84,6 @@ function makeMembership(overrides: {
     startDate: overrides.startDate,
     endDate: overrides.endDate,
     memberType: overrides.memberType ?? MemberType.REGULAR,
-    incasso: overrides.incasso ?? false,
     version: overrides.version ?? 1,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",

@@ -18,5 +18,4 @@ data class BoardCreateMembershipRequest(
     @field:PastOrPresent(message = "End date cannot be in the future")
     @field:DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     var endDate: LocalDate? = null,
-    var incasso: Boolean,
 )

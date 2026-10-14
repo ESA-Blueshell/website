@@ -7,6 +7,7 @@ import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -96,7 +97,6 @@ class UserFactory(
         memberType: MemberType = MemberType.REGULAR,
         startDate: LocalDate = LocalDate.now().minusDays(30),
         endDate: LocalDate? = null,
-        incasso: Boolean = true,
         activatedOn: LocalDate? = startDate,
     ): Membership =
         Membership(
@@ -104,7 +104,6 @@ class UserFactory(
             startDate = startDate,
             endDate = endDate,
             memberType = memberType,
-            incasso = incasso,
             activatedOn = activatedOn,
         )
 
@@ -115,5 +114,19 @@ class UserFactory(
         endDate: LocalDate? = null,
         incasso: Boolean = true,
         activatedOn: LocalDate? = startDate,
-    ): Membership = persistence.persist(buildMembership(user, memberType, startDate, endDate, incasso, activatedOn))
+    ): Membership {
+        val membership = persistence.persist(buildMembership(user, memberType, startDate, endDate, activatedOn))
+        payBy(user, incasso)
+        return membership
+    }
+
+    /** Sets how [user] pays, which stands on them rather than on a membership. */
+    fun payBy(
+        user: User,
+        incasso: Boolean,
+    ): PaymentDetails {
+        val userId = requireNotNull(user.id)
+        val held = persistence.query("SELECT p FROM PaymentDetails p WHERE p.userId = $userId", PaymentDetails::class.java).firstOrNull()
+        return persistence.persist((held ?: PaymentDetails(userId)).apply { this.incasso = incasso })
+    }
 }

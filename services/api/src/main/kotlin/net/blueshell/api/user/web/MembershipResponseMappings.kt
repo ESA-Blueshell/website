@@ -8,7 +8,6 @@ fun Membership.asResponse(): MembershipResponse =
         memberType = this.memberType,
         startDate = this.startDate,
         endDate = this.endDate,
-        incasso = this.incasso,
         pending = this.isPending,
         activatedOn = this.activatedOn,
         version = this.version,

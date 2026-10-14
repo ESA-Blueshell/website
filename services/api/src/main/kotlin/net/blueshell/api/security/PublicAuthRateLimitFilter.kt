@@ -99,6 +99,14 @@ class PublicAuthRateLimitFilter(
                 window = Duration.ofMinutes(1),
                 countedPer = CountedPer.APPLICANT,
             ),
+            // Each call seals bank details with Vault, so it is held to the other writes' pace.
+            Rule(
+                HttpMethod.PUT.name(),
+                "/signup/mandate",
+                maxRequests = 10,
+                window = Duration.ofMinutes(1),
+                countedPer = CountedPer.APPLICANT,
+            ),
             // Sends mail, so it is limited more tightly than the writes, and its address
             // ceiling is lower than theirs: twenty corrections from one address in ten
             // minutes is not a lecture hall, it is somebody spending our mail reputation.

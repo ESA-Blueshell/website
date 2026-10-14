@@ -7,6 +7,8 @@ import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.event.AfterCommitListener
+import net.blueshell.api.user.api.BankDetailsChanged
+import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserEmailChangedByBoard
 import net.blueshell.api.user.api.UserRolesChanged
@@ -59,5 +61,21 @@ class AccountSecurityListener(
         if (evt.dormantGranted.isEmpty()) return
         signIns.endAll(evt.userId)
         events.record(evt.userId, SecurityEventKind.SIGNED_OUT_EVERYWHERE, actor)
+    }
+
+    @AfterCommitListener
+    fun onBankDetailsChanged(evt: BankDetailsChanged) {
+        events.record(evt.userId, SecurityEventKind.BANK_DETAILS_CHANGED, note = evt.iban.toString())
+    }
+
+    /** Who revealed whose IBAN, never the IBAN itself. */
+    @AfterCommitListener
+    fun onIbanRevealed(evt: IbanRevealed) {
+        events.record(
+            evt.userId,
+            SecurityEventKind.IBAN_REVEALED,
+            SecurityActor.Person(evt.revealedBy),
+            note = "mandate ${evt.reference}",
+        )
     }
 }

@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.api.ContributionService
 import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
@@ -39,6 +40,7 @@ class DevFixtureSeeder(
     private val contributions: ContributionService,
     private val activations: UserActivationService,
     private val passwordEncoder: PasswordEncoder,
+    private val payments: PaymentDirectory,
 ) : ApplicationRunner {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -103,9 +105,9 @@ class DevFixtureSeeder(
                 startDate = start,
                 endDate = if (fixture.ended) DevFixtures.PERIOD_START.minusDays(1) else null,
                 memberType = fixture.type,
-                incasso = fixture.incasso,
             ),
         )
+        if (fixture.incasso) payments.payBy(requireNotNull(user.id), incasso = true)
     }
 
     /** Reuse a period that already covers today rather than stacking another on top of it. */

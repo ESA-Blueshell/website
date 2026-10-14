@@ -93,4 +93,8 @@ enum class SecurityEventKind(
     SIGNED_OUT_EVERYWHERE(false),
     SIGNED_OUT_ELSEWHERE(false),
     ROLES_CHANGED(false),
+    BANK_DETAILS_CHANGED(true),
+
+    /** A board member opened the person's full IBAN. */
+    IBAN_REVEALED(false),
 }

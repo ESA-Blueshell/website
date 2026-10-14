@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -47,6 +48,7 @@ class PeriodContributions(
     private val contributions: ContributionRepository,
     private val reminders: ContributionReminderRepository,
     private val notifications: IncassoNotificationRepository,
+    private val payments: PaymentDirectory,
 ) {
     @Transactional(readOnly = true)
     fun of(periodId: Long): PeriodContributionsView {
@@ -58,10 +60,10 @@ class PeriodContributions(
                     Triple(it.userId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION)
                 }
         val lastEmail = emails.groupBy { it.first }.mapValues { (_, sent) -> sent.maxBy { it.second } }
+        val overlapping = memberships.findOverlappingWithMembers(period.startDate, period.endDate).groupBy { it.userId }
+        val paying = payments.of(overlapping.keys)
         val members =
-            memberships
-                .findOverlappingWithMembers(period.startDate, period.endDate)
-                .groupBy { it.userId }
+            overlapping
                 .map { (userId, held) ->
                     val latest = held.maxBy { it.startDate }
                     val feeType = resolveFeeType(latest.memberType, latest.startDate, period)
@@ -71,7 +73,7 @@ class PeriodContributions(
                         username = latest.user.username,
                         feeType = feeType,
                         fee = feeType?.let { resolveFeeAmount(it, period) },
-                        incasso = latest.incasso,
+                        incasso = paying.getValue(userId).incasso,
                         paid = userId in paid,
                         paidAt = paid[userId],
                         lastEmailAt = lastEmail[userId]?.second,

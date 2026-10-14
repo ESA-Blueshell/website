@@ -198,11 +198,18 @@ describe("the Users page", () => {
     expect(wrapper.get('[data-testid="member-manager-row-1"]').classes()).toContain("mg-table__row--opens")
   })
 
+  it("routes a member's own Payment details to its page", async () => {
+    const route = router.resolve("/account/payment-details")
+    expect(route.name).toBe("accountPaymentDetails")
+    const load = route.matched.at(-1)!.components!.default as () => Promise<{default: unknown}>
+    expect((await load()).default).toBeTruthy()
+  })
+
   it("routes a person's address to their page, on the tab it names", async () => {
     const route = router.resolve("/management/users/1/roles")
     expect(route.name).toBe("userDetail")
     expect(route.params).toEqual({id: "1", tab: "roles"})
-    expect(router.resolve("/management/users/1/payment-details").name).not.toBe("userDetail")
+    expect(router.resolve("/management/users/1/bank").name).not.toBe("userDetail")
     const load = route.matched.at(-1)!.components!.default as () => Promise<{default: {name?: string}}>
     expect((await load()).default).toBeTruthy()
   })

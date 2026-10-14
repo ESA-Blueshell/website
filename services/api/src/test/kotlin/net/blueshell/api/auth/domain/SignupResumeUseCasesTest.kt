@@ -46,6 +46,7 @@ class SignupResumeUseCasesTest {
             jobs,
             validator,
             net.blueshell.api.user.api.TestSealing.addresses,
+            mock(),
         )
 
     private fun applicant(id: Long? = APPLICANT_ID): User {

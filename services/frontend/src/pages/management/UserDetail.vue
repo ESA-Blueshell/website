@@ -17,13 +17,16 @@ import UserForm from "@/components/form/UserForm.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import FormField from "@/components/island/FormField.vue"
+import SearchPicker from "@/components/island/SearchPicker.vue"
+import MandatePanel from "@/components/management/MandatePanel.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readUserOrNobody, Role} from "@/domains/user"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MandateResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandate, readUserOrNobody, Role, savePaysBy} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -34,7 +37,7 @@ import {formatDay, formatMoment, periodName} from "@/utils/timestamps"
 
 defineOptions({name: "UserDetailPage"})
 
-const TABS = ["Overview", "Membership", "Contributions", "Profile", "Address", "Account"]
+const TABS = ["Overview", "Membership", "Payment details", "Contributions", "Profile", "Address", "Account"]
 
 const PERIOD_COLUMNS: TableColumn<MemberPeriodContribution>[] = [
   {key: "period", label: "Period", sortBy: (row) => row.startDate},
@@ -62,6 +65,8 @@ const profileSaved = ref<string | null>(null)
 // The api asks for the member fields of a member only, as the person's own account page does.
 const isMember = computed(() => person.value?.roles.includes(Role.MEMBER) ?? false)
 const address = ref<Partial<AddressResponse>>({})
+/** How they pay and their mandate, which stand on the person across memberships. */
+const payment = ref<MandateResponse | null>(null)
 const activation = ref<TokenPurpose | null>(null)
 const deleteOpen = ref(false)
 const isAdmin = computed(() => store.getters.isAdmin === true)
@@ -72,6 +77,10 @@ const latestMembership = computed(() => current.value ?? [...memberships.value].
 const since = computed(() => memberships.value.map((one) => one.startDate).sort()[0] ?? null)
 const membershipState = computed(() => membershipStateOf(memberships.value))
 const standing = computed(() => MEMBERSHIP_WORDS[membershipState.value])
+// Somebody with nothing recorded still answers, so no answer means it could not be read.
+const paymentUnread = computed(() => person.value != null && payment.value == null)
+const paysBy = computed(() => (paymentUnread.value ? "How they pay could not be read" : payment.value?.incasso ? "Pays by incasso" : "Pays by transfer"))
+const incasso = computed(() => (current.value ? paysBy.value : null))
 const latest = computed(() => periods.value[0] ?? null)
 
 const euro = (amount: number) => `€ ${amount.toFixed(2)}`
@@ -91,7 +100,7 @@ const topRole = computed(() => {
 })
 
 const membershipLine = computed(() => (current.value && since.value
-  ? `${typeName.value} since ${formatDay(since.value)}`
+  ? `${typeName.value} since ${formatDay(since.value)}, ${paysBy.value.toLowerCase()}`
   : memberships.value.length > 0 ? `Ended ${formatDay(latestMembership.value?.endDate)}` : "Has never been a member"))
 const contributionLine = computed(() => (latest.value
   ? `${latest.value.paid ? "Paid" : "Not paid"} ${periodName(latest.value)}${latest.value.lastEmailAt ? `. Last payment email ${formatDay(latest.value.lastEmailAt)}` : ""}`
@@ -99,6 +108,28 @@ const contributionLine = computed(() => (latest.value
 const profileLine = computed(() => (person.value
   ? [person.value.email, person.value.phoneNumber, person.value.discord ? `@${person.value.discord}` : "No Discord linked"].filter(Boolean).join(" · ")
   : ""))
+const paymentLine = computed(() => (paymentUnread.value ? paysBy.value : `${paysBy.value} · incasso details`))
+
+const PAY_BY = [{key: "incasso", label: "Incasso"}, {key: "transfer", label: "Bank transfer"}]
+const changingPay = ref(false)
+const payFailure = ref<string | null>(null)
+const payBy = async (key: string) => {
+  const incassoNext = key === "incasso"
+  if (changingPay.value || payment.value?.incasso === incassoNext) return
+  changingPay.value = true
+  payFailure.value = null
+  const answered = await savePaysBy(id.value, incassoNext)
+  changingPay.value = false
+  if (!answered.ok) {
+    payFailure.value = answered.reason
+    return
+  }
+  payment.value = answered.saved
+  store.commit("setStatusSnackbarMessage", `${person.value?.fullName} now pays by ${incassoNext ? "incasso" : "bank transfer"}.`)
+}
+const reloadPayment = async () => {
+  payment.value = await readMandate(id.value)
+}
 const addressLine = computed(() => {
   if (person.value?.addressId == null) return "No address"
   const held = address.value
@@ -114,7 +145,7 @@ const facts = computed(() => [
   {
     label: "Membership",
     value: [standing.value, typeName.value.toLowerCase()].filter(Boolean).join(", "),
-    sub: since.value ? `Since ${formatDay(since.value)}` : "",
+    sub: since.value ? `Since ${formatDay(since.value)}${incasso.value ? ` · ${incasso.value}` : ""}` : "",
     testid: "user-standing",
   },
   latest.value
@@ -136,6 +167,7 @@ const load = async () => {
     takePeriods(owed)
     profile.value = found ? toEditableUser(found) : null
     address.value = found?.addressId == null ? {} : await readAddress(found.addressId).catch(() => ({}))
+    payment.value = found ? await readMandate(id.value) : null
     activation.value = found && !found.enabled ? (await listPendingActivations().catch(() => ({} as Record<number, TokenPurpose>)))[found.id] ?? null : null
     failed.value = false
   } catch (error) {
@@ -258,6 +290,12 @@ watch(id, load, {immediate: true})
           </template>
         </cut-row>
         <cut-row
+          :meta="paymentLine"
+          testid="user-row-payment-details"
+          title="Payment details"
+          :to="`${base}/payment-details`"
+        />
+        <cut-row
           :meta="contributionLine"
           testid="user-row-contributions"
           title="Contributions"
@@ -341,6 +379,57 @@ watch(id, load, {immediate: true})
       />
     </div>
 
+
+    <div
+      v-else-if="tab === 'payment-details'"
+      class="person__stack"
+      data-testid="user-payment-details"
+    >
+      <notice-box
+        v-if="paymentUnread"
+        testid="user-pays-by-unread"
+        tone="danger"
+        title="How they pay could not be read, so it cannot be changed now. Try again in a moment."
+      />
+      <form-field
+        v-else
+        class="person__pay"
+        hint="Incasso is automatic and needs incasso details. With bank transfer they pay by hand after a payment request."
+        label="Pays by"
+        testid="user-pays-by"
+      >
+        <template #default="{controlId, labelId}">
+          <search-picker
+            :control-id="controlId"
+            :disabled="changingPay"
+            :labelled-by="labelId"
+            :options="PAY_BY"
+            :selected-key="payment?.incasso ? 'incasso' : 'transfer'"
+            testid-prefix="user-pays-by-picker"
+            @pick="payBy"
+          />
+        </template>
+      </form-field>
+      <notice-box
+        v-if="payFailure"
+        testid="user-pays-by-failure"
+        tone="danger"
+        :title="payFailure"
+      />
+      <p
+        v-if="!current"
+        class="person__note"
+        data-testid="user-payment-no-membership"
+      >
+        {{ person.fullName }} has no running membership, so nothing is collected until one starts. How they pay and their
+        incasso details are kept for when it does.
+      </p>
+      <mandate-panel
+        :key="`${id}-${payment?.incasso}`"
+        :user-id="id"
+        @changed="reloadPayment"
+      />
+    </div>
 
     <div
       v-else-if="tab === 'profile'"
@@ -544,6 +633,10 @@ watch(id, load, {immediate: true})
 }
 
 
+
+.person__pay {
+  max-width: 24rem;
+}
 
 .person__note,
 .person__said {

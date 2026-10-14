@@ -37,7 +37,7 @@ describe("a membership's fields", () => {
     wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", MemberType.HONORARY)
     await submit(wrapper)
 
-    expect(user.startMembershipAsBoard).toHaveBeenCalledWith(42, {userId: 42, startDate: "2026-09-01", endDate: null, memberType: MemberType.HONORARY, incasso: false})
+    expect(user.startMembershipAsBoard).toHaveBeenCalledWith(42, {userId: 42, startDate: "2026-09-01", endDate: null, memberType: MemberType.HONORARY})
     expect(wrapper.emitted("saved")?.[0]).toEqual([{...held, id: 10}])
     expect(wrapper.get('[data-testid="membership-save"]').attributes("data-submit-mode")).toBe("create")
   })

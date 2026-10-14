@@ -236,6 +236,15 @@ export type BackupCodesResponse = {
     codes: Array<string>;
 };
 
+/**
+ * The association's own bank account, as a member needs it to make a transfer
+ */
+export type BankAccountResponse = {
+    accountName: string;
+    bic: string;
+    iban: string;
+};
+
 export type BlogResponse = {
     createdAt: string;
     html: string;
@@ -249,7 +258,6 @@ export type BlogResponse = {
 
 export type BoardCreateMembershipRequest = {
     endDate?: string | null;
-    incasso: boolean;
     memberType: MemberType;
     startDate: string | null;
     userId: number;
@@ -1936,6 +1944,12 @@ export enum InboxState {
     HANDLED = 'HANDLED'
 }
 
+export enum IncassoStanding {
+    NONE = 'NONE',
+    MANDATE_RECORDED = 'MANDATE_RECORDED',
+    ON_INCASSO_WITHOUT_BANK_DETAILS = 'ON_INCASSO_WITHOUT_BANK_DETAILS'
+}
+
 export enum JobEffect {
     MADE = 'MADE',
     EDITED = 'EDITED',
@@ -2182,6 +2196,60 @@ export enum MailSecurity {
     NONE = 'NONE'
 }
 
+export type MandateAddressRequest = {
+    city: string;
+    country: string;
+    houseNumber: string;
+    street: string;
+    zipCode: string;
+};
+
+export enum MandateKind {
+    ONLINE = 'ONLINE',
+    PAPER = 'PAPER'
+}
+
+export type MandateResponse = {
+    /**
+     * Null where no mandate is recorded, or where it cannot be opened now.
+     */
+    accountHolder?: string | null;
+    /**
+     * The moment an online mandate was authorised.
+     */
+    authorisedAt?: string | null;
+    /**
+     * True once the sealed bank details were wiped; the reference, signing date and masked IBAN stay as the record.
+     */
+    bankDetailsWiped: boolean;
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry?: string | null;
+    /**
+     * The IBAN's last two characters.
+     */
+    ibanLastTwo?: string | null;
+    /**
+     * Pays by incasso rather than by transfer, whether or not a mandate is recorded.
+     */
+    incasso: boolean;
+    /**
+     * Online where the member authorised it on the site, paper where the board recorded it.
+     */
+    kind?: MandateKind | null;
+    recordedAt?: string | null;
+    recordedBy?: number | null;
+    /**
+     * Who recorded it, by name; null where the account is gone.
+     */
+    recordedByName?: string | null;
+    reference?: string | null;
+    signedOn?: string | null;
+    standing: IncassoStanding;
+    userId: number;
+};
+
 export type MemberActivationRequest = {
     password: string;
     token: string;
@@ -2235,7 +2303,6 @@ export type MembershipResponse = {
     createdAt: string;
     endDate?: string | null;
     id: number;
-    incasso: boolean;
     memberType: MemberType;
     /**
      * Running and waiting for its first contribution, so it carries no member role yet.
@@ -2259,6 +2326,14 @@ export type MoveTargetRequest = {
 
 export type NameOnRostersRequest = {
     shown: boolean;
+};
+
+export type OwnMandateResponse = {
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
+    reference?: string | null;
+    signedOn?: string | null;
+    standing: IncassoStanding;
 };
 
 export type PageMetadata = {
@@ -2316,6 +2391,10 @@ export type PaymentEmailsResultResponse = {
      */
     notWrittenTo: number;
     remindersSent: number;
+};
+
+export type PaysByRequest = {
+    incasso: boolean;
 };
 
 /**
@@ -2497,6 +2576,13 @@ export type ReasonRequest = {
     reason: string;
 };
 
+export type RecordMandateRequest = {
+    accountHolder: string;
+    iban: string;
+    replacesOnline: boolean;
+    signedOn: string;
+};
+
 /**
  * The top rate every sender reached together, SiteCie included, and when
  */
@@ -2590,6 +2676,10 @@ export type ReplyRequest = {
      */
     message: string;
     replyTo?: string | null;
+};
+
+export type RevealedIbanResponse = {
+    iban: string;
 };
 
 export enum Role {
@@ -2778,7 +2868,9 @@ export enum SecurityEventKind {
     ACCOUNT_UNLOCKED = 'ACCOUNT_UNLOCKED',
     SIGNED_OUT_EVERYWHERE = 'SIGNED_OUT_EVERYWHERE',
     SIGNED_OUT_ELSEWHERE = 'SIGNED_OUT_ELSEWHERE',
-    ROLES_CHANGED = 'ROLES_CHANGED'
+    ROLES_CHANGED = 'ROLES_CHANGED',
+    BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED',
+    IBAN_REVEALED = 'IBAN_REVEALED'
 }
 
 export type SecurityEventPageResponse = {
@@ -2916,6 +3008,14 @@ export type ServiceEntry = {
     url: string;
 };
 
+export type SetUpMandateRequest = {
+    accountHolder: string;
+    address: MandateAddressRequest | null;
+    authorised: boolean;
+    iban: string;
+    wordingVersion: string;
+};
+
 export type SignInAnswer = {
     login?: LoginResponse | null;
     status: SignInStatus;
@@ -2966,6 +3066,13 @@ export type SignupDetailsRequest = {
 
 export type SignupEmailRequest = {
     email: string;
+};
+
+export type SignupMandateRequest = {
+    accountHolder: string;
+    authorised: boolean;
+    iban: string;
+    wordingVersion: string;
 };
 
 export type SignupOutcomeResponse = {
@@ -3368,7 +3475,6 @@ export type UpdateMemberProfileRequest = {
 
 export type UpdateMembershipRequest = {
     endDate?: string | null;
-    incasso?: boolean | null;
     memberType?: MemberType | null;
     startDate: string | null;
     userId: number;
@@ -5604,6 +5710,47 @@ export type CreateContributionResponses = {
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type FindBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributions/bank-account';
+};
+
+export type FindBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBankAccountError = FindBankAccountErrors[keyof FindBankAccountErrors];
+
+export type FindBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountResponse;
+};
+
+export type FindBankAccountResponse = FindBankAccountResponses[keyof FindBankAccountResponses];
 
 export type ReadContributionEmailData = {
     body?: never;
@@ -12242,6 +12389,50 @@ export type CorrectEmailResponses = {
 
 export type CorrectEmailResponse = CorrectEmailResponses[keyof CorrectEmailResponses];
 
+export type SetUpMandateData = {
+    body: SignupMandateRequest;
+    headers: {
+        'X-Signup-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/signup/mandate';
+};
+
+export type SetUpMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUpMandateError = SetUpMandateErrors[keyof SetUpMandateErrors];
+
+export type SetUpMandateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type SetUpMandateResponse = SetUpMandateResponses[keyof SetUpMandateResponses];
+
 export type ResumeSignupData = {
     body?: never;
     headers: {
@@ -12774,6 +12965,47 @@ export type FindDeletedUsersResponses = {
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
 
+export type FindOwnContributionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/contributions';
+};
+
+export type FindOwnContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnContributionsError = FindOwnContributionsErrors[keyof FindOwnContributionsErrors];
+
+export type FindOwnContributionsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MemberPeriodContribution>;
+};
+
+export type FindOwnContributionsResponse = FindOwnContributionsResponses[keyof FindOwnContributionsResponses];
+
 export type EmailAddressData = {
     body?: never;
     path?: never;
@@ -12896,6 +13128,88 @@ export type FindOwnFirstContributionResponses = {
 };
 
 export type FindOwnFirstContributionResponse = FindOwnFirstContributionResponses[keyof FindOwnFirstContributionResponses];
+
+export type FindOwnMandateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/mandate';
+};
+
+export type FindOwnMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnMandateError = FindOwnMandateErrors[keyof FindOwnMandateErrors];
+
+export type FindOwnMandateResponses = {
+    /**
+     * OK
+     */
+    200: OwnMandateResponse;
+};
+
+export type FindOwnMandateResponse = FindOwnMandateResponses[keyof FindOwnMandateResponses];
+
+export type SetUpOwnMandateData = {
+    body: SetUpMandateRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/mandate';
+};
+
+export type SetUpOwnMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetUpOwnMandateError = SetUpOwnMandateErrors[keyof SetUpOwnMandateErrors];
+
+export type SetUpOwnMandateResponses = {
+    /**
+     * OK
+     */
+    200: OwnMandateResponse;
+};
+
+export type SetUpOwnMandateResponse = SetUpOwnMandateResponses[keyof SetUpOwnMandateResponses];
 
 export type ChangePasswordData = {
     body: PasswordChangeRequest;
@@ -13916,6 +14230,135 @@ export type SetGameAccountResponses = {
 
 export type SetGameAccountResponse = SetGameAccountResponses[keyof SetGameAccountResponses];
 
+export type FindMandateData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate';
+};
+
+export type FindMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindMandateError = FindMandateErrors[keyof FindMandateErrors];
+
+export type FindMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type FindMandateResponse = FindMandateResponses[keyof FindMandateResponses];
+
+export type RecordMandateData = {
+    body: RecordMandateRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate';
+};
+
+export type RecordMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RecordMandateError = RecordMandateErrors[keyof RecordMandateErrors];
+
+export type RecordMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
+
+export type RevealIbanData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate/reveal';
+};
+
+export type RevealIbanErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RevealIbanError = RevealIbanErrors[keyof RevealIbanErrors];
+
+export type RevealIbanResponses = {
+    /**
+     * OK
+     */
+    200: RevealedIbanResponse;
+};
+
+export type RevealIbanResponse = RevealIbanResponses[keyof RevealIbanResponses];
+
 export type FindMemberProfileByUserIdData = {
     body?: never;
     path: {
@@ -14130,6 +14573,49 @@ export type SetNameOnRostersResponses = {
 };
 
 export type SetNameOnRostersResponse = SetNameOnRostersResponses[keyof SetNameOnRostersResponses];
+
+export type SetPaysByData = {
+    body: PaysByRequest;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/pays-by';
+};
+
+export type SetPaysByErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetPaysByError = SetPaysByErrors[keyof SetPaysByErrors];
+
+export type SetPaysByResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type SetPaysByResponse = SetPaysByResponses[keyof SetPaysByResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

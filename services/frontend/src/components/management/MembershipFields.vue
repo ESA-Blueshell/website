@@ -39,10 +39,9 @@ const save = async () => {
   saving.value = true
   const fields = {userId, startDate: startDate.value, endDate: endDate.value || null, memberType: memberType.value as MemberType}
   try {
-    // A new membership pays by transfer; an edit keeps how it was paid.
     emit("saved", membership
       ? await saveMembership(membership.id, {...membership, ...fields})
-      : await startMembershipAsBoard(userId, {...fields, incasso: false}))
+      : await startMembershipAsBoard(userId, fields))
   } catch (error) {
     reportRefusal(checks, error)
   } finally {

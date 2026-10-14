@@ -114,7 +114,7 @@ defineExpose({validate, save})
 
 <template>
   <div>
-    <!-- Board mode: compact date/type/incasso fields for administrative use -->
+    <!-- Board mode: compact date and type fields for administrative use -->
     <div
       v-if="isBoardMode"
       class="membership-board"
@@ -139,12 +139,6 @@ defineExpose({validate, save})
         v-model="membership.memberType"
         data-testid="membership-form-member-type"
         :error-messages="errorsOf('memberType')"
-      />
-      <check-box
-        v-model="membership.incasso"
-        class="membership-board__incasso"
-        label="Incasso"
-        testid="membership-form-incasso"
       />
     </div>
 
@@ -203,11 +197,6 @@ defineExpose({validate, save})
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem 1rem;
-}
-
-.membership-board__incasso {
-  align-self: center;
-  justify-self: center;
 }
 
 @media (--phone) {

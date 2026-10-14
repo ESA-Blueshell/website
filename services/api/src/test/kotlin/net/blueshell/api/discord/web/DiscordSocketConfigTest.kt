@@ -30,6 +30,6 @@ class DiscordSocketConfigTest {
         val module = ModuleMetadata()::class.java.getAnnotation(ApplicationModule::class.java)
 
         assertThat(module.allowedDependencies)
-            .containsExactly("security", "shared", "sync :: api", "game :: api", "game :: entities")
+            .containsExactly("alerts :: api", "security", "shared", "sync :: api", "game :: api", "game :: entities")
     }
 }

@@ -8,6 +8,7 @@ import java.time.Instant
 enum class AlertKind {
     JOB_DEAD,
     EXCEPTION_OPEN,
+    DISCORD_BOT_PERMISSION,
 }
 
 /** Who can act on an alert. An admin reads every alert; the board, the treasurer included, reads board alerts. */

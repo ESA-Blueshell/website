@@ -5,6 +5,7 @@ import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordPost
+import net.blueshell.api.sync.api.DiscordPostChannels
 import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.api.sync.domain.DiscordPostSchedule.calendarPostFrom
 import org.springframework.beans.factory.ObjectProvider
@@ -32,8 +33,7 @@ class DiscordEventPosts(
     private val publisher: ObjectProvider<DiscordPublisher>,
     private val ledger: PostLedger,
     @Value($$"${frontend.url}") private val site: String,
-    @Value($$"${discord.posts.info-channel:events-info}") private val infoChannel: String,
-    @Value($$"${discord.posts.calendar-channel:events-calendar}") private val calendarChannel: String,
+    private val channels: DiscordPostChannels,
 ) {
     // Settable for tests only.
     internal var clock: Clock = Clock.systemUTC()
@@ -42,8 +42,9 @@ class DiscordEventPosts(
     fun keepAnnouncement(
         eventId: Long,
         forced: Boolean = false,
-    ): Kept =
-        keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel, { null }) { event, due, out ->
+    ): Kept {
+        val infoChannel = channels.info()
+        return keepPost(eventId, DiscordArtefact.INFO_POST, infoChannel, { null }) { event, due, out ->
             when {
                 out -> null
                 due.over -> OVER
@@ -51,6 +52,7 @@ class DiscordEventPosts(
                 else -> "The #$infoChannel announcement is not due until ${morningOf(event.announceAt ?: event.startTime)}."
             }
         }
+    }
 
     /**
      * The events-calendar post, due from 08:00 on the event's first day and down for good at 08:00
@@ -60,6 +62,7 @@ class DiscordEventPosts(
         eventId: Long,
         forced: Boolean = false,
     ): Kept {
+        val calendarChannel = channels.calendar()
         val dayOver = "The event's day is over, so its #$calendarChannel post has come down."
         return keepPost(eventId, DiscordArtefact.CALENDAR_POST, calendarChannel, { due -> dayOver.takeIf { due.calendarPostOver } }) {
             event,

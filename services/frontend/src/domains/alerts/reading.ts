@@ -9,6 +9,8 @@ export function alertTitle(alert: Alert): string {
       return `${counted(alert.count, "job is", "jobs are")} dead`
     case AlertKind.EXCEPTION_OPEN:
       return `${counted(alert.count, "exception is", "exceptions are")} open`
+    case AlertKind.DISCORD_BOT_PERMISSION:
+      return `The Discord bot lacks ${alert.subjectLabel}`
   }
 }
 
@@ -19,6 +21,8 @@ export function alertRow(alert: Alert): {name: string; meta: string; from: strin
       return {name: alertTitle(alert), meta: "Every retry failed", from: "Jobs"}
     case AlertKind.EXCEPTION_OPEN:
       return {name: alertTitle(alert), meta: "Not resolved yet", from: "Exceptions"}
+    case AlertKind.DISCORD_BOT_PERMISSION:
+      return {name: "The bot lacks a permission", meta: alert.subjectLabel ?? "", from: "Discord"}
   }
 }
 
@@ -29,5 +33,7 @@ export function alertLink(alert: Alert): string {
       return "/management/jobs?status=DEAD"
     case AlertKind.EXCEPTION_OPEN:
       return "/management/exceptions"
+    case AlertKind.DISCORD_BOT_PERMISSION:
+      return "/management/platforms/discord/bot"
   }
 }

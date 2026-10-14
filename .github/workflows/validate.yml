@@ -220,6 +220,93 @@ jobs:
       - name: Check every reusable-workflow caller grants what it calls
         run: ./scripts/check-workflow-permissions.py
 
+  imaging:
+    # The imaging service shares nothing with the jar or the bundle, so it has a job of its own.
+    # Lint and the vulnerability check read the source on the runner. The unit suite runs in the
+    # image's test stage, against the libwebp the image links and the cwebp the api used to run,
+    # and has to reach every statement. The container tests then drive the image the cluster runs,
+    # read-only, as nobody and with no capabilities, and count towards no coverage.
+    name: Imaging lint, tests and image
+    needs: changes
+    if: fromJSON(needs.changes.outputs.run).imaging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: services/imaging
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: services/imaging/go.mod
+          cache-dependency-path: services/imaging/go.sum
+
+      # The encoder is cgo, so type-checking it needs libwebp's headers.
+      - name: Install libwebp's headers
+        run: sudo apt-get install -y --no-install-recommends libwebp-dev
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: services/imaging
+
+      - name: Check for known vulnerabilities
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          work-dir: services/imaging
+          # Empty, or setup-go takes the input's `stable` over the module's own version.
+          go-version-input: ''
+          go-version-file: services/imaging/go.mod
+          cache-dependency-path: services/imaging/go.sum
+          repo-checkout: false
+
+      - name: Lint the Dockerfile
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: services/imaging/Dockerfile
+          config: services/imaging/.hadolint.yaml
+
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+
+      - name: Unit tests, held to every statement
+        run: |
+          docker buildx build --progress=plain --target coverage --output type=local,dest=coverage \
+            --cache-from type=gha,scope=imaging-test --cache-to type=gha,mode=max,scope=imaging-test .
+
+      - name: Upload imaging unit coverage
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: imaging-unit-coverage
+          path: services/imaging/coverage/coverage.out
+          if-no-files-found: error
+
+      - name: Build the image
+        run: |
+          docker buildx build --progress=plain --load -t blueshell-website/imaging:ci \
+            --cache-from type=gha,scope=imaging --cache-to type=gha,mode=max,scope=imaging .
+
+      # The pod's own limits and restrictions: no writable filesystem, no capabilities and the
+      # image's non-root user.
+      - name: Start the image as the cluster runs it
+        run: |
+          docker run -d --name imaging --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --memory 1g --cpus 1 -p 8090:8080 blueshell-website/imaging:ci
+          for _ in $(seq 1 30); do curl -fsS http://localhost:8090/healthz && exit 0; sleep 1; done
+          docker logs imaging
+          exit 1
+
+      - name: Container tests
+        run: go test -count=1 -tags integration -v ./integration/
+        env:
+          IMAGING_URL: http://localhost:8090
+
+      - name: Imaging logs
+        if: failure()
+        run: docker logs imaging
+
   fe-static:
     # Also the bundle build: the system tests serve this artifact with
     # `vite preview`, so building it once here spares six shards a build each.
@@ -872,12 +959,13 @@ jobs:
     # Only measured lines count, so docs, config and any file outside an
     # `include` are not in the denominator.
     name: Changed lines are covered
-    # Gated on the buckets that hold measured sources, api and frontend. Both
-    # unit suites skipping on such a run fails below and says so.
+    # Gated on the buckets that hold measured sources: api, frontend and imaging.
+    # Every unit suite skipping on such a run fails below and says so.
     if: |
       always() && github.event_name == 'pull_request'
-      && (fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).frontend)
-    needs: [ changes, api-unit-tests, fe-unit ]
+      && (fromJSON(needs.changes.outputs.run).api || fromJSON(needs.changes.outputs.run).frontend
+          || fromJSON(needs.changes.outputs.run).imaging)
+    needs: [ changes, api-unit-tests, fe-unit, imaging ]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -887,9 +975,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The api or frontend bucket is on, so the unit suite it gates had to run.
-      # Both skipped means a gate in this file drifted from the buckets, which
-      # is the one thing selectivity could quietly break.
+      # The api, frontend or imaging bucket is on, so the unit suite it gates had
+      # to run. All skipped means a gate in this file drifted from the buckets,
+      # which is the one thing selectivity could quietly break.
       #
       # Neither succeeding for any other reason is not that: a failed suite
       # uploads nothing and reports itself, and a cancelled one was stopped by
@@ -900,18 +988,19 @@ jobs:
         env:
           API: ${{ needs.api-unit-tests.result }}
           FRONTEND: ${{ needs.fe-unit.result }}
+          IMAGING: ${{ needs.imaging.result }}
         run: |
           set -euo pipefail
-          if [ "$API" = "success" ] || [ "$FRONTEND" = "success" ]; then
+          if [ "$API" = "success" ] || [ "$FRONTEND" = "success" ] || [ "$IMAGING" = "success" ]; then
             echo "ran=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "ran=false" >> "$GITHUB_OUTPUT"
-          if [ "$API" = "skipped" ] && [ "$FRONTEND" = "skipped" ]; then
-            echo "::error::the api or frontend bucket is on but neither unit suite ran; a gate in validate.yml does not follow the buckets"
+          if [ "$API" = "skipped" ] && [ "$FRONTEND" = "skipped" ] && [ "$IMAGING" = "skipped" ]; then
+            echo "::error::a measured bucket is on but no unit suite ran; a gate in validate.yml does not follow the buckets"
             exit 1
           fi
-          echo "neither unit suite reported ($API, $FRONTEND); the jobs that own them say why"
+          echo "no unit suite reported ($API, $FRONTEND, $IMAGING); the jobs that own them say why"
 
       # One step per suite, each into its own directory: a pattern matching a
       # single artifact extracts it into `path` itself, where the gate never
@@ -929,6 +1018,13 @@ jobs:
         with:
           name: frontend-unit-coverage
           path: coverage-artifacts/frontend-unit-coverage
+
+      - name: Download the imaging unit coverage
+        if: steps.measurable.outputs.ran == 'true' && needs.imaging.result == 'success'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: imaging-unit-coverage
+          path: coverage-artifacts/imaging-unit-coverage
 
       - name: Refuse an uncovered changed line
         if: steps.measurable.outputs.ran == 'true'
@@ -1047,6 +1143,7 @@ jobs:
       - nix-flake-check
       - flux-kustomize-check
       - workflow-checks
+      - imaging
       - changeset-compatibility
       - changeset-sql
       - fe-static

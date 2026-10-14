@@ -1,0 +1,21 @@
+services:
+  # The production image, run as the cluster runs it: read-only, with no capabilities. The api
+  # reaches it at http://imaging:8080; nothing else needs to.
+  imaging:
+    image: imaging:dev
+    pull_policy: never
+    build:
+      context: .
+    container_name: imaging
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - global_network
+    restart: unless-stopped
+
+networks:
+  global_network:
+    driver: bridge

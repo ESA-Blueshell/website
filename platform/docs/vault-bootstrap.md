@@ -323,7 +323,7 @@ role is missing the localhost entry: re-run the bootstrap Job with
 
 ### GHCR pull credential (Deployments + registry scanning)
 
-`ghcr.io/esa-blueshell/{api,frontend,stalwart-tools}` are private
+`ghcr.io/esa-blueshell/{api,frontend,imaging,stalwart-tools}` are private
 packages. VSO materialises `ghcr-pull-secret` (type
 `kubernetes.io/dockerconfigjson`) from this Vault path into three
 namespaces: `default` and `mail-system`, where the Deployments

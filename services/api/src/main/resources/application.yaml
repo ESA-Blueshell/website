@@ -142,6 +142,10 @@ app:
     # will resize one. All three ship in the same libwebp package.
     dwebp-path: ${DWEBP_PATH:dwebp}
     webpmux-path: ${WEBPMUX_PATH:webpmux}
+  imaging:
+    # The imaging service that converts uploaded stills (architecture ADR-014). Blank converts
+    # them in this process with the binaries above, which is what the tests and a native run do.
+    url: ${IMAGING_URL:}
   jobs:
     max-retries: ${JOB_MAX_RETRIES:3}
     initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}

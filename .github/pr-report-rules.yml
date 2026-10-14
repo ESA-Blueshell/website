@@ -56,6 +56,19 @@
 - glob: "services/frontend/**"
   bucket: build
 
+# --- imaging ---
+- glob: "services/imaging/integration/**"
+  bucket: tests
+
+- glob: "services/imaging/**/*_test.go"
+  bucket: tests
+
+- glob: "services/imaging/**/*.go"
+  bucket: imaging
+
+- glob: "services/imaging/**"
+  bucket: build
+
 # --- system tests ---
 - glob: "tests/**"
   bucket: tests

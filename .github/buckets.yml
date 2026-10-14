@@ -37,6 +37,12 @@ frontend:
 system:
   - 'tests/**'
 
+# The imaging service's lint, unit suite, image and container tests. It shares nothing with the
+# jar or the bundle, so it turns on none of their suites.
+imaging:
+  - 'services/imaging/**'
+  - '!services/imaging/docker-compose.yml'
+
 # What no suite reads. `Workflow checks` runs on every pull request, so a
 # workflow other than validate.yml needs no bucket of its own.
 # renovate.json turns automerge off for the paths here that Renovate updates,

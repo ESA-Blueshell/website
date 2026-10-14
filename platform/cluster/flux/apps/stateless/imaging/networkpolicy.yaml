@@ -1,0 +1,29 @@
+# Only the api reaches the imaging service, and the imaging service reaches nothing, DNS included.
+# A picture that took over the decoder would find no Vault, database or api to talk to.
+#
+# Flagger runs the api as two Deployments, `api` for the canary and `api-primary` for the one
+# serving, and names their pods' label after each, so both are admitted. The kubelet's probes
+# come from the node, which the k3s policy controller lets through.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: imaging
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["api", "api-primary"]
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress: []

@@ -41,9 +41,9 @@ env:
   BASELINE_ARTIFACT: coverage-baseline
   # The unit suites only, matching SUITES in .github/scripts/pr_report.py.
   COVERAGE_ARTIFACTS: >-
-    api-unit-test-reports frontend-unit-coverage pr-report-meta changeset-sql
+    api-unit-test-reports frontend-unit-coverage imaging-unit-coverage pr-report-meta changeset-sql
   # The artifacts the live report waits for, one per suite in SUITES.
-  SUITE_ARTIFACTS: api-unit-test-reports frontend-unit-coverage
+  SUITE_ARTIFACTS: api-unit-test-reports frontend-unit-coverage imaging-unit-coverage
 
 jobs:
   live:

@@ -3,8 +3,11 @@ package net.blueshell.api.event.web
 import net.blueshell.api.event.api.AnnounceChoice
 import net.blueshell.api.event.api.AnnouncementLedger
 import net.blueshell.api.event.api.EventService
+import net.blueshell.api.event.domain.EventApprovals
+import net.blueshell.api.event.domain.EventField
 import net.blueshell.api.event.domain.EventRoster
 import net.blueshell.api.event.domain.EventUseCases
+import net.blueshell.api.event.domain.QueuedEvent
 import net.blueshell.api.event.domain.Roster
 import net.blueshell.api.event.domain.RosterPerson
 import net.blueshell.api.shared.discord.DescriptionNodeKind
@@ -17,6 +20,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.time.Instant
 
 class EventControllerTest {
@@ -33,9 +37,10 @@ class EventControllerTest {
             on { update(any(), any(), any(), any(), anyOrNull()) } doReturn event
         }
     private val service: EventService = mock { on { findById(6L) } doReturn event }
+    private val approvals: EventApprovals = mock()
     private val roster: EventRoster =
         mock { on { of(6L) } doReturn Roster(listOf(RosterPerson("Nelly", "https://cdn/n.png", discord = true)), guests = 2) }
-    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L }, roster)
+    private val controller = EventController(service, useCases, AnnouncementLedger { it == 6L }, roster, approvals)
 
     @Test
     fun `answers an event's roster as its page shows it`() {
@@ -107,5 +112,16 @@ class EventControllerTest {
 
         verify(useCases).create(any(), eq(AnnounceChoice.NOW))
         verify(useCases).update(eq(6L), any(), eq(false), eq(1L), eq(AnnounceChoice.NEXT_MORNING))
+    }
+
+    @Test
+    fun `answers the board's queue as the approvals read it, each with what changed since approved`() {
+        whenever(approvals.queue()).thenReturn(listOf(QueuedEvent(event, true, listOf(EventField.TITLE))))
+
+        val queue = controller.listApprovalQueue()
+
+        assertThat(queue.single().reapproval).isTrue()
+        assertThat(queue.single().changes).containsExactly(EventField.TITLE)
+        assertThat(queue.single().event.id).isEqualTo(6L)
     }
 }

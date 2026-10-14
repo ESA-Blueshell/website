@@ -461,6 +461,7 @@ const routes: RouteRecordRaw[] = [
       {path: "jobs/:id(\\d+)", name: "jobDetail", component: () => import("@/pages/management/JobDetail.vue"), meta: {title: "Job", requiresAdmin: true}},
       {path: "exceptions", name: "exceptionList", component: () => import("@/pages/management/ExceptionList.vue"), meta: {title: "Exceptions", requiresAdmin: true}},
       {path: "exceptions/:id(\\d+)", name: "exceptionDetail", component: () => import("@/pages/management/ExceptionDetail.vue"), meta: {title: "Exception", requiresAdmin: true}},
+      {path: "events", name: "eventQueue", component: () => import("@/pages/management/EventQueue.vue"), meta: {title: "Events to approve"}},
     ],
   },
   {

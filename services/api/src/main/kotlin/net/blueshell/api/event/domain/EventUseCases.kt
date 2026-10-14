@@ -34,6 +34,7 @@ class EventUseCases(
     private val fileService: FileService,
     private val games: GameService,
     private val announcements: AnnouncementLedger,
+    private val approvals: EventApprovals,
     @param:Value($$"${discord.guildId:}") private val discordGuildId: String = "",
     private val clock: Clock = Clock.systemUTC(),
 ) {
@@ -71,7 +72,7 @@ class EventUseCases(
         event.applyPingedRoles(data)
         applyGames(event, data)
         settleAnnouncement(event, wasApproved = false, announce)
-        return service.create(event)
+        return service.create(event).also { keepIfApproved(event) }
     }
 
     fun update(
@@ -94,7 +95,7 @@ class EventUseCases(
         event.awaitingReapproval = !board && (event.approved || event.awaitingReapproval)
         event.approved = board && data.approved
         settleAnnouncement(event, wasApproved, announce)
-        return service.update(event, removeExistingSignUps = removeExistingSignUps)
+        return service.update(event, removeExistingSignUps = removeExistingSignUps).also { keepIfApproved(event) }
     }
 
     fun approve(
@@ -107,7 +108,12 @@ class EventUseCases(
         event.approved = approved
         event.awaitingReapproval = false
         settleAnnouncement(event, wasApproved, announce)
-        return service.update(event)
+        return service.update(event).also { keepIfApproved(event) }
+    }
+
+    /** Whatever the board approves is kept as approved, for a later re-approval to be read against. */
+    private fun keepIfApproved(event: Event) {
+        if (event.approved) approvals.record(event)
     }
 
     /**

@@ -13,6 +13,9 @@ import java.time.Instant
 
 @Repository
 interface EventRepository : BaseRepository<Event, Long> {
+    /** The events waiting for the board that end after [from], soonest first. */
+    fun findByApprovedFalseAndEndTimeGreaterThanEqualOrderByStartTimeAsc(from: Instant): List<Event>
+
     @EntityGraph(value = "Event.withBannerFileAndFormQuestions", type = EntityGraph.EntityGraphType.LOAD)
     override fun findAll(
         spec: Specification<Event>,

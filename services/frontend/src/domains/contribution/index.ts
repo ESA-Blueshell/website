@@ -20,6 +20,15 @@ export {
 export {recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
 export {readFirstContribution, type FirstContribution} from "./adapters/firstContribution"
 export {
+  readBankAccount,
+  readOwnContributions,
+  type BankAccountResponse,
+  type MemberPeriodContribution,
+  type OwnContributions,
+} from "./adapters/ownContributions"
+export {noteHeld, useHeldMembership} from "./heldMembership"
+export {contributionRow, euros, owedIn, type ContributionRow} from "./ownContributions"
+export {
   changedFeeTypes,
   changedKinds,
   contributionEmailItems,

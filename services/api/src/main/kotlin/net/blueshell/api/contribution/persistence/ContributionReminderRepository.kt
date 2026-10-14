@@ -8,4 +8,7 @@ import org.springframework.stereotype.Repository
 interface ContributionReminderRepository : BaseRepository<ContributionReminder, Long> {
     /** Every ask made for this period, in no particular order. A member may appear more than once. */
     fun findByContributionPeriod_Id(contributionPeriodId: Long): MutableList<ContributionReminder>
+
+    /** Every ask made to this person, for any period, in no particular order. */
+    fun findByUser_Id(userId: Long): List<ContributionReminder>
 }

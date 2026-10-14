@@ -398,6 +398,7 @@ import logo from "@/assets/topbarlogo-38.webp"
 import logo2x from "@/assets/topbarlogo-76.webp"
 import logo3x from "@/assets/topbarlogo-114.webp"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {useHeldMembership} from "@/domains/contribution"
 
 // The bar draws the wordmark 38px tall, so it is shipped at that height and at twice and three times it.
 const logoSrcset = `${logo} 1x, ${logo2x} 2x, ${logo3x} 3x`
@@ -502,11 +503,14 @@ const route = useRoute()
 
 const isBoard = useIsBoard()
 
+const held = useHeldMembership(() => store.getters.getLogin?.userId ?? null)
+
 const reader = computed<NavReader>(() => ({
   loggedIn: Boolean(store.getters.isLoggedIn),
   board: isBoard.value,
   admin: Boolean(store.getters.isAdmin),
   addressId: store.getters.getLogin?.addressId ?? null,
+  held: held.value,
 }))
 
 const sections = computed(() => sectionsFor(currentGames.value, currentCommittees.value, casualGames.value))

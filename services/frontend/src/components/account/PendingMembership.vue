@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
+import CutButton from "@/components/island/CutButton.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {type FirstContribution, readFirstContribution} from "@/domains/contribution"
 import {feeTypeLabels} from "@/utils/feePreview"
@@ -33,5 +34,19 @@ onMounted(async () => {
       </template>.
       The treasurer records it when it arrives. Until then, members-only events stay closed.
     </p>
+    <cut-button
+      class="pending-membership__how"
+      href="/account/payment-details"
+      small
+      testid="pending-membership-how"
+    >
+      How to pay
+    </cut-button>
   </notice-box>
 </template>
+
+<style scoped>
+.pending-membership__how {
+  margin-top: 0.75rem;
+}
+</style>

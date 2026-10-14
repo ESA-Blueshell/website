@@ -257,7 +257,9 @@ export const HELP: HelpSection[] = [
         body: [
           "After you sign up, your membership is pending. While it is pending, you cannot sign up for members-only events.",
           "You become a member when your first contribution is paid. The treasurer must record the payment.",
+          "Payment details shows what you owe and how to pay.",
         ],
+        links: [{label: "Payment details", to: "/account/payment-details"}],
       },
       {
         id: "membership-cancel",
@@ -289,10 +291,11 @@ export const HELP: HelpSection[] = [
         title: "How you pay",
         audience: "member",
         body: [
-          "You do not pay on the site. The board sends you an email.",
-          "The email is a payment request with a due date. Or it tells you the date the amount is taken from your bank account by direct debit (incasso).",
-          "The treasurer marks your contribution as paid when the money arrives. Ask the board if you want to start or stop paying by direct debit.",
+          "You do not pay on the site. Payment details lists your contributions, shows which are unpaid and explains how to pay: by bank transfer, in cash or by direct debit.",
+          "The board also sends you an email. It is a payment request with a due date. Or it tells you the date the amount is taken from your bank account by direct debit (incasso).",
+          "The treasurer marks your contribution as paid when the money arrives. To pay by direct debit, download the mandate form on Payment details, sign it and email it to the board.",
         ],
+        links: [{label: "Payment details", to: "/account/payment-details"}],
       },
       {
         id: "contributions-periods",

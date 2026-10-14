@@ -7,6 +7,7 @@ import Island from "@/components/island/Island.vue"
 import PageTabs from "@/components/island/PageTabs.vue"
 import {accountFor, type NavReader} from "@/components/common/nav"
 import {useIsBoard} from "@/composables/useIsBoard"
+import {useHeldMembership} from "@/domains/contribution"
 
 /**
  * The head every account page shares: its name, the account tabs and, on a page one step down, a
@@ -30,11 +31,15 @@ const store = useStore()
 
 const isBoard = useIsBoard()
 
+// The signed-out account pages show no tabs, so they ask nothing.
+const held = useHeldMembership(() => (tabs ? store.getters.getLogin?.userId ?? null : null))
+
 const reader = computed<NavReader>(() => ({
   loggedIn: Boolean(store.getters.isLoggedIn),
   board: isBoard.value,
   admin: Boolean(store.getters.isAdmin),
   addressId: store.getters.getLogin?.addressId ?? null,
+  held: held.value,
 }))
 const pages = computed(() => accountFor(reader.value))
 </script>

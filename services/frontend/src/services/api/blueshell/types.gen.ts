@@ -195,6 +195,15 @@ export type BackupCodesResponse = {
     codes: Array<string>;
 };
 
+/**
+ * The association's own bank account, as a member needs it to make a transfer
+ */
+export type BankAccountResponse = {
+    accountName: string;
+    bic: string;
+    iban: string;
+};
+
 export type BlogResponse = {
     createdAt: string;
     html: string;
@@ -2026,6 +2035,18 @@ export type MemberActivationRequest = {
     username: string;
 };
 
+export type MemberPeriodContribution = {
+    dueDate?: string | null;
+    endDate: string;
+    fee?: number | null;
+    feeType?: BulkFeeType | null;
+    lastEmailAt?: string | null;
+    lastEmailKind?: ContributionEmailKind | null;
+    paidAt?: string | null;
+    periodId: number;
+    startDate: string;
+};
+
 export type MemberProfileResponse = {
     bhv: boolean;
     conditionsAcceptedAt?: string;
@@ -2085,6 +2106,12 @@ export type MoveTargetRequest = {
 
 export type NameOnRostersRequest = {
     shown: boolean;
+};
+
+export type OwnContributions = {
+    held: boolean;
+    paysByIncasso: boolean;
+    periods: Array<MemberPeriodContribution>;
 };
 
 export type PageMetadata = {
@@ -5168,6 +5195,47 @@ export type CreateContributionResponses = {
 };
 
 export type CreateContributionResponse = CreateContributionResponses[keyof CreateContributionResponses];
+
+export type FindBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/contributions/bank-account';
+};
+
+export type FindBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindBankAccountError = FindBankAccountErrors[keyof FindBankAccountErrors];
+
+export type FindBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountResponse;
+};
+
+export type FindBankAccountResponse = FindBankAccountResponses[keyof FindBankAccountResponses];
 
 export type ReadContributionEmailData = {
     body?: never;
@@ -11027,6 +11095,47 @@ export type FindDeletedUsersResponses = {
 };
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
+
+export type FindOwnContributionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/contributions';
+};
+
+export type FindOwnContributionsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnContributionsError = FindOwnContributionsErrors[keyof FindOwnContributionsErrors];
+
+export type FindOwnContributionsResponses = {
+    /**
+     * OK
+     */
+    200: OwnContributions;
+};
+
+export type FindOwnContributionsResponse = FindOwnContributionsResponses[keyof FindOwnContributionsResponses];
 
 export type EmailAddressData = {
     body?: never;

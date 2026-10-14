@@ -88,4 +88,11 @@ describe("the bar's own declaration", () => {
 
     expect(pages.at(-1)).toEqual({label: "Help", to: "/account/help"})
   })
+
+  it("offers Payment details before Help only to somebody who holds or held a membership", () => {
+    const member = accountFor({loggedIn: true, board: false, admin: false, addressId: null, held: true})
+
+    expect(member.map(entry => entry.label)).toEqual(["Account", "Security", "Esports Teams", "Address", "Payment details", "Help"])
+    expect(member[4]?.to).toBe("/account/payment-details")
+  })
 })

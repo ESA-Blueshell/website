@@ -88,8 +88,11 @@ vi.mock("@/plugins/handleNetworkError", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
-vi.mock("@/services/api", () => ({
+// Partial, because the bar loads whole domains and each reads its sdk calls when it loads.
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
   findUserById: mockFindUserById,
+  findOwnContributions: vi.fn(async () => ({data: {held: false, paysByIncasso: false, periods: []}})),
   twoFactorStanding: vi.fn(async () => ({data: null})),
   findCasualGames: vi.fn(async () => ({data: []})),
   SignInStatus: {SIGNED_IN: "SIGNED_IN", TWO_FACTOR_REQUIRED: "TWO_FACTOR_REQUIRED"},

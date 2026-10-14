@@ -40,3 +40,5 @@ services:
         vault read transit/keys/api-jwt
         # Derived key sealing members' addresses (api ADR-038).
         vault write -f transit/keys/api-address derived=true
+        # Derived key sealing members' bank details (api ADR-038).
+        vault write -f transit/keys/api-bank-details derived=true

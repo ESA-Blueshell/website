@@ -75,14 +75,10 @@ class MembershipBulkStartControllerIT : UserTestSupport() {
             .isEqualTo(LocalDate.now().minusYears(2))
         assertThat(held.minOf { it.startDate }).isEqualTo(LocalDate.now().minusYears(3))
 
-        // The type carries over — a returning alumnus comes back an alumnus — but the
-        // incasso mandate does not: a standing authorisation to take money, given for a
-        // membership that has since ended, is not re-armed on somebody's behalf in a batch.
+        // The type carries over: a returning alumnus comes back an alumnus.
         val fresh = held.single { it.endDate == null }
         assertThat(fresh.startDate).isEqualTo(LocalDate.now())
         assertThat(fresh.memberType).isEqualTo(MemberType.ALUMNI)
-        assertThat(fresh.incasso).isFalse()
-        assertThat(membershipRepository.findById(old.id!!).orElseThrow().incasso).isTrue()
     }
 
     @Test

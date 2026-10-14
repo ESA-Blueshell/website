@@ -85,7 +85,7 @@ describe("the one-membership writes", () => {
 describe("startMembershipAsBoard", () => {
   it("starts the membership on the account's behalf", async () => {
     vi.mocked(boardCreateMembership).mockResolvedValue(answer(boardCreateMembership, aMembership({id: 33, userId: 7})))
-    const terms = {userId: 7, memberType: MemberType.REGULAR, incasso: false, startDate: "2026-09-01"}
+    const terms = {userId: 7, memberType: MemberType.REGULAR, startDate: "2026-09-01"}
 
     await expect(startMembershipAsBoard(7, terms)).resolves.toEqual(aMembership({id: 33, userId: 7}))
     expect(boardCreateMembership).toHaveBeenCalledWith({

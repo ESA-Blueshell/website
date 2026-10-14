@@ -13,13 +13,17 @@ import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -44,6 +48,19 @@ class ContributionEmailPlannerTest {
     private val reminders: ContributionReminderService = mockk()
     private val preNotifications: IncassoNotificationService = mockk()
     private val erasure: UserErasureService = mockk()
+    private val payments: PaymentDirectory = mockk()
+    private val onIncasso = mutableSetOf<Long>()
+    private val withoutBankDetails = mutableSetOf<Long>()
+    private val recorded =
+        IncassoMandate(
+            sealedIban = "vault:v1:iban",
+            sealedAccountHolder = "vault:v1:holder",
+            ibanMasked = "NL34",
+            reference = "BLUESHELL-1-20250901",
+            signedOn = LocalDate.of(2025, 9, 1),
+            recordedBy = null,
+            recordedAt = Instant.parse("2025-09-01T10:00:00Z"),
+        )
 
     private val planner =
         ContributionEmailPlanner(
@@ -54,6 +71,7 @@ class ContributionEmailPlannerTest {
             reminders,
             preNotifications,
             erasure,
+            payments,
         )
 
     @Nested
@@ -69,15 +87,24 @@ class ContributionEmailPlannerTest {
         }
 
         @Test
-        fun `the flag is read off the membership still running, not the one that ended`() {
+        fun `the flag stands on the person, whichever of their memberships is judged`() {
             val member = member(1L, "Ann Moved")
+            onIncasso += 1L
             given(
-                Membership(user = member, startDate = LocalDate.of(2024, 9, 1), endDate = LocalDate.of(2025, 8, 31), incasso = true),
-                Membership(user = member, startDate = LocalDate.of(2025, 9, 1), incasso = false),
+                Membership(user = member, startDate = LocalDate.of(2024, 9, 1), endDate = LocalDate.of(2025, 8, 31)),
+                Membership(user = member, startDate = LocalDate.of(2025, 9, 1)),
             )
 
             assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.defaultKind)
-                .isEqualTo(ContributionEmailKind.REMINDER)
+                .isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
+        }
+
+        @Test
+        fun `a member on incasso with no bank details yet is asked to transfer, since nothing can be collected`() {
+            given(membership(1L, "Ann Debit", incasso = true))
+            withoutBankDetails += 1L
+
+            assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.defaultKind).isEqualTo(ContributionEmailKind.REMINDER)
         }
 
         @Test
@@ -232,8 +259,9 @@ class ContributionEmailPlannerTest {
         @Test
         fun `each statement carries its own date`() {
             val ann = member(1L, "Ann Moved")
+            onIncasso += 1L
             given(
-                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1), incasso = true),
+                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1)),
                 sentReminders = listOf(reminderFor(ann, LocalDate.of(2025, 9, 12))),
             )
 
@@ -247,7 +275,7 @@ class ContributionEmailPlannerTest {
         fun `the most recent of several sends is the one reported`() {
             val ann = member(1L, "Ann Chased")
             given(
-                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1), incasso = false),
+                Membership(user = ann, startDate = LocalDate.of(2025, 9, 1)),
                 sentReminders =
                     listOf(
                         reminderFor(ann, LocalDate.of(2025, 9, 12)),
@@ -299,6 +327,11 @@ class ContributionEmailPlannerTest {
             if (deleted) firstArg<Collection<Long>>().toSet() else emptySet()
         }
         every { users.findAllByIdsWithProfiles(any()) } returns emptyList()
+        every { payments.of(any()) } answers {
+            firstArg<Collection<Long>>().associateWith { userId ->
+                PersonPayment(userId in onIncasso, recorded.takeUnless { userId in withoutBankDetails })
+            }
+        }
     }
 
     private fun givenNoMemberships(member: User) {
@@ -314,13 +347,15 @@ class ContributionEmailPlannerTest {
         startDate: LocalDate = LocalDate.of(2025, 9, 1),
         endDate: LocalDate? = null,
         email: String = "member$userId@example.com",
-    ) = Membership(
-        user = member(userId, fullName, email),
-        startDate = startDate,
-        endDate = endDate,
-        memberType = memberType,
-        incasso = incasso,
-    )
+    ): Membership {
+        if (incasso) onIncasso += userId
+        return Membership(
+            user = member(userId, fullName, email),
+            startDate = startDate,
+            endDate = endDate,
+            memberType = memberType,
+        )
+    }
 
     private fun member(
         userId: Long,

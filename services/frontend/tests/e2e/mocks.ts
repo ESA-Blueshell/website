@@ -40,7 +40,9 @@ import type {
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
   FirstContribution,
+  MandateResponse,
   MembershipResponse,
+  OwnMandateResponse,
   PublishLineupRequest,
   Role,
   RosterEntryResponse,
@@ -72,6 +74,8 @@ type Fixtures = {
   deletedUsers?: Wire<UserDetailResponse>[]
   memberships?: Wire<MembershipResponse>[]
   contributionPeriods?: Wire<ContributionPeriodResponse>[]
+  /** People who pay by incasso; how somebody pays stands on them, not on a membership. */
+  onIncasso?: number[]
   /** The period the membership page and the signup form quote, or null where none is recorded. */
   currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
   /** What the signed-in reader pays to make a pending membership active; none by default. */
@@ -614,6 +618,15 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
   // The periods a payment was recorded for on a person's own page.
   const paidPeriods = new Set<number>()
+  let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
+  const payingByIncasso = new Set(fixtures.onIncasso ?? [])
+  const recordedMandates = new Map<number, Wire<MandateResponse>>()
+  const mandateOf = (userId: number): Wire<MandateResponse> => {
+    const incasso = payingByIncasso.has(userId)
+    const recorded = recordedMandates.get(userId)
+    if (recorded) return {...recorded, incasso}
+    return {userId, incasso, standing: incasso ? "ON_INCASSO_WITHOUT_BANK_DETAILS" : "NONE", bankDetailsWiped: false}
+  }
 
   const basePeriods: Wire<ContributionPeriodResponse>[] = fixtures.contributionPeriods ?? [
     aContributionPeriod({id: 200, startDate: "2025-01-01", endDate: "2025-06-30", halfYearCutoffDate: "2025-04-01", halfYearFee: 10, fullYearFee: 20, alumniFee: 5, contactListId: 7, version: 3}),
@@ -895,6 +908,49 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && path === "/users/me/two-factor/setup") {
       return answer(route, "setUpTwoFactor", {otpauthUri: "otpauth://totp/ESA%20Blueshell:mock-user?secret=JBSWY3DPEHPK3PXP", key: "JBSWY3DPEHPK3PXP"})
     }
+    if (method === "GET" && path === "/contributions/bank-account") {
+      return answer(route, "findBankAccount", {iban: "NL19 INGB 0008 0964 62", bic: "INGBNL2A", accountName: "Blueshell E-Sports Vereniging"})
+    }
+    if (method === "GET" && path === "/users/me/contributions") {
+      return answer(route, "findOwnContributions", [
+        {periodId: 201, startDate: "2025-07-01", endDate: "2025-12-31", feeType: "FULL_YEAR_FEE", fee: 20, paid: true, paidAt: "2025-07-15T10:00:00Z"},
+      ])
+    }
+    if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
+      if (method === "GET") return answer(route, "findOwnMandate", ownMandate)
+      const {iban} = request.postDataJSON() as {iban: string}
+      const signup = path.startsWith("/signup")
+      ownMandate = {
+        standing: "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
+        reference: "BLUESHELL-1-20260930", signedOn: "2026-09-30",
+      }
+      return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
+    }
+    if (method === "POST" && /^\/users\/\d+\/mandate\/reveal$/.test(path)) {
+      return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})
+    }
+    if (method === "PUT" && /^\/users\/\d+\/pays-by$/.test(path)) {
+      const userId = Number(path.split("/")[2])
+      const {incasso} = request.postDataJSON() as {incasso: boolean}
+      if (incasso) payingByIncasso.add(userId)
+      else payingByIncasso.delete(userId)
+      return answer(route, "setPaysBy", mandateOf(userId))
+    }
+    if (/^\/users\/\d+\/mandate$/.test(path)) {
+      const userId = Number(path.split("/")[2])
+      if (method === "PUT") {
+        const {accountHolder, signedOn, iban} = request.postDataJSON() as {accountHolder: string; signedOn: string; iban: string}
+        const compact = iban.replace(/\s/g, "")
+        payingByIncasso.add(userId)
+        recordedMandates.set(userId, {
+          userId, incasso: true, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
+          reference: `BLUESHELL-${userId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
+          kind: "PAPER", bankDetailsWiped: false,
+        })
+        return answer(route, "recordMandate", mandateOf(userId))
+      }
+      return answer(route, "findMandate", mandateOf(userId))
+    }
     if (method === "GET" && path === "/users/me/email") {
       return answer(route, "emailAddress", {email: "mock-user@example.com", pendingEmail: null})
     }
@@ -1061,7 +1117,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           memberSince: membership?.startDate ?? null,
           disposition,
           reason,
-          defaultKind: membership?.incasso ? "INCASSO_NOTIFICATION" : "REMINDER",
+          defaultKind: payingByIncasso.has(userId) ? "INCASSO_NOTIFICATION" : "REMINDER",
           feeType: honorary ? null : "FULL_YEAR_FEE",
           amount: honorary ? null : 20,
           lastRemindedOn: userId === 2 ? "2025-09-01" : null,
@@ -1166,7 +1222,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             username: user?.username ?? `user${held.userId}`,
             feeType: honorary ? null : "FULL_YEAR_FEE" as const,
             fee: honorary ? null : period?.fullYearFee ?? 0,
-            incasso: held.incasso,
+            incasso: payingByIncasso.has(held.userId),
             paid: baseContributions.some((one) => one.userId === held.userId && one.contributionPeriodId === periodId),
             paidAt: null,
             lastEmailAt: null,

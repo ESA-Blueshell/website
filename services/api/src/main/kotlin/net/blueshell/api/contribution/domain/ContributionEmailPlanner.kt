@@ -7,6 +7,7 @@ import net.blueshell.api.shared.dto.bulk.BulkRowDisposition
 import net.blueshell.api.shared.dto.bulk.BulkRowReason
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
 import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
@@ -30,6 +31,7 @@ class ContributionEmailPlanner(
     private val reminders: ContributionReminderService,
     private val preNotifications: IncassoNotificationService,
     private val erasure: UserErasureService,
+    private val payments: PaymentDirectory,
 ) {
     @Transactional(readOnly = true)
     fun plan(
@@ -50,6 +52,8 @@ class ContributionEmailPlanner(
                 preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
             )
         val deleted = erasure.deletedIdsAmong(selected)
+        // Only somebody who can be collected from is told of a collection; the rest are asked to pay.
+        val onIncasso = payments.of(selected).filterValues { it.incasso && it.collectable != null }.keys
 
         // The membership read already fetched the member, so only somebody holding none is
         // looked up — once for all of them. An id naming nobody is no row, so the plan names
@@ -72,6 +76,7 @@ class ContributionEmailPlanner(
                         period,
                         userId in paid,
                         userId in deleted,
+                        userId in onIncasso,
                         lastReminded[userId],
                         lastNotified[userId],
                     )
@@ -87,6 +92,7 @@ class ContributionEmailPlanner(
         period: ContributionPeriod,
         alreadyPaid: Boolean,
         isDeleted: Boolean,
+        onIncasso: Boolean,
         lastRemindedOn: LocalDate?,
         lastNotifiedOn: LocalDate?,
     ): ContributionEmailRow {
@@ -103,7 +109,7 @@ class ContributionEmailPlanner(
             disposition = disposition,
             reason = reason,
             defaultKind =
-                if (judged?.incasso == true) {
+                if (onIncasso) {
                     ContributionEmailKind.INCASSO_NOTIFICATION
                 } else {
                     ContributionEmailKind.REMINDER

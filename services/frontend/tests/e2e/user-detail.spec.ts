@@ -65,3 +65,27 @@ test.describe("one user's Account and Roles", () => {
     await expect(page.getByTestId("user-roles-save-btn")).toBeVisible()
   })
 })
+
+test.describe("one user's mandate", () => {
+  test("the board records a paper mandate and sees only the last two of the account", async ({page}) => {
+    await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01"})]})
+    await loginAsBoard(page.context())
+    await page.goto("/management/users/71")
+    await page.getByTestId("user-row-payment-details").click()
+    await expect(page).toHaveURL(/\/management\/users\/71\/payment-details$/)
+
+    await page.getByTestId("mandate-record").click()
+    await page.getByTestId("mandate-iban").locator("input").fill("NL91 ABNA 0417 1643 00")
+    await page.getByTestId("mandate-holder").locator("input").fill("Ann Vos")
+    await page.getByTestId("mandate-save").click()
+
+    await expect(page.getByTestId("mandate-facts")).toContainText("NL•• … ••00")
+    await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
+
+    // A reveal shows the full number until it is hidden again.
+    await page.getByTestId("mandate-reveal").click()
+    await expect(page.getByTestId("mandate-account")).toContainText("NL91 ABNA 0417 1643 00")
+    await page.getByTestId("mandate-reveal").click()
+    await expect(page.getByTestId("mandate-panel")).not.toContainText("0417")
+  })
+})

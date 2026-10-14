@@ -163,7 +163,6 @@ class MembershipUseCasesTest {
                     memberType = MemberType.REGULAR,
                     startDate = startDate,
                     endDate = endDate,
-                    incasso = true,
                 )
 
             assertThat(result).isSameAs(expected)
@@ -173,7 +172,6 @@ class MembershipUseCasesTest {
                     assertThat(it.memberType).isEqualTo(MemberType.REGULAR)
                     assertThat(it.startDate).isEqualTo(startDate)
                     assertThat(it.endDate).isEqualTo(endDate)
-                    assertThat(it.incasso).isTrue()
                 },
             )
         }
@@ -188,7 +186,6 @@ class MembershipUseCasesTest {
                     memberType = MemberType.REGULAR,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = null,
-                    incasso = true,
                 )
             }.isInstanceOf(ConstraintViolationException::class.java)
             verify(membershipService, never()).create(any())
@@ -206,7 +203,6 @@ class MembershipUseCasesTest {
                     startDate = LocalDate.of(2024, 1, 1),
                     memberType = MemberType.ALUMNI,
                     endDate = null,
-                    incasso = false,
                 ).apply { version = 1L }
             whenever(membershipService.findById(3L)).thenReturn(membership)
             whenever(membershipService.update(membership)).thenReturn(membership)
@@ -218,14 +214,12 @@ class MembershipUseCasesTest {
                     memberType = MemberType.HONORARY,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 12, 31),
-                    incasso = true,
                     version = 1L,
                 )
 
             assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
             assertThat(membership.startDate).isEqualTo(LocalDate.of(2025, 1, 1))
             assertThat(membership.endDate).isEqualTo(LocalDate.of(2025, 12, 31))
-            assertThat(membership.incasso).isTrue()
             assertThat(membership.version).isEqualTo(1L)
             assertThat(result).isSameAs(membership)
         }
@@ -238,7 +232,6 @@ class MembershipUseCasesTest {
                     startDate = LocalDate.of(2024, 1, 1),
                     memberType = MemberType.ALUMNI,
                     endDate = null,
-                    incasso = false,
                 ).apply { version = 2L }
             whenever(membershipService.findById(3L)).thenReturn(membership)
 
@@ -249,7 +242,6 @@ class MembershipUseCasesTest {
                     memberType = MemberType.HONORARY,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 12, 31),
-                    incasso = true,
                     version = 1L,
                 )
             }.isInstanceOf(OptimisticLockingFailureException::class.java)
@@ -267,7 +259,6 @@ class MembershipUseCasesTest {
                     startDate = LocalDate.of(2024, 1, 1),
                     memberType = MemberType.ALUMNI,
                     endDate = null,
-                    incasso = false,
                 ).apply { version = 5L }
             whenever(membershipService.findById(3L)).thenReturn(membership)
 
@@ -278,7 +269,6 @@ class MembershipUseCasesTest {
                     memberType = null,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = null,
-                    incasso = null,
                     version = 5L,
                 )
             }.isInstanceOf(ConstraintViolationException::class.java)

@@ -47,7 +47,6 @@ function makeNewMembership(): import("@/services/api").MembershipResponse {
     userId: 42,
     startDate: "2025-06-01",
     memberType: MemberType.REGULAR,
-    incasso: false,
     version: 0,
     createdAt: "",
     updatedAt: "",
@@ -60,7 +59,6 @@ function makeExistingMembership(): import("@/services/api").MembershipResponse {
     userId: 42,
     startDate: "2025-01-01",
     memberType: MemberType.REGULAR,
-    incasso: false,
     version: 2,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
@@ -112,8 +110,8 @@ describe("MembershipForm", () => {
     expect(fieldLabelled(wrapper, "Start Date").props("errorMessages")).toEqual(["This field is required"])
     expect(fieldLabelled(wrapper, "End Date").props("errorMessages")).toEqual([])
     expect(wrapper.findComponent({name: "MemberTypeSelect"}).props("errorMessages")).toEqual(["This field is required"])
-    // The one tick box is incasso's: nothing asks the board to accept the conditions.
-    expect(wrapper.findAllComponents({name: "CheckBox"}).map((box) => box.props("label"))).toEqual(["Incasso"])
+    // Nothing asks the board to accept the conditions, and how somebody pays is not set here.
+    expect(wrapper.findAllComponents({name: "CheckBox"})).toHaveLength(0)
   })
 
   it("board create: save() calls boardCreateMembership and emits submitted(true)", async () => {
@@ -209,13 +207,11 @@ describe("MembershipForm", () => {
     await fieldLabelled(wrapper, "Start Date").vm.$emit("update:modelValue", "2026-03-01")
     await fieldLabelled(wrapper, "End Date").vm.$emit("update:modelValue", "2026-09-01")
     await wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", MemberType.ALUMNI)
-    await wrapper.get("[data-testid=membership-form-incasso]").setValue(true)
 
     expect(membership).toMatchObject({
       startDate: "2026-03-01",
       endDate: "2026-09-01",
       memberType: MemberType.ALUMNI,
-      incasso: true,
     })
   })
 

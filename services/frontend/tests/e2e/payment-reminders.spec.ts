@@ -15,8 +15,9 @@ test.describe("payment reminders", () => {
       ],
       memberships: [
         aMembership({id: 100, userId: 1, memberType: "REGULAR", startDate: "2025-01-01"}),
-        aMembership({id: 101, userId: 2, memberType: "REGULAR", startDate: "2025-01-01", incasso: true}),
+        aMembership({id: 101, userId: 2, memberType: "REGULAR", startDate: "2025-01-01"}),
       ],
+      onIncasso: [2],
       contributionPeriods: [PERIOD],
       contributions: [],
     })

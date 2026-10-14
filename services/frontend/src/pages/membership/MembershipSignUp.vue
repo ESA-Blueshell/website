@@ -104,6 +104,17 @@
             v-model="membership"
             :signup-token="signupToken"
           />
+          <!-- Optional: without it the membership still starts, and paying is arranged by hand. -->
+          <section
+            v-if="!applicationSubmitted"
+            class="signup-incasso"
+            data-testid="membership-incasso-step"
+          >
+            <h3 class="signup-incasso__title">
+              Set up incasso (optional)
+            </h3>
+            <incasso-set-up :signup-token="signupToken" />
+          </section>
           <div class="panel-acts panel-acts--split">
             <cut-button
               testid="membership-conditions-back-btn"
@@ -197,6 +208,7 @@ import UserForm from "@/components/form/UserForm.vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import EmailConfirmationPanel from "@/components/form/EmailConfirmationPanel.vue"
+import IncassoSetUp from "@/components/account/IncassoSetUp.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import DoneTick from "@/components/island/DoneTick.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
@@ -569,5 +581,15 @@ onUnmounted(() => {
 
 .signup__waiting {
   padding: 24px;
+}
+
+.signup-incasso {
+  margin-top: 1.4rem;
+}
+
+.signup-incasso__title {
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 </style>

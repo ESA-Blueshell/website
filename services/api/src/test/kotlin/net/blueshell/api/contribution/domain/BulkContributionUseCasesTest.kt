@@ -203,7 +203,6 @@ class BulkContributionUseCasesTest {
             startDate = LocalDate.of(2023, 1, 1),
             endDate = null,
             memberType = memberType,
-            incasso = false,
         ).apply {
             setField(this, "createdAt", Instant.parse("2024-01-01T00:00:00Z"))
             setField(this, "updatedAt", Instant.parse("2024-01-01T00:00:00Z"))

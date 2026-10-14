@@ -16,7 +16,7 @@ import PersonLink from "@/components/management/PersonLink.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import PairList from "@/components/management/PairList.vue"
 import RowCheck from "@/components/management/RowCheck.vue"
-import StepStrip from "@/components/management/StepStrip.vue"
+import StepStrip from "@/components/island/StepStrip.vue"
 import {useEmailPreview} from "@/composables/useEmailPreview"
 import {
   type ContributionPeriodResponse,

@@ -13,20 +13,22 @@ class SealingKeysReachableTest {
     private val sealer: Sealer = mock()
 
     @Test
-    fun `starts where the address key seals`() {
+    fun `starts where both keys seal`() {
         whenever(sealer.seal(any(), any())).thenReturn(listOf("vault:v1:x"))
 
-        SealingKeysReachable(sealer, "api-address")
+        SealingKeysReachable(sealer, "api-address", "api-bank-details")
 
         verify(sealer).seal(eq("api-address"), any())
+        verify(sealer).seal(eq("api-bank-details"), any())
     }
 
     @Test
-    fun `refuses to start where the key cannot be used, naming it`() {
-        whenever(sealer.seal(eq("api-address"), any())).doThrow(SealingUnavailable())
+    fun `refuses to start where a key cannot be used, naming it`() {
+        whenever(sealer.seal(eq("api-address"), any())).thenReturn(listOf("vault:v1:x"))
+        whenever(sealer.seal(eq("api-bank-details"), any())).doThrow(SealingUnavailable())
 
-        assertThatThrownBy { SealingKeysReachable(sealer, "api-address") }
+        assertThatThrownBy { SealingKeysReachable(sealer, "api-address", "api-bank-details") }
             .isInstanceOf(IllegalStateException::class.java)
-            .hasMessageContaining("api-address")
+            .hasMessageContaining("api-bank-details")
     }
 }

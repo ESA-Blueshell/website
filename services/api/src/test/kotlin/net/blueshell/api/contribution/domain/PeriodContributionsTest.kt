@@ -9,6 +9,8 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
+import net.blueshell.api.user.api.PaymentDirectory
+import net.blueshell.api.user.api.PersonPayment
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -23,8 +25,9 @@ class PeriodContributionsTest {
     private val contributions: ContributionRepository = mock()
     private val reminders: ContributionReminderRepository = mock()
     private val notifications: IncassoNotificationRepository = mock()
+    private val payments: PaymentDirectory = mock()
     private val controller =
-        PeriodContributionsController(PeriodContributions(periods, memberships, contributions, reminders, notifications))
+        PeriodContributionsController(PeriodContributions(periods, memberships, contributions, reminders, notifications, payments))
 
     @Test
     fun `lists the period's members with their fee, payment and last email, and groups the emails into runs`() {
@@ -35,10 +38,13 @@ class PeriodContributionsTest {
         whenever(periods.findById(4)).thenReturn(period)
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(
             listOf(
-                Entities.membership(user = bea, startDate = LocalDate.of(2020, 1, 1)).apply { incasso = true },
+                Entities.membership(user = bea, startDate = LocalDate.of(2020, 1, 1)),
                 Entities.membership(user = ann, startDate = LocalDate.of(2026, 3, 2)),
                 Entities.membership(user = hon).apply { memberType = MemberType.HONORARY },
             ),
+        )
+        whenever(payments.of(setOf(1L, 2L, 3L))).thenReturn(
+            mapOf(1L to PersonPayment(true, null), 2L to PersonPayment(false, null), 3L to PersonPayment(false, null)),
         )
         val paidAt = Instant.parse("2025-10-01T10:00:00Z")
         whenever(contributions.findByIdContributionPeriodId(4)).thenReturn(

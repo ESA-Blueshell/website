@@ -12,6 +12,8 @@ const api = vi.hoisted(() => ({
   createContribution: vi.fn(),
   deleteContribution: vi.fn(),
   findAddressById: vi.fn(),
+  findMandate: vi.fn(),
+  setPaysBy: vi.fn(),
   updateMembership: vi.fn(),
   pendingActivations: vi.fn(),
   deleteUserById: vi.fn(),
@@ -20,6 +22,7 @@ const api = vi.hoisted(() => ({
   accountStanding: vi.fn(),
   securityEvents: vi.fn(),
 }))
+const onIncasso = {userId: 7, incasso: true, standing: "ON_INCASSO_WITHOUT_BANK_DETAILS", bankDetailsWiped: false}
 const {mockRoute, mockPush, mockStore} = vi.hoisted(() => ({
   mockRoute: {path: "/management/users/7", params: {id: "7", tab: ""} as Record<string, string>},
   mockPush: vi.fn(),
@@ -86,6 +89,7 @@ describe("one user's page", () => {
     api.deleteContribution.mockResolvedValue({status: 204, data: undefined})
     api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, street: "Hallenweg", version: 0, createdAt: "", updatedAt: ""}})
     api.pendingActivations.mockResolvedValue({status: 200, data: {activations: [{userId: 7, purpose: "USER_ACTIVATION"}]}})
+    api.findMandate.mockResolvedValue({status: 200, data: onIncasso})
     api.deleteUserById.mockResolvedValue({status: 204, data: undefined})
     api.accountStanding.mockResolvedValue({status: 200, data: {twoFactorOn: false, awaitingReenrolment: false, locked: false}})
     api.securityEvents.mockResolvedValue({status: 200, data: {events: []}})
@@ -101,7 +105,10 @@ describe("one user's page", () => {
 
     const overview = wrapper.get('[data-testid="user-overview"]').text()
     expect(overview).toContain("Member, regular")
-    expect(wrapper.get('[data-testid="user-row-membership"]').text()).toContain("Regular since 1 Sep 2023")
+    expect(overview).toContain("Since 1 Sep 2023 · Pays by incasso")
+    expect(wrapper.get('[data-testid="user-row-payment-details"]').attributes("to")).toBe("/management/users/7/payment-details")
+    expect(wrapper.get('[data-testid="user-row-payment-details"]').text()).toContain("Pays by incasso · incasso details")
+    expect(wrapper.get('[data-testid="user-row-membership"]').text()).toContain("Regular since 1 Sep 2023, pays by incasso")
     expect(overview).toContain("Not paid 2025-2026. Last payment email 20 Sep 2025")
     expect(overview).toContain("@annv")
     expect(overview).toContain("No two-factor")
@@ -231,6 +238,64 @@ describe("one user's page", () => {
     expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Hallenweg 19, Enschede")
     api.findAddressById.mockResolvedValue({status: 200, data: {id: 3, version: 0, createdAt: "", updatedAt: ""}})
     expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Address on file")
+  })
+
+  it("changes how the person pays from the payment details, and says so", async () => {
+    api.setPaysBy.mockResolvedValue({status: 200, data: {...onIncasso, incasso: false, standing: "NONE"}})
+    const wrapper = await mount("payment-details")
+    const picker = () => wrapper.findComponent({name: "SearchPicker"})
+
+    picker().vm.$emit("pick", "incasso")
+    await settle()
+    expect(api.setPaysBy).not.toHaveBeenCalled()
+
+    picker().vm.$emit("pick", "transfer")
+    await settle()
+    expect(api.setPaysBy).toHaveBeenCalledWith({path: {userId: 7}, body: {incasso: false}})
+    expect(picker().props("selectedKey")).toBe("transfer")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by bank transfer."))
+
+    api.setPaysBy.mockResolvedValue({status: 409, error: {code: "Stale", summary: "Somebody changed it first."}})
+    picker().vm.$emit("pick", "incasso")
+    await settle()
+    expect(mockStore.commit).not.toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by incasso."))
+    expect(wrapper.find('[data-testid="user-pays-by-failure"]').exists()).toBe(true)
+    expect(picker().props("selectedKey")).toBe("transfer")
+  })
+
+  it("keeps how somebody pays and their incasso details while no membership runs", async () => {
+    api.findMemberships.mockResolvedValue({status: 200, data: []})
+    api.findMandate.mockResolvedValue({status: 200, data: {...onIncasso, standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00"}})
+    const wrapper = await mount("payment-details")
+
+    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("nothing is collected until one starts")
+    expect(wrapper.findComponent({name: "SearchPicker"}).props("selectedKey")).toBe("incasso")
+    expect(wrapper.findComponent({name: "MandatePanel"}).props("userId")).toBe(7)
+    expect(api.findMandate).toHaveBeenCalledWith({path: {userId: 7}})
+    expect((await mount()).get('[data-testid="user-row-payment-details"]').text()).toContain("Pays by incasso · incasso details")
+  })
+
+  it("says how somebody pays could not be read, rather than calling it a transfer", async () => {
+    api.findMandate.mockResolvedValue({status: 500, error: {}})
+    const overview = (await mount()).get('[data-testid="user-row-payment-details"]').text()
+    expect(overview).toContain("How they pay could not be read")
+    expect(overview).not.toContain("transfer")
+
+    const tab = await mount("payment-details")
+    expect(tab.find('[data-testid="user-pays-by-unread"]').exists()).toBe(true)
+    expect(tab.find('[data-testid="user-pays-by"]').exists()).toBe(false)
+  })
+
+  it("reads how somebody pays again once their mandate changed", async () => {
+    const wrapper = await mount("payment-details")
+    const before = api.findMandate.mock.calls.length
+
+    api.findMandate.mockResolvedValue({status: 200, data: {...onIncasso, standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00"}})
+    wrapper.findComponent({name: "MandatePanel"}).vm.$emit("changed")
+    await settle()
+
+    // The page reads it again; the panel keeps its own, being keyed on how they pay, which stayed.
+    expect(api.findMandate).toHaveBeenCalledTimes(before + 1)
   })
 
   it("offers the emails the account can be sent on the Account tab, and its security to an admin only", async () => {

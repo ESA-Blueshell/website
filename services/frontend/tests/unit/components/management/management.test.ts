@@ -155,7 +155,7 @@ describe("the Management portal", {timeout: 20_000}, () => {
     await wrapper.get("[data-testid=management-account]").trigger("click")
     await settle()
     expect(items().map((item) => item.find("a").exists() ? item.find("a").attributes("to") : item.text()))
-      .toEqual(["/management/alerts", "/account", "/account/security", "/account/games", "/account/addresses", "/", "Log out"])
+      .toEqual(["/management/alerts", "/account", "/account/security", "/account/games", "/account/addresses", "/account/payment-details", "/", "Log out"])
     expect(items().at(-2)!.text()).toBe("Back to the site")
     await wrapper.get("[data-testid=management-log-out]").trigger("click")
     expect(wrapper.emitted("logOut")).toHaveLength(1)

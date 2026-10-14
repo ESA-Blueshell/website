@@ -227,7 +227,6 @@ class MembershipSpecificationsIT : UserTestSupport() {
             Membership(
                 user = user,
                 memberType = MemberType.REGULAR,
-                incasso = true,
                 startDate = startDate,
                 endDate = endDate,
             ),
@@ -244,7 +243,6 @@ class MembershipSpecificationsIT : UserTestSupport() {
             Membership(
                 user = user,
                 memberType = MemberType.REGULAR,
-                incasso = true,
                 startDate = startDate,
                 endDate = endDate,
             ),

@@ -248,6 +248,12 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Account", requiresAuth: true},
   },
   {
+    path: "/account/payment-details",
+    name: "accountPaymentDetails",
+    component: () => import("@/pages/login/PaymentDetails.vue"),
+    meta: {title: "Payment details", requiresAuth: true},
+  },
+  {
     path: SECURITY_PAGES.hub,
     name: "accountSecurity",
     component: () => import("@/pages/login/Security.vue"),
@@ -484,7 +490,7 @@ const routes: RouteRecordRaw[] = [
         meta: {title: "Many members"},
       },
       {
-        path: "users/:id(\\d+)/:tab(membership|contributions|profile|address|account|roles)?",
+        path: "users/:id(\\d+)/:tab(membership|payment-details|contributions|profile|address|account|roles)?",
         name: "userDetail",
         component: () => import("@/pages/management/UserDetail.vue"),
         meta: {title: "User"},

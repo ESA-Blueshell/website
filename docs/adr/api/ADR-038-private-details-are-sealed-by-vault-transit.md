@@ -44,8 +44,9 @@ data and a key derived from the key's name. It protects nothing. Production sets
 address, soft-deleted ones included, and empties the plaintext. It can run again without harm. The
 plaintext columns go in the release after, once the previous release no longer reads them.
 
-**Bank details are kept for 13 months after the last collection** (#2092), the window in which a
-member can dispute a SEPA debit, and then wiped.
+**Bank details are kept for 13 months after their last use** (#2092), the window in which a
+member can dispute a SEPA debit, and then wiped. A use is a collection or, since ADR-040, a
+declaration paid to the account; nothing is wiped while a mandate stands.
 
 **Rotation:** a rotation adds a Transit key version, and a nightly job rewraps every sealed value
 onto it (#2088). `min_decryption_version` is raised only to the version current at the oldest

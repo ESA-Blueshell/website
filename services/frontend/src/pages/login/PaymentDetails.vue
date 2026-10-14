@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {DateTime} from "luxon"
+import mandate from "@/assets/documents/20210801 - ESA Blueshell Direct Debit Mandate.pdf?url"
 import {computed, onMounted, ref} from "vue"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -20,6 +21,7 @@ import {
 defineOptions({name: "PaymentDetailsPage"})
 
 const BOARD_EMAIL = "board@blueshell.utwente.nl"
+const MANDATE_FILE = "ESA Blueshell - Direct Debit Mandate.pdf"
 
 const own = ref<OwnContributions | null>(null)
 const bank = ref<BankAccountResponse | null>(null)
@@ -69,7 +71,7 @@ onMounted(async () => {
         class="payment__note"
         data-testid="payment-details-unread"
       >
-        Your payment details could not be loaded. Try again later.
+        Could not load your payment details. Try again later.
       </p>
 
       <p
@@ -101,7 +103,7 @@ onMounted(async () => {
             class="payment__note"
             data-testid="payment-details-no-periods"
           >
-            No contributions to show. A contribution shows here for each contribution period you are a member in.
+            No contributions to show. There is one row for each year you are a member.
           </p>
           <div
             v-else
@@ -141,24 +143,31 @@ onMounted(async () => {
             <dt>Bank transfer</dt>
             <dd data-testid="payment-details-bank">
               <template v-if="bank">
-                Transfer to {{ bank.iban }}, in the name of {{ bank.accountName }}. From a foreign bank account, the BIC is {{ bank.bic }}.
+                Transfer to {{ bank.iban }}, in the name of {{ bank.accountName }}. From a bank in another country, use BIC {{ bank.bic }}.
               </template>
               <template v-else>
-                The account could not be loaded. Email the board to ask for it.
+                Could not load the account. Email the board to ask for it.
               </template>
               In the description, put your name, your student number if you have one and "contribution" with the year.
             </dd>
             <dt>Cash</dt>
             <dd>
-              Put the money in an envelope with your name, your student number if you have one and "contribution" with the year on it. Drop it in postbus 49 in the Bastille.
+              Put cash in an envelope. On the envelope, write your name, your student number if you have one and "contribution" with the year. Drop it in postbus 49 in the Bastille.
             </dd>
             <template v-if="!own.paysByIncasso">
               <dt>Direct debit</dt>
               <dd data-testid="payment-details-switch">
-                Fill in the mandate form from <router-link to="/documents">
-                  Documents
-                </router-link> and email it to the board.
-                It may not cover what you owe now. Pay that by transfer or in cash, unless the board tells you otherwise.
+                Download the mandate form. Fill it in, sign it and email it to the board. After that, the board takes your contribution from your bank account each year.
+                The mandate may not cover what you owe now. Pay that by transfer or in cash, unless the board tells you otherwise.
+                <cut-button
+                  class="payment__download"
+                  :download="MANDATE_FILE"
+                  :href="mandate"
+                  small
+                  testid="payment-details-mandate"
+                >
+                  Download the mandate form
+                </cut-button>
               </dd>
             </template>
           </dl>
@@ -231,6 +240,12 @@ onMounted(async () => {
 
 .payment__ask {
   margin-top: 1.4rem;
+}
+
+.payment__download {
+  display: flex;
+  width: fit-content;
+  margin-top: 0.6rem;
 }
 
 @media (--phone) {

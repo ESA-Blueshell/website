@@ -68,10 +68,13 @@ describe("the Payment details page", () => {
 
     expect(page.get("[data-testid=payment-details-bank]").text()).toContain("Transfer to NL00 TEST 0000 0000 00, in the name of Test Vereniging")
     expect(page.get("[data-testid=payment-details-switch]").text()).toContain("mandate form")
-    expect(page.get("[data-testid=payment-details-switch]").text()).toContain("It may not cover what you owe now")
+    expect(page.get("[data-testid=payment-details-switch]").text()).toContain("The mandate may not cover what you owe now")
     expect(page.find("[data-testid=payment-details-incasso]").exists()).toBe(false)
-    expect(page.get("[data-testid=payment-details-no-periods]").text()).toBe("No contributions to show. A contribution shows here for each contribution period you are a member in.")
-    expect(page.getComponent({name: "CutButton"}).props("href")).toBe("mailto:board@blueshell.utwente.nl")
+    expect(page.get("[data-testid=payment-details-no-periods]").text()).toBe("No contributions to show. There is one row for each year you are a member.")
+    const buttons = page.findAllComponents({name: "CutButton"})
+    expect(buttons.map(button => button.props("download"))).toContain("ESA Blueshell - Direct Debit Mandate.pdf")
+    expect(buttons.find(button => button.props("download"))?.props("href")).toMatch(/Direct%20Debit%20Mandate\.pdf$/)
+    expect(buttons.at(-1)?.props("href")).toBe("mailto:board@blueshell.utwente.nl")
   })
 
   it("says a member on direct debit pays that way, and still lists the others", async () => {
@@ -79,7 +82,7 @@ describe("the Payment details page", () => {
 
     expect(page.get("[data-testid=payment-details-incasso]").text()).toBe("You pay by direct debit. To stop it, email the board.")
     expect(page.get("[data-testid=payment-details-method]").text()).toContain("Direct debit")
-    expect(page.get("[data-testid=payment-details-bank]").text()).toContain("The account could not be loaded")
+    expect(page.get("[data-testid=payment-details-bank]").text()).toContain("Could not load the account")
     expect(page.find("[data-testid=payment-details-switch]").exists()).toBe(false)
   })
 

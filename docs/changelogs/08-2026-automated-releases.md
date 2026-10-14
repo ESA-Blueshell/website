@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.23.0](https://github.com/ESA-Blueshell/website/compare/v1.22.0...v1.23.0) (2026-10-14)
+
+
+### Features
+
+* a Payment details tab shows a member's contributions, what is unpaid and how to pay ([#2435](https://github.com/ESA-Blueshell/website/issues/2435)) ([42315f5](https://github.com/ESA-Blueshell/website/commit/42315f545235fa5e3fdcb1bc6085a7f0b7bf9a62))
+
 ## [1.22.0](https://github.com/ESA-Blueshell/website/compare/v1.21.1...v1.22.0) (2026-10-14)
 
 

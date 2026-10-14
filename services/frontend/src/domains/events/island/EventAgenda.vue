@@ -64,6 +64,7 @@ const months = computed(() => monthsOf(events))
         :key="month.key"
       >
         <month-head
+          class="agenda__month"
           :count="month.events.length"
           :name="month.name"
         />
@@ -92,14 +93,31 @@ const months = computed(() => monthsOf(events))
 }
 
 /* The rows reach past the column on a wide screen, as far as the band has room to spare, while
-   the heading stays on the line every band's heading starts on. */
+   the heading stays on the line every band's heading starts on. The columns are every
+   AgendaRow's, held here so each row takes them as a subgrid and a column lines up through every
+   month even when one row's actions are wider. */
 .agenda__list {
   margin-inline: calc(-1 * clamp(0rem, (100vw - 76rem) / 2, 5rem));
+  display: grid;
+  grid-template-columns: 4.5rem 6.5rem minmax(0, 1fr) 13rem auto;
+  column-gap: 1.5rem;
+}
+
+.agenda__month,
+.agenda__rows {
+  grid-column: 1 / -1;
 }
 
 .agenda__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: subgrid;
+  row-gap: 2px;
+}
+
+@media (--phone) {
+  .agenda__list {
+    grid-template-columns: 3rem 4.25rem minmax(0, 1fr);
+    column-gap: 0.85rem;
+  }
 }
 </style>

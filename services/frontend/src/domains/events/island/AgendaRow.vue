@@ -125,6 +125,9 @@ function signedOut(id: number) {
   --cut: 1.1rem;
 
   position: relative;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   background-color: var(--band-ground);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   transition: background-color 220ms ease;
@@ -150,10 +153,11 @@ function signedOut(id: number) {
   scale: 1 1;
 }
 
+/* The columns come from EventAgenda, so they line up with every other row. */
 .row__line {
   display: grid;
-  grid-template-columns: 4.5rem 6.5rem minmax(0, 1fr) 13rem auto;
-  gap: 0 1.5rem;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
   padding: 1.25rem calc(1.25rem + var(--cut)) 1.25rem 1.6rem;
 }
@@ -229,6 +233,7 @@ function signedOut(id: number) {
 }
 
 .row__form {
+  grid-column: 1 / -1;
   padding: 0 calc(1.25rem + var(--cut)) 1.25rem 1.6rem;
 }
 
@@ -242,8 +247,6 @@ function signedOut(id: number) {
 /* On a phone the state and the actions drop under the title, and nothing is hidden. */
 @media (--phone) {
   .row__line {
-    grid-template-columns: 3rem 4.25rem minmax(0, 1fr);
-    gap: 0 0.85rem;
     padding: 0.75rem calc(0.9rem + var(--cut)) 0.75rem 1.1rem;
   }
 

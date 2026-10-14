@@ -47,15 +47,11 @@ export const aUser = (over: Partial<Wire<UserDetailResponse>> = {}): Wire<UserDe
   ...over,
 })
 
-export const aMembership = (over: Partial<Wire<MembershipResponse>> = {}): Wire<MembershipResponse> => ({
-  ...stamped,
-  id: 100,
-  userId: 1,
-  memberType: "REGULAR",
-  pending: false,
-  startDate: "2025-01-01",
-  ...over,
-})
+// One type from the start, as a membership holds unless a test names its types.
+export const aMembership = (over: Partial<Wire<MembershipResponse>> = {}): Wire<MembershipResponse> => {
+  const held = {...stamped, id: 100, userId: 1, memberType: "REGULAR" as const, pending: false, startDate: "2025-01-01", ...over}
+  return {...held, types: over.types ?? [{id: held.id * 10, type: held.memberType, since: held.startDate}]}
+}
 
 export const aContributionPeriod = (
   over: Partial<Wire<ContributionPeriodResponse>> = {},

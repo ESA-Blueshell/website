@@ -119,6 +119,16 @@ describe("one user's page", () => {
     expect(wrapper.get('[data-testid="user-tab-membership"]').attributes("to")).toBe("/management/users/7/membership")
   })
 
+  it("dates a type changed within the running membership from its own day", async () => {
+    api.findMemberships.mockResolvedValue({status: 200, data: [aMembership({
+      id: 3, userId: 7, startDate: "2023-09-01", endDate: null, memberType: MemberType.ALUMNI,
+      types: [{id: 30, type: MemberType.REGULAR, since: "2023-09-01"}, {id: 31, type: MemberType.ALUMNI, since: "2025-09-01"}],
+    })]})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="user-row-membership"]').text()).toContain("Alumni since 1 Sep 2025, pays by incasso")
+  })
+
   it("opens the tab its address names", async () => {
     const contributions = await mount("contributions")
     expect(contributions.get('[data-testid="user-tab-contributions"]').attributes("aria-current")).toBe("page")

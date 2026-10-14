@@ -246,7 +246,7 @@ class IncassoRuns(
         val deleted = erasure.deletedIdsAmong(onIncasso.map { it.userId })
         return onIncasso
             .map { membership ->
-                val feeType = resolveFeeType(membership.memberType, membership.startDate, period)
+                val feeType = resolveFeeType(membership, LocalDate.now(clock), period)
                 val mandate = paying.getValue(membership.userId).collectable
                 val leftOut =
                     when {

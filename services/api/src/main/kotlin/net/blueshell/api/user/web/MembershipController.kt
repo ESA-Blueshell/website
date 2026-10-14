@@ -37,6 +37,13 @@ class MembershipController(
         @ParameterObject query: MembershipQuery = MembershipQuery(),
     ): MutableList<MembershipResponse> = useCases.findByQuery(query).map { it.asResponse() }.toMutableList()
 
+    /** The reader's own memberships with their types, for their account page. */
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/users/me/memberships")
+    fun findOwnMemberships(
+        @AuthenticationPrincipal principal: UserPrincipal?,
+    ): List<MembershipResponse> = membershipService.findByUserId(principal!!.id).map { it.asResponse() }
+
     @PreAuthorize("hasPermission(#principal.id, 'User', 'write')")
     @PostMapping("/memberships")
     fun createMembership(
@@ -74,13 +81,34 @@ class MembershipController(
             useCases.correct(
                 id = id,
                 userId = request.userId,
-                memberType = request.memberType,
                 startDate = request.startDate,
                 endDate = request.endDate,
                 version = request.version,
             )
         return membership.asResponse()
     }
+
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
+    @PostMapping(value = ["/memberships/{id}/types"])
+    fun recordMembershipType(
+        @PathVariable @Positive id: Long,
+        @Valid @RequestBody request: MembershipTypeRequest,
+    ): MembershipResponse = useCases.recordType(id, request.type!!, request.since!!).asResponse()
+
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
+    @PutMapping(value = ["/memberships/{id}/types/{typeId}"])
+    fun correctMembershipType(
+        @PathVariable @Positive id: Long,
+        @PathVariable @Positive typeId: Long,
+        @Valid @RequestBody request: MembershipTypeRequest,
+    ): MembershipResponse = useCases.correctType(id, typeId, request.type!!, request.since!!).asResponse()
+
+    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
+    @DeleteMapping(value = ["/memberships/{id}/types/{typeId}"])
+    fun removeMembershipType(
+        @PathVariable @Positive id: Long,
+        @PathVariable @Positive typeId: Long,
+    ): MembershipResponse = useCases.removeType(id, typeId).asResponse()
 
     @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
     @PostMapping(value = ["/memberships/{id}/end"])

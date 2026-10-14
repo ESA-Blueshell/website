@@ -3,6 +3,8 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
+import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.persistence.Membership
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -25,6 +27,34 @@ class FeeResolutionTest {
         memberType: MemberType,
         startDate: LocalDate?,
     ): Double? = resolveFeeType(memberType, startDate, period)?.let { resolveFeeAmount(it, period) }
+
+    @Nested
+    inner class OnTheDayAsked {
+        private val alumniSince = LocalDate.of(2024, 9, 1)
+        private val membership =
+            Membership(user = Entities.user(), startDate = LocalDate.of(2020, 9, 1)).apply {
+                recordType(MemberType.REGULAR, startDate)
+                recordType(MemberType.ALUMNI, alumniSince)
+            }
+
+        @Test
+        fun `a member asked before turning alumni is asked the full year fee`() {
+            assertThat(resolveFeeType(membership, alumniSince.minusDays(1), period)).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+        }
+
+        @Test
+        fun `a member asked after turning alumni in the same period is asked the alumni fee`() {
+            assertThat(resolveFeeType(membership, alumniSince, period)).isEqualTo(BulkFeeType.ALUMNI_FEE)
+        }
+
+        @Test
+        fun `the half year cutoff reads the membership's start, not the type's`() {
+            val regularAgain = cutoffDate.plusMonths(3)
+            membership.recordType(MemberType.REGULAR, regularAgain)
+
+            assertThat(resolveFeeType(membership, regularAgain, period)).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+        }
+    }
 
     @Nested
     inner class RegularMembers {

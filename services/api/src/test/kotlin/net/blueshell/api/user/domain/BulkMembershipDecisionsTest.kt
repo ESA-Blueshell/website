@@ -98,6 +98,11 @@ class BulkMembershipDecisionsTest {
     }
 
     @Test
+    fun `starting skips a member whose membership ended today, since a new one needs a gap`() {
+        assertThat(decideStart(membership(endDate = today))).isEqualTo(BulkMembershipDecision.Skip(BulkRowReason.ENDED_TODAY))
+    }
+
+    @Test
     fun `a returning member comes back on the type of their most recent spell`() {
         val decision =
             decideStart(

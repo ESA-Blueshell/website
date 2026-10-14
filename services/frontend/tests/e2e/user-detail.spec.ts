@@ -40,6 +40,28 @@ test.describe("one user's page", () => {
   })
 })
 
+test.describe("one user's membership types", () => {
+  test("the board records that a member turned alumni, sees since when, and takes it back", async ({page}) => {
+    await installApiMocks(page, {users: [ann], memberships: [aMembership({id: 171, userId: 71, startDate: "2024-09-01"})]})
+    await loginAsBoard(page.context())
+    await page.goto("/management/users/71/membership")
+
+    await page.getByTestId("manage-membership-edit-btn-171").click()
+    const add = "manage-membership-type-add-btn-171"
+    await page.getByTestId(`${add}-since`).locator("input").fill("2025-09-01")
+    await page.getByTestId(add).click()
+
+    await expect(page.getByTestId("manage-membership-row-171")).toContainText("Alumni since 1 Sep 2025")
+    const types = page.getByTestId("manage-membership-types-171")
+    await expect(types.locator('[data-testid^="manage-membership-type-row-"]')).toHaveCount(2)
+    await expect(types.locator('[data-testid^="manage-membership-type-remove-btn-"]')).toHaveCount(1)
+
+    await types.locator('[data-testid^="manage-membership-type-remove-btn-"]').click()
+    await expect(page.getByTestId("manage-membership-row-171")).not.toContainText("since")
+    await expect(types.locator('[data-testid^="manage-membership-type-row-"]')).toHaveCount(1)
+  })
+})
+
 test.describe("one user's Account and Roles", () => {
   test("the board has no Roles tab, and the Account tab offers a password reset", async ({page}) => {
     await installApiMocks(page, {users: [ann]})

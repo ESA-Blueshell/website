@@ -6,6 +6,7 @@ fun Membership.asResponse(): MembershipResponse =
     MembershipResponse(
         userId = this.userId,
         memberType = this.memberType,
+        types = this.types.map { MembershipTypeResponse(id = it.id!!, type = it.type, since = it.since) },
         startDate = this.startDate,
         endDate = this.endDate,
         pending = this.isPending,

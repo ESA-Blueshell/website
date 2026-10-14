@@ -28,6 +28,11 @@ vi.mock("@/domains/user", () => ({
   readUser: mockReadUser,
 }))
 
+// The type line reads its own memberships; CurrentMembershipType.test.ts covers it.
+vi.mock("@/components/account/CurrentMembershipType.vue", () => ({
+  default: {name: "CurrentMembershipType", template: "<p data-test='membership-type' />"},
+}))
+
 vi.mock("@/plugins/handleNetworkError.ts", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))

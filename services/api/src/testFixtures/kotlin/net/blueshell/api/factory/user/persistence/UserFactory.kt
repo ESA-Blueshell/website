@@ -105,7 +105,7 @@ class UserFactory(
             endDate = endDate,
             memberType = memberType,
             activatedOn = activatedOn,
-        )
+        ).apply { recordType(memberType, startDate) }
 
     fun createMembership(
         user: User,

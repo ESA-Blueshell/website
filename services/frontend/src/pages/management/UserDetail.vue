@@ -99,8 +99,13 @@ const topRole = computed(() => {
   return role.charAt(0).toUpperCase() + role.slice(1)
 })
 
+// A type recorded within the running membership dates from its own day, not from joining.
+const typeSince = computed(() => {
+  const types = current.value?.types ?? []
+  return types.length > 1 ? types.at(-1)!.since : since.value
+})
 const membershipLine = computed(() => (current.value && since.value
-  ? `${typeName.value} since ${formatDay(since.value)}, ${paysBy.value.toLowerCase()}`
+  ? `${typeName.value} since ${formatDay(typeSince.value)}, ${paysBy.value.toLowerCase()}`
   : memberships.value.length > 0 ? `Ended ${formatDay(latestMembership.value?.endDate)}` : "Has never been a member"))
 const contributionLine = computed(() => (latest.value
   ? `${latest.value.paid ? "Paid" : "Not paid"} ${periodName(latest.value)}${latest.value.lastEmailAt ? `. Last payment email ${formatDay(latest.value.lastEmailAt)}` : ""}`

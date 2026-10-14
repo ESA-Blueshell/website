@@ -9,7 +9,9 @@ import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.PaymentDirectory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 /** One member of a period, with what they owe and whether and how they were asked. */
@@ -52,6 +54,7 @@ class PeriodContributions(
     private val notifications: IncassoNotificationRepository,
     private val payments: PaymentDirectory,
     private val incassoRuns: IncassoRuns,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     @Transactional(readOnly = true)
     fun of(periodId: Long): PeriodContributionsView {
@@ -69,7 +72,7 @@ class PeriodContributions(
             overlapping
                 .map { (userId, held) ->
                     val latest = held.maxBy { it.startDate }
-                    val feeType = resolveFeeType(latest.memberType, latest.startDate, period)
+                    val feeType = resolveFeeType(latest, LocalDate.now(clock), period)
                     PeriodMember(
                         userId = userId,
                         name = latest.user.fullName,

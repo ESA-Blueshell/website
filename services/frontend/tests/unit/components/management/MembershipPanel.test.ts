@@ -52,6 +52,16 @@ vi.mock("@/components/management/MembershipFields.vue", () => ({
   },
 }))
 
+// The types' own writes are tested in MembershipTypes.test.ts.
+vi.mock("@/components/management/MembershipTypes.vue", () => ({
+  default: {
+    name: "MembershipTypes",
+    props: ["membership"],
+    emits: ["changed"],
+    template: "<div class='membership-types-stub' />",
+  },
+}))
+
 // ── Mock store ────────────────────────────────────────────────────────────────
 
 const mockStore = {
@@ -84,6 +94,8 @@ function makeMembership(overrides: {
     startDate: overrides.startDate,
     endDate: overrides.endDate,
     memberType: overrides.memberType ?? MemberType.REGULAR,
+    types: [{id: overrides.id * 10, type: overrides.memberType ?? MemberType.REGULAR, since: overrides.startDate}],
+    pending: false,
     version: overrides.version ?? 1,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
@@ -133,6 +145,34 @@ describe("MembershipPanel", () => {
 
     expect((wrapper.vm as any).memberships.map((one: {id: number}) => one.id)).toEqual([2, 3, 1])
     expect(await sortByEveryHead(wrapper)).toBe(3)
+  })
+
+  it("lists the type history with its days, and reloads once a type changes", async () => {
+    const turned = {
+      ...makeMembership({id: 5, userId: 42, startDate: "2022-09-01", memberType: MemberType.ALUMNI}),
+      types: [
+        {id: 50, type: MemberType.REGULAR, since: "2022-09-01"},
+        {id: 51, type: MemberType.ALUMNI, since: "2025-09-01"},
+      ],
+    }
+    mockListMembershipsFor.mockResolvedValue([turned, makeMembership({id: 4, userId: 42, startDate: "2020-01-01", endDate: "2021-01-01"})])
+
+    const wrapper = mountDialog()
+    await settle()
+
+    expect(wrapper.get('[data-testid="manage-membership-row-5"]').text()).toContain("Regular from 1 Sep 2022")
+    expect(wrapper.get('[data-testid="manage-membership-row-5"]').text()).toContain("Alumni since 1 Sep 2025")
+    expect(wrapper.get('[data-testid="manage-membership-row-4"]').text()).toContain("Regular")
+    expect(wrapper.get('[data-testid="manage-membership-row-4"]').text()).not.toContain("since")
+
+    ;(wrapper.vm as any).toggleInlineEdit(turned)
+    await settle()
+    wrapper.findComponent({name: "MembershipTypes"}).vm.$emit("changed", turned)
+    await settle()
+
+    expect(mockListMembershipsFor).toHaveBeenCalledTimes(2)
+    expect(wrapper.emitted("changed")).toHaveLength(1)
+    expect(wrapper.find('[data-testid="manage-membership-edit-pane"]').exists()).toBe(true)
   })
 
   it("does NOT call findDeletedMemberships when not admin", async () => {

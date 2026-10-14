@@ -8,6 +8,7 @@
         <p class="account__hello">
           Hello {{ user != null ? user.firstName : "" }}!
         </p>
+        <current-membership-type v-if="user" />
 
         <p>
           On this page you can view your account data and edit it below. Fields like your name and e-mail address
@@ -58,6 +59,7 @@ import {useStore} from "vuex"
 import AccountFrame from "@/components/common/AccountFrame.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError.ts"
 import UserForm from "@/components/form/UserForm.vue"
+import CurrentMembershipType from "@/components/account/CurrentMembershipType.vue"
 import PendingMembership from "@/components/account/PendingMembership.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {readUser} from "@/domains/user"

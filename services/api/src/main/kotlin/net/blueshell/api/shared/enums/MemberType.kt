@@ -7,5 +7,4 @@ enum class MemberType {
     ALUMNI,
     HONORARY,
     REGULAR,
-    NONE,
 }

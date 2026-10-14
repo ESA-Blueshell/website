@@ -44,6 +44,7 @@ import type {
   IncassoRunView,
   MandateResponse,
   MembershipResponse,
+  MembershipTypeResponse,
   OwnMandateResponse,
   PublishLineupRequest,
   Role,
@@ -1059,6 +1060,24 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       }
       return answer(route, "restoreDeletedUserById", {}, 204)
     }
+    if (method === "GET" && path === "/users/me/memberships") {
+      return answer(route, "findOwnMemberships", baseMemberships.filter((one) => one.userId === 1))
+    }
+    // A membership's types, kept in order with the current one last, as the api answers them.
+    const typePath = /^\/memberships\/(\d+)\/types(?:\/(\d+))?$/.exec(path)
+    if (typePath && ["POST", "PUT", "DELETE"].includes(method)) {
+      const held = baseMemberships.find((one) => one.id === Number(typePath[1]))
+      if (!held) return route.fulfill({status: 404, body: ""})
+      const typeId = Number(typePath[2])
+      const body = method === "DELETE" ? null : request.postDataJSON() as Wire<MembershipTypeResponse>
+      if (method === "POST") held.types = [...held.types, {id: Date.now(), type: body!.type, since: body!.since}]
+      if (method === "PUT") held.types = held.types.map((one) => (one.id === typeId ? {...one, ...body!} : one))
+      if (method === "DELETE") held.types = held.types.filter((one) => one.id !== typeId)
+      held.types.sort((a, b) => a.since.localeCompare(b.since))
+      held.memberType = held.types.at(-1)!.type
+      const operation = method === "POST" ? "recordMembershipType" : method === "PUT" ? "correctMembershipType" : "removeMembershipType"
+      return answer(route, operation, held)
+    }
     if (method === "GET" && path === "/memberships") {
       const userId = url.searchParams.get("userId")
       return answer(route, "findMemberships", userId ? baseMemberships.filter((one) => String(one.userId) === userId) : baseMemberships)
@@ -1128,7 +1147,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         return {
           userId,
           name: baseUsers.find((u) => Number(u.id) === userId)?.fullName ?? `#${userId}`,
-          memberType: membership?.memberType ?? "NONE",
+          memberType: membership?.memberType ?? "REGULAR",
           memberSince: membership?.startDate ?? null,
           disposition,
           reason,

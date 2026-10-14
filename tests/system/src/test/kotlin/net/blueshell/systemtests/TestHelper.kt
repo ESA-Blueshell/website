@@ -659,6 +659,16 @@ object TestHelper {
                     val keys = stmt.generatedKeys
                     require(keys.next()) { "INSERT memberships produced no id" }
                     keys.getLong(1)
+                }.also { id ->
+                    // The type it starts as, which the api reads a fee off (api ADR-040).
+                    conn
+                        .prepareStatement("INSERT INTO membership_types (membership_id, type, since) VALUES (?, ?, ?)")
+                        .use { stmt ->
+                            stmt.setLong(1, id)
+                            stmt.setString(2, memberType)
+                            stmt.setDate(3, java.sql.Date.valueOf(startDate))
+                            stmt.executeUpdate()
+                        }
                 }
         }
     }

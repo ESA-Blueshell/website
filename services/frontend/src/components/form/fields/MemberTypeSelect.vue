@@ -36,7 +36,7 @@ const options = computed(() => Object.values(MemberType).map((type: MemberType) 
   <form-field
     :error="said"
     filled
-    label="Member type"
+    label="Membership type"
     required
     :testid="named"
     variant="inside"

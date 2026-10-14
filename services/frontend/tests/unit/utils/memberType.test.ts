@@ -8,7 +8,6 @@ describe("memberTypeLabel", () => {
       "Alumni",
       "Honorary",
       "Regular",
-      "None",
     ])
   })
 

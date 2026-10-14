@@ -8,7 +8,10 @@ import java.time.LocalDate
 @Schema(name = "MembershipResponse")
 data class MembershipResponse(
     var userId: Long,
+    @field:Schema(description = "The type in force today, the last of types.")
     var memberType: MemberType,
+    @field:Schema(description = "Every membership type this membership has had, earliest first; the first starts with it.")
+    var types: List<MembershipTypeResponse>,
     var startDate: LocalDate,
     var endDate: LocalDate? = null,
     @field:Schema(description = "Running and waiting for its first contribution, so it carries no member role yet.")
@@ -18,4 +21,11 @@ data class MembershipResponse(
     var id: Long,
     var createdAt: Instant,
     var updatedAt: Instant,
+)
+
+@Schema(name = "MembershipTypeResponse")
+data class MembershipTypeResponse(
+    var id: Long,
+    var type: MemberType,
+    var since: LocalDate,
 )

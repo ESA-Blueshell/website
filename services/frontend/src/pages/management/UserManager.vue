@@ -69,8 +69,8 @@ const COLUMNS: TableColumn<PersonRow>[] = [
   {key: "needs", label: "Needs a look", wrap: true, sortBy: (row) => row.needs.map((one) => NEEDS_LOOK_WORDS[one]).join(", ")},
 ]
 const membershipOptions = (Object.keys(MEMBERSHIP_WORDS) as MembershipState[]).map((key) => ({key, label: MEMBERSHIP_WORDS[key]}))
-// Picker values come from the generated SDK; NONE is no type anybody holds.
-const typeOptions = Object.values(MemberType).filter((one) => one !== MemberType.NONE)
+// Picker values come from the generated SDK.
+const typeOptions = Object.values(MemberType)
   .map((key) => ({key, label: key.charAt(0) + key.slice(1).toLowerCase()}))
 const needsOptions = [
   {key: "any", label: "Any reason"},

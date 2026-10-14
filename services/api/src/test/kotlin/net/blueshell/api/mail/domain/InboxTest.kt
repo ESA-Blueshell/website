@@ -215,19 +215,19 @@ class InboxTest {
         whenever(messages.countByStateAndAutomaticFalse(InboxState.HANDLED)).thenReturn(42)
         whenever(messages.countByAutomaticTrue()).thenReturn(24)
 
-        val entry = Inbox(messages, sent, users).page(" lars ", page).content.single()
+        val entry = Inbox(messages, mock(), sent, users).page(" lars ", page).content.single()
 
         assertThat(entry.senderName).isEqualTo("Lars Mulder")
         assertThat(entry.handledByName).isEqualTo("Alice Board")
         assertThat(entry.answers).isEqualTo(AnsweredEmail(9, "email.contribution-reminder", Instant.EPOCH))
-        assertThat(Inbox(messages, sent, users).counts()).isEqualTo(InboxCounts(3, null, 142, 24))
+        assertThat(Inbox(messages, mock(), sent, users).counts()).isEqualTo(InboxCounts(3, null, 142, 24))
     }
 
     @Test
     fun `searches for what was typed literally, a hundred characters at most`() {
         val page = PageRequest.of(0, 50)
         whenever(messages.search(any(), any())).thenReturn(PageImpl(emptyList(), page, 0))
-        val inbox = Inbox(messages, sent, users)
+        val inbox = Inbox(messages, mock(), sent, users)
 
         inbox.page("50%_off!", page)
         inbox.page("x".repeat(150), page)

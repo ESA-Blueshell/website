@@ -109,6 +109,12 @@ class InboxMessageParserTest {
 
         assertThat(parsed.fromName).hasSize(255)
         assertThat(parsed.subject).hasSize(998)
+        val named = message { setHeader("From", "=?utf-8?Q?Lars=0D=0ABcc=3A_x=40y.z?= <lars@example.com>") }
+        assertThat(InboxMessageParser.parse(named, "<x>", now)!!.fromName).isEqualTo("Lars Bcc: x@y.z")
+        val spaced = message { setHeader("From", "\"lars mulder\"@example.com") }
+        assertThatThrownBy { InboxMessageParser.parse(spaced, "<x>", now) }.isInstanceOf(UnreadableMessage::class.java)
+        val broken = message { setHeader("From", "a: b: <c") }
+        assertThatThrownBy { InboxMessageParser.parse(broken, "<x>", now) }.isInstanceOf(UnreadableMessage::class.java)
         val folded = message { setSubject("=?utf-8?Q?Hi=0D=0ABcc:_x@y.z?=") }
         assertThat(InboxMessageParser.parse(folded, "<x>", now)!!.subject).isEqualTo("Hi Bcc: x@y.z")
         assertThat(parsed.toAddress).isEqualTo("partners@esa-blueshell.nl")

@@ -32,4 +32,11 @@ class SentEmailsTest {
         assertThat(sent.byIds(listOf(9L)).keys).containsExactly(9)
         assertThat(sent.byIds(emptyList())).isEmpty()
     }
+
+    @Test
+    fun `reads what the site sent to one address, newest first`() {
+        whenever(repository.findTop20ByRecipientEmailOrderByIdDesc("a@b.nl")).thenReturn(listOf(reminder))
+
+        assertThat(sent.toAddress("a@b.nl").map { it.id }).containsExactly(9)
+    }
 }

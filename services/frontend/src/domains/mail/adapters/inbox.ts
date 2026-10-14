@@ -1,18 +1,28 @@
 /** The catch-all mailbox as the board reads it. */
 import {
   type AnsweredEmail,
+  type Conversation,
+  type ConversationItem,
+  ConversationKind,
+  type EarlierMail,
+  findConversation,
   findInbox,
   findInboxCounts,
   type InboxCounts,
   type InboxEntry,
   InboxSort,
   InboxState,
+  markMessageHandled,
+  replyToMessage,
 } from "@/services/api"
 import type {PageOf, PageQuery} from "@/composables/usePagedTable"
+import type {Refused} from "@/types/api"
+import type {Saved} from "@/utils/refusals"
 import {readOr} from "@/utils/answers"
+import {refusable} from "../refusals"
 
-export type {AnsweredEmail, InboxCounts, InboxEntry}
-export {InboxState}
+export type {AnsweredEmail, Conversation, ConversationItem, EarlierMail, InboxCounts, InboxEntry}
+export {ConversationKind, InboxState}
 
 /** What each of the table's columns is ordered by on the server. Who handled a message is a name looked up after, so it has none. */
 const INBOX_SORTS: Record<string, InboxSort> = {received: InboxSort.RECEIVED, from: InboxSort.FROM, what: InboxSort.SUBJECT, state: InboxSort.STATE}
@@ -27,3 +37,16 @@ export async function loadInboxPage(query: PageQuery): Promise<PageOf<InboxEntry
 
 /** What the facts count, or nothing where they could not be read. */
 export const readInboxCounts = (): Promise<InboxCounts | null> => readOr(findInboxCounts(), null)
+
+/** One message with its conversation, or nothing, and whether that is because there is no such message. */
+export async function readConversation(id: number): Promise<{conversation: Conversation | null; missing: boolean}> {
+  const res = await findConversation({path: {id}})
+  return {conversation: res.error || res.data == null ? null : res.data, missing: res.status === 404}
+}
+
+/** Sends the reply in the conversation's thread and marks the message replied. */
+export const sendReply = (id: number, message: string, replyTo: string | null): Promise<Saved<Conversation> | Refused> =>
+  refusable(replyToMessage({path: {id}, body: {message, replyTo}}), "The reply could not be sent.")
+
+export const markHandled = (id: number): Promise<Saved<Conversation> | Refused> =>
+  refusable(markMessageHandled({path: {id}}), "The message could not be marked handled.")

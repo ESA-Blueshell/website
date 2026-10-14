@@ -2,6 +2,7 @@ package net.blueshell.api.email.domain
 
 import jakarta.mail.Session
 import jakarta.mail.internet.MimeMessage
+import net.blueshell.api.shared.email.EmailContent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -62,6 +63,25 @@ class SmtpEmailClientTest {
         assertThat(sent.replyTo.single().toString()).contains("board@blueshell.utwente.nl")
         // The content-type isn't asserted directly: MimeMessageHelper with HTML=true wraps the
         // body in nested multiparts and the precise nesting varies by Jakarta Mail version.
+    }
+
+    @Test
+    fun `a reply carries the thread it answers, so mail clients keep it in one conversation`() {
+        val captor = argumentCaptor<MimeMessage>()
+        client.send(
+            "x@y.z",
+            "X",
+            "Re: S",
+            "<p>B</p>",
+            "Blueshell",
+            "no-reply@esa-blueshell.nl",
+            "r@y.z",
+            EmailContent("x@y.z", "X", "Re: S", "B", inReplyTo = "<b@x>", references = listOf("<a@x>", "<b@x>")).threadHeaders,
+        )
+
+        verify(mailSender).send(captor.capture())
+        assertThat(captor.firstValue.getHeader("In-Reply-To")).containsExactly("<b@x>")
+        assertThat(captor.firstValue.getHeader("References")).containsExactly("<a@x> <b@x>")
     }
 
     @Test

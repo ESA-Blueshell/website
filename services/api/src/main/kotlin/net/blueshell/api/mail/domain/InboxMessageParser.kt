@@ -49,6 +49,7 @@ object InboxMessageParser {
     // A real message nests a few parts deep; a deeper one is read no further.
     private const val DEPTH_LIMIT = 10
 
+    private val PLAIN_ADDRESS = Regex("[^\\s@\"]+@[^\\s@\"]+")
     private val LINE_BREAKS = Regex("[\\r\\n]+")
     private val MESSAGE_ID = Regex("<[^<>\\s]{1,${ID_LIMIT - 2}}>")
     private val AUTOMATIC_SUBJECT =
@@ -61,8 +62,11 @@ object InboxMessageParser {
         fallbackReceivedAt: Instant,
     ): ParsedInboxMessage? {
         if (isDeliveryReport(message)) return null
-        val from = message.from?.firstOrNull() as? InternetAddress ?: throw UnreadableMessage("no sender")
-        val fromAddress = from.address?.lowercase()?.takeIf { it.length <= ADDRESS_LIMIT } ?: throw UnreadableMessage("no usable sender")
+        val from = senderOf(message) ?: throw UnreadableMessage("no sender")
+        // A reply goes to this address, so it is one plain address or the message is not kept.
+        val fromAddress =
+            from.address?.lowercase()?.takeIf { it.length <= ADDRESS_LIMIT && PLAIN_ADDRESS.matches(it) }
+                ?: throw UnreadableMessage("no usable sender")
         val inReplyTo = idIn(header(message, "In-Reply-To"))
         val references = idsIn(header(message, "References")).reversed()
         // One line: a decoded subject can hold line breaks, and a reply repeats it as a header.
@@ -73,7 +77,7 @@ object InboxMessageParser {
             inReplyTo = inReplyTo,
             threadIds = (listOfNotNull(inReplyTo) + references).distinct().take(THREAD_LIMIT),
             fromAddress = fromAddress,
-            fromName = from.personal?.take(NAME_LIMIT),
+            fromName = from.personal?.let(::oneLine)?.take(NAME_LIMIT),
             toAddress = deliveredTo(message),
             subject = subject,
             bodyText = text,
@@ -84,6 +88,9 @@ object InboxMessageParser {
     }
 
     private fun oneLine(text: String) = text.replace(LINE_BREAKS, " ")
+
+    // A From header that does not parse names no sender.
+    private fun senderOf(message: Message): InternetAddress? = runCatching { message.from }.getOrNull()?.firstOrNull() as? InternetAddress
 
     // An id longer than its column does not match at all, rather than in part.
     private fun idIn(value: String?): String? = value?.let { MESSAGE_ID.find(it)?.value }
@@ -97,7 +104,7 @@ object InboxMessageParser {
 
     private fun isDeliveryReport(message: Message): Boolean =
         message.isMimeType("multipart/report") ||
-            (message.from?.firstOrNull() as? InternetAddress)?.address?.lowercase()?.startsWith("mailer-daemon@") == true
+            senderOf(message)?.address?.lowercase()?.startsWith("mailer-daemon@") == true
 
     // Auto-Submitted is the standard (RFC 3834); the others are what common mail servers send.
     private fun isAutomatic(

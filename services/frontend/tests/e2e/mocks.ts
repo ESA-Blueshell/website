@@ -40,6 +40,8 @@ import type {
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
   FirstContribution,
+  IncassoCandidate,
+  IncassoRunView,
   MandateResponse,
   MembershipResponse,
   OwnMandateResponse,
@@ -66,6 +68,18 @@ import type {WidgetResponse} from "@/domains/discord/adapters/widget"
 import {aBlog, aCommittee, aContribution, aContributionPeriod, aJob, aMembership, anAddress, anEmail, anEsportsGame, anEvent, aSeason, aSignUp, aUser, type Wire} from "./records"
 
 const stampedAt = {createdAt: "2025-01-01T00:00:00Z", updatedAt: "2025-01-01T00:00:00Z", version: 0}
+
+/** Members on incasso as the first step of a run reads them: two to collect from, one with an accent, and two left out. */
+const INCASSO_CANDIDATES: Wire<IncassoCandidate>[] = [
+  {userId: 201, membershipId: 901, name: "Mila de Vries", ingName: "Mila de Vries", memberSince: "2024-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "NL", ibanLastTwo: "34", mandateReference: "BLUESHELL-201-20240901", mandateSignedOn: "2024-09-01"},
+  {userId: 202, membershipId: 902, name: "Zoë Bakker", ingName: "Zoe Bakker", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "DE", ibanLastTwo: "18", mandateReference: "BLUESHELL-202-20250904", mandateSignedOn: "2025-09-04"},
+  {userId: 203, membershipId: 903, name: "Lotte Meijer", ingName: "Lotte Meijer", memberSince: "2025-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    leftOut: "NO_BANK_DETAILS"},
+  {userId: 204, membershipId: 904, name: "Bram Kok", ingName: "Bram Kok", memberSince: "2020-09-01", feeType: "FULL_YEAR_FEE", amount: 25,
+    ibanCountry: "NL", ibanLastTwo: "60", mandateReference: "BLUESHELL-204-20200901", mandateSignedOn: "2020-09-01", leftOut: "ALREADY_PAID"},
+]
 
 export type {Wire}
 
@@ -618,6 +632,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   ]
   // The periods a payment was recorded for on a person's own page.
   const paidPeriods = new Set<number>()
+  const incassoRuns: Wire<IncassoRunView>[] = []
   let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
   const payingByIncasso = new Set(fixtures.onIncasso ?? [])
   const recordedMandates = new Map<number, Wire<MandateResponse>>()
@@ -1206,6 +1221,41 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       if (index >= 0) basePeriods.splice(index, 1)
       return route.fulfill({status: 204})
     }
+    if (method === "GET" && /^\/contributionPeriods\/\d+\/incasso$/.test(path)) {
+      return answer(route, "planIncasso", INCASSO_CANDIDATES)
+    }
+    if (method === "POST" && /^\/contributionPeriods\/\d+\/incassoRuns$/.test(path)) {
+      const body = request.postDataJSON() as {userIds: number[]; collectionDate: string; statementText: string}
+      const collections = INCASSO_CANDIDATES.filter((one) => body.userIds.includes(one.userId)).map((one) => ({
+        userId: one.userId, name: one.name, ingName: one.ingName, ibanCountry: one.ibanCountry, ibanLastTwo: one.ibanLastTwo, mandateReference: one.mandateReference,
+        mandateSignedOn: one.mandateSignedOn, feeType: one.feeType ?? "FULL_YEAR_FEE", amount: one.amount ?? 0,
+      }))
+      const run = {
+        id: 70 + incassoRuns.length, contributionPeriodId: Number(path.split("/")[2]), collectionDate: body.collectionDate,
+        statementText: body.statementText, collections, total: collections.reduce((sum, one) => sum + one.amount, 0),
+        createdAt: "2026-09-30T10:00:00.000Z", submittedAt: null as string | null, fileParts: 1,
+      }
+      incassoRuns.push(run)
+      return answer(route, "startIncassoRun", run, 201)
+    }
+    if (method === "GET" && /^\/incassoRuns\/\d+\/file$/.test(path)) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers: {"Content-Disposition": "attachment; filename=\"incassobatch.xlsx\""},
+        body: "PK",
+      })
+    }
+    if (method === "POST" && /^\/incassoRuns\/\d+\/submitted$/.test(path)) {
+      const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))
+      if (!run) return route.fulfill({status: 404, body: ""})
+      run.submittedAt = "2026-10-20T10:00:00.000Z"
+      return answer(route, "markIncassoRunSubmitted", run)
+    }
+    if (method === "GET" && /^\/incassoRuns\/\d+$/.test(path)) {
+      const run = incassoRuns.find((one) => one.id === Number(path.split("/")[2]))
+      return run ? answer(route, "findIncassoRun", run) : route.fulfill({status: 404, body: ""})
+    }
     if (method === "GET" && /^\/contributionPeriods\/\d+\/members$/.test(path)) {
       const periodId = Number(path.split("/")[2])
       const period = basePeriods.find((one) => one.id === periodId)
@@ -1213,6 +1263,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         && one.startDate <= period.endDate && (one.endDate == null || one.endDate >= period.startDate))
       return answer(route, "findPeriodContributions", {
         periodId,
+        incassoRuns: incassoRuns.filter((one) => one.contributionPeriodId === periodId).map((one) => ({
+          id: one.id, collectionDate: one.collectionDate, collections: one.collections.length, total: one.total, submittedAt: one.submittedAt,
+        })),
         members: inPeriod.map((held) => {
           const user = baseUsers.find((one) => one.id === held.userId)
           const honorary = held.memberType === "HONORARY"

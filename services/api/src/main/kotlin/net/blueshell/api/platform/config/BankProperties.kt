@@ -13,4 +13,6 @@ data class BankProperties(
     val iban: String = "NL19 INGB 0008 0964 62",
     val bic: String = "INGBNL2A",
     val accountName: String = "Blueshell E-Sports Vereniging",
+    /** The creditor ID on ING's incasso contract, 19 characters; incasso files are refused without it. */
+    val incassantId: String = "",
 )

@@ -28,6 +28,7 @@ const KINDS: Record<SecurityEventResponse["kind"], string> = {
   ROLES_CHANGED: "Roles changed",
   BANK_DETAILS_CHANGED: "Bank details changed",
   IBAN_REVEALED: "Full IBAN revealed",
+  INCASSO_FILE_DOWNLOADED: "ING's incasso file downloaded",
 }
 
 /** What happened, and who did it when it was not the person. */

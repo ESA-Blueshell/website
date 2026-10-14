@@ -39,6 +39,8 @@ data class PeriodContributionsView(
     val periodId: Long,
     val members: List<PeriodMember>,
     val runs: List<PaymentEmailRun>,
+    /** Newest first; a run with no submittedAt waits for upload to ING. */
+    val incassoRuns: List<IncassoRunSummary>,
 )
 
 @Service
@@ -49,6 +51,7 @@ class PeriodContributions(
     private val reminders: ContributionReminderRepository,
     private val notifications: IncassoNotificationRepository,
     private val payments: PaymentDirectory,
+    private val incassoRuns: IncassoRuns,
 ) {
     @Transactional(readOnly = true)
     fun of(periodId: Long): PeriodContributionsView {
@@ -85,6 +88,6 @@ class PeriodContributions(
                 .groupBy { it.third to it.second.truncatedTo(ChronoUnit.MINUTES) }
                 .map { (key, sent) -> PaymentEmailRun(key.first, key.second, sent.size) }
                 .sortedByDescending { it.sentAt }
-        return PeriodContributionsView(periodId, members, runs)
+        return PeriodContributionsView(periodId, members, runs, incassoRuns.summariesOf(periodId))
     }
 }

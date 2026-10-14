@@ -1944,6 +1944,72 @@ export enum InboxState {
     HANDLED = 'HANDLED'
 }
 
+export type IncassoCandidate = {
+    amount?: number | null;
+    feeType?: BulkFeeType | null;
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
+    ingName: string;
+    lastNotifiedOn?: string | null;
+    leftOut?: IncassoLeftOut | null;
+    mandateReference?: string | null;
+    mandateSignedOn?: string | null;
+    memberSince: string;
+    /**
+     * The membership the member is judged on, which their incasso details are recorded against.
+     */
+    membershipId: number;
+    name: string;
+    userId: number;
+};
+
+export type IncassoCollection = {
+    amount: number;
+    feeType: BulkFeeType;
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry?: string | null;
+    ibanLastTwo?: string | null;
+    ingName: string;
+    mandateReference?: string | null;
+    mandateSignedOn?: string | null;
+    name: string;
+    userId: number;
+};
+
+export enum IncassoLeftOut {
+    OWES_NOTHING = 'OWES_NOTHING',
+    DELETED = 'DELETED',
+    NO_EMAIL = 'NO_EMAIL',
+    NO_BANK_DETAILS = 'NO_BANK_DETAILS',
+    ALREADY_PAID = 'ALREADY_PAID',
+    IN_EARLIER_RUN = 'IN_EARLIER_RUN'
+}
+
+export type IncassoRunSummary = {
+    collectionDate: string;
+    collections: number;
+    id: number;
+    submittedAt?: string | null;
+    total: number;
+};
+
+export type IncassoRunView = {
+    collectionDate: string;
+    collections: Array<IncassoCollection>;
+    contributionPeriodId: number;
+    createdAt: string;
+    fileParts: number;
+    id: number;
+    statementText: string;
+    submittedAt?: string | null;
+    total: number;
+};
+
 export enum IncassoStanding {
     NONE = 'NONE',
     MANDATE_RECORDED = 'MANDATE_RECORDED',
@@ -2419,6 +2485,7 @@ export type PendingActivationsResponse = {
 };
 
 export type PeriodContributionsView = {
+    incassoRuns: Array<IncassoRunSummary>;
     members: Array<PeriodMember>;
     periodId: number;
     runs: Array<PaymentEmailRun>;
@@ -2870,7 +2937,8 @@ export enum SecurityEventKind {
     SIGNED_OUT_ELSEWHERE = 'SIGNED_OUT_ELSEWHERE',
     ROLES_CHANGED = 'ROLES_CHANGED',
     BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED',
-    IBAN_REVEALED = 'IBAN_REVEALED'
+    IBAN_REVEALED = 'IBAN_REVEALED',
+    INCASSO_FILE_DOWNLOADED = 'INCASSO_FILE_DOWNLOADED'
 }
 
 export type SecurityEventPageResponse = {
@@ -3192,6 +3260,15 @@ export type StarboardEntryResponse = {
      * The message in Discord markdown, with mentions and server emoji; absent for a picture alone
      */
     text?: string | null;
+};
+
+export type StartIncassoRunRequest = {
+    collectionDate: string | null;
+    feeTypeOverrides: {
+        [key: string]: BulkFeeType;
+    };
+    statementText: string;
+    userIds: Array<number>;
 };
 
 export type StepUpRequest = {
@@ -5458,6 +5535,92 @@ export type FindContributionsByPeriodIdResponses = {
 };
 
 export type FindContributionsByPeriodIdResponse = FindContributionsByPeriodIdResponses[keyof FindContributionsByPeriodIdResponses];
+
+export type PlanIncassoData = {
+    body?: never;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/incasso';
+};
+
+export type PlanIncassoErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PlanIncassoError = PlanIncassoErrors[keyof PlanIncassoErrors];
+
+export type PlanIncassoResponses = {
+    /**
+     * OK
+     */
+    200: Array<IncassoCandidate>;
+};
+
+export type PlanIncassoResponse = PlanIncassoResponses[keyof PlanIncassoResponses];
+
+export type StartIncassoRunData = {
+    body: StartIncassoRunRequest;
+    path: {
+        periodId: number;
+    };
+    query?: never;
+    url: '/contributionPeriods/{periodId}/incassoRuns';
+};
+
+export type StartIncassoRunErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StartIncassoRunError = StartIncassoRunErrors[keyof StartIncassoRunErrors];
+
+export type StartIncassoRunResponses = {
+    /**
+     * Created
+     */
+    201: IncassoRunView;
+};
+
+export type StartIncassoRunResponse = StartIncassoRunResponses[keyof StartIncassoRunResponses];
 
 export type FindPeriodContributionsData = {
     body?: never;
@@ -8671,6 +8834,137 @@ export type HealthCheckResponses = {
 };
 
 export type HealthCheckResponse = HealthCheckResponses[keyof HealthCheckResponses];
+
+export type FindIncassoRunData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: never;
+    url: '/incassoRuns/{runId}';
+};
+
+export type FindIncassoRunErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindIncassoRunError = FindIncassoRunErrors[keyof FindIncassoRunErrors];
+
+export type FindIncassoRunResponses = {
+    /**
+     * OK
+     */
+    200: IncassoRunView;
+};
+
+export type FindIncassoRunResponse = FindIncassoRunResponses[keyof FindIncassoRunResponses];
+
+export type DownloadIncassoFileData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: {
+        part?: number;
+    };
+    url: '/incassoRuns/{runId}/file';
+};
+
+export type DownloadIncassoFileErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadIncassoFileError = DownloadIncassoFileErrors[keyof DownloadIncassoFileErrors];
+
+export type DownloadIncassoFileResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadIncassoFileResponse = DownloadIncassoFileResponses[keyof DownloadIncassoFileResponses];
+
+export type MarkIncassoRunSubmittedData = {
+    body?: never;
+    path: {
+        runId: number;
+    };
+    query?: never;
+    url: '/incassoRuns/{runId}/submitted';
+};
+
+export type MarkIncassoRunSubmittedErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkIncassoRunSubmittedError = MarkIncassoRunSubmittedErrors[keyof MarkIncassoRunSubmittedErrors];
+
+export type MarkIncassoRunSubmittedResponses = {
+    /**
+     * OK
+     */
+    200: IncassoRunView;
+};
+
+export type MarkIncassoRunSubmittedResponse = MarkIncassoRunSubmittedResponses[keyof MarkIncassoRunSubmittedResponses];
 
 export type FindAudiencesData = {
     body?: never;

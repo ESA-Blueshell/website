@@ -128,6 +128,25 @@ describe("the Contributions page", () => {
     expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
   })
 
+  it("lists the period's incassos, a run not yet in ING as waiting for upload", async () => {
+    api.findPeriodContributions.mockResolvedValue({status: 200, data: {
+      periodId: 2,
+      members: [],
+      runs: [],
+      incassoRuns: [
+        {id: 7, collectionDate: "2026-11-01", collections: 2, total: 50, submittedAt: null},
+        {id: 6, collectionDate: "2025-11-01", collections: 1, total: 25, submittedAt: "2025-10-20T10:00:00Z"},
+      ],
+    }})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="contribution-incasso-run"]').attributes("to")).toBe("/management/contributions/2/incasso")
+    expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("Waiting for upload to ING")
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
+    expect(wrapper.get('[data-testid="contribution-incasso-7"]').text()).toContain("€ 50.00")
+    expect(wrapper.get('[data-testid="contribution-incasso-6"]').text()).toContain("Submitted to ING 20 Oct 2025")
+  })
+
   it("sends reminders for the people selected, and marks payments on the task page", async () => {
     const wrapper = await mount()
 
@@ -249,7 +268,7 @@ describe("the Contributions page", () => {
   })
   it("routes a period's address to its own page, a new one and the period list", async () => {
     const router = (await import("@/plugins/router")).default
-    for (const [path, name] of [["/management/contributions/periods/new", "contributionPeriodNew"], ["/management/contributions/periods/2", "contributionPeriod"], ["/management/contributions/2", "contributions"], ["/management/contributions/2/reminders", "paymentReminders"]] as const) {
+    for (const [path, name] of [["/management/contributions/periods/new", "contributionPeriodNew"], ["/management/contributions/periods/2", "contributionPeriod"], ["/management/contributions/2", "contributions"], ["/management/contributions/2/reminders", "paymentReminders"], ["/management/contributions/2/incasso", "incassoRun"]] as const) {
       const route = router.resolve(path)
       expect(route.name).toBe(name)
       const load = route.matched.at(-1)!.components!.default as () => Promise<{default: unknown}>

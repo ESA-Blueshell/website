@@ -32,5 +32,17 @@ export {
   type PeriodMember,
 } from "./adapters/memberContributions"
 export {contributionEmailLabels} from "./paymentEmail"
-export {maskedIban, type IbanMask} from "./incasso"
+export {
+  IncassoLeftOut,
+  fetchIncassoFile,
+  readIncassoPlan,
+  readIncassoRun,
+  saveSubmitted,
+  startIncasso,
+  type IncassoCandidate,
+  type IncassoCollection,
+  type IncassoRunSummary,
+  type IncassoRunView,
+} from "./adapters/incasso"
+export {dayName, defaultStatementText, incassoFileName, leftOutGroups, leftOutHelp, leftOutLabels, maskedIban, renamedForIng, type IbanMask} from "./incasso"
 export {dueDateProblem, localDay, PERIOD_OVERHANG_MONTHS, reminderName, reminderRows, type ReminderRow} from "./reminders"

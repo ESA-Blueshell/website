@@ -4,6 +4,7 @@ import net.blueshell.api.email.api.EmailJob
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.email.EmailContent
 import net.blueshell.api.shared.job.requireExists
+import net.blueshell.api.user.api.MaskedIban
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 
@@ -35,6 +36,8 @@ class IncassoNotificationEmailJob(
             notification.feeType,
             notification.amount,
             notification.debitDate,
+            MaskedIban.of(notification.ibanMasked),
+            notification.mandateReference,
         )
     }
 }

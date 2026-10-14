@@ -103,3 +103,8 @@ springdoc:
 server:
   error:
     include-message: always
+
+blueshell:
+  bank:
+    # A made-up creditor ID of the length ING checks, so a test run can fill the incasso file.
+    incassant-id: NL00ZZZ000000000000

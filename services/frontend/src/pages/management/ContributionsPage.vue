@@ -22,6 +22,7 @@ import {
   type PeriodMember,
   type PeriodContributionsView,
   contributionEmailLabels,
+  dayName,
   listPeriods,
   readPeriodContributions,
   recordPayment,
@@ -90,6 +91,8 @@ const RUN_COLUMNS: TableColumn<RunRow>[] = [
   {key: "sent", label: "Sent", sortBy: (run) => run.sent},
   {key: "what", label: "What", wrap: true, sortBy: (run) => run.what},
   {key: "members", label: "Members", sortBy: (run) => run.members},
+  {key: "total", label: "Total", sortBy: (run) => run.amount},
+  {key: "state", label: "State", sortBy: (run) => run.state},
 ]
 
 const today = new Date().toISOString().slice(0, 10)
@@ -123,18 +126,42 @@ interface RunRow {
   sent: string
   what: string
   members: number
+  total: string
+  /** The total as a number, for ordering; nothing for a run that collected no money. */
+  amount: number | null
+  waiting: boolean
+  state: string
+  to: string
 }
 
-/** The payment emails that went out this period, newest first. */
-const runs = computed<RunRow[]>(() => (view.value?.runs ?? [])
-  .map((run): RunRow => ({
+/** What went out this period, incassos and payment emails in one list, newest first. */
+const runs = computed<RunRow[]>(() => {
+  const incassos = (view.value?.incassoRuns ?? []).map((run): RunRow => ({
+    key: `incasso-${run.id}`,
+    testid: `contribution-incasso-${run.id}`,
+    sent: run.collectionDate,
+    what: `Incasso, collected ${dayName(run.collectionDate)}`,
+    members: run.collections,
+    total: euro(run.total),
+    amount: run.total,
+    waiting: !run.submittedAt,
+    state: run.submittedAt ? `Submitted to ING ${dayName(run.submittedAt.slice(0, 10))}` : "Waiting for upload to ING",
+    to: `/management/contributions/${period.value?.id}/incasso/${run.id}`,
+  }))
+  const emails = (view.value?.runs ?? []).map((run): RunRow => ({
     key: `${run.kind}-${run.sentAt}`,
     testid: `contribution-run-${run.kind}-${run.sentAt}`,
     sent: run.sentAt,
     what: contributionEmailLabels[run.kind],
     members: run.recipients,
+    total: "·",
+    amount: null,
+    waiting: false,
+    state: "Sent",
+    to: "/management/mail/sent",
   }))
-  .sort((a, b) => b.sent.localeCompare(a.sent)))
+  return [...incassos, ...emails].sort((a, b) => b.sent.localeCompare(a.sent))
+})
 
 const clear = () => {
   search.value = ""
@@ -446,13 +473,21 @@ void loadPeriods()
         </cut-button>
       </selection-bar>
 
-      <list-head title="Payment emails this period" />
+      <list-head title="Reminders and incassos this period">
+        <cut-button
+          :href="`/management/contributions/${period.id}/incasso`"
+          small
+          testid="contribution-incasso-run"
+        >
+          Run an incasso
+        </cut-button>
+      </list-head>
       <p
         v-if="runs.length === 0"
         class="money__note"
         data-testid="contribution-runs-empty"
       >
-        No payment emails have gone out for this period yet.
+        No payment emails or incassos have gone out for this period yet.
       </p>
       <management-table
         v-else
@@ -460,7 +495,7 @@ void loadPeriods()
         :row-key="(run) => run.key"
         :row-testid="(run) => run.testid"
         search-label="Search runs"
-        :search-text="(run) => run.what"
+        :search-text="(run) => `${run.what} ${run.state}`"
         :rows="runs"
         testid="contribution-runs"
       >
@@ -473,9 +508,17 @@ void loadPeriods()
         <template #members="{row}">
           {{ row.members }}
         </template>
-        <template #acts>
-          <mini-button to="/management/mail/sent">
-            See the emails
+        <template #total="{row}">
+          <span :class="{'mg-quiet': row.total === '·'}">{{ row.total }}</span>
+        </template>
+        <template #state="{row}">
+          <state-mark :kind="row.waiting ? 'extra' : 'in-sync'">
+            {{ row.state }}
+          </state-mark>
+        </template>
+        <template #acts="{row}">
+          <mini-button :to="row.to">
+            {{ row.to.includes("/incasso/") ? "Open" : "See the emails" }}
           </mini-button>
         </template>
       </management-table>

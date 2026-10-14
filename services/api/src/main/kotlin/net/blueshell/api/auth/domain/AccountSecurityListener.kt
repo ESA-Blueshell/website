@@ -3,6 +3,7 @@ package net.blueshell.api.auth.domain
 import net.blueshell.api.auth.domain.twofactor.TrustedBrowsers
 import net.blueshell.api.auth.domain.twofactor.TwoFactor
 import net.blueshell.api.auth.persistence.SecurityEventKind
+import net.blueshell.api.contribution.api.IncassoFileDownloaded
 import net.blueshell.api.security.SignInEndReason
 import net.blueshell.api.security.SignInEndedAsSuspicious
 import net.blueshell.api.security.SignIns
@@ -76,6 +77,17 @@ class AccountSecurityListener(
             SecurityEventKind.IBAN_REVEALED,
             SecurityActor.Person(evt.revealedBy),
             note = "mandate ${evt.reference}",
+        )
+    }
+
+    /** On the log of whoever downloaded it: which run, which file of it and how many members it holds. */
+    @AfterCommitListener
+    fun onIncassoFileDownloaded(evt: IncassoFileDownloaded) {
+        val members = if (evt.members == 1) "1 member" else "${evt.members} members"
+        events.record(
+            evt.downloadedBy,
+            SecurityEventKind.INCASSO_FILE_DOWNLOADED,
+            note = "incasso run ${evt.runId}, file ${evt.part} of ${evt.parts}, $members",
         )
     }
 }

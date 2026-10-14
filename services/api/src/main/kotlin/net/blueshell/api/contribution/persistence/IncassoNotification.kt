@@ -68,6 +68,17 @@ class IncassoNotification(
     /** When the member was notified. Fixed at the notification. */
     @Column(name = "asked_at", nullable = false, updatable = false)
     var askedAt: Instant = Instant.now(),
+    /** The incasso run that sent it; null for one sent before runs, from the payment email wizard. */
+    @Column(name = "incasso_run_id", updatable = false)
+    var incassoRunId: Long? = null,
+    /** The mandate it is collected under, as it stood when the member was told. */
+    @Column(name = "mandate_reference", length = 35, updatable = false)
+    var mandateReference: String? = null,
+    @Column(name = "mandate_signed_on", updatable = false)
+    var mandateSignedOn: LocalDate? = null,
+    /** The IBAN's country code and last two characters, as `NL34`, as collected from. */
+    @Column(name = "iban_masked", length = 4, updatable = false)
+    var ibanMasked: String? = null,
 ) : AuditedAutoIdEntity() {
     val userId: Long
         get() = user.id ?: 0

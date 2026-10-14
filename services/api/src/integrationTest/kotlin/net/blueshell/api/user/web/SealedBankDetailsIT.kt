@@ -71,6 +71,28 @@ class SealedBankDetailsIT : UserTestSupport() {
         return member to member.id!!
     }
 
+    private fun runFor(
+        board: User,
+        member: User,
+    ): String {
+        val period = createContributionPeriodFixture()
+        val answer =
+            mvc
+                .perform(
+                    post("/contributionPeriods/${period.id}/incassoRuns")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(
+                            """{"userIds":[${member.id}],"collectionDate":"${LocalDate.now().plusDays(
+                                7,
+                            )}","statementText":"Contributie"}""",
+                        ),
+                ).andExpect(status().isCreated)
+                .andReturn()
+                .response.contentAsString
+        return Regex("\"id\":(\\d+)").find(answer)!!.groupValues[1]
+    }
+
     private fun sealedOf(userId: Long) =
         jdbc.queryForMap("SELECT mandate_iban, mandate_account_holder FROM payment_details WHERE user_id = ?", userId)
 
@@ -91,10 +113,11 @@ class SealedBankDetailsIT : UserTestSupport() {
     }
 
     @Test
-    fun `a sealed account copied onto another member's mandate does not open`() {
+    fun `a sealed account copied onto another member's mandate does not open, so no file collects from it`() {
         val board = createUserWithRole(Role.BOARD)
         val (_, annId) = onIncasso(board, "Ann Vos")
-        val (_, bobId) = onIncasso(board, "Bob Smit")
+        val (bob, bobId) = onIncasso(board, "Bob Smit")
+        val runId = runFor(board, bob)
 
         jdbc.update(
             "UPDATE payment_details theirs JOIN payment_details anns ON anns.user_id = ? " +
@@ -105,8 +128,9 @@ class SealedBankDetailsIT : UserTestSupport() {
         )
 
         mvc
-            .perform(post("/users/$bobId/mandate/reveal").with(signedIn(board)))
+            .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
             .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("BankDetailsUnopenable"))
         mvc
             .perform(get("/users/$bobId/mandate").with(signedIn(board)))
             .andExpect(status().isOk)
@@ -114,9 +138,10 @@ class SealedBankDetailsIT : UserTestSupport() {
     }
 
     @Test
-    fun `with the key out of reach, recording, setting up and revealing are refused, and the panel shows the masked IBAN alone`() {
+    fun `with the key out of reach, recording, setting up and downloading are refused, and the panel shows the masked IBAN alone`() {
         val board = createUserWithRole(Role.BOARD)
-        val (_, annId) = onIncasso(board, "Ann Vos")
+        val (ann, annId) = onIncasso(board, "Ann Vos")
+        val runId = runFor(board, ann)
         val unrecorded = createMembershipFixture(createUserWithRole(Role.MEMBER))
         val applicant = createUserWithRole(Role.GUEST)
         doThrow(SealingUnavailable()).whenever(sealer).seal(any(), any())
@@ -128,6 +153,10 @@ class SealedBankDetailsIT : UserTestSupport() {
             "Cas Bos",
         ).andExpect(status().isServiceUnavailable).andExpect(jsonPath("$.code").value("SealingUnavailable"))
         setUpOwn(applicant).andExpect(status().isServiceUnavailable).andExpect(jsonPath("$.code").value("SealingUnavailable"))
+        mvc
+            .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
+            .andExpect(status().isServiceUnavailable)
+            .andExpect(jsonPath("$.code").value("SealingUnavailable"))
         mvc
             .perform(post("/users/$annId/mandate/reveal").with(signedIn(board)))
             .andExpect(status().isServiceUnavailable)
@@ -164,10 +193,11 @@ class SealedBankDetailsIT : UserTestSupport() {
     }
 
     @Test
-    fun `a board member reveals a full IBAN and nobody below board can, and each reveal is logged without it`() {
+    fun `a board member reveals a full IBAN and nobody below board can, and each reveal and download is logged without it`() {
         val board = createUserWithRole(Role.BOARD)
         val admin = createUserWithRole(Role.ADMIN)
         val (ann, annId) = onIncasso(board, "Ann Vos")
+        val runId = runFor(board, ann)
 
         mvc
             .perform(post("/users/$annId/mandate/reveal").with(signedIn(board)))
@@ -175,6 +205,7 @@ class SealedBankDetailsIT : UserTestSupport() {
             .andExpect(header().string("Cache-Control", "no-store"))
             .andExpect(jsonPath("$.iban").value(iban))
         mvc.perform(post("/users/$annId/mandate/reveal").with(signedIn(ann))).andExpect(status().isForbidden)
+        mvc.perform(get("/incassoRuns/$runId/file").with(signedIn(board))).andExpect(status().isOk)
 
         val annsLog =
             mvc
@@ -185,6 +216,13 @@ class SealedBankDetailsIT : UserTestSupport() {
                 .andExpect(jsonPath("$.events.length()").value(1))
                 .andReturn()
                 .response.contentAsString
-        assertThat(annsLog).doesNotContain(iban).doesNotContain("0417")
+        val boardsLog =
+            mvc
+                .perform(get("/users/${board.id}/security-events").with(signedIn(admin)))
+                .andExpect(jsonPath("$.events[0].kind").value("INCASSO_FILE_DOWNLOADED"))
+                .andExpect(jsonPath("$.events[0].note").value("incasso run $runId, file 1 of 1, 1 member"))
+                .andReturn()
+                .response.contentAsString
+        assertThat(annsLog + boardsLog).doesNotContain(iban).doesNotContain("0417")
     }
 }

@@ -52,7 +52,7 @@ class ContributionEmailJobsTest {
     }
 
     @Test
-    fun `a pre-notification sends the amount its record states`() {
+    fun `a pre-notification from a run names the account it is collected from`() {
         val told =
             IncassoNotification(
                 user = Entities.user(id = 1, firstName = "Mila", lastName = "Vries"),
@@ -60,6 +60,8 @@ class ContributionEmailJobsTest {
                 feeType = BulkFeeType.FULL_YEAR_FEE,
                 amount = 25.0,
                 debitDate = LocalDate.of(2026, 11, 1),
+                ibanMasked = "NL00",
+                mandateReference = "BLUESHELL-1-20250901",
             )
         val notifications: IncassoNotificationService = mockk { every { findById(1L) } returns told }
         val sent = slot<EmailContent>()
@@ -68,7 +70,7 @@ class ContributionEmailJobsTest {
         IncassoNotificationEmailJob(objectMapper, notifications, emails)
             .runJob(objectMapper.writeValueAsString(ContributionJobs.IncassoNotificationPayload(1L)))
 
-        assertThat(sent.captured.markdownContent).contains("25,00")
+        assertThat(sent.captured.markdownContent).contains("25,00", "account **NL•• … ••00**", "BLUESHELL-1-20250901")
     }
 
     @Test

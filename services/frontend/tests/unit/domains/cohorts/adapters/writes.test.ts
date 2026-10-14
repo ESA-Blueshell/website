@@ -18,6 +18,7 @@ import {
   setTargetEnforced,
   renameTarget,
   switchCohortTarget,
+  evaluateMember,
   triggerReconcile,
 } from "@/domains/cohorts/adapters/cohorts"
 import {
@@ -29,7 +30,8 @@ import {
   createTargetFolder,
   deleteExternalTarget,
   enforceTarget,
-  enqueue,
+  evaluateUser,
+  reconcileTarget,
   linkExistingTarget,
   linkDrift,
   moveCohortTarget,
@@ -42,7 +44,6 @@ import {
   switchTarget,
 } from "@/services/api"
 import type {ExternalTarget} from "@/services/api"
-import {aJob} from "../../../helpers/apiFixtures"
 import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 import {TargetKind, TargetSystem} from "@/services/api"
 
@@ -58,7 +59,8 @@ vi.mock("@/services/api", async (importOriginal) => ({
   createTargetFolder: vi.fn(),
   renameExternalTarget: vi.fn(),
   enforceTarget: vi.fn(),
-  enqueue: vi.fn(),
+  evaluateUser: vi.fn(),
+  reconcileTarget: vi.fn(),
   linkExistingTarget: vi.fn(),
   linkDrift: vi.fn(),
   proposeLinks: vi.fn(),
@@ -81,21 +83,21 @@ const target = (over: Partial<ExternalTarget> = {}): ExternalTarget => ({
   ...over,
 })
 
-describe("enqueued cohort work", () => {
-  it("answers with the job it started, so the page can follow it", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: 88})))
+describe("work the board queues", () => {
+  it("reconciles one target of a cohort, and looks at a member again", async () => {
+    vi.mocked(reconcileTarget).mockResolvedValue(emptyAnswer(reconcileTarget))
+    vi.mocked(evaluateUser).mockResolvedValue(emptyAnswer(evaluateUser))
 
-    await expect(triggerReconcile(4)).resolves.toBe(88)
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.reconcile-list", payload: {cohortId: 4, trigger: "BY_HAND"}},
-      throwOnError: true,
-    })
+    await expect(triggerReconcile(1, 4)).resolves.toEqual({ok: true})
+    await expect(evaluateMember(7)).resolves.toEqual({ok: true})
+    expect(reconcileTarget).toHaveBeenCalledWith({path: {id: 1, targetId: 4}})
+    expect(evaluateUser).toHaveBeenCalledWith({path: {userId: 7}})
   })
 
-  it("answers with no job where the api named none", async () => {
-    vi.mocked(enqueue).mockResolvedValue(emptyAnswer(enqueue))
+  it("says why a reconcile was refused", async () => {
+    vi.mocked(reconcileTarget).mockResolvedValue(refusal(reconcileTarget, {code: "TargetNotCreated", cohortId: 4}, 409))
 
-    await expect(triggerReconcile(4)).resolves.toBeNull()
+    await expect(triggerReconcile(1, 4)).resolves.toEqual({ok: false, reason: "The target has not been created yet."})
   })
 })
 

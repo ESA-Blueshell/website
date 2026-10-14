@@ -13,6 +13,7 @@ import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
 import net.blueshell.api.sync.api.ExternalIdConflictException
@@ -123,6 +124,18 @@ class DriftResolutionsTest {
         assertThatThrownBy { service.push(1L, 3L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
         assertThatThrownBy { service.push(1L, 5L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
         assertThatThrownBy { service.remove(1L, 4L, listOf("x")) }.isInstanceOf(TargetNotCreated::class.java)
+    }
+
+    @Test
+    fun `the board reconciles a target of the cohort by hand and has a member looked at again`() {
+        service.reconcile(1L, 2L)
+        service.evaluate(7L)
+
+        verify {
+            jobs.runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(2L, JobTrigger.BY_HAND), JobTrigger.BY_HAND)
+            jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(7L), JobTrigger.BY_HAND)
+        }
+        assertThatThrownBy { service.reconcile(9L, 2L) }.isInstanceOf(TargetNotOfCohort::class.java)
     }
 
     @Test

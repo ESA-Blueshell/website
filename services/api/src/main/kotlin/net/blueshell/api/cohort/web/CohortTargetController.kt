@@ -10,6 +10,7 @@ import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetDescriptor
 import net.blueshell.api.cohort.domain.TidyPlan
 import net.blueshell.api.security.AdminOnly
+import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.shared.enums.TargetSystem
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/management/cohort-targets")
-@Tag(name = "Cohort Targets", description = "Admin: external cohort target catalog")
-@AdminOnly
+@Tag(name = "Cohort Targets", description = "The board's catalog of lists on the external systems")
+@BoardOnly
 class CohortTargetController(
     private val catalog: TargetCatalog,
     private val tidy: FolderTidy,
@@ -78,6 +79,7 @@ class CohortTargetController(
     ): ExternalTarget = catalog.archive(system, externalId)
 
     // A POST with the typed name rather than a DELETE: the confirm travels in the body.
+    @AdminOnly
     @PostMapping("/{system}/{externalId}/delete")
     @Operation(operationId = "deleteExternalTarget")
     @ResponseStatus(HttpStatus.NO_CONTENT)

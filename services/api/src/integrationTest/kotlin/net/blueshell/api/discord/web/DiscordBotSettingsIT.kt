@@ -39,4 +39,24 @@ class DiscordBotSettingsIT : UserTestSupport() {
         mvc.perform(get("/management/discord/settings/bot").with(signedIn(member))).andExpect(status().isForbidden)
         mvc.perform(get("/management/discord/bot").with(signedIn(member))).andExpect(status().isForbidden)
     }
+
+    @Test
+    fun `refuses a channel name longer than Discord allows and a claim role that is not a Discord id`() {
+        val board = createUserWithRole(Role.BOARD)
+        val longName = "a".repeat(101)
+
+        listOf(
+            """{"infoChannel":"$longName","calendarChannel":"","starboardChannel":"","claimRoleIds":[]}""",
+            """{"infoChannel":"","calendarChannel":"","starboardChannel":"","claimRoleIds":["Board"]}""",
+            """{"infoChannel":"","calendarChannel":"","starboardChannel":"","claimRoleIds":[${(1..41).joinToString(",") { "\"$it\"" }}]}""",
+        ).forEach { body ->
+            mvc
+                .perform(
+                    put("/management/discord/settings/bot")
+                        .with(signedIn(board))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body),
+                ).andExpect(status().isBadRequest)
+        }
+    }
 }

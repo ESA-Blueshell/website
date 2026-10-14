@@ -72,7 +72,15 @@ onMounted(async () => {
     </template>
 
     <p
-      v-if="loaded && !standing?.connected"
+      v-if="loaded && !standing"
+      class="bot__note"
+      data-testid="discord-bot-unread"
+    >
+      The bot's standing could not be read. Reload the page to try again.
+    </p>
+
+    <p
+      v-else-if="standing && !standing.connected"
       class="bot__note"
       data-testid="discord-bot-away"
     >
@@ -109,8 +117,7 @@ onMounted(async () => {
           </li>
         </ol>
         <p class="bot__note">
-          Only somebody who may manage the server on Discord can do this. Giving the bot's role Administrator covers every permission
-          and every channel at once, though not the order of the roles.
+          Only somebody who may manage the server on Discord can do this.
         </p>
       </template>
 

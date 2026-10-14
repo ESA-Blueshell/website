@@ -29,6 +29,7 @@ const bot = ref<DiscordBotSettings | null>(null)
 const roles = ref<KeptRole[]>([])
 const channels = ref<KeptChannel[]>([])
 const loaded = ref(false)
+const discordUnread = ref(false)
 const acting = ref(false)
 const failure = ref<string | null>(null)
 
@@ -64,8 +65,9 @@ async function saveBot() {
 onMounted(async () => {
   const [readBot, readRoles, readChannels] = await Promise.all([readBotSettings(), listKeepableRoles(), listKeepableChannels()])
   bot.value = readBot
-  roles.value = readRoles
-  channels.value = readChannels
+  roles.value = readRoles ?? []
+  channels.value = readChannels ?? []
+  discordUnread.value = readRoles === null || readChannels === null
   loaded.value = true
 })
 </script>
@@ -98,7 +100,7 @@ onMounted(async () => {
     </notice-box>
 
     <p
-      v-if="loaded && roles.length === 0"
+      v-if="loaded && discordUnread"
       class="settings__note"
       data-testid="discord-settings-away"
     >

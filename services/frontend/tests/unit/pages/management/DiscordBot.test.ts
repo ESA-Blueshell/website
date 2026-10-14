@@ -85,14 +85,16 @@ describe("the Discord bot's page", () => {
     expect((await mount()).get('[data-testid="discord-bot-lacking"]').text()).toContain("The bot lacks 2 permissions")
   })
 
-  it("says nothing can be checked while the bot is away or cannot be read", async () => {
+  it("says nothing can be checked while the bot is away, and says so apart when its standing cannot be read", async () => {
     api.findBotStanding.mockResolvedValue({status: 200, data: standing({connected: false, permissions: []})})
     const away = await mount()
     expect(away.get('[data-testid="discord-bot-away"]').text()).toContain("nothing can be checked")
     expect(away.find('[data-testid="discord-bot-permissions"]').exists()).toBe(false)
 
     api.findBotStanding.mockResolvedValue({status: 503, error: {message: "down"}, response: {status: 503}})
-    expect((await mount()).find('[data-testid="discord-bot-away"]').exists()).toBe(true)
+    const unread = await mount()
+    expect(unread.get('[data-testid="discord-bot-unread"]').text()).toContain("could not be read")
+    expect(unread.find('[data-testid="discord-bot-away"]').exists()).toBe(false)
   })
 
   it("is reached from Platforms, beside the bot settings", async () => {

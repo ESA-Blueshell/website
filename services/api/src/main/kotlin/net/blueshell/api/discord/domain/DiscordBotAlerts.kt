@@ -7,8 +7,8 @@ import net.blueshell.api.alerts.api.RaisedAlert
 import org.springframework.stereotype.Component
 
 /**
- * For the board: the bot is in the server and lacks a permission the site's work needs. The alert
- * names the permissions, and its key changes with them, so hiding it for one does not hide another.
+ * For the board: the bot is in the server and lacks a permission the site's work needs. Each
+ * permission is its own alert under its own key, so hiding one never hides another that goes later.
  */
 @Component
 class DiscordBotAlerts(
@@ -16,23 +16,17 @@ class DiscordBotAlerts(
 ) : AlertSource {
     override val audience = AlertAudience.BOARD
 
-    override fun raised(): List<RaisedAlert> {
-        // Nothing is known of a bot that is not connected, so nothing is said of it.
-        val permissions = standing.read().permissions
-        val lacking = permissions.filterNot { it.granted }.map { it.name }
-        if (lacking.isEmpty()) return emptyList()
-        // One bit per permission in the check's own order, so a newly lacking one raises the mark.
-        val mark = permissions.withIndex().filterNot { it.value.granted }.sumOf { 1L shl it.index }
-        return listOf(
+    // Nothing is known of a bot that is not connected, so nothing is said of it.
+    override fun raised(): List<RaisedAlert> =
+        standing.read().permissions.filterNot { it.granted }.map {
             RaisedAlert(
-                key = "discord-bot-permissions",
-                kind = AlertKind.DISCORD_BOT_PERMISSIONS,
+                key = "discord-bot-permission:${it.name}",
+                kind = AlertKind.DISCORD_BOT_PERMISSION,
                 subjectId = null,
-                subjectLabel = lacking.joinToString(", "),
-                count = lacking.size.toLong(),
+                subjectLabel = it.name,
+                count = 1,
                 since = null,
-                mark = mark,
-            ),
-        )
-    }
+                mark = 0,
+            )
+        }
 }

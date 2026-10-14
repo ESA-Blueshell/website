@@ -86,4 +86,12 @@ describe("the Discord settings page", () => {
     expect(wrapper.get('[data-testid="discord-settings-away"]').text()).toContain("Discord cannot be read now")
     expect(wrapper.get('[data-testid="discord-settings-bot-unread"]').text()).toBe("The bot settings could not be read.")
   })
+
+  it("tells an empty server apart from one that could not be read", async () => {
+    api.listKeptRoles.mockResolvedValue({status: 200, data: []})
+    api.listKeptChannels.mockResolvedValue({status: 200, data: []})
+    const wrapper = await mount()
+
+    expect(wrapper.find('[data-testid="discord-settings-away"]').exists()).toBe(false)
+  })
 })

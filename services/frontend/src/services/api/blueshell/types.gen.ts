@@ -123,7 +123,7 @@ export type AlertKeyRequest = {
 export enum AlertKind {
     JOB_DEAD = 'JOB_DEAD',
     EXCEPTION_OPEN = 'EXCEPTION_OPEN',
-    DISCORD_BOT_PERMISSIONS = 'DISCORD_BOT_PERMISSIONS'
+    DISCORD_BOT_PERMISSION = 'DISCORD_BOT_PERMISSION'
 }
 
 export enum AnnounceChoice {

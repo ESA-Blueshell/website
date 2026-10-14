@@ -181,6 +181,9 @@ class JdaChannelKeeperTest {
             .isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
             .hasMessageContaining("it lacks View Channel")
         assertThatThrownBy { keeper().close("1", "900") }.isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
+
+        doThrow(unseen).whenever(text).delete()
+        assertThatThrownBy { keeper().delete("1") }.isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -100,6 +101,16 @@ class JdaRoleKeeperTest {
         whenever(api.listGuildMembers("1", 1000, "1000")).thenReturn(second)
 
         assertThat(keeper().holders("902")).containsExactly(RoleHolder("7", "user7"), RoleHolder("2001", "Ann"))
+    }
+
+    @Test
+    fun `refuses rather than read part of a server larger than it pages through`() {
+        val full = (1..1000).map { member("$it", listOf("902")) }
+        whenever(api.listGuildMembers(eq("1"), eq(1000), anyOrNull())).thenReturn(full)
+
+        assertThatThrownBy { keeper().holders("902") }
+            .isInstanceOf(DiscordUnavailable::class.java)
+            .hasMessageContaining("more than 20000 members")
     }
 
     @Test

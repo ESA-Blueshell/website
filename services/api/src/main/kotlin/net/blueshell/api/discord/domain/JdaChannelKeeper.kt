@@ -88,7 +88,7 @@ class JdaChannelKeeper(
         val guild = guild()
         val channel = containerOf(guild, channelId)
         val access = if ((channel as GuildChannel).type == ChannelType.VOICE) VOICE_ACCESS else TEXT_ACCESS
-        permitted(channel) {
+        permitted(channel.name) {
             channel.upsertPermissionOverride(roleOf(guild, roleId)).grant(access).complete()
             if (private) channel.upsertPermissionOverride(guild.publicRole).deny(Permission.VIEW_CHANNEL).complete()
         }
@@ -100,7 +100,7 @@ class JdaChannelKeeper(
     ) {
         val guild = guild()
         val channel = containerOf(guild, channelId)
-        permitted(channel) { channel.getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete() }
+        permitted(channel.name) { channel.getPermissionOverride(roleOf(guild, roleId))?.delete()?.complete() }
     }
 
     override fun archive(channelIds: Collection<String>) {
@@ -109,7 +109,7 @@ class JdaChannelKeeper(
         channelIds.mapNotNull { guild.getGuildChannelById(it) as? ICategorizableChannel }.forEach { channel ->
             if (channel.parentCategoryIdLong == archive.idLong) return@forEach
             archived.save(ArchivedChannel(channel.id, channel.parentCategoryId))
-            channel.manager.setParent(archive).complete()
+            permitted(channel.name) { channel.manager.setParent(archive).complete() }
         }
     }
 
@@ -118,13 +118,15 @@ class JdaChannelKeeper(
         channelIds.forEach { id ->
             val kept = archived.findById(id).orElse(null) ?: return@forEach
             val channel = guild.getGuildChannelById(id) as? ICategorizableChannel
-            channel?.manager?.setParent(kept.categoryId?.let(guild::getCategoryById))?.complete()
+            val home = kept.categoryId?.let(guild::getCategoryById)
+            if (channel != null) permitted(channel.name) { channel.manager.setParent(home).complete() }
             archived.delete(kept)
         }
     }
 
     override fun delete(channelId: String) {
-        guild().getGuildChannelById(channelId)?.delete()?.complete()
+        val channel = guild().getGuildChannelById(channelId) ?: return
+        permitted(channel.name) { channel.delete().complete() }
     }
 
     private fun guild(): Guild = gateway.ifAvailable?.guild() ?: throw DiscordUnavailable("The bot is not in the server right now.")
@@ -142,12 +144,12 @@ class JdaChannelKeeper(
 
     // The bot sees every channel's name and still may not change one it has no access to itself.
     private fun permitted(
-        channel: IPermissionContainer,
+        channel: String,
         change: () -> Unit,
     ) = try {
         change()
     } catch (e: InsufficientPermissionException) {
-        throw DiscordRefused("The bot may not change ${channel.name}: it lacks ${e.permission.getName()} there.").apply { initCause(e) }
+        throw DiscordRefused("The bot may not change $channel: it lacks ${e.permission.getName()} there.").apply { initCause(e) }
     }
 
     private fun kept(channel: GuildChannel): KeptChannel? = keptOf(channel)

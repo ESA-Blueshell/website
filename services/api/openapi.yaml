@@ -253,7 +253,7 @@ components:
       enum:
       - JOB_DEAD
       - EXCEPTION_OPEN
-      - DISCORD_BOT_PERMISSIONS
+      - DISCORD_BOT_PERMISSION
       type: string
     AnnounceChoice:
       enum:
@@ -2442,17 +2442,26 @@ components:
       properties:
         calendarChannel:
           description: The channel an event is posted in on its day, by name
+          maxLength: 100
+          minLength: 0
           type: string
         claimRoleIds:
           description: The roles the role-claim bot hands out, which the site leaves alone
           items:
+            pattern: \s*\d{1,20}\s*
             type: string
+          maxItems: 40
+          minItems: 0
           type: array
         infoChannel:
           description: The channel approved events are announced in, by name
+          maxLength: 100
+          minLength: 0
           type: string
         starboardChannel:
           description: The channel the starboard bot reposts starred messages to, by name
+          maxLength: 100
+          minLength: 0
           type: string
       required:
       - calendarChannel

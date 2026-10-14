@@ -16,7 +16,7 @@ class DiscordBotAlertsTest {
         BotStandingResult(true, true, true, null, emptyList(), emptyList(), permissions.toList())
 
     @Test
-    fun `tells the board which permissions the bot lacks, under a mark that rises with each newly lacking one`() {
+    fun `raises one alert per lacking permission, keyed by it, so hiding one never hides another`() {
         whenever(standing.read()).thenReturn(
             read(
                 BotGrant("View Channels", "Read the channels", true),
@@ -27,17 +27,21 @@ class DiscordBotAlertsTest {
 
         assertThat(alerts.audience).isEqualTo(AlertAudience.BOARD)
         assertThat(alerts.raised()).containsExactly(
-            RaisedAlert(
-                key = "discord-bot-permissions",
-                kind = AlertKind.DISCORD_BOT_PERMISSIONS,
-                subjectId = null,
-                subjectLabel = "Manage Roles, Create Invite",
-                count = 2,
-                since = null,
-                mark = 0b110,
-            ),
+            lacking("Manage Roles"),
+            lacking("Create Invite"),
         )
     }
+
+    private fun lacking(permission: String) =
+        RaisedAlert(
+            key = "discord-bot-permission:$permission",
+            kind = AlertKind.DISCORD_BOT_PERMISSION,
+            subjectId = null,
+            subjectLabel = permission,
+            count = 1,
+            since = null,
+            mark = 0,
+        )
 
     @Test
     fun `says nothing while the bot holds every permission, or is not connected`() {

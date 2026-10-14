@@ -1,6 +1,8 @@
 package net.blueshell.api.discord.domain
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 import net.blueshell.api.discord.persistence.DiscordSetting
 import net.blueshell.api.discord.persistence.DiscordSettingName
 import net.blueshell.api.discord.persistence.DiscordSettingRepository
@@ -13,14 +15,26 @@ import org.springframework.transaction.annotation.Transactional
 @Schema(name = "DiscordBotSettings")
 data class DiscordBotSettings(
     @param:Schema(description = "The channel approved events are announced in, by name")
+    @field:Size(max = CHANNEL_NAME_MAX, message = "A channel name is at most $CHANNEL_NAME_MAX characters.")
     val infoChannel: String,
     @param:Schema(description = "The channel an event is posted in on its day, by name")
+    @field:Size(max = CHANNEL_NAME_MAX, message = "A channel name is at most $CHANNEL_NAME_MAX characters.")
     val calendarChannel: String,
     @param:Schema(description = "The channel the starboard bot reposts starred messages to, by name")
+    @field:Size(max = CHANNEL_NAME_MAX, message = "A channel name is at most $CHANNEL_NAME_MAX characters.")
     val starboardChannel: String,
     @param:Schema(description = "The roles the role-claim bot hands out, which the site leaves alone")
-    val claimRoleIds: List<String>,
+    @field:Size(max = CLAIM_ROLES_MAX, message = "Pick at most $CLAIM_ROLES_MAX roles.")
+    val claimRoleIds: List<
+        @Pattern(regexp = DISCORD_ID, message = "A role is named by its Discord id, which is digits.")
+        String,
+    >,
 )
+
+// Discord's own limit on a channel name; the ids together stay inside the setting's 1024 characters.
+private const val CHANNEL_NAME_MAX = 100
+private const val CLAIM_ROLES_MAX = 40
+private const val DISCORD_ID = "\\s*\\d{1,20}\\s*"
 
 /**
  * The Discord settings the board sets on the site. A setting the board never set is the

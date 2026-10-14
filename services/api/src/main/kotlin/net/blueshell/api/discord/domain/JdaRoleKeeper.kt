@@ -42,14 +42,14 @@ class JdaRoleKeeper(
         val client = api.ifAvailable ?: throw DiscordUnavailable("There is no Discord bot.")
         val holders = mutableListOf<RoleHolder>()
         var after: String? = null
-        var pages = 0
-        do {
+        repeat(MAX_PAGES) {
             val page = client.listGuildMembers(guildId, PAGE, after)
             page.filter { roleId in it.roles }.mapTo(holders) { RoleHolder(it.user.id, it.nick ?: it.user.globalName ?: it.user.username) }
-            after = page.lastOrNull()?.user?.id
-            pages += 1
-        } while (page.size == PAGE && pages < MAX_PAGES)
-        return holders
+            if (page.size < PAGE) return holders
+            after = page.last().user.id
+        }
+        // A cut-off list would read as members who lost the role.
+        throw DiscordUnavailable("The server has more than ${PAGE * MAX_PAGES} members, more than the site reads.")
     }
 
     override fun add(

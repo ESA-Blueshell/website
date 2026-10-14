@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.web
 
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
 import net.blueshell.api.discord.domain.DiscordBotSettings
 import net.blueshell.api.discord.domain.DiscordSettings
 import net.blueshell.api.security.BoardOnly
@@ -23,6 +24,6 @@ class DiscordBotSettingsController(
 
     @PutMapping
     fun setDiscordBotSettings(
-        @RequestBody request: DiscordBotSettings,
+        @Valid @RequestBody request: DiscordBotSettings,
     ): DiscordBotSettings = settings.write(request)
 }

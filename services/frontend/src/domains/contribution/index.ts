@@ -19,5 +19,13 @@ export {
 } from "./adapters/paymentEmails"
 export {listPaidUserIds, recordPaid, recordUnpaid, type BulkContributionCall} from "./adapters/contributions"
 export {readFirstContribution, type FirstContribution} from "./adapters/firstContribution"
-export {listMemberContributions, recordPayment, withdrawPayment, type MemberPeriodContribution} from "./adapters/memberContributions"
+export {
+  listMemberContributions,
+  readPeriodContributions,
+  recordPayment,
+  withdrawPayment,
+  type MemberPeriodContribution,
+  type PeriodContributionsView,
+  type PeriodMember,
+} from "./adapters/memberContributions"
 export {contributionEmailLabels} from "./paymentEmail"

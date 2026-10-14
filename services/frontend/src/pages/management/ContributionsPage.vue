@@ -1,0 +1,549 @@
+<script lang="ts" setup>
+/* Money only, one contribution period at a time: the strip picks the period, the list says who
+   paid, and the selection sends payment emails or marks payments on the bulk task page. */
+import {computed, ref, watch} from "vue"
+import {useRoute, useRouter} from "vue-router"
+import FilterBar from "@/components/island/FilterBar.vue"
+import FilterPicker from "@/components/island/FilterPicker.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import FactList from "@/components/island/FactList.vue"
+import SearchBox from "@/components/island/SearchBox.vue"
+import SelectionBar from "@/components/island/SelectionBar.vue"
+import StateMark from "@/components/island/StateMark.vue"
+import ListHead from "@/components/management/ListHead.vue"
+import ManagementPage from "@/components/management/ManagementPage.vue"
+import ManagementRow from "@/components/management/ManagementRow.vue"
+import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
+import RowCheck from "@/components/management/RowCheck.vue"
+import {useUserSelection} from "@/composables/useUserSelection"
+import {
+  type ContributionPeriodResponse,
+  type PeriodMember,
+  type PeriodContributionsView,
+  contributionEmailLabels,
+  listPeriods,
+  readPeriodContributions,
+  recordPayment,
+  withdrawPayment,
+} from "@/domains/contribution"
+import {fold} from "@/domains/user"
+import {$handleNetworkError} from "@/plugins/handleNetworkError"
+import store from "@/plugins/store"
+import {feeTypeLabels} from "@/utils/feePreview"
+import {formatDay, formatMoment} from "@/utils/timestamps"
+
+defineOptions({name: "ContributionsPage"})
+
+const route = useRoute()
+const router = useRouter()
+
+const periods = ref<ContributionPeriodResponse[]>([])
+const view = ref<PeriodContributionsView | null>(null)
+const viewFailed = ref(false)
+const periodsFailed = ref(false)
+const search = ref("")
+const paid = ref<string | null>(null)
+// Nobody written to yet orders before anybody who was.
+const NEVER = "0"
+
+const paidOptions = [
+  {key: "no", label: "Not paid"},
+  {key: "yes", label: "Paid"},
+]
+
+/** The period in the address, else the newest that has begun, else the newest of all. */
+const period = computed<ContributionPeriodResponse | null>(() => {
+  const asked = Number(route.params.periodId)
+  const today = new Date().toISOString().slice(0, 10)
+  return periods.value.find((one) => one.id === asked)
+    ?? [...periods.value].reverse().find((one) => one.startDate <= today)
+    ?? periods.value.at(-1)
+    ?? null
+})
+
+const members = computed(() => view.value?.members ?? [])
+const shown = computed(() => {
+  const words = fold(search.value).split(" ").filter(Boolean)
+  return members.value.filter((one) =>
+    words.every((word) => fold(`${one.name} ${one.username}`).includes(word))
+    && (paid.value === null || one.paid === (paid.value === "yes")))
+})
+
+const paidCount = computed(() => members.value.filter((one) => one.paid).length)
+const incassoCount = computed(() => members.value.filter((one) => one.incasso).length)
+const filtered = computed(() => search.value !== "" || paid.value !== null)
+
+const {selectedIdsArray, isSelected, toggle, headerState, toggleHeader, selectMany, clear: clearSelection} = useUserSelection(computed(() => shown.value.map((one) => one.userId)))
+
+const euro = (amount: number) => `€ ${amount.toFixed(2)}`
+
+const COLUMNS: TableColumn<PeriodMember>[] = [
+  {key: "name", label: "Member", wrap: true, testid: "contribution-sort-name", sortBy: (one) => one.name},
+  {key: "fee", label: "Fee type", wrap: true, sortBy: (one) => (one.feeType && one.fee != null ? feeTypeLabels[one.feeType] : null)},
+  {key: "incasso", label: "Incasso", sortBy: (one) => one.incasso},
+  {key: "paid", label: "Paid", sortBy: (one) => one.paid},
+  {key: "lastEmail", label: "Last payment email", wrap: true, testid: "contribution-sort-last-email", newestFirst: true, sortBy: (one) => one.lastEmailAt ?? NEVER},
+]
+
+const RUN_COLUMNS: TableColumn<RunRow>[] = [
+  {key: "sent", label: "Sent", sortBy: (run) => run.sent},
+  {key: "what", label: "What", wrap: true, sortBy: (run) => run.what},
+  {key: "members", label: "Members", sortBy: (run) => run.members},
+]
+
+const today = new Date().toISOString().slice(0, 10)
+/** "2026-2027", or the one year a period starts and ends in. */
+const periodName = (one: ContributionPeriodResponse) => {
+  const [from, until] = [one.startDate.slice(0, 4), one.endDate.slice(0, 4)]
+  return from === until ? from : `${from}-${until}`
+}
+const isCurrent = (one: ContributionPeriodResponse) => one.startDate <= today && today <= one.endDate
+
+const facts = computed(() => (period.value
+  ? viewFailed.value ? [{label: "Still to pay", value: "Not read", sub: "The members could not be read", testid: "contribution-paid-count"}] : [
+      {
+        label: "Still to pay",
+        value: String(members.value.length - paidCount.value),
+        sub: `${paidCount.value} of ${members.value.length} paid`,
+        quiet: paidCount.value === members.value.length,
+        testid: "contribution-paid-count",
+      },
+      {label: "Full-year fee", value: euro(period.value.fullYearFee)},
+      {label: "Half-year fee", value: euro(period.value.halfYearFee)},
+      {label: "Alumni fee", value: euro(period.value.alumniFee)},
+      {label: "Half-year cutoff", value: formatDay(period.value.halfYearCutoffDate)},
+      {label: "On incasso", value: String(incassoCount.value), testid: "contribution-incasso-count"},
+    ]
+  : []))
+
+interface RunRow {
+  key: string
+  testid: string
+  sent: string
+  what: string
+  members: number
+}
+
+/** The payment emails that went out this period, newest first. */
+const runs = computed<RunRow[]>(() => (view.value?.runs ?? [])
+  .map((run): RunRow => ({
+    key: `${run.kind}-${run.sentAt}`,
+    testid: `contribution-run-${run.kind}-${run.sentAt}`,
+    sent: run.sentAt,
+    what: contributionEmailLabels[run.kind],
+    members: run.recipients,
+  }))
+  .sort((a, b) => b.sent.localeCompare(a.sent)))
+
+const clear = () => {
+  search.value = ""
+  paid.value = null
+}
+
+const loadPeriods = async () => {
+  try {
+    periods.value = [...await listPeriods()].sort((a, b) => a.startDate.localeCompare(b.startDate))
+  } catch (error) {
+    periodsFailed.value = true
+    $handleNetworkError(error)
+  }
+}
+
+// A slower answer for a period no longer open must not land on the one that is.
+const loadView = async () => {
+  const asked = period.value?.id ?? null
+  view.value = null
+  viewFailed.value = false
+  if (asked == null) return
+  const read = await readPeriodContributions(asked)
+  if (period.value?.id !== asked) return
+  view.value = read
+  viewFailed.value = read == null
+}
+
+/** Marking payments happens on the bulk task page, which comes back here once done. */
+const markPayments = (action: "paid" | "unpaid") => {
+  if (!period.value) return
+  void router.push({
+    path: `/management/users/bulk/${action}`,
+    query: {ids: selectedIdsArray.value.join(","), period: String(period.value.id), back: `/management/contributions/${period.value.id}`},
+  })
+}
+
+/** One person's payment is recorded or withdrawn on the spot; only a selection goes through the task page. */
+const marking = ref<number | null>(null)
+const markOne = async (one: PeriodMember) => {
+  if (!period.value || view.value?.periodId !== period.value.id || marking.value !== null) return
+  marking.value = one.userId
+  const answered = one.paid ? await withdrawPayment(one.userId, period.value.id) : await recordPayment(one.userId, period.value.id)
+  marking.value = null
+  if (!answered.ok) return void store.commit("setStatusSnackbarMessage", answered.reason)
+  store.commit("setStatusSnackbarMessage", one.paid ? `${one.name}'s payment is withdrawn.` : `${one.name} is marked as paid.`)
+  await loadView()
+}
+
+const feeName = (one: PeriodMember) => (one.feeType && one.fee != null ? feeTypeLabels[one.feeType] : "Owes nothing")
+const lastEmail = (one: PeriodMember) => (one.lastEmailAt && one.lastEmailKind ? formatMoment(one.lastEmailAt) : "None yet")
+
+watch(() => period.value?.id, () => {
+  clearSelection()
+  void loadView()
+})
+void loadPeriods()
+</script>
+
+<template>
+  <management-page
+    eyebrow="Money"
+    testid="contributions-page"
+    title="Contributions"
+  >
+    <template #lede>
+      Who owes what for a contribution period, who paid and who was asked. People and their accounts live in Users.
+    </template>
+    <template
+      v-if="period"
+      #actions
+    >
+      <cut-button
+        :href="`/management/contributions/periods/${period.id}`"
+        testid="contribution-period-edit"
+      >
+        Edit this period
+      </cut-button>
+    </template>
+
+    <nav
+      aria-label="Contribution periods"
+      class="money__strip"
+      data-testid="contribution-periods"
+    >
+      <router-link
+        v-for="one in periods"
+        :key="one.id"
+        :aria-current="period?.id === one.id ? 'page' : undefined"
+        class="money__tile"
+        :class="{'money__tile--on': period?.id === one.id}"
+        :data-testid="`contribution-period-${one.id}`"
+        :to="`/management/contributions/${one.id}`"
+      >
+        <span>
+          <span class="money__period">{{ periodName(one) }}</span>
+          <span class="money__dates">{{ formatDay(one.startDate) }} to {{ formatDay(one.endDate) }}</span>
+        </span>
+        <span
+          v-if="isCurrent(one)"
+          class="money__current"
+        >Current</span>
+      </router-link>
+      <router-link
+        class="money__tile money__tile--new"
+        data-testid="contribution-period-new"
+        to="/management/contributions/periods/new"
+      >
+        <svg
+          aria-hidden="true"
+          fill="none"
+          viewBox="0 0 12 12"
+        >
+          <path
+            d="M6 1v10M1 6h10"
+            stroke="currentColor"
+            stroke-width="1.6"
+          />
+        </svg>
+        New period
+      </router-link>
+    </nav>
+
+    <p
+      v-if="periodsFailed"
+      class="money__note"
+      data-testid="contributions-periods-failed"
+    >
+      The contribution periods could not be read. Try again in a moment.
+    </p>
+    <p
+      v-else-if="!period"
+      class="money__note"
+      data-testid="contributions-no-period"
+    >
+      There is no contribution period yet.
+    </p>
+
+    <template v-else>
+      <fact-list
+        class="money__facts"
+        :columns="6"
+        data-testid="contribution-period-facts"
+        :facts="facts"
+      />
+
+      <management-table
+        :columns="COLUMNS"
+        :row-key="(one) => one.userId"
+        :row-testid="(one) => `contribution-row-${one.userId}`"
+        :rows="shown"
+        :start-sort="{key: 'name'}"
+        testid="contribution-list"
+        :to="(one) => `/management/users/${one.userId}/contributions`"
+        :header-state="headerState"
+        :selected-count="selectedIdsArray.length"
+        :total="members.length"
+        @clear-selection="clearSelection"
+        @select-all="selectMany(members.map((one) => one.userId))"
+        @toggle-shown="toggleHeader"
+      >
+        <template #count>
+          <span><b>{{ shown.length }}</b> of {{ members.length }} members</span>
+        </template>
+        <template #filters>
+          <filter-bar
+            :active="filtered"
+            testid="contribution-filters"
+            @clear="clear"
+          >
+            <filter-picker
+              v-model="paid"
+              label="Paid"
+              :options="paidOptions"
+              testid="contribution-filter-paid"
+            />
+          </filter-bar>
+        </template>
+        <template #search>
+          <search-box
+            v-model="search"
+            label="Search for a user"
+            testid="contribution-search"
+          />
+        </template>
+        <template
+          v-if="view || viewFailed"
+          #empty
+        >
+          <span
+            v-if="viewFailed"
+            data-testid="contributions-failed"
+          >The members of this period could not be read. Try again in a moment.</span>
+          <span
+            v-else
+            data-testid="contributions-empty"
+          >Nobody matches.</span>
+        </template>
+        <template #check="{row}">
+          <row-check
+            :checked="isSelected(row.userId)"
+            :label="`Select ${row.name}`"
+            :testid="`contribution-checkbox-${row.userId}`"
+            @toggle="toggle(row.userId)"
+          />
+        </template>
+        <template #name="{row}">
+          <router-link
+            class="mg-name"
+            :to="`/management/users/${row.userId}/contributions`"
+          >
+            {{ row.name }}
+          </router-link>
+          <span class="mg-sub">{{ row.username }}</span>
+        </template>
+        <template #fee="{row}">
+          {{ feeName(row) }}
+          <span
+            v-if="row.fee != null && row.feeType"
+            class="mg-sub"
+          >{{ euro(row.fee) }}</span>
+        </template>
+        <template #incasso="{row}">
+          <span :class="{'mg-quiet': !row.incasso}">{{ row.incasso ? "On incasso" : "No" }}</span>
+        </template>
+        <template #paid="{row}">
+          <state-mark
+            :kind="row.paid ? 'in-sync' : 'extra'"
+            :testid="`contribution-paid-${row.userId}`"
+          >
+            {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+          </state-mark>
+        </template>
+        <template #lastEmail="{row}">
+          <span :data-testid="`contribution-last-email-${row.userId}`">
+            <span :class="{'mg-quiet': !row.lastEmailAt}">{{ lastEmail(row) }}</span>
+            <span
+              v-if="row.lastEmailAt && row.lastEmailKind"
+              class="mg-sub"
+            >{{ contributionEmailLabels[row.lastEmailKind] }}</span>
+          </span>
+        </template>
+        <template #acts="{row}">
+          <mini-button
+            :disabled="marking !== null"
+            :testid="`contribution-mark-${row.userId}`"
+            @click="markOne(row)"
+          >
+            {{ row.paid ? "Withdraw" : "Mark paid" }}
+          </mini-button>
+        </template>
+        <template #phone="{row}">
+          <management-row
+            :meta="`${feeName(row)}${row.incasso ? ' · incasso' : ''}`"
+            :name="row.name"
+            :testid="`contribution-row-${row.userId}`"
+            :to="`/management/users/${row.userId}/contributions`"
+          >
+            <template #check>
+              <row-check
+                :checked="isSelected(row.userId)"
+                :label="`Select ${row.name}`"
+                :testid="`contribution-checkbox-${row.userId}`"
+                @toggle="toggle(row.userId)"
+              />
+            </template>
+            <state-mark
+              :kind="row.paid ? 'in-sync' : 'extra'"
+              :testid="`contribution-paid-${row.userId}`"
+            >
+              {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+            </state-mark>
+          </management-row>
+        </template>
+      </management-table>
+
+      <selection-bar
+        always
+        :count="selectedIdsArray.length"
+        testid="contribution-selection"
+        @clear="clearSelection"
+      >
+        <cut-button
+          small
+          testid="bulk-action-mark-paid"
+          tone="solid"
+          @click="markPayments('paid')"
+        >
+          Mark paid
+        </cut-button>
+        <cut-button
+          small
+          testid="bulk-action-mark-unpaid"
+          @click="markPayments('unpaid')"
+        >
+          Mark unpaid
+        </cut-button>
+      </selection-bar>
+
+      <list-head title="Payment emails this period" />
+      <p
+        v-if="runs.length === 0"
+        class="money__note"
+        data-testid="contribution-runs-empty"
+      >
+        No payment emails have gone out for this period yet.
+      </p>
+      <management-table
+        v-else
+        :columns="RUN_COLUMNS"
+        :row-key="(run) => run.key"
+        :row-testid="(run) => run.testid"
+        search-label="Search runs"
+        :search-text="(run) => run.what"
+        :rows="runs"
+        testid="contribution-runs"
+      >
+        <template #sent="{row}">
+          {{ formatDay(row.sent) }}
+        </template>
+        <template #what="{row}">
+          {{ row.what }}
+        </template>
+        <template #members="{row}">
+          {{ row.members }}
+        </template>
+        <template #acts>
+          <mini-button to="/management/mail/sent">
+            See the emails
+          </mini-button>
+        </template>
+      </management-table>
+    </template>
+  </management-page>
+</template>
+
+<style scoped>
+.money__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 1rem;
+}
+
+.money__tile {
+  position: relative;
+  display: flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.9rem;
+  padding: 0.7rem 1rem;
+  color: var(--color-ash);
+  background-color: var(--band-ground);
+}
+
+.money__tile:hover {
+  color: var(--color-chalk);
+}
+
+.money__tile--on {
+  color: var(--color-chalk);
+  box-shadow: inset 0 -3px 0 var(--color-eyebrow);
+}
+
+.money__period {
+  display: block;
+  font-weight: 600;
+}
+
+.money__dates {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--color-ash);
+}
+
+.money__current {
+  padding: 0.26rem 0.55rem;
+  border: 1px solid currentColor;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-eyebrow);
+}
+
+.money__tile--new {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--color-brand-ink);
+}
+
+.money__tile--new svg {
+  width: 12px;
+  height: 12px;
+}
+
+.money__facts {
+  padding: 1.4rem 0 0.4rem;
+}
+
+
+
+.money__note {
+  margin-top: 1rem;
+  color: var(--color-ash);
+}
+</style>

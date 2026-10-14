@@ -1,0 +1,263 @@
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import type {VueWrapper} from "@vue/test-utils"
+import ContributionsPage from "@/pages/management/ContributionsPage.vue"
+import {BulkFeeType, ContributionEmailKind} from "@/services/api"
+import {aContributionPeriod} from "../../helpers/apiFixtures"
+import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
+
+const api = vi.hoisted(() => ({
+  findContributionPeriods: vi.fn(),
+  findPeriodContributions: vi.fn(),
+  createContribution: vi.fn(),
+  deleteContribution: vi.fn(),
+}))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {}}}))
+const {mockRoute, mockPush, mockHandleNetworkError} = vi.hoisted(() => ({
+  mockRoute: {params: {} as Record<string, string>},
+  mockPush: vi.fn(),
+  mockHandleNetworkError: vi.fn(),
+}))
+
+vi.mock("vue-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("vue-router")>()),
+  useRoute: () => mockRoute,
+  useRouter: () => ({push: mockPush}),
+}))
+
+vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: mockHandleNetworkError}))
+
+vi.mock("@/plugins/store", () => ({default: mockStore}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  ...api,
+}))
+
+const member = (userId: number, name: string, fields: Record<string, unknown> = {}) => ({
+  userId, name, username: name.toLowerCase(), feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, incasso: false,
+  paid: false, paidAt: null, lastEmailAt: null, lastEmailKind: null, ...fields,
+})
+
+describe("the Contributions page", () => {
+  const wrappers: VueWrapper[] = []
+  const mount = async (periodId?: string) => {
+    mockRoute.params = periodId ? {periodId} : {}
+    const wrapper = mountInApp(ContributionsPage)
+    wrappers.push(wrapper)
+    await settle()
+    return wrapper
+  }
+
+  const rowIds = (wrapper: VueWrapper) =>
+    wrapper.findAll('[data-testid^="contribution-row-"]').map((row) => Number(row.attributes("data-testid")!.split("-").at(-1)))
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: [
+      aContributionPeriod({id: 2, startDate: "2025-09-01", endDate: "2026-08-31", fullYearFee: 30, halfYearFee: 15, alumniFee: 5}),
+      aContributionPeriod({id: 1, startDate: "2024-09-01", endDate: "2025-08-31"}),
+      aContributionPeriod({id: 3, startDate: "2099-09-01", endDate: "2100-08-31"}),
+    ]})
+    api.findPeriodContributions.mockResolvedValue({status: 200, data: {
+      periodId: 2,
+      members: [
+        member(1, "Bea", {paid: true, paidAt: "2025-10-01T10:00:00Z", incasso: true}),
+        member(2, "Ann", {lastEmailAt: "2025-09-20T10:00:00Z", lastEmailKind: ContributionEmailKind.REMINDER}),
+        member(3, "Hon", {feeType: null, fee: null}),
+      ],
+      runs: [
+        {kind: ContributionEmailKind.REMINDER, sentAt: "2025-09-20T10:00:00Z", recipients: 1},
+        {kind: ContributionEmailKind.INCASSO_NOTIFICATION, sentAt: "2025-10-20T10:00:00Z", recipients: 2},
+      ],
+    }})
+  })
+
+  afterEach(() => {
+    unmountAll(wrappers, "ContributionsPage")
+  })
+
+  it("lays the periods out oldest first, marks the one that has begun, and shows its money", async () => {
+    const wrapper = await mount()
+
+    const tiles = wrapper.findAll('[data-testid="contribution-periods"] a').map((one) => one.attributes("data-testid"))
+    expect(tiles).toEqual(["contribution-period-1", "contribution-period-2", "contribution-period-3", "contribution-period-new"])
+    expect(wrapper.get('[data-testid="contribution-period-2"]').attributes("aria-current")).toBe("page")
+    expect(api.findPeriodContributions).toHaveBeenCalledWith({path: {periodId: 2}})
+    // Still to pay leads, with how many paid under it.
+    expect(wrapper.get('[data-testid="contribution-paid-count"]').text()).toBe("Still to pay21 of 3 paid")
+    expect(wrapper.findAll(".facts__label")[0]!.text()).toBe("Still to pay")
+    expect(wrapper.get('[data-testid="contribution-incasso-count"]').text()).toContain("1")
+    expect(wrapper.get('[data-testid="contribution-last-email-3"]').text()).toBe("None yet")
+    expect(wrapper.get('[data-testid="contribution-last-email-2"]').text().toLowerCase()).toContain("contribution reminder")
+    expect(wrapper.get('[data-testid="contribution-row-3"]').text()).toContain("Owes nothing")
+    expect(wrapper.findAll('[data-testid^="contribution-run-"]').map((row) => row.attributes("data-testid"))).toEqual([
+      "contribution-run-INCASSO_NOTIFICATION-2025-10-20T10:00:00Z",
+      "contribution-run-REMINDER-2025-09-20T10:00:00Z",
+    ])
+    expect(wrapper.get('[data-testid="contribution-runs"] a').attributes("to")).toBe("/management/mail/sent")
+  })
+
+  it("opens the period its address names", async () => {
+    await mount("1")
+
+    expect(api.findPeriodContributions).toHaveBeenCalledWith({path: {periodId: 1}})
+  })
+
+  it("sorts the last payment email as a date, and narrows by search and paid", async () => {
+    const wrapper = await mount()
+
+    expect(rowIds(wrapper)).toEqual([2, 1, 3])
+    await wrapper.get('[data-testid="contribution-sort-last-email"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)[0]).toBe(2)
+    await wrapper.get('[data-testid="contribution-sort-last-email"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper).at(-1)).toBe(2)
+    await wrapper.get('[data-testid="contribution-sort-name"]').trigger("click")
+    await settle()
+
+    await wrapper.findComponent({name: "FilterPicker"}).vm.$emit("update:modelValue", "yes")
+    await settle()
+    expect(rowIds(wrapper)).toEqual([1])
+    await wrapper.findComponent({name: "FilterPicker"}).vm.$emit("update:modelValue", null)
+    await wrapper.get('[data-testid="contribution-search"]').setValue("ann")
+    expect(rowIds(wrapper)).toEqual([2])
+    await wrapper.get('[data-testid="contribution-filters-clear"]').trigger("click")
+    await settle()
+    expect(rowIds(wrapper)).toHaveLength(3)
+    expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
+  })
+
+  it("marks payments for the people selected on the task page", async () => {
+    const wrapper = await mount()
+
+    await wrapper.get('[data-testid="contribution-checkbox-1"]').trigger("change")
+    await settle()
+    await wrapper.get('[data-testid="bulk-action-mark-paid"]').trigger("click")
+    expect(mockPush).toHaveBeenCalledWith({
+      path: "/management/users/bulk/paid",
+      query: {ids: "1", period: "2", back: "/management/contributions/2"},
+    })
+    await wrapper.get('[data-testid="bulk-action-mark-unpaid"]').trigger("click")
+    expect(mockPush).toHaveBeenLastCalledWith(expect.objectContaining({path: "/management/users/bulk/unpaid"}))
+  })
+
+  it("selects every member shown from the head of the list, then every member, and lets go", async () => {
+    const wrapper = await mount()
+    const selection = () => wrapper.find('[data-testid="contribution-selection"]')
+
+    await wrapper.get('[data-testid="contribution-search"]').setValue("ann")
+    await wrapper.get('[data-testid="contribution-list-select-shown"]').trigger("change")
+    await settle()
+    expect(selection().text()).toContain("1 selected")
+    await wrapper.get('[data-testid="contribution-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().text()).toContain("3 selected")
+    await wrapper.get('[data-testid="contribution-list-select-all"]').trigger("click")
+    await settle()
+    expect(selection().text()).toContain("0 selected")
+  })
+
+  it("records one member's payment from their own row without a task page, or withdraws it where they paid", async () => {
+    api.createContribution.mockResolvedValue({status: 201, data: {}})
+    api.deleteContribution.mockResolvedValueOnce({status: 204, data: undefined}).mockResolvedValue({status: 409, error: {detail: "Already withdrawn."}})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="contribution-mark-1"]').text()).toBe("Withdraw")
+    await wrapper.get('[data-testid="contribution-mark-1"]').trigger("click")
+    await settle()
+    expect(api.deleteContribution).toHaveBeenCalledWith({path: {userId: 1, contributionPeriodId: 2}})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("payment is withdrawn"))
+    expect(api.findPeriodContributions).toHaveBeenCalledTimes(2)
+
+    await wrapper.get('[data-testid="contribution-mark-2"]').trigger("click")
+    await settle()
+    expect(api.createContribution).toHaveBeenCalledWith({body: {userId: 2, contributionPeriodId: 2}})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("is marked as paid"))
+    expect(mockPush).not.toHaveBeenCalledWith(expect.objectContaining({path: "/management/users/bulk/paid"}))
+
+    await wrapper.get('[data-testid="contribution-mark-1"]').trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenLastCalledWith("setStatusSnackbarMessage", "Already withdrawn.")
+  })
+
+  it("draws each member as a row on a phone, and names a period inside one year by that year", async () => {
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: [aContributionPeriod({id: 2, startDate: "2025-01-01", endDate: "2025-12-31"})]})
+    vi.stubGlobal("matchMedia", vi.fn(() => ({matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn()})))
+    const wrapper = await mount()
+    vi.unstubAllGlobals()
+
+    expect(wrapper.get('[data-testid="contribution-period-2"]').text()).toContain("20251 Jan 2025 to 31 Dec 2025")
+    expect(wrapper.findAllComponents({name: "ManagementRow"}).length).toBeGreaterThan(0)
+    await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
+    await settle()
+    expect(wrapper.get('[data-testid="contribution-selection"]').text()).toContain("1 selected")
+  })
+
+  it("sends New period and Edit period to the period's own page", async () => {
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="contribution-period-new"]').attributes("to")).toBe("/management/contributions/periods/new")
+    expect(wrapper.get('[data-testid="contribution-period-edit"]').attributes("to")).toBe("/management/contributions/periods/2")
+  })
+
+  it("says so when there is no period, when nobody matches, and when the periods could not be read", async () => {
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: []})
+    expect((await mount()).find('[data-testid="contributions-no-period"]').exists()).toBe(true)
+
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: [aContributionPeriod({id: 2, startDate: "2025-09-01"})]})
+    api.findPeriodContributions.mockResolvedValue({status: 200, data: {periodId: 2, members: [], runs: []}})
+    const nobody = await mount()
+    expect(nobody.find('[data-testid="contributions-empty"]').exists()).toBe(true)
+    expect(nobody.find('[data-testid="contribution-runs-empty"]').exists()).toBe(true)
+
+    api.findContributionPeriods.mockRejectedValue(new Error("offline"))
+    const unread = await mount()
+    expect(mockHandleNetworkError).toHaveBeenCalled()
+    expect(unread.get('[data-testid="contributions-periods-failed"]').text()).toContain("could not be read")
+    expect(unread.find('[data-testid="contributions-no-period"]').exists()).toBe(false)
+  })
+
+  it("keeps the members of the period that is open when an older read answers late", async () => {
+    const {reactive, nextTick} = await import("vue")
+    const params = reactive<Record<string, string>>({periodId: "1"})
+    mockRoute.params = params
+    api.findContributionPeriods.mockResolvedValue({status: 200, data: [
+      aContributionPeriod({id: 1, startDate: "2024-09-01", endDate: "2025-08-31"}),
+      aContributionPeriod({id: 2, startDate: "2025-09-01", endDate: "2026-08-31"}),
+    ]})
+    let answerFirst: (value: unknown) => void = () => {}
+    api.findPeriodContributions.mockImplementation(({path}: {path: {periodId: number}}) => (path.periodId === 1
+      ? new Promise((resolve) => { answerFirst = resolve })
+      : Promise.resolve({status: 200, data: {periodId: 2, members: [member(5, "Second")], runs: []}})))
+    const wrapper = mountInApp(ContributionsPage)
+    wrappers.push(wrapper)
+    await settle()
+
+    params.periodId = "2"
+    await nextTick()
+    await settle()
+    answerFirst({status: 200, data: {periodId: 1, members: [member(4, "First")], runs: []}})
+    await settle()
+
+    expect(rowIds(wrapper)).toEqual([5])
+  })
+  it("routes a period's address to its own page, a new one and the period list", async () => {
+    const router = (await import("@/plugins/router")).default
+    for (const [path, name] of [["/management/contributions/periods/new", "contributionPeriodNew"], ["/management/contributions/periods/2", "contributionPeriod"], ["/management/contributions/2", "contributions"]] as const) {
+      const route = router.resolve(path)
+      expect(route.name).toBe(name)
+      const load = route.matched.at(-1)!.components!.default as () => Promise<{default: unknown}>
+      expect((await load()).default).toBeTruthy()
+    }
+  })
+
+  it("says the members could not be read, rather than that nobody owes anything", async () => {
+    api.findPeriodContributions.mockResolvedValue({status: 500, error: {detail: "Broken"}})
+    const wrapper = await mount()
+
+    expect(wrapper.get('[data-testid="contributions-failed"]').text()).toContain("could not be read")
+    expect(wrapper.get('[data-testid="contribution-paid-count"]').text()).toContain("Not read")
+    expect(wrapper.find('[data-testid="contributions-empty"]').exists()).toBe(false)
+  })
+})

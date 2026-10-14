@@ -20,6 +20,7 @@ describe("a pending membership on the account page", () => {
     }})
     const wrapper = mount(PendingMembership)
     await vi.waitFor(() => expect(wrapper.get('[data-testid="pending-membership"]').text()).toContain("€ 30.00, the full-year fee for 2026-2027"))
+    expect(wrapper.getComponent({name: "CutButton"}).props("href")).toBe("/account/payment-details")
   })
 
   it("says it is pending without a fee before any period exists, and nothing for a member", async () => {

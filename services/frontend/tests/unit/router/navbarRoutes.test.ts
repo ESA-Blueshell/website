@@ -29,6 +29,7 @@ const navbarPaths = [
   "/account",
   "/account/security",
   "/account/games",
+  "/account/payment-details",
   "/account/help",
   "/recovery/manage",
   "/user-manager",
@@ -48,14 +49,18 @@ describe("Navbar route targets", () => {
   }, 20_000)
 })
 
-describe("the Help page", () => {
-  it("loads, for somebody signed in only", async () => {
-    const route = router.getRoutes().find(one => one.name === "accountHelp")!
+describe("the Help and Payment details pages", () => {
+  it.each([["accountHelp", "/account/help"], ["accountPaymentDetails", "/account/payment-details"]])(
+    "%s loads, for somebody signed in only",
+    async (name, path) => {
+      const route = router.getRoutes().find(one => one.name === name)!
 
-    expect(route.path).toBe("/account/help")
-    expect(route.meta.requiresAuth).toBe(true)
-    await expect((route.components?.default as () => Promise<unknown>)()).resolves.toBeDefined()
-  }, 20_000)
+      expect(route.path).toBe(path)
+      expect(route.meta.requiresAuth).toBe(true)
+      await expect((route.components?.default as () => Promise<unknown>)()).resolves.toBeDefined()
+    },
+    20_000,
+  )
 })
 
 describe("the account security pages", () => {

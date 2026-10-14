@@ -33,6 +33,8 @@ export interface NavReader {
   admin: boolean
   /** The address the account menu edits, where the reader has one. */
   addressId?: number | string | null
+  /** Whether the reader holds or held a membership, pending ones included. */
+  held?: boolean
 }
 
 const ASSOCIATION: NavEntry[] = [
@@ -137,6 +139,7 @@ export const accountFor = (reader: NavReader): NavEntry[] => [
   {label: "Esports Teams", to: "/account/games"},
   // Always offered: without an address on file, the page is where the first one is written.
   {label: "Address", to: reader.addressId == null ? "/account/addresses" : `/account/addresses/${reader.addressId}`},
+  ...(reader.held ? [{label: "Payment details", to: "/account/payment-details"}] : []),
   {label: "Help", to: "/account/help"},
 ]
 

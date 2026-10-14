@@ -39,6 +39,7 @@ import type {
   LinkBoardMemberRequest,
   LinkRosterEntryRequest,
   FirstContribution,
+  OwnContributions,
   MembershipResponse,
   PublishLineupRequest,
   Role,
@@ -75,6 +76,8 @@ type Fixtures = {
   currentContributionPeriod?: Wire<ContributionPeriodResponse> | null
   /** What the signed-in reader pays to make a pending membership active; none by default. */
   firstContribution?: Wire<FirstContribution> | null
+  /** The signed-in reader's own contributions; none by default, which hides Payment details. */
+  ownContributions?: Wire<OwnContributions>
   /** The association's own numbers, or null where the endpoint refuses to say. */
   associationStatistics?: Wire<AssociationStatisticsResponse> | null
   contributions?: Wire<ContributionResponse>[]
@@ -882,6 +885,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/users/me/trusted-browsers") {
       return answer(route, "trustedBrowsers", [])
+    }
+    if (method === "GET" && path === "/users/me/contributions") {
+      return answer(route, "findOwnContributions", fixtures.ownContributions ?? {held: false, paysByIncasso: false, periods: []})
+    }
+    if (method === "GET" && path === "/contributions/bank-account") {
+      return answer(route, "findBankAccount", {iban: "NL19 INGB 0008 0964 62", bic: "INGBNL2A", accountName: "Blueshell E-Sports Vereniging"})
     }
     if (method === "GET" && path === "/users/me/first-contribution") {
       return fixtures.firstContribution ? answer(route, "findOwnFirstContribution", fixtures.firstContribution) : route.fulfill({status: 204, body: ""})

@@ -35,6 +35,7 @@ import type {
   InboundReconcileApplyResponse as ApiInboundReconcileApplyResponse,
   InboundReconcilePreview as ApiInboundReconcilePreview,
   TargetDescriptor as ApiTargetDescriptor,
+  SummaryTarget,
 } from "@/services/api"
 import {TargetKind, CohortCategory, CohortType, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
@@ -47,6 +48,7 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
 export {TargetKind, CohortCategory, CohortType, TargetSystem}
+export type {SummaryTarget}
 
 export type ExternalUserConflict = {
   existingUserId: number
@@ -429,6 +431,9 @@ export type CohortSummary = {
   type: CohortType
   memberCount: number
   mappingCount: number
+  /** The definition in code that fills it, such as `COMMITTEE_MEMBERS:7`. */
+  definitionKey: string | null
+  targets: SummaryTarget[]
 }
 
 /** One target a picker offers, named by where it lives as much as by what it is called. */
@@ -497,6 +502,8 @@ function toCohortSummary(raw: ApiCohortSummary): CohortSummary {
     type: raw.type,
     memberCount: raw.memberCount,
     mappingCount: raw.mappingCount,
+    definitionKey: raw.definitionKey ?? null,
+    targets: raw.targets ?? [],
   }
 }
 
@@ -504,6 +511,12 @@ function toCohortSummary(raw: ApiCohortSummary): CohortSummary {
 export async function fetchCohorts(): Promise<CohortSummary[]> {
   const res = await findCohorts()
   return (res.data ?? []).map(toCohortSummary)
+}
+
+/** Every cohort, or nothing where they could not be read, as for a board member who is no admin. */
+export async function readCohorts(): Promise<CohortSummary[] | null> {
+  const res = await findCohorts()
+  return res.error || res.data == null ? null : res.data.map(toCohortSummary)
 }
 
 /** One cohort, or nothing where the api named none. */

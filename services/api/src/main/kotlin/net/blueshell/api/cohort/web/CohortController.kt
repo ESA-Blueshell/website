@@ -15,6 +15,7 @@ import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.SummaryTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
 import net.blueshell.api.cohort.persistence.CohortCategory
@@ -139,6 +140,13 @@ data class CohortSummaryResponse(
     val label: String,
     val memberCount: Int,
     val mappingCount: Int,
+    @param:Schema(description = "Which definition in code decides who belongs here")
+    val definitionKey: String?,
+    @param:Schema(
+        description = "The targets it has, one per system, and whether each is made there yet",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val targets: List<SummaryTarget>,
 )
 
 @Schema(name = "CohortDetail")
@@ -242,6 +250,8 @@ private fun CohortSummary.toResponse(): CohortSummaryResponse =
         label = cohort.label,
         memberCount = memberCount,
         mappingCount = mappingCount,
+        definitionKey = cohort.definitionKey,
+        targets = targets,
     )
 
 private fun CohortDetail.toResponse(): CohortDetailResponse =

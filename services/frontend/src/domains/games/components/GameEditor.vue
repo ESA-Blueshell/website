@@ -54,6 +54,8 @@ const props = defineProps<{
   /** The season a new game is entered in by the same save, where it was added from one. */
   enterIn?: number | null
   back: string
+  /** What the way back is called where it leads elsewhere than the area, such as Management's list. */
+  backLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -198,7 +200,7 @@ const removed = async () => {
   await refreshSharedLists()
 }
 
-const backLabel = computed(() => (props.area === "casual" ? "Casual" : "Esports"))
+const backLabel = computed(() => props.backLabel ?? (props.area === "casual" ? "Casual" : "Esports"))
 const toCount = (raw: string | null) => {
   sortIndex.value = raw ? Number(raw) : null
 }

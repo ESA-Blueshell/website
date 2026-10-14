@@ -10,6 +10,9 @@ import org.springframework.stereotype.Repository
  */
 @Repository
 interface TargetRepository : BaseRepository<Target, Long> {
+    /** Every target that belongs to a cohort. */
+    fun findAllByCohortIdIsNotNull(): List<Target>
+
     fun findAllBySystem(system: String): List<Target>
 
     fun findAllBySystemAndKind(

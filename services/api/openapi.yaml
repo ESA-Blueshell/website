@@ -1207,6 +1207,11 @@ components:
       properties:
         category:
           $ref: '#/components/schemas/CohortCategory'
+        definitionKey:
+          description: Which definition in code decides who belongs here
+          type:
+          - string
+          - 'null'
         id:
           format: int64
           type: integer
@@ -1218,6 +1223,11 @@ components:
         memberCount:
           format: int32
           type: integer
+        targets:
+          description: The targets it has, one per system, and whether each is made there yet
+          items:
+            $ref: '#/components/schemas/SummaryTarget'
+          type: array
         type:
           $ref: '#/components/schemas/CohortType'
       required:
@@ -5845,6 +5855,19 @@ components:
           type:
           - string
           - 'null'
+      type: object
+    SummaryTarget:
+      properties:
+        label:
+          type: string
+        made:
+          type: boolean
+        system:
+          $ref: '#/components/schemas/TargetSystem'
+      required:
+      - label
+      - made
+      - system
       type: object
     SurveyRequest:
       properties:

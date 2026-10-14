@@ -33,7 +33,16 @@ const GROUPS: ManagementGroup[] = [
       {label: "Account recovery", to: "/recovery/manage"},
     ],
   },
-  {label: "Content", entries: [{label: "Events to approve", to: "/management/events"}]},
+  {
+    label: "Content",
+    entries: [
+      {label: "Events to approve", to: "/management/events"},
+      {label: "Committees", to: "/management/committees"},
+      {label: "Board", to: "/management/board"},
+      {label: "Games", to: "/management/games"},
+      {label: "Esports", to: "/management/esports"},
+    ],
+  },
   {label: "Mail", entries: [{label: "Sent", to: "/management/mail/sent"}, {label: "Inbox", to: "/management/mail/inbox"}, {label: "Addresses", to: "/management/mail/addresses"}]},
   {label: "Platforms", adminOnly: true, entries: [{label: "Cohorts", to: "/management/cohorts", adminOnly: true}]},
   {

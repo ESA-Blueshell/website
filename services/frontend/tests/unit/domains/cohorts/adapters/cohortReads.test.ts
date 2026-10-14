@@ -116,6 +116,8 @@ describe("a cohort arrives with its absences already decided", () => {
         type: CohortType.NEWSLETTER_SUBSCRIBERS,
         memberCount: 12,
         mappingCount: 1,
+        definitionKey: "NEWSLETTER_SUBSCRIBERS",
+        targets: [{system: TargetSystem.BREVO, label: "Newsletter", made: true}],
       }]))
 
     await expect(fetchCohorts()).resolves.toEqual([{
@@ -125,6 +127,8 @@ describe("a cohort arrives with its absences already decided", () => {
       type: CohortType.NEWSLETTER_SUBSCRIBERS,
       memberCount: 12,
       mappingCount: 1,
+      definitionKey: "NEWSLETTER_SUBSCRIBERS",
+      targets: [{system: TargetSystem.BREVO, label: "Newsletter", made: true}],
     }])
   })
 })

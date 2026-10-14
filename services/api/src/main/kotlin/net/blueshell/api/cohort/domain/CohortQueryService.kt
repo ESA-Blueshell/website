@@ -39,8 +39,8 @@ class CohortQueryService(
         val allCohorts = cohorts.findAll()
         if (allCohorts.isEmpty()) return emptyList()
 
-        // Batch-loading counts + cohort labels would be nicer; for ~50
-        // cohorts the per-row queries are still cheap and readable.
+        // One read for every cohort's targets; the counts stay a query per cohort, cheap for ~50.
+        val targetsByCohort = targets.findAllByCohortIdIsNotNull().groupBy { it.cohortId }
         return allCohorts
             .map { cohort ->
                 val cohortId = cohort.id!!
@@ -48,6 +48,12 @@ class CohortQueryService(
                     cohort = cohort,
                     memberCount = targetMembers.countByCohortIdAndUserIdIsNotNull(cohortId).toInt(),
                     mappingCount = targets.countByCohortId(cohortId).toInt(),
+                    targets =
+                        targetsByCohort[cohortId].orEmpty().mapNotNull { target ->
+                            targetSystemOrNull(
+                                target.system,
+                            )?.let { SummaryTarget(it, target.label, targetExternalIds.find(target) != null) }
+                        },
                 )
             }.sortedWith(
                 compareBy({ it.cohort.type.category() }, { it.cohort.type.name }, { it.cohort.label.lowercase() }),
@@ -202,11 +208,19 @@ data class TargetSummary(
     val memberCount: Int,
 )
 
+/** A target a cohort has on a system, and whether it is made there yet. */
+data class SummaryTarget(
+    val system: TargetSystem,
+    val label: String,
+    val made: Boolean,
+)
+
 /** Read-model projection for the dashboard's top-level list. */
 data class CohortSummary(
     val cohort: Cohort,
     val memberCount: Int,
     val mappingCount: Int,
+    val targets: List<SummaryTarget>,
 ) {
     val category: CohortCategory get() = cohort.type.category()
 }

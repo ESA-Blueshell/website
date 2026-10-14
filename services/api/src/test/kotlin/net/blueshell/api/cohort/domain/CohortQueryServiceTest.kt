@@ -55,8 +55,41 @@ class CohortQueryServiceTest {
             strategies,
         )
 
+    init {
+        every { targets.findAll() } returns emptyList()
+        every { targets.findAllByCohortIdIsNotNull() } returns emptyList()
+    }
+
     @Test
-    fun `summaries returns memberCount and mappingCount from count methods not findAll`() {
+    fun `summaries name each cohort's targets, made or not, read in one query`() {
+        val cohort = cohort(3L).apply { definitionKey = "COMMITTEE_MEMBERS:3" }
+        val list = target(30L).apply { cohortId = 3L }
+        val calendar =
+            Target(system = "GOOGLE_CALENDAR", kind = TargetKind.LIST, label = "Sitecie").apply {
+                id = 31L
+                cohortId = 3L
+            }
+        val gone =
+            Target(system = "GONE", kind = TargetKind.LIST, label = "Old").apply {
+                id = 32L
+                cohortId = 3L
+            }
+        every { cohorts.findAll() } returns listOf(cohort)
+        every { targets.findAllByCohortIdIsNotNull() } returns listOf(list, calendar, gone)
+        every { targetMembers.countByCohortIdAndUserIdIsNotNull(3L) } returns 2L
+        every { targets.countByCohortId(3L) } returns 3L
+        every { targetExternalIds.find(list) } returns "7"
+        every { targetExternalIds.find(calendar) } returns null
+
+        assertThat(service.summaries().single().targets).containsExactly(
+            SummaryTarget(TargetSystem.BREVO, "Cohort 30", true),
+            SummaryTarget(TargetSystem.GOOGLE_CALENDAR, "Sitecie", false),
+        )
+        verify(exactly = 1) { targets.findAllByCohortIdIsNotNull() }
+    }
+
+    @Test
+    fun `summaries counts members and mappings with count queries`() {
         val cohort = cohort(1L)
         every { cohorts.findAll() } returns listOf(cohort)
         every { targetMembers.countByCohortIdAndUserIdIsNotNull(1L) } returns 4L

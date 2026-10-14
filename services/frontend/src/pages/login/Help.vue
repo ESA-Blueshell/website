@@ -67,13 +67,21 @@ watch([term, role], async () => {
   if (start < 0) top.value?.scrollIntoView({block: "start"})
 })
 
-/** The topics opened by hand. A search or a role opens every answer, since they are few and wanted. */
+/**
+ * A search or a role opens every answer, since they are few and wanted, so while narrowed a press
+ * closes one. The closed ones start over with each new search.
+ */
 const opened = ref<Set<string>>(new Set())
-const isOpen = (id: string): boolean => narrowed.value || opened.value.has(id)
+const closed = ref<Set<string>>(new Set())
+watch([term, role], () => {
+  closed.value = new Set()
+})
+const isOpen = (id: string): boolean => narrowed.value ? !closed.value.has(id) : opened.value.has(id)
 function toggle(id: string): void {
-  const next = new Set(opened.value)
+  const flipped = narrowed.value ? closed : opened
+  const next = new Set(flipped.value)
   if (!next.delete(id)) next.add(id)
-  opened.value = next
+  flipped.value = next
 }
 
 /** A paragraph that opens by naming what it is about, "Member: ...", has that name set apart. */

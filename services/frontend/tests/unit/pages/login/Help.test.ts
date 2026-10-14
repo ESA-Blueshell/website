@@ -87,6 +87,23 @@ describe("the Help page", () => {
     expect(shut(text)).toBe(true)
   })
 
+  it("shuts an answer a search opened when its row is pressed, until the next search", async () => {
+    const wrapper = signedInAs({})
+    const search = wrapper.get("[data-testid=help-search] input")
+    await search.setValue("backup codes")
+    const row = wrapper.get("[data-testid=help-open-security-backup-codes]")
+
+    await row.trigger("click")
+    expect(row.attributes("aria-expanded")).toBe("false")
+    expect(shut(wrapper.get("#help-security-backup-codes-text"))).toBe(true)
+
+    await search.setValue("backup")
+    expect(wrapper.get("[data-testid=help-open-security-backup-codes]").attributes("aria-expanded")).toBe("true")
+
+    await search.setValue("")
+    expect(wrapper.get("[data-testid=help-open-security-backup-codes]").attributes("aria-expanded")).toBe("false")
+  })
+
   it("sets a role's name apart where a paragraph opens with it", () => {
     const roles = signedInAs({}).get("[data-testid=help-topic-roles-what]")
 

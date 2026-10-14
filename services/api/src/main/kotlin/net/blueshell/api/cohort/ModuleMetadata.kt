@@ -52,7 +52,7 @@ import org.springframework.modulith.PackageInfo
         // engine reacts to the user lifecycle events.
         "user :: api",
         // DEBT. The cohort definitions and the controller response mappers read User
-        // rows. No cohort entity holds an FK into users — cohort_member stores the
+        // rows. No cohort entity holds an FK into users — target_member stores the
         // id. This wants a member projection published through user :: api.
         "user :: entities",
     ],

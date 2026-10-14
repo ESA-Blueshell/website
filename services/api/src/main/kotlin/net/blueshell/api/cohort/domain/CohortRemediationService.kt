@@ -35,7 +35,7 @@ import java.time.LocalDateTime
  * vanished members, records strangers and the run's drift, and on an
  * enforced target queues the strangers' removal.
  *
- * All `cohort_member` writes go through [CohortLedger]; this service only
+ * All `target_member` writes go through [CohortLedger]; this service only
  * decides which transition applies and enqueues follow-up jobs.
  */
 @Service

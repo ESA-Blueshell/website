@@ -128,9 +128,14 @@ describe("the Contributions page", () => {
     expect(await sortByEveryHead(wrapper)).toBeGreaterThanOrEqual(5)
   })
 
-  it("marks payments for the people selected on the task page", async () => {
+  it("sends reminders for the people selected, and marks payments on the task page", async () => {
     const wrapper = await mount()
 
+    await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
+    await settle()
+    await wrapper.get('[data-testid="bulk-action-send-payment-reminders"]').trigger("click")
+    expect(mockPush).toHaveBeenCalledWith({path: "/management/contributions/2/reminders", query: {ids: "2"}})
+    await wrapper.get('[data-testid="contribution-checkbox-2"]').trigger("change")
     await wrapper.get('[data-testid="contribution-checkbox-1"]').trigger("change")
     await settle()
     await wrapper.get('[data-testid="bulk-action-mark-paid"]').trigger("click")
@@ -244,7 +249,7 @@ describe("the Contributions page", () => {
   })
   it("routes a period's address to its own page, a new one and the period list", async () => {
     const router = (await import("@/plugins/router")).default
-    for (const [path, name] of [["/management/contributions/periods/new", "contributionPeriodNew"], ["/management/contributions/periods/2", "contributionPeriod"], ["/management/contributions/2", "contributions"]] as const) {
+    for (const [path, name] of [["/management/contributions/periods/new", "contributionPeriodNew"], ["/management/contributions/periods/2", "contributionPeriod"], ["/management/contributions/2", "contributions"], ["/management/contributions/2/reminders", "paymentReminders"]] as const) {
       const route = router.resolve(path)
       expect(route.name).toBe(name)
       const load = route.matched.at(-1)!.components!.default as () => Promise<{default: unknown}>

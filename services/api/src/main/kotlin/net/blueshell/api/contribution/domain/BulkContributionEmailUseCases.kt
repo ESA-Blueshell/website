@@ -255,8 +255,8 @@ class BulkContributionEmailUseCases(
         /**
          * How far past the end of a period a due date may still fall: chasing the last unpaid
          * members needs one beyond the period, a mistyped year does not. Mirrored by
-         * `PERIOD_OVERHANG_MONTHS` in `frontend/src/utils/contributionEmail.ts` — change one,
-         * change the other.
+         * `PERIOD_OVERHANG_MONTHS` in `frontend/src/domains/contribution/reminders.ts`; change
+         * one, change the other.
          */
         const val MONTHS_PAST_PERIOD_END = 3L
     }

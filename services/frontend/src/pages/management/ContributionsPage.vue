@@ -162,6 +162,12 @@ const loadView = async () => {
   viewFailed.value = read == null
 }
 
+/** Reminders for members paying by transfer have a task page of their own. */
+const sendReminders = () => {
+  if (!period.value) return
+  void router.push({path: `/management/contributions/${period.value.id}/reminders`, query: {ids: selectedIdsArray.value.join(",")}})
+}
+
 /** Marking payments happens on the bulk task page, which comes back here once done. */
 const markPayments = (action: "paid" | "unpaid") => {
   if (!period.value) return
@@ -418,8 +424,15 @@ void loadPeriods()
       >
         <cut-button
           small
-          testid="bulk-action-mark-paid"
+          testid="bulk-action-send-payment-reminders"
           tone="solid"
+          @click="sendReminders"
+        >
+          Send payment reminders
+        </cut-button>
+        <cut-button
+          small
+          testid="bulk-action-mark-paid"
           @click="markPayments('paid')"
         >
           Mark paid

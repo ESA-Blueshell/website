@@ -275,4 +275,9 @@ class UserService @Autowired constructor(
     /** Everybody holding [role] or a role above it, such as the board for members. */
     @Transactional(readOnly = true)
     fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(Role.allThatInherit(role)).toSet()
+
+    /** The accounts holding any of [emails], matched without regard to case. */
+    @Transactional(readOnly = true)
+    fun findAllByEmails(emails: Collection<String>): List<User> =
+        if (emails.isEmpty()) emptyList() else repository.findAllByEmailIn(emails.map { it.trim().lowercase() }.toSet())
 }

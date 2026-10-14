@@ -16,3 +16,5 @@ export {
 } from "./adapters/writing"
 export {addresseeKey, addresseeOf} from "./addressees"
 export {default as ReplyToPicker} from "./island/ReplyToPicker.vue"
+export {InboxState, loadInboxPage, readInboxCounts, type InboxCounts, type InboxEntry} from "./adapters/inbox"
+export {followsOf, inboxStateWord} from "./inbox"

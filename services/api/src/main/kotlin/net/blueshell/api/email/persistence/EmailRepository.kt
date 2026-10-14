@@ -17,4 +17,8 @@ interface EmailRepository : BaseRepository<Email, Long> {
     fun findByResentFromIdOrderByIdAsc(resentFromId: Long): List<Email>
 
     fun existsByResentFromId(resentFromId: Long): Boolean
+
+    fun findByMessageIdIn(messageIds: Collection<String>): List<Email>
+
+    fun findByIdIn(ids: Collection<Long>): List<Email>
 }

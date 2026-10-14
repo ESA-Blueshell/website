@@ -79,7 +79,13 @@ describe("the bar's own declaration", () => {
     const withAddress = accountFor({loggedIn: true, board: false, admin: false, addressId: 12})
     const without = accountFor({loggedIn: true, board: false, admin: false, addressId: null})
 
-    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/12"])
-    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses"])
+    expect(withAddress.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses/12", "/account/help"])
+    expect(without.map(entry => entry.to)).toEqual(["/account", "/account/security", "/account/games", "/account/addresses", "/account/help"])
+  })
+
+  it("ends the account pages with Help", () => {
+    const pages = accountFor({loggedIn: true, board: false, admin: false, addressId: null})
+
+    expect(pages.at(-1)).toEqual({label: "Help", to: "/account/help"})
   })
 })

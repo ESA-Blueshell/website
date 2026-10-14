@@ -378,6 +378,7 @@ watch(matches, () => {
         v-else-if="shownOption?.avatar"
         alt=""
         class="picker__avatar picker__avatar--field"
+        crossorigin="anonymous"
         :data-testid="`${testidPrefix}-avatar`"
         :src="shownOption.avatar"
       >
@@ -518,6 +519,7 @@ watch(matches, () => {
               v-else-if="one.avatar"
               alt=""
               class="picker__avatar"
+              crossorigin="anonymous"
               loading="lazy"
               :src="one.avatar"
             >

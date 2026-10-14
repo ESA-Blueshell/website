@@ -324,6 +324,12 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Esports Teams", requiresAuth: true},
   },
   {
+    path: "/account/help",
+    name: "accountHelp",
+    component: () => import("@/pages/login/Help.vue"),
+    meta: {title: "Help", requiresAuth: true},
+  },
+  {
     path: "/account/create",
     name: "accountCreation",
     component: () => import("@/pages/login/CreateAccount.vue"),

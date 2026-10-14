@@ -9,26 +9,6 @@
           Hello {{ user != null ? user.firstName : "" }}!
         </p>
 
-        <p>
-          On this page you can view your account data and edit it below. Fields like your name and e-mail address
-          cannot be changed. You should contact board or sitecie on discord if you would like to change any of these
-          fields
-        </p>
-        <p>
-          On the "Upcoming events" page you will find all of the events that have been planned. Here, you can sign up
-          for events that have it enabled, either by clicking the sign-up checkbox or filling in the sign-up form. (no
-          more google forms baybee)
-        </p>
-        <p v-if="store.getters.isActive">
-          With the event manager, you can create and edit an upcoming event for one of the committees you're in. Once an
-          event is created it will have to be approved by board {{ isBoard ? "(yes, you)" : "" }} before
-          it will go public.
-        </p>
-        <p v-if="isBoard">
-          Using the committee manager you can manage the committees in the association (duh). You can crate a committee,
-          give it a description and add any members to it.
-        </p>
-
         <pending-membership
           v-if="user"
           class="account__pending"
@@ -62,11 +42,9 @@ import PendingMembership from "@/components/account/PendingMembership.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import {readUser} from "@/domains/user"
 import {toEditableUser, type EditableUser} from "@/utils/editableUser"
-import {useIsBoard} from "@/composables/useIsBoard"
 
 const user = ref<EditableUser>()
 const store = useStore()
-const isBoard = useIsBoard()
 const isMember = computed<boolean>(() => store.getters.isMember)
 
 onMounted(async () => {

@@ -1,6 +1,7 @@
 package net.blueshell.api.shared.discord
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 class DiscordMarkdownTest {
@@ -14,6 +15,8 @@ class DiscordMarkdownTest {
     private fun html(text: String) = DiscordMarkdown.toCommonMark(text, names, html = true)
 
     private fun plain(text: String) = DiscordMarkdown.toCommonMark(text, names, html = false)
+
+    private fun email(text: String) = DiscordMarkdown.toCommonMark(text, names, html = true, email = true)
 
     @Test
     fun `finds the members, roles and channels a description mentions`() {
@@ -77,5 +80,69 @@ class DiscordMarkdownTest {
         assertThat(plain("`||x|| <@123456789012345611>` and ||y||"))
             .isEqualTo("`||x|| <@123456789012345611>` and ${DiscordMarkdown.SPOILER_SAID}")
         assertThat(plain("```\n||x||\n>>> no\n```\n||y||")).isEqualTo("```\n||x||\n>>> no\n```\n${DiscordMarkdown.SPOILER_SAID}")
+    }
+
+    @Test
+    fun `draws server and unicode emoji as PNG pictures an email shows, named where a picture does not load`() {
+        assertThat(email("hi <:blueshell:123456789012345678> and <a:wave:123456789012345679>"))
+            .contains("""<img src="https://cdn.discordapp.com/emojis/123456789012345678.png?size=48" alt=":blueshell:"""")
+            .contains("""<img src="https://cdn.discordapp.com/emojis/123456789012345679.gif?size=48" alt=":wave:"""")
+        assertThat(email("well done 👍🏽 ❤️ 👨‍👩‍👧 🇳🇱"))
+            .contains("assets/72x72/1f44d-1f3fd.png\" alt=\"👍🏽\"")
+            .contains("assets/72x72/2764.png\" alt=\"❤️\"")
+            .contains("assets/72x72/1f468-200d-1f469-200d-1f467.png")
+            .contains("assets/72x72/1f1f3-1f1f1.png")
+            .doesNotContain(".svg")
+        assertThat(email("© 2026, 3 # items")).isEqualTo("© 2026, 3 # items")
+    }
+
+    @Test
+    fun `keeps a spoiler hidden until selected, strike, underline and small print, and leaves code alone`() {
+        val said = email("-# fine print\n__under__ ~~gone~~ ||secret|| `||kept||`")
+        assertThat(said).contains("<small>fine print</small>", "<u>under</u>", "<s>gone</s>", "`||kept||`")
+        assertThat(said).contains(">secret</span>").contains("background-color:#1E1F22")
+    }
+
+    @Test
+    fun `names mentions and dates times in Amsterdam in an email too, and keeps the old look elsewhere`() {
+        assertThat(email("<@123456789012345611> on <t:1790000000:F>")).isEqualTo("@Anna\\_B on Monday, 21 September 2026 16:13")
+        assertThat(html("~~old~~ <:blueshell:123456789012345678>")).isEqualTo("~~old~~ :blueshell:")
+    }
+
+    @Test
+    fun `draws keycaps and tag-spelled flags, and leaves a text symbol such as a trademark as text`() {
+        assertThat(email("1\uFE0F\u20E3 #\uFE0F\u20E3 *\uFE0F\u20E3"))
+            .contains("72x72/31-20e3.png", "72x72/23-20e3.png", "72x72/2a-20e3.png")
+        assertThat(email("\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC65\uDB40\uDC6E\uDB40\uDC67\uDB40\uDC7F"))
+            .contains("72x72/1f3f4-e0067-e0062-e0065-e006e-e0067-e007f.png")
+            .startsWith("<img")
+            .endsWith(">")
+        assertThat(email("Blueshell™ ▶ go ↔")).isEqualTo("Blueshell™ ▶ go ↔")
+        assertThat(email("▶\uFE0F")).contains("72x72/25b6.png")
+    }
+
+    @Test
+    fun `leaves a link's address whole when it holds an emoji`() {
+        val said = email("[docs](https://x.org/🎉) https://y.org/🎉 <https://z.org/🎉> 🎉")
+        assertThat(said).startsWith("[docs](https://x.org/🎉) https://y.org/🎉 <https://z.org/🎉> <img")
+    }
+
+    @Test
+    fun `writes HTML an editor types as text in an email, and keeps mentions, emoji and links`() {
+        assertThat(email("<b>x</b> </td><style>td{}</style> <!-- c -->"))
+            .isEqualTo("&lt;b>x&lt;/b> &lt;/td>&lt;style>td{}&lt;/style> &lt;!-- c -->")
+        assertThat(email("<https://x.org> <@123456789012345611> <:gg:123456789012345678>"))
+            .startsWith("<https://x.org> @Anna\\_B <img")
+    }
+
+    @Test
+    fun `keeps unicode emoji as text outside an email`() {
+        assertThat(html("🎉 ™")).isEqualTo("🎉 ™")
+    }
+
+    @Test
+    fun `refuses an email that is not HTML`() {
+        assertThatThrownBy { DiscordMarkdown.toCommonMark("x", names, html = false, email = true) }
+            .isInstanceOf(IllegalArgumentException::class.java)
     }
 }

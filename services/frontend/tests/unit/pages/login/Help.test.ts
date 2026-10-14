@@ -154,6 +154,13 @@ describe("the Help page", () => {
     await board.vm.$nextTick()
     expect(topicIds(board)).toContain("events-sign-up")
     expect(board.find("[data-testid=help-count]").exists()).toBe(false)
+
+    picker.vm.$emit("pick", "board")
+    await board.vm.$nextTick()
+    picker.vm.$emit("clear")
+    await board.vm.$nextTick()
+    expect(picker.props("selectedKey")).toBe("all")
+    expect(board.find("[data-testid=help-count]").exists()).toBe(false)
   })
 
   it("says so when nothing matches, and always offers the board and the sitecie", async () => {

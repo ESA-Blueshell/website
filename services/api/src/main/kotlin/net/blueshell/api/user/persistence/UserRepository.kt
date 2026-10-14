@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.model.SoftDelete
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
@@ -14,6 +15,12 @@ import java.util.Optional
 // responsibilities.
 @Suppress("TooManyFunctions")
 interface UserRepository : BaseRepository<User, Long> {
+    /** Everybody holding any of [roles] as stored. */
+    @Query("select distinct u.id from User u join u.roles r where r in :roles")
+    fun findIdsHolding(
+        @Param("roles") roles: Collection<Role>,
+    ): List<Long>
+
     fun findByUsername(username: String): Optional<User>
 
     /** Every administrator who is a person: the service account holds SYSTEM as well. */

@@ -30,7 +30,7 @@ export {TargetKind, CohortCategory, CohortType, TargetSystem} from "./adapters/c
 export {type ExternalUserConflict} from "./adapters/cohorts"
 export {fetchCohortTargets} from "./adapters/cohorts"
 export {fetchCohort} from "./adapters/cohorts"
-export {fetchCohorts} from "./adapters/cohorts"
+export {fetchCohorts, readCohorts, type SummaryTarget} from "./adapters/cohorts"
 export {linkUserToExternal} from "./adapters/cohorts"
 export {queueCohortJob} from "./adapters/cohorts"
 export {removeExternalMember} from "./adapters/cohorts"

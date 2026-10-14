@@ -14,7 +14,7 @@ vi.mock("vue-router", async importOriginal => ({...(await importOriginal<typeof 
 const chess = {code: "CHESS", name: "Chess", slug: "chess"}
 vi.mock("@/domains/games", () => ({useCasualGames: () => ({games: ref([chess]), ready: Promise.resolve([chess])}), forgetCasualGames: () => {}}))
 
-const GameEditor = {name: "GameEditor", props: ["game", "area", "back", "enterIn"], emits: ["saved", "removed", "cancel"], template: "<div />"}
+const GameEditor = {name: "GameEditor", props: ["game", "area", "back", "backLabel", "enterIn"], emits: ["saved", "removed", "cancel"], template: "<div />"}
 const stubs = {GameEditor, NotFound: {template: "<div data-testid=missing />"}}
 
 const mountPage = async (at: {params?: Record<string, string>, query?: Record<string, string>, area?: string, back?: string | null}) => {
@@ -30,6 +30,23 @@ const mountPage = async (at: {params?: Record<string, string>, query?: Record<st
 beforeEach(() => router.replace.mockReset())
 
 describe("the game edit page", () => {
+  it("stays inside Management when opened there", async () => {
+    route.params = {slug: "chess"}
+    route.query = {}
+    route.meta = {portal: "/management/games"}
+    state.back = null
+    const wrapper = mount(GameEdit, {global: {stubs}})
+    await flushPromises()
+    const editor = wrapper.getComponent(GameEditor)
+
+    expect(editor.props("back")).toBe("/management/games")
+    // The way back names Management's list, whichever area the game is played in.
+    expect(editor.props("backLabel")).toBe("Games")
+    editor.vm.$emit("saved", {...chess, slug: "schaak"})
+    editor.vm.$emit("removed")
+    expect(router.replace.mock.calls).toEqual([["/management/games/schaak"], ["/management/games"]])
+  })
+
   it("corrects a casual game and goes back where it came from, or to the game's new address", async () => {
     const wrapper = await mountPage({params: {slug: "chess"}, back: "/casual/chess"})
     const editor = wrapper.getComponent(GameEditor)

@@ -166,6 +166,18 @@ class OwnMandateIT : UserTestSupport() {
         mvc
             .perform(get("/users/me/mandate").with(signedIn(applicant)))
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
+
+        // A second step on the token changes details already on file, which the account's log keeps.
+        mvc
+            .perform(
+                put("/signup/mandate")
+                    .header(SignupHeaders.SIGNUP_TOKEN, token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body),
+            ).andExpect(status().isNoContent)
+        mvc
+            .perform(get("/users/${applicant.id}/security-events").with(signedIn(createUserWithRole(Role.ADMIN))))
+            .andExpect(jsonPath("$.events[0].kind").value("BANK_DETAILS_CHANGED"))
     }
 
     @Test

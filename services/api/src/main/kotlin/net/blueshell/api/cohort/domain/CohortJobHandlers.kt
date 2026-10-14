@@ -50,7 +50,7 @@ class CohortJobHandlers(
     @Bean
     fun reconcileListHandler() =
         bind(CohortJobs.ReconcileList) {
-            remediation.verifyTarget(it.targetId)
+            remediation.verifyTarget(it.targetId, it.trigger)
         }
 
     @Bean

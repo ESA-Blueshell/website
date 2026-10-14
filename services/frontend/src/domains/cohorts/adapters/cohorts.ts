@@ -10,17 +10,21 @@ import {
   createTarget,
   createTargetFolder,
   deleteExternalTarget,
+  enforceTarget,
   enqueue,
   findCohortById,
   findCohorts,
   listTargetOptions,
   linkExistingTarget,
-  linkUser,
+  linkDrift,
   listCohortTargetFolders,
   listCohortTargetSystems,
   moveCohortTarget,
   moveCohortTargets,
   previewInboundReconcile,
+  proposeLinks,
+  pushDrift,
+  removeDrift,
   renameExternalTarget,
   searchCohortTargets,
   switchTarget,
@@ -37,7 +41,7 @@ import type {
   TargetDescriptor as ApiTargetDescriptor,
   SummaryTarget,
 } from "@/services/api"
-import {TargetKind, CohortCategory, CohortType, TargetSystem} from "@/services/api"
+import {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem} from "@/services/api"
 import {parseBulkRejection, type BulkRejection} from "@/utils/bulkRejection"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
@@ -47,66 +51,71 @@ import {accepted, refusable} from "@/domains/cohorts/refusals"
  * The enums are re-exported rather than re-declared: what a picker offers and what a category
  * route matches are the values the api declares, and a copy in a page drifts from them.
  */
-export {TargetKind, CohortCategory, CohortType, TargetSystem}
+export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, JobTrigger, TargetSystem}
 export type {SummaryTarget}
-
-export type ExternalUserConflict = {
-  existingUserId: number
-  system: string
-  existingUserFullName: string | null
-}
 
 export async function triggerReconcile(targetId: number): Promise<number | null> {
   const res = await enqueue({
-    body: { jobType: "cohort.reconcile-list", payload: { cohortId: targetId } },
+    body: { jobType: "cohort.reconcile-list", payload: { cohortId: targetId, trigger: JobTrigger.BY_HAND } },
     throwOnError: true,
   })
   return res.data?.id ?? null
 }
 
-export async function removeExternalMember(
-  targetId: number,
-  externalUserId: string,
-): Promise<number | null> {
-  const res = await enqueue({
-    body: { jobType: "cohort.remove-external-member", payload: { cohortId: targetId, externalUserId } },
-    throwOnError: true,
-  })
-  return res.data?.id ?? null
+
+/** A theirs-only contact, and the account holding the address the target calls them by. */
+export type LinkProposal = {externalUserId: string; label: string | null; userId: number | null; userFullName: string | null}
+
+/** How many contacts were linked, and those another account already holds. */
+export type LinkOutcome = {linked: number; conflicts: {externalUserId: string; existingUserId: number}[]}
+
+/** Switch whether each reconcile removes the target's theirs-only people. Only an admin may. */
+export async function setTargetEnforced(cohortId: number, targetId: number, enforced: boolean): Promise<{ok: true} | Refused> {
+  return accepted(enforceTarget({path: {id: cohortId, targetId}, body: {enforced}}), "The target could not be switched.")
 }
 
-export type LinkUserResult = { type: "ok" } | { type: "conflict"; conflict: ExternalUserConflict }
+/** Push each ours-only person to the target; answers how many were still ours only. */
+export async function pushDriftPeople(cohortId: number, targetId: number, userIds: number[]): Promise<Saved<number> | Refused> {
+  const answer = await refusable(pushDrift({path: {id: cohortId, targetId}, body: {userIds}}), "They could not be pushed.")
+  return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
+}
 
-export async function linkUserToExternal(
+/** Remove each theirs-only person from the target; answers how many were still theirs only. */
+export async function removeDriftPeople(
   cohortId: number,
-  userId: number,
-  system: TargetSystem,
-  externalUserId: string,
-): Promise<LinkUserResult> {
-  try {
-    // `throwOnError` is what makes the conflict below reachable: without it the client
-    // resolves with the refusal and the caller reports a link that never happened.
-    await linkUser({
-      path: { id: cohortId },
-      body: { userId, system, externalUserId },
-      throwOnError: true,
-    })
-    return { type: "ok" }
-  } catch (err: unknown) {
-    const resp = (err as { response?: { status?: number; data?: Record<string, unknown> } })?.response
-    if (resp?.status === 409 && resp.data) {
-      const d = resp.data
-      return {
-        type: "conflict",
-        conflict: {
-          existingUserId: d["existingUserId"] as number,
-          system: d["system"] as string,
-          existingUserFullName: (d["existingUserFullName"] as string | null) ?? null,
-        },
-      }
-    }
-    throw err
+  targetId: number,
+  externalUserIds: string[],
+): Promise<Saved<number> | Refused> {
+  const answer = await refusable(removeDrift({path: {id: cohortId, targetId}, body: {externalUserIds}}), "They could not be removed.")
+  return answer.ok ? {ok: true, saved: answer.saved.resolved} : answer
+}
+
+/** For each theirs-only contact, the account with its address, where there is one. Changes nothing. */
+export async function proposeDriftLinks(
+  cohortId: number,
+  targetId: number,
+  externalUserIds: string[],
+): Promise<Saved<LinkProposal[]> | Refused> {
+  const answer = await refusable(proposeLinks({path: {id: cohortId, targetId}, body: {externalUserIds}}), "The links could not be found.")
+  if (!answer.ok) return answer
+  return {
+    ok: true,
+    saved: answer.saved.map((p) => ({
+      externalUserId: p.externalUserId,
+      label: p.label ?? null,
+      userId: p.userId ?? null,
+      userFullName: p.userFullName ?? null,
+    })),
   }
+}
+
+/** Link each theirs-only contact to the account chosen for it. */
+export async function linkDriftPeople(
+  cohortId: number,
+  targetId: number,
+  links: {externalUserId: string; userId: number}[],
+): Promise<Saved<LinkOutcome> | Refused> {
+  return refusable(linkDrift({path: {id: cohortId, targetId}, body: {links}}), "They could not be linked.")
 }
 
 // Mirrors the API's CohortTarget. A field added there has to be added here too.
@@ -122,6 +131,19 @@ export type TargetMapping = {
   path: string[]
   /** False when the system could not say which folder the target is in. */
   folderKnown: boolean
+  /** Recent reconciles, newest first; the first is the target's current drift. */
+  runs: ReconcileRun[]
+  /** Whether each reconcile removes the target's theirs-only people. */
+  enforced: boolean
+}
+
+/** One reconcile of a target: how many were in step, missing from it and extra on it. */
+export type ReconcileRun = {
+  startedAt: string
+  trigger: string | null
+  inStep: number
+  missing: number
+  extra: number
 }
 
 export type AddTargetResult = { type: "ok"; mapping: TargetMapping } | { type: "conflict" }
@@ -157,6 +179,14 @@ function toTargetMapping(raw: ApiCohortTarget): TargetMapping {
     lastReconciledAt: raw.lastReconciledAt ?? null,
     path: raw.path ?? [],
     folderKnown: raw.folderKnown,
+    runs: raw.runs.map((run) => ({
+      startedAt: run.startedAt,
+      trigger: run.trigger ?? null,
+      inStep: run.inSync,
+      missing: run.oursOnly,
+      extra: run.theirsOnly,
+    })),
+    enforced: raw.enforced,
   }
 }
 
@@ -421,6 +451,18 @@ export type Cohort = {
   orphaned: boolean
   mappings: TargetMapping[]
   members: CohortMember[]
+  /** The latest drift resolutions across the cohort's targets, newest first. */
+  resolutions: DriftResolutionEntry[]
+}
+
+/** One person's drift on a target, resolved, and by whom. */
+export type DriftResolutionEntry = {
+  system: TargetSystem
+  action: DriftResolutionAction
+  personName: string | null
+  /** Null when the api resolved it on its own behalf. */
+  resolvedByName: string | null
+  resolvedAt: string
 }
 
 /** A cohort in a listing: enough to put it in a row, not enough to open it. */
@@ -491,6 +533,13 @@ function toCohort(raw: ApiCohortDetail): Cohort {
     orphaned: raw.orphaned,
     mappings: raw.mappings.map(toTargetMapping),
     members: raw.members.map(toCohortMember),
+    resolutions: raw.resolutions.map((r) => ({
+      system: r.system,
+      action: r.action,
+      personName: r.personName ?? null,
+      resolvedByName: r.resolvedByName ?? null,
+      resolvedAt: r.resolvedAt,
+    })),
   }
 }
 

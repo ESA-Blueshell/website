@@ -70,7 +70,7 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
         )
         externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, externalUserId))
 
-        assertThatCode { remediation.verifyTarget(target.id!!) }.doesNotThrowAnyException()
+        assertThatCode { remediation.verifyTarget(target.id!!, null) }.doesNotThrowAnyException()
 
         val desired = members.findByTargetIdAndUserId(target.id!!, user.id!!)!!
         assertThat(desired.externalUserId).isEqualTo(externalUserId)

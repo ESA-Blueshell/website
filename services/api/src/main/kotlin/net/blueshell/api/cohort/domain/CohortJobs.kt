@@ -2,6 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTrigger
 
 /**
  * Per-target cohort membership sync jobs: one execution pushes one `(user, cohort)` pair to one
@@ -166,6 +168,8 @@ object CohortJobs {
         @param:JsonProperty("cohortId")
         @get:JsonProperty("cohortId")
         val targetId: Long,
+        /** What queued the reconcile, recorded on its run; null on payloads queued before runs recorded it. */
+        val trigger: JobTrigger? = null,
     )
 
     /** `system` holds a `TargetSystem.name()`; shared/job cannot depend on the sync.port package. */
@@ -192,13 +196,23 @@ object CohortJobs {
         /** Which cohort this is reconciling into, by the key of the definition behind it. */
         val definitionKey: String,
         val selected: List<InboundReconcileSelectedUser>,
+        /** The account that chose them, recorded with each adoption; null on a job stored before it was kept. */
+        val resolvedBy: Long? = null,
     )
 
     data class InboundReconcileSelectedUser(
         val externalUserId: String,
         val userId: Long,
+        /** What the target calls them, for the record of the adoption. */
+        val label: String? = null,
     )
 }
 
 /** Direction of a single cohort-membership sync: the verb the payload carries. */
 enum class SyncCohortMembershipIntent { ADD, REMOVE }
+
+/** Queues a reconcile of target [targetId], recording [trigger] on its run. */
+fun JobQueue.reconcileTarget(
+    targetId: Long,
+    trigger: JobTrigger,
+) = runAsync(CohortJobs.ReconcileList, CohortJobs.ReconcileListPayload(targetId, trigger), trigger)

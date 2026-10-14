@@ -1,13 +1,16 @@
 import {describe, expect, it} from "vitest"
-import {CohortCategory, type CohortMember} from "@/domains/cohorts/adapters/cohorts"
+import {TargetKind, CohortCategory, JobTrigger, TargetSystem, type CohortMember, type ReconcileRun, type TargetMapping} from "@/domains/cohorts/adapters/cohorts"
 import {
   categoryLabel,
+  driftLabel,
+  earlierDrift,
   isMember,
   memberName,
   syncChipColour,
   syncLabel,
   systemLabel,
 } from "@/domains/cohorts"
+import {runStartedBy} from "@/domains/cohorts/reading"
 
 const member = (over: Partial<CohortMember> = {}): CohortMember => ({
   targetMemberId: 1,
@@ -77,5 +80,50 @@ describe("what a system and a category are called", () => {
     expect(categoryLabel(CohortCategory.COMMITTEES)).toBe("Committees")
     expect(categoryLabel(CohortCategory.PERIODS)).toBe("Periods")
     expect(categoryLabel(CohortCategory.MEMBERS)).toBe("Members")
+  })
+})
+
+const run = (over: Partial<ReconcileRun> = {}): ReconcileRun => ({
+  startedAt: "2026-02-10T09:00:00Z",
+  trigger: JobTrigger.SCHEDULED_RUN,
+  inStep: 40,
+  missing: 1,
+  extra: 2,
+  ...over,
+})
+
+const mapping = (runs: ReconcileRun[]): TargetMapping => ({
+  targetId: 3,
+  system: TargetSystem.BREVO,
+  kind: TargetKind.LIST,
+  label: "Newsletter",
+  externalId: "7",
+  lastReconciledAt: null,
+  path: [],
+  folderKnown: true,
+  runs,
+  enforced: false,
+})
+
+describe("drift", () => {
+  it("names what started a run", () => {
+    expect(runStartedBy(run())).toBe("Nightly")
+    expect(runStartedBy(run({trigger: JobTrigger.BY_HAND}))).toBe("By hand")
+    expect(runStartedBy(run({trigger: JobTrigger.SITE_ACTION}))).toBe("After a change")
+    expect(runStartedBy(run({trigger: null}))).toBe("Unknown")
+  })
+
+  it("reads the latest run as the target's drift, and nothing before the first", () => {
+    expect(driftLabel(mapping([run(), run({missing: 9})]))).toBe("40 in step · 1 missing · 2 extra")
+    expect(driftLabel(mapping([]))).toBe("")
+  })
+
+  it("lists the runs before the latest, at most four", () => {
+    const runs = [run(), ...Array.from({length: 6}, () => run({trigger: JobTrigger.BY_HAND, missing: 3, extra: 0}))]
+
+    const lines = earlierDrift(mapping(runs))
+
+    expect(lines).toHaveLength(4)
+    expect(lines[0]).toMatch(/by hand: 3 missing, 0 extra$/)
   })
 })

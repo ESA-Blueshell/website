@@ -34,6 +34,7 @@ const rawCohort = (over: Record<string, unknown> = {}) => ({
   orphaned: false,
   mappings: [],
   members: [],
+  resolutions: [],
   ...over,
 })
 
@@ -83,9 +84,20 @@ describe("a cohort arrives with its absences already decided", () => {
     ])
   })
 
+  it("a target's runs keep their counts, and a run too old to say what started it names nothing", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: true, enforced: false,
+          runs: [{startedAt: "2026-09-29T03:00:00Z", inSync: 40, oursOnly: 1, theirsOnly: 2}]}],
+      })))
+
+    const cohort = await fetchCohort(7)
+
+    expect(cohort?.mappings[0]?.runs).toEqual([{startedAt: "2026-09-29T03:00:00Z", trigger: null, inStep: 40, missing: 1, extra: 2}])
+  })
+
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {
     vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
-        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: false}],
+        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: [], enforced: false}],
       })))
 
     const cohort = await fetchCohort(7)
@@ -99,7 +111,21 @@ describe("a cohort arrives with its absences already decided", () => {
       lastReconciledAt: null,
       path: [],
       folderKnown: false,
+      runs: [],
+      enforced: false,
     })
+  })
+
+  it("a resolution by the api itself names nobody as its maker", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        resolutions: [{targetId: 3, system: TargetSystem.BREVO, action: "REMOVE", resolvedAt: "2026-09-29T20:00:00Z"}],
+      })))
+
+    const cohort = await fetchCohort(7)
+
+    expect(cohort?.resolutions).toEqual([
+      {system: TargetSystem.BREVO, action: "REMOVE", personName: null, resolvedByName: null, resolvedAt: "2026-09-29T20:00:00Z"},
+    ])
   })
 
   it("a listing that came back with nothing reads as no cohorts", async () => {

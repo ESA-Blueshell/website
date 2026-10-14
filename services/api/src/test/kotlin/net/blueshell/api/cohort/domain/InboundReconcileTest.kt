@@ -6,6 +6,7 @@ import io.mockk.verify
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetMember
@@ -41,6 +42,7 @@ class InboundReconcileTest {
     private val contributionWriter: MembershipWriter = mockk()
     private val definitions: CohortDefinitionRegistry = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
+    private val resolutions: DriftResolutions = mockk(relaxed = true)
     private val strategy = RecordingTargetStrategy()
     private val service =
         InboundReconcile(
@@ -53,6 +55,7 @@ class InboundReconcileTest {
             definitions = definitions,
             jobs = jobs,
             strategies = TargetStrategies(listOf(strategy)),
+            resolutions = resolutions,
             transactionManager = ImmediateTransactionManager(),
         )
 
@@ -175,6 +178,7 @@ class InboundReconcileTest {
         every { jobs.runAsync(CohortJobs.ApplyInboundReconcile, any<CohortJobs.ApplyInboundReconcilePayload>(), any()) } returns
             TestJobExecution(55L)
 
+        every { resolutions.actor() } returns 4L
         val preview = service.preview(10L, 20L)
         val result = service.apply(10L, 20L, InboundReconcileApplyRequest(preview.previewToken, listOf("ext-2")))
 
@@ -190,12 +194,15 @@ class InboundReconcileTest {
                         it.system == TargetSystem.BREVO.name &&
                         it.externalTargetId == "list-20" &&
                         it.definitionKey == "PERIOD_PAYERS:12" &&
-                        it.selected == listOf(CohortJobs.InboundReconcileSelectedUser("ext-2", 2L))
+                        it.selected == listOf(CohortJobs.InboundReconcileSelectedUser("ext-2", 2L, "Mapped Two")) &&
+                        it.resolvedBy == 4L
                 },
                 any(),
             )
         }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
+        // Nothing is adopted until the job writes it.
+        verify(exactly = 0) { resolutions.record(any(), any(), any(), any()) }
     }
 
     @Test
@@ -216,11 +223,15 @@ class InboundReconcileTest {
                     system = TargetSystem.BREVO.name,
                     externalTargetId = "list-20",
                     definitionKey = "PERIOD_PAYERS:12",
-                    selected = listOf(CohortJobs.InboundReconcileSelectedUser("ext-1", 1L)),
+                    selected = listOf(CohortJobs.InboundReconcileSelectedUser("ext-1", 1L, "One")),
+                    resolvedBy = 4L,
                 ),
             )
 
         assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, MembershipWriteStatus.WRITTEN))
+        verify {
+            resolutions.record(given.target.id!!, DriftResolutionAction.ADOPT, listOf(DriftResolutions.Person(1L, "ext-1", "One")), 4L)
+        }
         verify(exactly = 1) { contributionWriter.apply(1L, any()) }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
     }
@@ -247,6 +258,7 @@ class InboundReconcileTest {
             )
 
         assertThat(result).containsExactly(ApplyInboundReconcileItemResult("ext-1", 1L, MembershipWriteStatus.UNSUPPORTED))
+        verify { resolutions.record(given.target.id!!, DriftResolutionAction.ADOPT, emptyList(), null) }
         verify(exactly = 0) { contributionWriter.apply(any(), any()) }
         verify(exactly = 0) { externalIds.linkUser(any(), any(), any()) }
     }

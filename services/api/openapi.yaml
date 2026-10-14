@@ -1228,6 +1228,11 @@ components:
         orphaned:
           description: True when no definition produces this cohort any more
           type: boolean
+        resolutions:
+          description: The latest drift resolutions across the cohort's targets, newest first
+          items:
+            $ref: '#/components/schemas/DriftResolutionEntry'
+          type: array
         type:
           $ref: '#/components/schemas/CohortType'
       required:
@@ -1237,6 +1242,7 @@ components:
       - mappings
       - members
       - orphaned
+      - resolutions
       - type
       type: object
     CohortMember:
@@ -1331,6 +1337,9 @@ components:
       type: object
     CohortTarget:
       properties:
+        enforced:
+          description: Whether each reconcile removes the target's theirs-only people
+          type: boolean
         externalId:
           type:
           - string
@@ -1353,6 +1362,11 @@ components:
           items:
             type: string
           type: array
+        runs:
+          description: The target's recent reconciles, newest first; the first is its current drift
+          items:
+            $ref: '#/components/schemas/ReconcileRun'
+          type: array
         system:
           $ref: '#/components/schemas/TargetSystem'
           description: External system this mapping targets
@@ -1360,10 +1374,12 @@ components:
           format: int64
           type: integer
       required:
+      - enforced
       - folderKnown
       - kind
       - label
       - path
+      - runs
       - system
       - targetId
       type: object
@@ -2694,6 +2710,61 @@ components:
       - name
       - people
       type: object
+    DriftResolutionAction:
+      description: How a person's drift on a target was resolved
+      enum:
+      - PUSH
+      - REMOVE
+      - LINK
+      - ADOPT
+      - ENFORCED_REMOVE
+      type: string
+    DriftResolutionEntry:
+      properties:
+        action:
+          $ref: '#/components/schemas/DriftResolutionAction'
+        externalUserId:
+          type:
+          - string
+          - 'null'
+        personName:
+          description: The account's name, or what the target calls a person with none
+          type:
+          - string
+          - 'null'
+        resolvedAt:
+          format: date-time
+          type: string
+        resolvedByName:
+          description: Who resolved it; null when the api did so on its own behalf
+          type:
+          - string
+          - 'null'
+        system:
+          $ref: '#/components/schemas/TargetSystem'
+        targetId:
+          format: int64
+          type: integer
+        userId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - action
+      - resolvedAt
+      - system
+      - targetId
+      type: object
+    DriftResolved:
+      properties:
+        resolved:
+          description: How many people the action resolved; anyone no longer drifting is skipped
+          format: int32
+          type: integer
+      required:
+      - resolved
+      type: object
     EarlierMail:
       properties:
         at:
@@ -2893,6 +2964,14 @@ components:
       - queuedCount
       - sentCount
       - totalCount
+      type: object
+    EnforceTarget:
+      properties:
+        enforced:
+          description: Whether each reconcile removes the target's theirs-only people
+          type: boolean
+      required:
+      - enforced
       type: object
     EnqueueJobRequest:
       properties:
@@ -3138,6 +3217,16 @@ components:
       - kind
       - updatedAt
       - version
+      type: object
+    ExternalDrift:
+      properties:
+        externalUserIds:
+          items:
+            type: string
+          minItems: 1
+          type: array
+      required:
+      - externalUserIds
       type: object
     ExternalTarget:
       properties:
@@ -4506,6 +4595,38 @@ components:
           - integer
           - 'null'
       type: object
+    LinkChoice:
+      properties:
+        externalUserId:
+          type: string
+        userId:
+          format: int64
+          type: integer
+      required:
+      - externalUserId
+      - userId
+      type: object
+    LinkConflict:
+      properties:
+        existingUserId:
+          format: int64
+          type: integer
+        externalUserId:
+          type: string
+      required:
+      - existingUserId
+      - externalUserId
+      type: object
+    LinkDrift:
+      properties:
+        links:
+          items:
+            $ref: '#/components/schemas/LinkChoice'
+          minItems: 1
+          type: array
+      required:
+      - links
+      type: object
     LinkExistingTarget:
       properties:
         externalId:
@@ -4517,6 +4638,39 @@ components:
       - externalId
       - system
       type: object
+    LinkOutcome:
+      properties:
+        conflicts:
+          items:
+            $ref: '#/components/schemas/LinkConflict'
+          type: array
+        linked:
+          format: int32
+          type: integer
+      required:
+      - conflicts
+      - linked
+      type: object
+    LinkProposal:
+      properties:
+        externalUserId:
+          type: string
+        label:
+          type:
+          - string
+          - 'null'
+        userFullName:
+          type:
+          - string
+          - 'null'
+        userId:
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - externalUserId
+      type: object
     LinkRosterEntryRequest:
       description: Attach a roster entry to a member, or detach it with a null id
       properties:
@@ -4525,35 +4679,6 @@ components:
           type:
           - integer
           - 'null'
-      type: object
-    LinkUser:
-      properties:
-        externalUserId:
-          minLength: 1
-          type: string
-        system:
-          $ref: '#/components/schemas/TargetSystem'
-        userId:
-          format: int64
-          type: integer
-      required:
-      - externalUserId
-      - system
-      - userId
-      type: object
-    LinkedUser:
-      properties:
-        externalUserId:
-          type: string
-        system:
-          $ref: '#/components/schemas/TargetSystem'
-        userId:
-          format: int64
-          type: integer
-      required:
-      - externalUserId
-      - system
-      - userId
       type: object
     LockResponse:
       properties:
@@ -5246,6 +5371,17 @@ components:
       - roster
       - team
       type: object
+    PushDrift:
+      properties:
+        userIds:
+          items:
+            format: int64
+            type: integer
+          minItems: 1
+          type: array
+      required:
+      - userIds
+      type: object
     QuestionRequest:
       properties:
         choiceLabels:
@@ -5378,6 +5514,32 @@ components:
           type: string
       required:
       - reason
+      type: object
+    ReconcileRun:
+      description: One reconcile of a target and the drift it found.
+      properties:
+        inSync:
+          format: int32
+          type: integer
+        oursOnly:
+          format: int32
+          type: integer
+        startedAt:
+          format: date-time
+          type: string
+        theirsOnly:
+          format: int32
+          type: integer
+        trigger:
+          description: What queued it; null for a run queued before runs recorded it
+          oneOf:
+          - $ref: '#/components/schemas/JobTrigger'
+          - type: 'null'
+      required:
+      - inSync
+      - oursOnly
+      - startedAt
+      - theirsOnly
       type: object
     RecordMandateRequest:
       properties:
@@ -23984,120 +24146,6 @@ paths:
           description: Server error
       tags:
       - Cohorts
-  /management/cohorts/{id}/drift/link-user:
-    post:
-      operationId: linkUser
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LinkUser'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LinkedUser'
-          description: OK
-        '400':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Bad Request",
-                  "status": 400,
-                  "detail": "Validation failed for request.",
-                  "instance": "/api/users",
-                  "errors": [
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "email",
-                      "message": "must be a well-formed email address",
-                      "code": "Email"
-                    },
-                    {
-                      "objectName": "createUserRequest",
-                      "field": "age",
-                      "message": "must be greater than or equal to 0",
-                      "code": "Min"
-                    }
-                  ],
-                  "traceId": "a8c0c4e5f1c24a7e"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Validation error
-        '401':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Full authentication is required to access this resource",
-                  "instance": "/api/users",
-                  "traceId": "401401401401"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403,
-                  "detail": "Access is denied",
-                  "instance": "/api/users",
-                  "traceId": "403403403403"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Forbidden (access denied)
-        '404':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Not Found",
-                  "status": 404,
-                  "detail": "User not found with id: 42",
-                  "instance": "/api/users/42",
-                  "traceId": "cdef1234abcd5678"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Not Found
-        '500':
-          content:
-            application/json:
-              example: |
-                {
-                  "type": "about:blank",
-                  "title": "Internal Server Error",
-                  "status": 500,
-                  "detail": "An unexpected error occurred.",
-                  "instance": "/api/users",
-                  "traceId": "ab12cd34ef56"
-                }
-              schema:
-                $ref: '#/components/schemas/ApiError'
-          description: Server error
-      tags:
-      - Cohorts
   /management/cohorts/{id}/targets/existing:
     post:
       operationId: linkExistingTarget
@@ -24355,6 +24403,604 @@ paths:
               schema:
                 $ref: '#/components/schemas/CohortTarget'
           description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohorts
+  /management/cohorts/{id}/targets/{targetId}/drift/link:
+    post:
+      operationId: linkDrift
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: targetId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkDrift'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkOutcome'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohorts
+  /management/cohorts/{id}/targets/{targetId}/drift/link/preview:
+    post:
+      operationId: proposeLinks
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: targetId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalDrift'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/LinkProposal'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohorts
+  /management/cohorts/{id}/targets/{targetId}/drift/push:
+    post:
+      operationId: pushDrift
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: targetId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushDrift'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriftResolved'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohorts
+  /management/cohorts/{id}/targets/{targetId}/drift/remove:
+    post:
+      operationId: removeDrift
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: targetId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExternalDrift'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriftResolved'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Cohorts
+  /management/cohorts/{id}/targets/{targetId}/enforced:
+    put:
+      operationId: enforceTarget
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: targetId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnforceTarget'
+        required: true
+      responses:
+        '204':
+          description: No Content
         '400':
           content:
             application/json:

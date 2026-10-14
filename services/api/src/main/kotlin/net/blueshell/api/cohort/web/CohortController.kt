@@ -4,32 +4,40 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import net.blueshell.api.cohort.domain.CohortDetail
 import net.blueshell.api.cohort.domain.CohortQueryService
-import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortSummary
 import net.blueshell.api.cohort.domain.CohortTargetRow
 import net.blueshell.api.cohort.domain.CohortTargeting
+import net.blueshell.api.cohort.domain.DriftResolutions
 import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.LinkChoice
+import net.blueshell.api.cohort.domain.LinkOutcome
+import net.blueshell.api.cohort.domain.LinkProposal
 import net.blueshell.api.cohort.domain.SummaryTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
 import net.blueshell.api.cohort.persistence.CohortCategory
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobTrigger
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
@@ -40,7 +48,7 @@ import java.time.Instant
 @AdminOnly
 class CohortController(
     private val queries: CohortQueryService,
-    private val remediation: CohortRemediation,
+    private val resolutions: DriftResolutions,
     private val targeting: CohortTargeting,
     private val inboundReconcile: InboundReconcile,
     private val catalog: TargetCatalog,
@@ -70,24 +78,41 @@ class CohortController(
         )
     }
 
-    @PostMapping("/{id}/drift/link-user")
-    fun linkUser(
+    @PostMapping("/{id}/targets/{targetId}/drift/push")
+    fun pushDrift(
         @PathVariable id: Long,
-        @RequestBody @Valid body: LinkUserRequest,
-    ): LinkedUserResponse {
-        val mapping =
-            remediation.linkUser(
-                cohortId = id,
-                userId = body.userId,
-                system = body.system,
-                externalUserId = body.externalUserId,
-            )
-        return LinkedUserResponse(
-            userId = mapping.aggregateId,
-            system = TargetSystem.valueOf(mapping.system),
-            externalUserId = mapping.externalId ?: body.externalUserId,
-        )
-    }
+        @PathVariable targetId: Long,
+        @RequestBody @Valid body: PushDriftRequest,
+    ): DriftResolvedResponse = DriftResolvedResponse(resolutions.push(id, targetId, body.userIds))
+
+    @PutMapping("/{id}/targets/{targetId}/enforced")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun enforceTarget(
+        @PathVariable id: Long,
+        @PathVariable targetId: Long,
+        @RequestBody @Valid body: EnforceTargetRequest,
+    ) = resolutions.enforce(id, targetId, body.enforced)
+
+    @PostMapping("/{id}/targets/{targetId}/drift/remove")
+    fun removeDrift(
+        @PathVariable id: Long,
+        @PathVariable targetId: Long,
+        @RequestBody @Valid body: ExternalDriftRequest,
+    ): DriftResolvedResponse = DriftResolvedResponse(resolutions.remove(id, targetId, body.externalUserIds))
+
+    @PostMapping("/{id}/targets/{targetId}/drift/link/preview")
+    fun proposeLinks(
+        @PathVariable id: Long,
+        @PathVariable targetId: Long,
+        @RequestBody @Valid body: ExternalDriftRequest,
+    ): List<LinkProposal> = resolutions.proposeLinks(id, targetId, body.externalUserIds)
+
+    @PostMapping("/{id}/targets/{targetId}/drift/link")
+    fun linkDrift(
+        @PathVariable id: Long,
+        @PathVariable targetId: Long,
+        @RequestBody @Valid body: LinkDriftRequest,
+    ): LinkOutcome = resolutions.link(id, targetId, body.links)
 
     @PostMapping("/{id}/targets/existing")
     fun linkExistingTarget(
@@ -162,6 +187,8 @@ data class CohortDetailResponse(
     @Schema(description = "True when no definition produces this cohort any more")
     val orphaned: Boolean,
     val members: List<CohortMemberResponse>,
+    @param:Schema(description = "The latest drift resolutions across the cohort's targets, newest first")
+    val resolutions: List<DriftResolutionResponse>,
 )
 
 @Schema(name = "CohortTarget")
@@ -184,6 +211,20 @@ data class CohortTargetResponse(
     val path: List<String>,
     @param:Schema(description = "False when the system could not say which folder the target is in")
     val folderKnown: Boolean = true,
+    @param:Schema(description = "The target's recent reconciles, newest first; the first is its current drift")
+    val runs: List<ReconcileRunResponse> = emptyList(),
+    @param:Schema(description = "Whether each reconcile removes the target's theirs-only people")
+    val enforced: Boolean = false,
+)
+
+@Schema(name = "ReconcileRun", description = "One reconcile of a target and the drift it found.")
+data class ReconcileRunResponse(
+    val startedAt: Instant,
+    @param:Schema(description = "What queued it; null for a run queued before runs recorded it")
+    val trigger: JobTrigger?,
+    val inSync: Int,
+    val oursOnly: Int,
+    val theirsOnly: Int,
 )
 
 @Schema(name = "CohortMember")
@@ -205,18 +246,45 @@ data class CohortMemberResponse(
     val joinedAt: Instant,
 )
 
-@Schema(name = "LinkUser")
-data class LinkUserRequest(
-    @field:NotNull val userId: Long,
-    @field:NotNull val system: TargetSystem,
-    @field:NotBlank val externalUserId: String,
+@Schema(name = "PushDrift")
+data class PushDriftRequest(
+    @field:NotEmpty val userIds: List<Long>,
 )
 
-@Schema(name = "LinkedUser")
-data class LinkedUserResponse(
-    val userId: Long,
+@Schema(name = "EnforceTarget")
+data class EnforceTargetRequest(
+    @param:Schema(description = "Whether each reconcile removes the target's theirs-only people")
+    val enforced: Boolean,
+)
+
+@Schema(name = "ExternalDrift")
+data class ExternalDriftRequest(
+    @field:NotEmpty val externalUserIds: List<String>,
+)
+
+@Schema(name = "LinkDrift")
+data class LinkDriftRequest(
+    @field:NotEmpty val links: List<LinkChoice>,
+)
+
+@Schema(name = "DriftResolved")
+data class DriftResolvedResponse(
+    @param:Schema(description = "How many people the action resolved; anyone no longer drifting is skipped")
+    val resolved: Int,
+)
+
+@Schema(name = "DriftResolutionEntry")
+data class DriftResolutionResponse(
+    val targetId: Long,
     val system: TargetSystem,
-    val externalUserId: String,
+    val action: DriftResolutionAction,
+    val userId: Long?,
+    val externalUserId: String?,
+    @param:Schema(description = "The account's name, or what the target calls a person with none")
+    val personName: String?,
+    @param:Schema(description = "Who resolved it; null when the api did so on its own behalf")
+    val resolvedByName: String?,
+    val resolvedAt: Instant,
 )
 
 /** Map the cohort's target to an external target that already exists. */
@@ -265,6 +333,19 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
         definitionKey = definitionKey,
         orphaned = orphaned,
         members = members.map { it.toMemberResponse() },
+        resolutions =
+            resolutions.map {
+                DriftResolutionResponse(
+                    targetId = it.resolution.targetId,
+                    system = it.system,
+                    action = it.resolution.action,
+                    userId = it.resolution.userId,
+                    externalUserId = it.resolution.externalUserId,
+                    personName = it.personName,
+                    resolvedByName = it.resolvedByName,
+                    resolvedAt = it.resolution.resolvedAt,
+                )
+            },
     )
 
 private fun CohortTargetRow.toResponse(): CohortTargetResponse =
@@ -276,6 +357,8 @@ private fun CohortTargetRow.toResponse(): CohortTargetResponse =
         externalId = externalId,
         lastReconciledAt = lastReconciledAt,
         path = path,
+        runs = runs.map { ReconcileRunResponse(it.startedAt, it.trigger, it.inSync, it.oursOnly, it.theirsOnly) },
+        enforced = target.enforced,
     )
 
 private fun TargetMemberRow.toMemberResponse(): CohortMemberResponse =

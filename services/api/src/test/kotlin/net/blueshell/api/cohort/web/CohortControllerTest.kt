@@ -2,23 +2,30 @@ package net.blueshell.api.cohort.web
 
 import net.blueshell.api.cohort.domain.CohortDetail
 import net.blueshell.api.cohort.domain.CohortQueryService
-import net.blueshell.api.cohort.domain.CohortRemediation
 import net.blueshell.api.cohort.domain.CohortSummary
 import net.blueshell.api.cohort.domain.CohortTargetRow
 import net.blueshell.api.cohort.domain.CohortTargeting
+import net.blueshell.api.cohort.domain.DriftResolutionRow
+import net.blueshell.api.cohort.domain.DriftResolutions
 import net.blueshell.api.cohort.domain.InboundReconcile
 import net.blueshell.api.cohort.domain.InboundReconcileApplyRequest
 import net.blueshell.api.cohort.domain.InboundReconcileApplyResponse
 import net.blueshell.api.cohort.domain.InboundReconcilePreview
+import net.blueshell.api.cohort.domain.LinkChoice
+import net.blueshell.api.cohort.domain.LinkOutcome
+import net.blueshell.api.cohort.domain.LinkProposal
 import net.blueshell.api.cohort.domain.SummaryTarget
 import net.blueshell.api.cohort.domain.TargetCatalog
 import net.blueshell.api.cohort.domain.TargetMemberRow
 import net.blueshell.api.cohort.domain.TargetPlace
 import net.blueshell.api.cohort.domain.TargetSummary
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
 import net.blueshell.api.cohort.persistence.TargetMember
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.sync.persistence.ExternalIdMapping
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -32,11 +39,11 @@ import java.time.Instant
 
 class CohortControllerTest {
     private val queries = mock<CohortQueryService>()
-    private val remediation = mock<CohortRemediation>()
     private val targeting = mock<CohortTargeting>()
     private val inbound = mock<InboundReconcile>()
     private val catalog = mock<TargetCatalog>()
-    private val controller = CohortController(queries, remediation, targeting, inbound, catalog)
+    private val resolutions = mock<DriftResolutions>()
+    private val controller = CohortController(queries, resolutions, targeting, inbound, catalog)
     private val json = JsonMapper.builder().findAndAddModules().build()
 
     @Test
@@ -164,16 +171,6 @@ class CohortControllerTest {
     }
 
     @Test
-    fun `linking a user answers the account and the id it now has on the system`() {
-        whenever(remediation.linkUser(1L, 7L, TargetSystem.BREVO, "ext-7"))
-            .thenReturn(ExternalIdMapping("USER", 7L, TargetSystem.BREVO.name, "ext-7"))
-
-        val linked = controller.linkUser(1L, LinkUserRequest(7L, TargetSystem.BREVO, "ext-7"))
-
-        assertThat(linked).isEqualTo(LinkedUserResponse(7L, TargetSystem.BREVO, "ext-7"))
-    }
-
-    @Test
     fun `linking, creating and switching a target answer the target as it now stands`() {
         val row = CohortTargetRow(Entities.target(id = 12L, externalId = "7"), "7")
         whenever(targeting.linkExisting(1L, TargetSystem.BREVO, "7")).thenReturn(row)
@@ -202,5 +199,87 @@ class CohortControllerTest {
 
         assertThat(controller.previewInboundReconcile(1L, 12L)).isEqualTo(preview)
         assertThat(controller.applyInboundReconcile(1L, 12L, request)).isEqualTo(applied)
+    }
+
+    @Test
+    fun `a mapping carries its recent reconciles, newest first`() {
+        val run = TargetReconcileRun(3L, Instant.parse("2026-09-29T03:00:00Z"), JobTrigger.SCHEDULED_RUN, 188, 2, 1)
+        whenever(queries.detail(9L)).thenReturn(
+            CohortDetail(
+                cohort = Entities.cohort(id = 9L),
+                mappings =
+                    listOf(
+                        CohortTargetRow(
+                            Entities.target(id = 3L).apply { enforced = true },
+                            null,
+                            path = listOf("Brevo"),
+                            runs = listOf(run),
+                        ),
+                    ),
+                members = emptyList(),
+                definitionKey = null,
+                orphaned = false,
+            ),
+        )
+
+        val mapping =
+            controller
+                .findCohortById(9L)
+                .mappings
+                .single()
+
+        assertThat(mapping.runs).containsExactly(ReconcileRunResponse(run.startedAt, JobTrigger.SCHEDULED_RUN, 188, 2, 1))
+        assertThat(mapping.enforced).isTrue()
+        assertThat(mapping.runs.single().trigger).isEqualTo(JobTrigger.SCHEDULED_RUN)
+    }
+
+    @Test
+    fun `the drift actions hand their people to the resolutions`() {
+        whenever(resolutions.push(1L, 2L, listOf(5L))).thenReturn(1)
+        whenever(resolutions.remove(1L, 2L, listOf("x"))).thenReturn(1)
+        val proposal = LinkProposal("x", "a@example.com", 5L, "Ada")
+        whenever(resolutions.proposeLinks(1L, 2L, listOf("x"))).thenReturn(listOf(proposal))
+        val outcome = LinkOutcome(1, emptyList())
+        whenever(resolutions.link(1L, 2L, listOf(LinkChoice("x", 5L)))).thenReturn(outcome)
+
+        assertThat(controller.pushDrift(1L, 2L, PushDriftRequest(listOf(5L))).resolved).isEqualTo(1)
+        assertThat(controller.removeDrift(1L, 2L, ExternalDriftRequest(listOf("x"))).resolved).isEqualTo(1)
+        assertThat(controller.proposeLinks(1L, 2L, ExternalDriftRequest(listOf("x")))).containsExactly(proposal)
+        assertThat(controller.linkDrift(1L, 2L, LinkDriftRequest(listOf(LinkChoice("x", 5L))))).isEqualTo(outcome)
+        controller.enforceTarget(1L, 2L, EnforceTargetRequest(true))
+        verify(resolutions).enforce(1L, 2L, true)
+    }
+
+    @Test
+    fun `the detail carries the recent resolutions with their names`() {
+        val at = Instant.parse("2026-09-29T20:00:00Z")
+        val resolution = DriftResolution(3L, DriftResolutionAction.REMOVE, null, "ext-1", "c@example.com", 4L, at)
+        whenever(queries.detail(10L)).thenReturn(
+            CohortDetail(
+                cohort = Entities.cohort(id = 10L),
+                mappings = emptyList(),
+                members = emptyList(),
+                definitionKey = null,
+                orphaned = false,
+                resolutions = listOf(DriftResolutionRow(resolution, TargetSystem.BREVO, "c@example.com", "Board Member")),
+            ),
+        )
+
+        val entry = controller.findCohortById(10L).resolutions.single()
+
+        assertThat(listOf(entry.personName, entry.resolvedByName)).containsExactly("c@example.com", "Board Member")
+
+        assertThat(entry).isEqualTo(
+            DriftResolutionResponse(
+                targetId = 3L,
+                system = TargetSystem.BREVO,
+                action = DriftResolutionAction.REMOVE,
+                userId = null,
+                externalUserId = "ext-1",
+                personName = "c@example.com",
+                resolvedByName = "Board Member",
+                resolvedAt = at,
+            ),
+        )
     }
 }

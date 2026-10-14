@@ -101,7 +101,7 @@ onMounted(async () => {
             class="payment__note"
             data-testid="payment-details-no-periods"
           >
-            Nothing yet. Your contributions show here once the board opens the year.
+            Nothing yet. Your first contribution shows here once the board adds this year's contribution period.
           </p>
           <div
             v-else
@@ -144,7 +144,7 @@ onMounted(async () => {
                 Transfer to {{ bank.iban }}, in the name of {{ bank.accountName }}. From a foreign bank account, the BIC is {{ bank.bic }}.
               </template>
               <template v-else>
-                The payment email names the account to transfer to.
+                The account could not be loaded. Email the board to ask for it.
               </template>
               In the description, put your name, your student number if you have one and "contribution" with the year.
             </dd>
@@ -158,6 +158,7 @@ onMounted(async () => {
                 Fill in the mandate form from <router-link to="/documents">
                   Documents
                 </router-link> and email it to the board.
+                It may not cover what you owe now. Pay that by transfer or in cash, unless the board tells you otherwise.
               </dd>
             </template>
           </dl>
@@ -183,7 +184,6 @@ onMounted(async () => {
   margin-top: 2.5rem;
 }
 
-/* Named the way the security pages name their sections: small, spaced, in the eyebrow's colour. */
 .payment__title {
   font-family: var(--font-body);
   font-size: 11px;

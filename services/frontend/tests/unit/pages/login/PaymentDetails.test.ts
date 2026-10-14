@@ -68,6 +68,7 @@ describe("the Payment details page", () => {
 
     expect(page.get("[data-testid=payment-details-bank]").text()).toContain("Transfer to NL00 TEST 0000 0000 00, in the name of Test Vereniging")
     expect(page.get("[data-testid=payment-details-switch]").text()).toContain("mandate form")
+    expect(page.get("[data-testid=payment-details-switch]").text()).toContain("It may not cover what you owe now")
     expect(page.find("[data-testid=payment-details-incasso]").exists()).toBe(false)
     expect(page.find("[data-testid=payment-details-no-periods]").exists()).toBe(true)
     expect(page.getComponent({name: "CutButton"}).props("href")).toBe("mailto:board@blueshell.utwente.nl")
@@ -78,7 +79,7 @@ describe("the Payment details page", () => {
 
     expect(page.get("[data-testid=payment-details-incasso]").text()).toBe("You pay by direct debit. To stop it, email the board.")
     expect(page.get("[data-testid=payment-details-method]").text()).toContain("Direct debit")
-    expect(page.get("[data-testid=payment-details-bank]").text()).toContain("The payment email names the account")
+    expect(page.get("[data-testid=payment-details-bank]").text()).toContain("The account could not be loaded")
     expect(page.find("[data-testid=payment-details-switch]").exists()).toBe(false)
   })
 

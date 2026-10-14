@@ -1,7 +1,6 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.api.ContributionPeriodService
-import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
@@ -12,12 +11,10 @@ import net.blueshell.api.user.api.MembershipService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.LocalDate
-import java.util.Optional
 
 class MemberContributionsTest {
     private val periods: ContributionPeriodService = mock()
@@ -35,7 +32,7 @@ class MemberContributionsTest {
     @BeforeEach
     fun nothingPaidOrAsked() {
         whenever(periods.findAll()).thenReturn(listOf(older, newer, before))
-        whenever(contributions.findById(any())).thenReturn(Optional.empty())
+        whenever(contributions.findByIdUserId(7)).thenReturn(emptyList())
         whenever(reminders.findByUser_Id(7)).thenReturn(emptyList())
         whenever(notifications.findByUser_Id(7)).thenReturn(emptyList())
     }
@@ -49,7 +46,7 @@ class MemberContributionsTest {
             ),
         )
         val paid = Entities.contribution(user = ann, period = older).apply { createdAt = Instant.parse("2024-11-01T10:00:00Z") }
-        whenever(contributions.findById(Contribution.Id(7, 2))).thenReturn(Optional.of(paid))
+        whenever(contributions.findByIdUserId(7)).thenReturn(listOf(paid))
 
         val listed = own.of(7)
 

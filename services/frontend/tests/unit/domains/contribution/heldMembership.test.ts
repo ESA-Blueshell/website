@@ -37,6 +37,22 @@ describe("whether the reader holds a membership", () => {
     scope.stop()
   })
 
+  it("asks again on the next page where a read failed", async () => {
+    const {useHeldMembership} = await fresh()
+    readOwnContributions.mockResolvedValueOnce(null).mockResolvedValueOnce({held: true, paysByIncasso: false, periods: []})
+    const scope = effectScope()
+    const first = scope.run(() => useHeldMembership(() => 7))!
+    await flushPromises()
+    expect(first.value).toBe(false)
+
+    const next = scope.run(() => useHeldMembership(() => 7))!
+    await flushPromises()
+
+    expect(next.value).toBe(true)
+    expect(readOwnContributions).toHaveBeenCalledTimes(2)
+    scope.stop()
+  })
+
   it("follows a fresh read of the page", async () => {
     const {noteHeld, useHeldMembership} = await fresh()
     readOwnContributions.mockResolvedValue({held: false, paysByIncasso: false, periods: []})

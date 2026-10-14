@@ -1,7 +1,6 @@
 package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.contribution.api.ContributionPeriodService
-import net.blueshell.api.contribution.persistence.Contribution
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
@@ -65,6 +64,7 @@ class MemberContributions(
                 Sent(it.contributionPeriodId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION, it.debitDate)
             }
         val sent = asked + told
+        val paid = contributions.findByIdUserId(userId).associateBy { it.contributionPeriodId }
         val rows =
             periods
                 .findAll()
@@ -83,7 +83,7 @@ class MemberContributions(
                         endDate = period.endDate,
                         feeType = feeType,
                         fee = feeType?.let { resolveFeeAmount(it, period) },
-                        paidAt = contributions.findById(Contribution.Id(userId, periodId)).orElse(null)?.createdAt,
+                        paidAt = paid[periodId]?.createdAt,
                         lastEmailAt = last?.at,
                         lastEmailKind = last?.kind,
                         dueDate = last?.due,

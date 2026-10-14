@@ -12,7 +12,10 @@ async function readHeld(userId: number | null): Promise<void> {
   held.value = false
   if (userId == null) return
   const own = await readOwnContributions()
-  if (readFor === userId) held.value = own?.held === true
+  if (readFor !== userId) return
+  held.value = own?.held === true
+  // A read that failed is asked again by the next page that wants it.
+  if (!own) readFor = null
 }
 
 /** Whether the signed-in person holds or held a membership, which is when the account pages offer Payment details. */

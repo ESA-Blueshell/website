@@ -37,6 +37,7 @@ stack.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [011](ADR-011-backups-go-off-site-to-scaleway-under-a-compliance-object-lock.md) | Backups Go Off-Site to Scaleway Under a Compliance Object Lock | Accepted | Kopia nightly to Standard One Zone in `nl-ams`, in a backup-only organization; a 30-day COMPLIANCE lock bounds how long erased data survives; OpenTofu runs on an owner's user key |
+| [013](ADR-013-the-api-boots-from-a-jvm-aot-cache.md) | The Api Boots From a JVM AOT Cache | Accepted | Trained at image build under the `training` profile; flags only in the image; G1, named; an `AOTMode=on` boot in each pod's shape proves it loads |
 
 ### Getting there
 

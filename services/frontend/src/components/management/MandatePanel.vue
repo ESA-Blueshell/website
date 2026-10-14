@@ -5,6 +5,7 @@
 import {vFirstField} from "@/utils/firstField"
 import {computed, ref, watch} from "vue"
 import CheckBox from "@/components/island/CheckBox.vue"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import DateInput from "@/components/island/DateInput.vue"
 import FormField from "@/components/island/FormField.vue"
@@ -13,7 +14,7 @@ import TextInput from "@/components/island/TextInput.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, MandateKind, type MandateResponse, fetchMandatePdf, readMandate, revealMandateIban, saveMandate} from "@/domains/user"
+import {IncassoStanding, MandateKind, type MandateResponse, fetchMandatePdf, readMandate, revealMandateIban, saveMandate, stopMandate} from "@/domains/user"
 import {formatDate, formatDay} from "@/utils/timestamps"
 
 defineOptions({name: "MandatePanel"})
@@ -45,7 +46,30 @@ const revealed = ref<string | null>(null)
 const revealFailure = ref<string | null>(null)
 const revealing = ref(false)
 
-const standing = computed(() => (mandate.value ? WORDS[mandate.value.standing] : ""))
+const standing = computed(() => {
+  if (!mandate.value) return ""
+  const ended = mandate.value.endedOn ? `, incasso stopped ${formatDay(mandate.value.endedOn)}` : ""
+  return `${WORDS[mandate.value.standing]}${ended}`
+})
+
+/* Ending stops direct debit today, as when the member stops it on paper; the record stays. */
+const ending = ref(false)
+const endOpen = ref(false)
+const endFailure = ref<string | null>(null)
+const end = async () => {
+  if (ending.value) return
+  ending.value = true
+  endFailure.value = null
+  const answered = await stopMandate(userId)
+  ending.value = false
+  endOpen.value = false
+  if (!answered.ok) {
+    endFailure.value = answered.reason
+    return
+  }
+  mandate.value = answered.saved
+  emit("changed")
+}
 
 const account = computed(() =>
   mandate.value ? [revealed.value ?? maskedIban(mandate.value), mandate.value.accountHolder].filter(Boolean).join(", ") : "")
@@ -253,8 +277,15 @@ watch(() => userId, load, {immediate: true})
       >
         {{ mandate?.ibanLastTwo ? "Replace incasso details" : "Add incasso details" }}
       </cut-button>
+      <cut-button
+        v-if="mandate && mandate.standing !== IncassoStanding.NONE"
+        testid="mandate-end"
+        tone="danger"
+        @click="endOpen = true"
+      >
+        Stop incasso
+      </cut-button>
     </div>
-
     <form
       v-else-if="open && !unread"
       v-first-field
@@ -331,6 +362,24 @@ watch(() => userId, load, {immediate: true})
         </cut-button>
       </div>
     </form>
+    <p
+      v-if="endFailure"
+      class="mandate__failure"
+      data-testid="mandate-end-failure"
+      role="alert"
+    >
+      {{ endFailure }}
+    </p>
+    <confirm-dialog
+      v-model:open="endOpen"
+      confirm-label="Stop incasso"
+      question="Incasso stops today and we tell the member. From then on they pay each contribution themselves, by bank transfer or in cash."
+      testid="mandate-end-dialog"
+      title="Stop incasso for this member?"
+      :working="ending"
+      working-label="Stopping"
+      @confirm="end"
+    />
   </section>
 </template>
 

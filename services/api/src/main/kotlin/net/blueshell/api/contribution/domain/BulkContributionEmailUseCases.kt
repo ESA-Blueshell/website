@@ -3,7 +3,6 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.contribution.persistence.ContributionReminder
-import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.dto.bulk.BulkFieldRejected
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
@@ -29,7 +28,6 @@ class BulkContributionEmailUseCases(
     private val periods: ContributionPeriodService,
     private val users: UserService,
     private val reminders: ContributionReminderService,
-    private val preNotifications: IncassoNotificationService,
 ) {
     @Transactional(readOnly = true)
     fun preview(
@@ -42,23 +40,19 @@ class BulkContributionEmailUseCases(
         contributionPeriodId: Long,
         userIds: Collection<Long>,
         forciblyIncluded: Set<Long>,
-        kindOverrides: Map<Long, ContributionEmailKind>,
         paymentDueDate: LocalDate?,
-        debitDate: LocalDate?,
         feeTypeOverrides: Map<Long, BulkFeeType>,
     ): ContributionEmailResult {
         val plan = planner.plan(contributionPeriodId, userIds)
         rejectIncoherentSelection(userIds, forciblyIncluded, plan)
 
         val recipients = plan.recipients(forciblyIncluded)
-        rejectStatementsForNonRecipients(recipients, forciblyIncluded, feeTypeOverrides, kindOverrides)
+        rejectStatementsForNonRecipients(recipients, forciblyIncluded, feeTypeOverrides)
 
         val period = periods.findById(contributionPeriodId)
-        rejectDates(period, recipients.map { it.kind(kindOverrides) }, paymentDueDate, debitDate)
+        rejectDates(period, recipients.isNotEmpty(), paymentDueDate)
 
         val sentAt = Instant.now()
-        var remindersSent = 0
-        var notificationsSent = 0
 
         for (row in recipients) {
             // Only an honorary member has no fee type, and honorary is a hard exclusion.
@@ -66,40 +60,20 @@ class BulkContributionEmailUseCases(
             val amount = resolveFeeAmount(feeType, period)
             val member = users.findById(row.userId)
 
-            when (row.kind(kindOverrides)) {
-                ContributionEmailKind.REMINDER -> {
-                    reminders.record(
-                        ContributionReminder(
-                            user = member,
-                            contributionPeriod = period,
-                            feeType = feeType,
-                            amount = amount,
-                            paymentDueDate = requireNotNull(paymentDueDate),
-                            askedAt = sentAt,
-                        ),
-                    )
-                    remindersSent++
-                }
-
-                ContributionEmailKind.INCASSO_NOTIFICATION -> {
-                    preNotifications.record(
-                        IncassoNotification(
-                            user = member,
-                            contributionPeriod = period,
-                            feeType = feeType,
-                            amount = amount,
-                            debitDate = requireNotNull(debitDate),
-                            askedAt = sentAt,
-                        ),
-                    )
-                    notificationsSent++
-                }
-            }
+            reminders.record(
+                ContributionReminder(
+                    user = member,
+                    contributionPeriod = period,
+                    feeType = feeType,
+                    amount = amount,
+                    paymentDueDate = requireNotNull(paymentDueDate),
+                    askedAt = sentAt,
+                ),
+            )
         }
 
         return ContributionEmailResult(
-            remindersSent = remindersSent,
-            incassoNotificationsSent = notificationsSent,
+            remindersSent = recipients.size,
             notWrittenTo = userIds.distinct().size - recipients.size,
         )
     }
@@ -150,7 +124,6 @@ class BulkContributionEmailUseCases(
         recipients: List<ContributionEmailRow>,
         forciblyIncluded: Set<Long>,
         feeTypeOverrides: Map<Long, BulkFeeType>,
-        kindOverrides: Map<Long, ContributionEmailKind>,
     ) {
         val ids = recipients.map { it.userId }.toSet()
         val violations =
@@ -175,39 +148,18 @@ class BulkContributionEmailUseCases(
                         ),
                     )
                 }
-                strayIds(kindOverrides.keys, ids)?.let { stray ->
-                    add(
-                        BulkSelectionRejected.Violation(
-                            field = "kindOverrides",
-                            code = BulkSelectionRejected.NON_RECIPIENT_EMAIL_KINDS,
-                            values = stray,
-                            message = "${stray.size} of the chosen emails name members this send does not write to.",
-                        ),
-                    )
-                }
             }
         if (violations.isEmpty()) return
         throw BulkSelectionRejected(OBJECT_NAME, violations)
     }
 
-    /**
-     * Each date is required exactly when it reaches somebody, and each one the request
-     * states has to sit against the period being billed.
-     */
+    /** The due date is required exactly when it reaches somebody, and has to sit against the period being billed. */
     private fun rejectDates(
         period: ContributionPeriod,
-        kinds: List<ContributionEmailKind>,
+        reachesSomebody: Boolean,
         paymentDueDate: LocalDate?,
-        debitDate: LocalDate?,
     ) {
-        val violations =
-            dateViolations("paymentDueDate", paymentDueDate, ContributionEmailKind.REMINDER in kinds, period) +
-                dateViolations(
-                    "debitDate",
-                    debitDate,
-                    ContributionEmailKind.INCASSO_NOTIFICATION in kinds,
-                    period,
-                )
+        val violations = dateViolations("paymentDueDate", paymentDueDate, reachesSomebody, period)
         if (violations.isEmpty()) return
         throw BulkFieldRejected(OBJECT_NAME, violations)
     }
@@ -262,9 +214,7 @@ class BulkContributionEmailUseCases(
     }
 }
 
-/** Counted per statement, because one total hides either half being zero. */
 data class ContributionEmailResult(
     val remindersSent: Int,
-    val incassoNotificationsSent: Int,
     val notWrittenTo: Int,
 )

@@ -69,7 +69,7 @@ describe("dispositionColor", () => {
 
 describe("reasonLabel", () => {
   it("says why a row was set aside in the operator's words rather than the api's code", () => {
-    expect(reasonLabel(BulkRowReason.INCASSO_MISMATCH)).toBe("No direct-debit mandate")
+    expect(reasonLabel(BulkRowReason.PAYS_BY_DIRECT_DEBIT)).toBe("Pays by incasso")
     expect(reasonLabel(BulkRowReason.NO_EMAIL)).toBe("No email address on file")
   })
 

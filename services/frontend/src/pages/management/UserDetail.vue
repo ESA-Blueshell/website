@@ -17,8 +17,6 @@ import UserForm from "@/components/form/UserForm.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import FormField from "@/components/island/FormField.vue"
-import SearchPicker from "@/components/island/SearchPicker.vue"
 import MandatePanel from "@/components/management/MandatePanel.vue"
 import MembershipPanel from "@/components/management/MembershipPanel.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
@@ -26,7 +24,7 @@ import RecoveryAction from "@/components/management/RecoveryAction.vue"
 import {AccountSecurityPanel} from "@/domains/auth"
 import {type TokenPurpose, listPendingActivations} from "@/domains/recovery"
 import {type MemberPeriodContribution, contributionEmailLabels, listMemberContributions, recordPayment, withdrawPayment} from "@/domains/contribution"
-import {type AddressResponse, MEMBERSHIP_WORDS, type MandateResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandate, readUserOrNobody, Role, savePaysBy} from "@/domains/user"
+import {type AddressResponse, MEMBERSHIP_WORDS, type MandateResponse, type MembershipResponse, type RoleStanding, type UserDetailResponse, deleteUser, highestRoleLabel, listMembershipsFor, membershipStateOf, readAddress, readMandate, readUserOrNobody, IncassoStanding, Role} from "@/domains/user"
 import UserRolesPanel from "@/domains/user/components/UserRolesPanel.vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import store from "@/plugins/store"
@@ -79,7 +77,10 @@ const membershipState = computed(() => membershipStateOf(memberships.value))
 const standing = computed(() => MEMBERSHIP_WORDS[membershipState.value])
 // Somebody with nothing recorded still answers, so no answer means it could not be read.
 const paymentUnread = computed(() => person.value != null && payment.value == null)
-const paysBy = computed(() => (paymentUnread.value ? "How they pay could not be read" : payment.value?.incasso ? "Pays by incasso" : "Pays by transfer"))
+// A standing mandate, with or without bank details, is the only "pays by incasso".
+const paysBy = computed(() => (paymentUnread.value
+  ? "How they pay could not be read"
+  : payment.value && payment.value.standing !== IncassoStanding.NONE ? "Pays by incasso" : "Pays by transfer"))
 const incasso = computed(() => (current.value ? paysBy.value : null))
 const latest = computed(() => periods.value[0] ?? null)
 
@@ -115,23 +116,6 @@ const profileLine = computed(() => (person.value
   : ""))
 const paymentLine = computed(() => (paymentUnread.value ? paysBy.value : `${paysBy.value} · incasso details`))
 
-const PAY_BY = [{key: "incasso", label: "Incasso"}, {key: "transfer", label: "Bank transfer"}]
-const changingPay = ref(false)
-const payFailure = ref<string | null>(null)
-const payBy = async (key: string) => {
-  const incassoNext = key === "incasso"
-  if (changingPay.value || payment.value?.incasso === incassoNext) return
-  changingPay.value = true
-  payFailure.value = null
-  const answered = await savePaysBy(id.value, incassoNext)
-  changingPay.value = false
-  if (!answered.ok) {
-    payFailure.value = answered.reason
-    return
-  }
-  payment.value = answered.saved
-  store.commit("setStatusSnackbarMessage", `${person.value?.fullName} now pays by ${incassoNext ? "incasso" : "bank transfer"}.`)
-}
 const reloadPayment = async () => {
   payment.value = await readMandate(id.value)
 }
@@ -394,43 +378,17 @@ watch(id, load, {immediate: true})
         v-if="paymentUnread"
         testid="user-pays-by-unread"
         tone="danger"
-        title="How they pay could not be read, so it cannot be changed now. Try again in a moment."
-      />
-      <form-field
-        v-else
-        class="person__pay"
-        hint="Incasso is automatic and needs incasso details. With bank transfer they pay by hand after a payment request."
-        label="Pays by"
-        testid="user-pays-by"
-      >
-        <template #default="{controlId, labelId}">
-          <search-picker
-            :control-id="controlId"
-            :disabled="changingPay"
-            :labelled-by="labelId"
-            :options="PAY_BY"
-            :selected-key="payment?.incasso ? 'incasso' : 'transfer'"
-            testid-prefix="user-pays-by-picker"
-            @pick="payBy"
-          />
-        </template>
-      </form-field>
-      <notice-box
-        v-if="payFailure"
-        testid="user-pays-by-failure"
-        tone="danger"
-        :title="payFailure"
+        title="We could not load how they pay. Try again in a moment."
       />
       <p
         v-if="!current"
         class="person__note"
         data-testid="user-payment-no-membership"
       >
-        {{ person.fullName }} has no running membership, so nothing is collected until one starts. How they pay and their
-        incasso details are kept for when it does.
+        {{ person.fullName }} has no current membership, so nothing is collected. Incasso stops when the membership ends.
       </p>
       <mandate-panel
-        :key="`${id}-${payment?.incasso}`"
+        :key="id"
         :user-id="id"
         @changed="reloadPayment"
       />
@@ -638,10 +596,6 @@ watch(id, load, {immediate: true})
 }
 
 
-
-.person__pay {
-  max-width: 24rem;
-}
 
 .person__note,
 .person__said {

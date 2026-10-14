@@ -76,19 +76,20 @@ class ContributionEmailPlannerTest {
         )
 
     @Nested
-    inner class WhichEmailAMemberGets {
+    inner class PayingByDirectDebit {
         @Test
-        fun `the direct-debit flag chooses it, not the operator`() {
+        fun `a member whose mandate stands is warned, to be ticked on purpose`() {
             given(membership(1L, "Ann Debit", incasso = true), membership(2L, "Ben Transfer", incasso = false))
 
             val plan = planner.plan(periodId, listOf(1L, 2L))
 
-            assertThat(plan.byUserId(1L)!!.defaultKind).isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
-            assertThat(plan.byUserId(2L)!!.defaultKind).isEqualTo(ContributionEmailKind.REMINDER)
+            assertThat(plan.byUserId(1L)!!.disposition).isEqualTo(BulkRowDisposition.WARNING)
+            assertThat(plan.byUserId(1L)!!.reason).isEqualTo(BulkRowReason.PAYS_BY_DIRECT_DEBIT)
+            assertThat(plan.byUserId(2L)!!.disposition).isEqualTo(BulkRowDisposition.INCLUDED)
         }
 
         @Test
-        fun `the flag stands on the person, whichever of their memberships is judged`() {
+        fun `the mandate stands on the person, whichever of their memberships is judged`() {
             val member = member(1L, "Ann Moved")
             onIncasso += 1L
             given(
@@ -96,24 +97,15 @@ class ContributionEmailPlannerTest {
                 Membership(user = member, startDate = LocalDate.of(2025, 9, 1)),
             )
 
-            assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.defaultKind)
-                .isEqualTo(ContributionEmailKind.INCASSO_NOTIFICATION)
+            assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.reason).isEqualTo(BulkRowReason.PAYS_BY_DIRECT_DEBIT)
         }
 
         @Test
-        fun `a member on incasso with no bank details yet is asked to transfer, since nothing can be collected`() {
+        fun `a standing mandate without bank details is warned too, since a run lists it as needing them`() {
             given(membership(1L, "Ann Debit", incasso = true))
             withoutBankDetails += 1L
 
-            assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.defaultKind).isEqualTo(ContributionEmailKind.REMINDER)
-        }
-
-        @Test
-        fun `a member holding no membership at all is asked to transfer`() {
-            givenNoMemberships(member(9L, "Kim Ada"))
-
-            assertThat(planner.plan(periodId, listOf(9L)).byUserId(9L)!!.defaultKind)
-                .isEqualTo(ContributionEmailKind.REMINDER)
+            assertThat(planner.plan(periodId, listOf(1L)).byUserId(1L)!!.reason).isEqualTo(BulkRowReason.PAYS_BY_DIRECT_DEBIT)
         }
     }
 

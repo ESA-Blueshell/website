@@ -1,0 +1,47 @@
+# A standing mandate is the only "pays by direct debit" (api ADR-040). Somebody on incasso with
+# no mandate gets a paper one without bank details, which an incasso run lists as needing them;
+# a mandate kept for somebody off incasso, or for somebody whose memberships all ended, ends.
+# payment_details.incasso is no longer read or written but stays for the release before this one.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-14-switch-becomes-mandate.yaml
+      id: switch-becomes-mandate
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: payment_details
+            columns:
+              - column: {name: mandate_ended_on, type: DATE}
+        - sql:
+            sql: >-
+              UPDATE payment_details
+              SET mandate_reference = CONCAT('BLUESHELL-', user_id, '-', DATE_FORMAT(CURRENT_DATE, '%Y%m%d')),
+              mandate_signed_on = CURRENT_DATE, mandate_recorded_at = NOW(6), mandate_kind = 'PAPER'
+              WHERE incasso = TRUE AND mandate_reference IS NULL
+        - sql:
+            sql: >-
+              UPDATE payment_details SET mandate_ended_on = CURRENT_DATE
+              WHERE incasso = FALSE AND mandate_reference IS NOT NULL
+        - sql:
+            sql: >-
+              UPDATE payment_details p
+              SET p.mandate_ended_on = (
+                SELECT MAX(m.end_date) FROM memberships m
+                WHERE m.user_id = p.user_id AND m.deleted_at = '9999-12-31 23:59:59'
+              )
+              WHERE p.mandate_reference IS NOT NULL AND p.mandate_ended_on IS NULL
+              AND EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = p.user_id AND m.deleted_at = '9999-12-31 23:59:59')
+              AND NOT EXISTS (
+                SELECT 1 FROM memberships m
+                WHERE m.user_id = p.user_id AND m.end_date IS NULL AND m.deleted_at = '9999-12-31 23:59:59'
+              )
+      rollback:
+        - sql:
+            sql: >-
+              UPDATE payment_details SET incasso = (mandate_reference IS NOT NULL AND mandate_ended_on IS NULL)
+        - sql:
+            sql: >-
+              UPDATE payment_details
+              SET mandate_reference = NULL, mandate_signed_on = NULL, mandate_recorded_at = NULL, mandate_kind = NULL
+              WHERE mandate_reference IS NOT NULL AND mandate_iban_masked IS NULL
+        - dropColumn: {tableName: payment_details, columnName: mandate_ended_on}

@@ -41,9 +41,8 @@ enum class BulkRowReason {
     NOT_PAID,
     HONORARY,
 
-    /** Dead: routing by the direct-debit flag replaced it. Kept one release for stored values. */
-    @Deprecated("Nothing populates this.")
-    INCASSO_MISMATCH,
+    /** A mandate stands, so an incasso run collects from them; a reminder goes only when ticked on purpose. */
+    PAYS_BY_DIRECT_DEBIT,
 
     /** No membership running right now. Read by the membership actions. */
     NO_ACTIVE_MEMBERSHIP,

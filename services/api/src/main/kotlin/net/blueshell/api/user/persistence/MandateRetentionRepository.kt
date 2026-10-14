@@ -1,6 +1,5 @@
 package net.blueshell.api.user.persistence
 
-import net.blueshell.api.shared.model.SoftDelete
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.Repository
@@ -27,8 +26,8 @@ interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
 
     /**
      * Wipes the mandate only if it is still the one that was judged and still stopped: the row is
-     * checked again in the write itself, so a mandate recorded anew or put back on incasso since
-     * the judgement keeps its bank details.
+     * checked again in the write itself, so a mandate recorded anew since the judgement keeps its
+     * bank details.
      */
     @Modifying
     @Query(
@@ -43,19 +42,21 @@ interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
         @Param("today") today: LocalDate,
     ): Int
 
-    /** An erased account is no longer collected from. */
+    /** An erased account is no longer collected from: its standing mandate, one ending ahead included, ends on [today]. */
     @Modifying
-    @Query(value = "UPDATE payment_details SET incasso = FALSE WHERE user_id = :userId", nativeQuery = true)
+    @Query(
+        value =
+            "UPDATE payment_details SET mandate_ended_on = :today " +
+                "WHERE user_id = :userId AND mandate_reference IS NOT NULL AND (mandate_ended_on IS NULL OR mandate_ended_on > :today)",
+        nativeQuery = true,
+    )
     fun stopCollecting(
         @Param("userId") userId: Long,
+        @Param("today") today: LocalDate,
     ): Int
 
     private companion object {
-        // Off incasso, or every membership ended or removed. Somebody with no membership yet, such as
-        // an applicant whose signup mandate waits for it, is not stopped.
-        const val STOPPED =
-            "(p.incasso = FALSE OR (EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = p.user_id) " +
-                "AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = p.user_id " +
-                "AND (m.end_date IS NULL OR m.end_date > :today) AND m.deleted_at = '" + SoftDelete.LIVE + "')))"
+        // Ended by today: the member stopped it, its account was replaced, or their membership ended.
+        const val STOPPED = "(p.mandate_ended_on IS NOT NULL AND p.mandate_ended_on <= :today)"
     }
 }

@@ -17,7 +17,7 @@ enum class ContributionEmailKind {
     INCASSO_NOTIFICATION,
 }
 
-/** One selected member: which email they get, what they owe, and whether they are written to. */
+/** One selected member: what they owe and whether they are sent a contribution reminder. */
 data class ContributionEmailRow(
     val userId: Long,
     val name: String,
@@ -25,23 +25,13 @@ data class ContributionEmailRow(
     val memberSince: LocalDate?,
     val disposition: BulkRowDisposition,
     val reason: BulkRowReason?,
-    /** From the member's direct-debit flag. A default the treasurer may overrule per row. */
-    val defaultKind: ContributionEmailKind,
     /** Null exactly when no fee applies, which is when the member is honorary. */
     val feeType: BulkFeeType?,
     val amount: Double?,
-    // Both, so switching a row's email re-reads its history without a round trip.
     val lastRemindedOn: LocalDate?,
     val lastNotifiedOn: LocalDate?,
 ) {
     val isHardExcluded: Boolean get() = disposition == BulkRowDisposition.EXCLUDED
-
-    /**
-     * Which email this member gets: the flag's default, unless the treasurer switched the row.
-     * The only place a default becomes a decision, so the send and its date checks cannot
-     * read it differently.
-     */
-    fun kind(switched: Map<Long, ContributionEmailKind>): ContributionEmailKind = switched[userId] ?: defaultKind
 
     /** A warning is a default the caller can overrule; a hard exclusion is not. */
     fun willSend(forciblyIncluded: Set<Long>): Boolean =

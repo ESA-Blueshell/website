@@ -52,8 +52,8 @@ class ContributionEmailPlanner(
                 preNotifications.findByContributionPeriodId(contributionPeriodId).map { it.userId to it.askedAt },
             )
         val deleted = erasure.deletedIdsAmong(selected)
-        // Only somebody who can be collected from is told of a collection; the rest are asked to pay.
-        val onIncasso = payments.of(selected).filterValues { it.incasso && it.collectable != null }.keys
+        // A run collects from them, so a reminder goes to one only when ticked on purpose (api ADR-040).
+        val onIncasso = payments.of(selected).filterValues { it.incasso }.keys
 
         // The membership read already fetched the member, so only somebody holding none is
         // looked up — once for all of them. An id naming nobody is no row, so the plan names
@@ -99,7 +99,7 @@ class ContributionEmailPlanner(
         val judged = judgedMembership(held)
         val memberType = judged?.let { askedType(it, period) } ?: MemberType.REGULAR
         val feeType = resolveFeeType(memberType, judged?.startDate, period)
-        val (disposition, reason) = decide(member, held, period, alreadyPaid, isDeleted, feeType == null)
+        val (disposition, reason) = decide(member, held, period, alreadyPaid, isDeleted, feeType == null, onIncasso)
 
         return ContributionEmailRow(
             userId = userId,
@@ -108,12 +108,6 @@ class ContributionEmailPlanner(
             memberSince = judged?.startDate,
             disposition = disposition,
             reason = reason,
-            defaultKind =
-                if (onIncasso) {
-                    ContributionEmailKind.INCASSO_NOTIFICATION
-                } else {
-                    ContributionEmailKind.REMINDER
-                },
             feeType = feeType,
             amount = feeType?.let { resolveFeeAmount(it, period) },
             lastRemindedOn = lastRemindedOn,
@@ -129,6 +123,7 @@ class ContributionEmailPlanner(
         alreadyPaid: Boolean,
         isDeleted: Boolean,
         owesNothing: Boolean,
+        paysByDirectDebit: Boolean,
     ): Pair<BulkRowDisposition, BulkRowReason?> =
         when {
             owesNothing -> BulkRowDisposition.EXCLUDED to BulkRowReason.HONORARY
@@ -140,6 +135,8 @@ class ContributionEmailPlanner(
             member.email.isBlank() -> BulkRowDisposition.EXCLUDED to BulkRowReason.NO_EMAIL
 
             alreadyPaid -> BulkRowDisposition.WARNING to BulkRowReason.ALREADY_PAID
+
+            paysByDirectDebit -> BulkRowDisposition.WARNING to BulkRowReason.PAYS_BY_DIRECT_DEBIT
 
             held.none { it.overlaps(period) } -> BulkRowDisposition.WARNING to BulkRowReason.NOT_MEMBER_IN_PERIOD
 

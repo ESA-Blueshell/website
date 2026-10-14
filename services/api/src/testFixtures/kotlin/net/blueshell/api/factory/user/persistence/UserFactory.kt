@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.Address
+import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.MembershipType
@@ -121,13 +122,23 @@ class UserFactory(
         return membership
     }
 
-    /** Sets how [user] pays, which stands on them rather than on a membership. */
+    /**
+     * Sets how [user] pays, which stands on them rather than on a membership: direct debit is a
+     * standing mandate, here a paper one without bank details, and transfer ends any mandate.
+     */
     fun payBy(
         user: User,
         incasso: Boolean,
     ): PaymentDetails {
         val userId = requireNotNull(user.id)
-        val held = persistence.query("SELECT p FROM PaymentDetails p WHERE p.userId = $userId", PaymentDetails::class.java).firstOrNull()
-        return persistence.persist((held ?: PaymentDetails(userId)).apply { this.incasso = incasso })
+        val held =
+            persistence.query("SELECT p FROM PaymentDetails p WHERE p.userId = $userId", PaymentDetails::class.java).firstOrNull()
+                ?: PaymentDetails(userId)
+        val mandate = held.mandate
+        if (incasso && (mandate == null || mandate.endedOn != null)) {
+            held.mandate = IncassoMandate(null, null, null, "BLUESHELL-$userId-TEST", LocalDate.now(), null, Instant.now())
+        }
+        if (!incasso && mandate != null && mandate.endedOn == null) mandate.endedOn = LocalDate.now()
+        return persistence.persist(held)
     }
 }

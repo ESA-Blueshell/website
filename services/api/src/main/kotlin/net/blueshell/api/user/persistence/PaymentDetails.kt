@@ -7,17 +7,14 @@ import jakarta.persistence.Table
 import net.blueshell.api.shared.model.AutoIdEntity
 
 /**
- * How a person pays and the mandate they are collected under, kept across their memberships. A
- * person without a row pays by transfer and has no mandate.
+ * The mandate a person is collected under, kept across their memberships. They pay by direct debit
+ * exactly while it stands; a person without a row, or whose mandate ended, pays by transfer.
  */
 @Entity
 @Table(name = "payment_details")
 class PaymentDetails(
     @Column(name = "user_id", nullable = false, unique = true, updatable = false)
     val userId: Long,
-    /** Paid by incasso rather than by transfer; a run collects only where a mandate is recorded too. */
-    @Column(name = "incasso", nullable = false)
-    var incasso: Boolean = false,
 ) : AutoIdEntity() {
     /** The bank details and mandate they are collected under, or null where none is recorded. */
     @Embedded

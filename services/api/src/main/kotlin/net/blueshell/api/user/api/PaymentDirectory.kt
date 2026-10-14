@@ -8,12 +8,13 @@ import org.springframework.transaction.annotation.Transactional
 
 /** How one person pays, as the contribution module reads it. */
 data class PersonPayment(
+    /** Pays by direct debit: a mandate stands, with or without bank details to collect from. */
     val incasso: Boolean,
     val mandate: IncassoMandate?,
 ) {
-    /** The mandate they can be collected under: one whose bank details were wiped is a record only. */
+    /** The mandate they can be collected under: a standing one that still holds its bank details. */
     val collectable: IncassoMandate?
-        get() = mandate?.takeUnless { it.wiped }
+        get() = mandate?.takeIf { incasso && !it.wiped }
 }
 
 /** How people pay, read for the contribution reminders, notifications and incasso runs. */
@@ -27,15 +28,14 @@ class PaymentDirectory(
     fun of(userIds: Collection<Long>): Map<Long, PersonPayment> {
         if (userIds.isEmpty()) return emptyMap()
         val found = payments.findByUserIdIn(userIds.toSet()).associateBy { it.userId }
-        return userIds.associateWith { userId -> found[userId]?.let { PersonPayment(it.incasso, it.mandate) } ?: BY_TRANSFER }
+        return userIds.associateWith { userId ->
+            found[userId]?.let { PersonPayment(mandates.stands(it.mandate), it.mandate) } ?: BY_TRANSFER
+        }
     }
 
-    /** Sets whether [userId] pays by incasso or by transfer, as the board's Pays by does. */
-    fun payBy(
-        userId: Long,
-        incasso: Boolean,
-    ) {
-        mandates.payBy(userId, incasso)
+    /** Keeps a paper mandate without bank details for [userId], as the dev fixtures seed one. */
+    fun payByDirectDebit(userId: Long) {
+        mandates.recordWithoutBankDetails(userId, recordedBy = null)
     }
 
     private companion object {

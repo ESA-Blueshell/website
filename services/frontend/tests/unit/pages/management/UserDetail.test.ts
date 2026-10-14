@@ -13,7 +13,7 @@ const api = vi.hoisted(() => ({
   deleteContribution: vi.fn(),
   findAddressById: vi.fn(),
   findMandate: vi.fn(),
-  setPaysBy: vi.fn(),
+  endMandate: vi.fn(),
   updateMembership: vi.fn(),
   pendingActivations: vi.fn(),
   deleteUserById: vi.fn(),
@@ -22,7 +22,7 @@ const api = vi.hoisted(() => ({
   accountStanding: vi.fn(),
   securityEvents: vi.fn(),
 }))
-const onIncasso = {userId: 7, incasso: true, standing: "ON_INCASSO_WITHOUT_BANK_DETAILS", bankDetailsWiped: false}
+const onIncasso = {userId: 7, endedOn: null, standing: "ON_INCASSO_WITHOUT_BANK_DETAILS", bankDetailsWiped: false}
 const {mockRoute, mockPush, mockStore} = vi.hoisted(() => ({
   mockRoute: {path: "/management/users/7", params: {id: "7", tab: ""} as Record<string, string>},
   mockPush: vi.fn(),
@@ -250,36 +250,44 @@ describe("one user's page", () => {
     expect((await mount()).get('[data-testid="user-row-address"]').text()).toContain("Address on file")
   })
 
-  it("changes how the person pays from the payment details, and says so", async () => {
-    api.setPaysBy.mockResolvedValue({status: 200, data: {...onIncasso, incasso: false, standing: "NONE"}})
+  it("ends the mandate from the payment details, and the person then pays by transfer", async () => {
+    api.endMandate.mockResolvedValue({status: 200, data: {...onIncasso, standing: "NONE", endedOn: "2026-10-14"}})
     const wrapper = await mount("payment-details")
-    const picker = () => wrapper.findComponent({name: "SearchPicker"})
 
-    picker().vm.$emit("pick", "incasso")
+    await wrapper.get('[data-testid="mandate-end"]').trigger("click")
     await settle()
-    expect(api.setPaysBy).not.toHaveBeenCalled()
+    wrapper.findComponent({name: "ConfirmDialog"}).vm.$emit("update:open", false)
+    await settle()
+    expect(wrapper.findComponent({name: "ConfirmDialog"}).props("open")).toBe(false)
+    await wrapper.get('[data-testid="mandate-end"]').trigger("click")
+    await settle()
+    wrapper.findComponent({name: "ConfirmDialog"}).vm.$emit("confirm")
+    await settle()
 
-    picker().vm.$emit("pick", "transfer")
-    await settle()
-    expect(api.setPaysBy).toHaveBeenCalledWith({path: {userId: 7}, body: {incasso: false}})
-    expect(picker().props("selectedKey")).toBe("transfer")
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by bank transfer."))
-
-    api.setPaysBy.mockResolvedValue({status: 409, error: {code: "Stale", summary: "Somebody changed it first."}})
-    picker().vm.$emit("pick", "incasso")
-    await settle()
-    expect(mockStore.commit).not.toHaveBeenCalledWith("setStatusSnackbarMessage", expect.stringContaining("now pays by incasso."))
-    expect(wrapper.find('[data-testid="user-pays-by-failure"]').exists()).toBe(true)
-    expect(picker().props("selectedKey")).toBe("transfer")
+    expect(api.endMandate).toHaveBeenCalledWith({path: {userId: 7}})
+    expect(wrapper.get('[data-testid="mandate-standing"]').text()).toContain("incasso stopped 14 Oct 2026")
+    expect(wrapper.find('[data-testid="mandate-end"]').exists()).toBe(false)
   })
 
-  it("keeps how somebody pays and their incasso details while no membership runs", async () => {
+  it("says why a mandate could not be ended", async () => {
+    api.endMandate.mockResolvedValue({status: 409, error: {code: "Stale", summary: "Somebody changed it first."}})
+    const wrapper = await mount("payment-details")
+
+    await wrapper.get('[data-testid="mandate-end"]').trigger("click")
+    await settle()
+    wrapper.findComponent({name: "ConfirmDialog"}).vm.$emit("confirm")
+    await settle()
+
+    expect(wrapper.get('[data-testid="mandate-end-failure"]').text()).toContain("We could not stop incasso. Try again.")
+  })
+
+  it("shows a standing mandate and its details while no membership runs", async () => {
     api.findMemberships.mockResolvedValue({status: 200, data: []})
     api.findMandate.mockResolvedValue({status: 200, data: {...onIncasso, standing: "MANDATE_RECORDED", ibanCountry: "NL", ibanLastTwo: "00"}})
     const wrapper = await mount("payment-details")
 
-    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("nothing is collected until one starts")
-    expect(wrapper.findComponent({name: "SearchPicker"}).props("selectedKey")).toBe("incasso")
+    expect(wrapper.get('[data-testid="user-payment-no-membership"]').text()).toContain("nothing is collected. Incasso stops when the membership ends.")
+    expect(wrapper.get('[data-testid="mandate-standing"]').text()).toContain("Collected by incasso")
     expect(wrapper.findComponent({name: "MandatePanel"}).props("userId")).toBe(7)
     expect(api.findMandate).toHaveBeenCalledWith({path: {userId: 7}})
     expect((await mount()).get('[data-testid="user-row-payment-details"]').text()).toContain("Pays by incasso · incasso details")
@@ -304,7 +312,7 @@ describe("one user's page", () => {
     wrapper.findComponent({name: "MandatePanel"}).vm.$emit("changed")
     await settle()
 
-    // The page reads it again; the panel keeps its own, being keyed on how they pay, which stayed.
+    // The page reads it again; the panel keeps its own, being keyed on the person.
     expect(api.findMandate).toHaveBeenCalledTimes(before + 1)
   })
 

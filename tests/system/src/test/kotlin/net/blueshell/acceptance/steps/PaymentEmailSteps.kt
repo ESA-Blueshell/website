@@ -78,8 +78,8 @@ class PaymentEmailSteps(
     @When("they send the payment emails")
     fun send() = post()
 
-    @When("they move that member onto the contribution reminder and send")
-    fun sendSwitched() = post(kindOverrides = mapOf(idOf(subject()) to "REMINDER"))
+    @When("they tick that member in and send the payment emails")
+    fun sendTicked() = post(forciblyIncluded = listOf(idOf(subject())))
 
     @When("they send the payment emails charging that member the alumni fee")
     fun sendChargingAlumniFee() = post(feeTypeOverrides = mapOf(idOf(subject()) to "ALUMNI_FEE"))
@@ -89,16 +89,8 @@ class PaymentEmailSteps(
         lastEmail = awaitEmail(subject(), REMINDER_SUBJECT)
     }
 
-    @Then("that member receives an incasso notification")
-    fun receivesNotification() {
-        lastEmail = awaitEmail(subject(), NOTIFICATION_SUBJECT)
-    }
-
-    @Then("each member receives the email their payment method calls for")
-    fun eachReceivesTheirOwn() {
-        awaitEmail(requireNotNull(transferMember), REMINDER_SUBJECT)
-        awaitEmail(requireNotNull(directDebitMember), NOTIFICATION_SUBJECT)
-    }
+    @Then("the member who pays by direct debit receives no payment email")
+    fun directDebitReceivesNothing() = receivesNothing(requireNotNull(directDebitMember))
 
     @Then("it states the {word} fee and what it comes to")
     fun itStatesTheFee(fee: String) {
@@ -120,25 +112,20 @@ class PaymentEmailSteps(
         assertThat(body()).contains("Bank transfer")
     }
 
-    @Then("it asks them to transfer nothing")
-    fun itAsksForNoTransfer() {
-        assertThat(body())
-            .contains("do not need to transfer anything")
-            .doesNotContain("Bank transfer")
-    }
-
     @Then("they are not told that anything will be taken from their account")
     fun notToldAboutADebit() {
         assertThat(body()).doesNotContain("collected from your bank account")
     }
 
     @Then("the honorary member receives no payment email")
-    fun honoraryReceivesNothing() {
+    fun honoraryReceivesNothing() = receivesNothing(requireNotNull(honoraryMember))
+
+    private fun receivesNothing(member: TestHelper.RegisteredUser) {
         // Waiting for the other member's email first, so an absent one here is the answer
-        // rather than a race. Their inbox is not empty — creating a member sends them an
-        // activation email — so this asks only about payment emails.
+        // rather than a race. Their inbox is not empty: creating a member sends them an
+        // activation email, so this asks only about payment emails.
         awaitEmail(requireNotNull(transferMember), REMINDER_SUBJECT)
-        val theirs = TestHelper.findEmails(recipient = requireNotNull(honoraryMember).email)
+        val theirs = TestHelper.findEmails(recipient = member.email)
         assertThat(theirs.map { it.subject }.filter(::isPaymentEmail)).isEmpty()
     }
 
@@ -190,17 +177,16 @@ class PaymentEmailSteps(
     }
 
     private fun post(
-        kindOverrides: Map<Long, String> = emptyMap(),
+        forciblyIncluded: List<Long> = emptyList(),
         feeTypeOverrides: Map<Long, String> = emptyMap(),
     ) {
         val body =
             buildString {
                 append("""{"contributionPeriodId":$periodId""")
                 append(""","userIds":[${selection.joinToString(",")}]""")
-                append(""","kindOverrides":${asJsonObject(kindOverrides)}""")
+                append(""","forciblyIncludedUserIds":[${forciblyIncluded.joinToString(",")}]""")
                 append(""","feeTypeOverrides":${asJsonObject(feeTypeOverrides)}""")
-                append(""","paymentDueDate":"${LocalDate.now().plusMonths(1)}"""")
-                append(""","debitDate":"${LocalDate.now().plusMonths(1).plusDays(14)}"}""")
+                append(""","paymentDueDate":"${LocalDate.now().plusMonths(1)}"}""")
             }
         val response =
             TestHelper

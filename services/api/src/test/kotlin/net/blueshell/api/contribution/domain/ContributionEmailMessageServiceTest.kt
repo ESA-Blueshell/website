@@ -69,7 +69,7 @@ class ContributionEmailMessageServiceTest {
 
     @Test
     fun `a payment request quotes the amount and asks for a transfer by the date`() {
-        givenSelected(ContributionEmailKind.REMINDER, BulkFeeType.HALF_YEAR_FEE)
+        givenSelected(BulkFeeType.HALF_YEAR_FEE)
         val captured = capturingRenderer()
 
         val message = service.render(ContributionEmailKind.REMINDER, periodId, 1L, date, null)
@@ -82,7 +82,7 @@ class ContributionEmailMessageServiceTest {
 
     @Test
     fun `a pre-notification announces the debit and asks for no transfer`() {
-        givenSelected(ContributionEmailKind.INCASSO_NOTIFICATION, BulkFeeType.FULL_YEAR_FEE)
+        givenSelected(BulkFeeType.FULL_YEAR_FEE)
         val captured = capturingRenderer()
 
         val message = service.render(ContributionEmailKind.INCASSO_NOTIFICATION, periodId, 1L, date, null)
@@ -95,7 +95,7 @@ class ContributionEmailMessageServiceTest {
 
     @Test
     fun `the kind asked for is the kind rendered, whatever the member's flag says`() {
-        givenSelected(ContributionEmailKind.INCASSO_NOTIFICATION, BulkFeeType.FULL_YEAR_FEE)
+        givenSelected(BulkFeeType.FULL_YEAR_FEE)
         val captured = capturingRenderer()
 
         service.render(ContributionEmailKind.REMINDER, periodId, 1L, date, null)
@@ -105,7 +105,7 @@ class ContributionEmailMessageServiceTest {
 
     @Test
     fun `an overridden fee type is what the email quotes, with its own reason`() {
-        givenSelected(ContributionEmailKind.REMINDER, BulkFeeType.FULL_YEAR_FEE)
+        givenSelected(BulkFeeType.FULL_YEAR_FEE)
         val captured = capturingRenderer()
 
         val message = service.render(ContributionEmailKind.REMINDER, periodId, 1L, date, BulkFeeType.ALUMNI_FEE)
@@ -117,7 +117,6 @@ class ContributionEmailMessageServiceTest {
     @Test
     fun `a warned member's email can still be read`() {
         givenSelected(
-            ContributionEmailKind.REMINDER,
             BulkFeeType.FULL_YEAR_FEE,
             disposition = BulkRowDisposition.WARNING,
             reason = BulkRowReason.ALREADY_PAID,
@@ -130,7 +129,6 @@ class ContributionEmailMessageServiceTest {
     @Test
     fun `a hard-excluded member has no email to read`() {
         givenSelected(
-            ContributionEmailKind.REMINDER,
             feeType = null,
             disposition = BulkRowDisposition.EXCLUDED,
             reason = BulkRowReason.HONORARY,
@@ -151,7 +149,7 @@ class ContributionEmailMessageServiceTest {
 
     @Test
     fun `reading an email goes through the shared renderer and writes nothing`() {
-        givenSelected(ContributionEmailKind.REMINDER, BulkFeeType.FULL_YEAR_FEE)
+        givenSelected(BulkFeeType.FULL_YEAR_FEE)
         capturingRenderer()
 
         service.render(ContributionEmailKind.REMINDER, periodId, 1L, date, null)
@@ -168,7 +166,6 @@ class ContributionEmailMessageServiceTest {
     }
 
     private fun givenSelected(
-        defaultKind: ContributionEmailKind,
         feeType: BulkFeeType?,
         disposition: BulkRowDisposition = BulkRowDisposition.INCLUDED,
         reason: BulkRowReason? = null,
@@ -184,7 +181,6 @@ class ContributionEmailMessageServiceTest {
                         memberSince = LocalDate.of(2025, 9, 1),
                         disposition = disposition,
                         reason = reason,
-                        defaultKind = defaultKind,
                         feeType = feeType,
                         amount = feeType?.let { resolveFeeAmount(it, period) },
                         lastRemindedOn = null,

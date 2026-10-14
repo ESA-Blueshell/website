@@ -116,6 +116,23 @@ class AccountSecurityListenerTest {
     }
 
     @Test
+    fun `a mandate that ended is logged on the member, naming the mandate`() {
+        listener.onMandateEnded(
+            net.blueshell.api.user.api
+                .MandateEnded(7, "BLUESHELL-7-20260901"),
+        )
+
+        verify(events).record(
+            eq(7L),
+            eq(SecurityEventKind.MANDATE_ENDED),
+            eq(SecurityActor.Person(7)),
+            eq("mandate BLUESHELL-7-20260901"),
+            anyOrNull(),
+            anyOrNull(),
+        )
+    }
+
+    @Test
     fun `a member's own change of bank details is logged with the new account, masked`() {
         listener.onBankDetailsChanged(
             net.blueshell.api.user.api

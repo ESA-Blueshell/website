@@ -107,7 +107,7 @@ class DevFixtureSeeder(
                 memberType = fixture.type,
             ),
         )
-        if (fixture.incasso) payments.payBy(requireNotNull(user.id), incasso = true)
+        if (fixture.incasso) payments.payByDirectDebit(requireNotNull(user.id))
     }
 
     /** Reuse a period that already covers today rather than stacking another on top of it. */

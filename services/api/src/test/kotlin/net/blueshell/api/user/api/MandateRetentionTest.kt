@@ -7,11 +7,15 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 
 class MandateRetentionTest {
     private val mandates: MandateRetentionRepository = mock()
-    private val retention = MandateRetention(mandates)
+    private val clock = Clock.fixed(Instant.parse("2026-10-14T10:00:00Z"), ZoneOffset.UTC)
+    private val retention = MandateRetention(mandates, clock)
 
     @Test
     fun `names the mandates no longer collected from, and wipes one only while it still is the one judged`() {
@@ -32,9 +36,9 @@ class MandateRetentionTest {
     }
 
     @Test
-    fun `an erased account comes off incasso`() {
+    fun `an erased account's mandate ends today`() {
         retention.accountErased(7)
 
-        verify(mandates).stopCollecting(7)
+        verify(mandates).stopCollecting(7, LocalDate.now(clock))
     }
 }

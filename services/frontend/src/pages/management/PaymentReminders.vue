@@ -120,7 +120,6 @@ const send = async () => {
       contributionPeriodId: periodId.value,
       userIds: chosen.value.map((one) => one.userId),
       forciblyIncludedUserIds: chosen.value.filter((one) => one.row.disposition === "WARNING").map((one) => one.userId),
-      kindOverrides: {},
       paymentDueDate: dueDate.value,
       feeTypeOverrides: overrides,
     })

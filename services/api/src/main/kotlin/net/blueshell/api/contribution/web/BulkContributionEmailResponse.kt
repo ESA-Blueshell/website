@@ -18,8 +18,6 @@ data class BulkContributionEmailRowResponse(
     val disposition: BulkRowDisposition,
     @field:Schema(description = "Why this member is warned about or not written to.")
     val reason: BulkRowReason?,
-    @field:Schema(description = "The email this member gets unless the treasurer switches it.")
-    val defaultKind: ContributionEmailKind,
     @field:Schema(description = "Absent only for honorary members, who owe nothing.")
     val feeType: BulkFeeType?,
     @field:Schema(description = "Follows from the fee type and the period. Never typed.")
@@ -50,7 +48,6 @@ data class ContributionEmailMessageResponse(
 @Schema(name = "PaymentEmailsResultResponse")
 data class PaymentEmailsResultResponse(
     val remindersSent: Int,
-    val incassoNotificationsSent: Int,
     @field:Schema(description = "Members in the selection who were not written to.")
     val notWrittenTo: Int,
 )

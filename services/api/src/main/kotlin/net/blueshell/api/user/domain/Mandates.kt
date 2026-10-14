@@ -5,6 +5,7 @@ import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
+import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OpenedOnlineMandate
 import net.blueshell.api.user.api.OwnMandate
@@ -21,13 +22,13 @@ import java.time.format.DateTimeFormatter
 /** Where a person stands on incasso. */
 @Schema(enumAsRef = true)
 enum class IncassoStanding {
-    /** Pays by transfer. */
+    /** Pays by transfer: no mandate stands. */
     NONE,
 
-    /** Collected by incasso under a recorded mandate. */
+    /** Collected by incasso under a standing mandate. */
     MANDATE_RECORDED,
 
-    /** Marked as paying by incasso, but no bank details are on file to collect from. */
+    /** A mandate stands, but no bank details are on file to collect from. */
     ON_INCASSO_WITHOUT_BANK_DETAILS,
 }
 
@@ -46,15 +47,25 @@ data class BankDetails(
     override fun toString(): String = "BankDetails($iban)"
 }
 
-/** The mandate the person can be collected under: one whose bank details were wiped is a record only. */
-val PaymentDetails.collectableMandate: IncassoMandate?
+/**
+ * Whether the mandate stands on [today], which is the only thing that says somebody pays by
+ * direct debit (api ADR-040). An end set for a later day, as a membership ending ahead sets, has
+ * not come yet. TWIN: `MandateRetentionRepository.STOPPED` reads an end the same way.
+ */
+fun IncassoMandate.standsOn(today: LocalDate): Boolean = endedOn?.isAfter(today) ?: true
+
+/** The mandate the person can be collected under on [today]: it stands and still holds its bank details. */
+fun PaymentDetails.collectableMandate(today: LocalDate): IncassoMandate? = mandate?.takeIf { it.standsOn(today) && !it.wiped }
+
+/** A mandate whose bank details are still kept, standing or ended, for a reveal or its PDF. */
+val PaymentDetails.keptMandate: IncassoMandate?
     get() = mandate?.takeUnless { it.wiped }
 
-/** Collected by incasso only while the person pays by it; a mandate kept for a transfer payer is not used. */
-fun PaymentDetails.incassoStanding(): IncassoStanding =
+/** A standing mandate is the only "pays by direct debit" (api ADR-040). */
+fun PaymentDetails.incassoStanding(today: LocalDate): IncassoStanding =
     when {
-        incasso && collectableMandate != null -> IncassoStanding.MANDATE_RECORDED
-        incasso -> IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS
+        collectableMandate(today) != null -> IncassoStanding.MANDATE_RECORDED
+        mandate?.standsOn(today) == true -> IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS
         else -> IncassoStanding.NONE
     }
 
@@ -85,19 +96,57 @@ class Mandates(
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
         if (signedOn.isAfter(LocalDate.now(clock))) throw MandateSignedInFuture()
         val details = of(userId)
-        val online = details.collectableMandate?.takeIf { it.kind == MandateKind.ONLINE }
+        val online = details.collectableMandate(today())?.takeIf { it.kind == MandateKind.ONLINE }
         if (online != null && !replacesOnline) throw ReplacesOnlineMandate(online.authorisedAt ?: online.recordedAt)
         return write(details, iban, holder, signedOn, recordedBy, null)
     }
 
-    /** Sets whether the person pays by incasso or by transfer; a mandate on file stays either way. */
+    /**
+     * Ends the person's standing mandate on [on], today unless said, and tells them: they pay by
+     * transfer from then. False where none stood. Bank details stay sealed until the retention wipe.
+     */
     @Transactional
-    fun payBy(
+    fun end(
         userId: Long,
-        incasso: Boolean,
+        on: LocalDate? = null,
+    ): Boolean {
+        val details = payments.findByUserId(userId) ?: return false
+        val mandate = details.mandate?.takeIf { it.standsOn(today()) } ?: return false
+        mandate.endedOn = on ?: today()
+        payments.save(details)
+        events.publish(MandateEnded(userId, mandate.reference))
+        return true
+    }
+
+    /** Where [details] stands on incasso today. */
+    fun standing(details: PaymentDetails): IncassoStanding = details.incassoStanding(today())
+
+    /** Whether [mandate] stands today. */
+    fun stands(mandate: IncassoMandate?): Boolean = mandate?.standsOn(today()) == true
+
+    /** The mandate [userId] can be collected under today, or nothing. */
+    @Transactional(readOnly = true)
+    fun collectable(userId: Long): IncassoMandate? = payments.findByUserId(userId)?.collectableMandate(today())
+
+    /** A paper mandate kept without bank details, which an incasso run lists as needing them. */
+    @Transactional
+    fun recordWithoutBankDetails(
+        userId: Long,
+        recordedBy: Long?,
     ): PaymentDetails {
         val details = of(userId)
-        details.incasso = incasso
+        if (details.mandate?.standsOn(today()) == true) return details
+        val today = LocalDate.now(clock)
+        details.mandate =
+            IncassoMandate(
+                sealedIban = null,
+                sealedAccountHolder = null,
+                ibanMasked = null,
+                reference = referenceFor(userId, today),
+                signedOn = today,
+                recordedBy = recordedBy,
+                recordedAt = clock.instant(),
+            )
         return payments.save(details)
     }
 
@@ -113,7 +162,7 @@ class Mandates(
         val userId = details.userId
         // A mandate that no longer opens for its person is replaced as a new one, under a new reference.
         val before =
-            details.collectableMandate?.let { held ->
+            details.collectableMandate(today())?.let { held ->
                 try {
                     bankDetailsOf(userId, held)
                 } catch (_: BankDetailsUnopenable) {
@@ -121,7 +170,8 @@ class Mandates(
                 }
             }
         val reference =
-            details.collectableMandate
+            details
+                .collectableMandate(today())
                 ?.takeIf { before?.iban == iban }
                 ?.reference
                 ?: referenceFor(userId, signedOn)
@@ -142,7 +192,6 @@ class Mandates(
                 authorisedBy = online?.let { userId },
                 sealedAddress = sealed.address,
             )
-        details.incasso = true
         return payments.save(details)
     }
 
@@ -188,8 +237,8 @@ class Mandates(
     @Transactional(readOnly = true)
     fun own(userId: Long): OwnMandate {
         val details = of(userId)
-        val held = details.collectableMandate
-        return OwnMandate(details.incassoStanding(), MaskedIban.of(held?.ibanMasked), held?.reference, held?.signedOn)
+        val held = details.collectableMandate(today())
+        return OwnMandate(details.incassoStanding(today()), MaskedIban.of(held?.ibanMasked), held?.reference, held?.signedOn)
     }
 
     /** How the person pays; one without a row pays by transfer and has no mandate. */
@@ -205,7 +254,7 @@ class Mandates(
         userId: Long,
         revealedBy: Long,
     ): Iban {
-        val mandate = of(userId).collectableMandate ?: throw NoMandateRecorded()
+        val mandate = of(userId).keptMandate ?: throw NoMandateRecorded()
         val iban = bankDetailsOf(userId, mandate).iban
         events.publish(IbanRevealed(userId, mandate.reference, revealedBy))
         return iban
@@ -217,7 +266,7 @@ class Mandates(
         userId: Long,
         username: String,
     ): OpenedOnlineMandate {
-        val mandate = of(userId).collectableMandate?.takeIf { it.kind == MandateKind.ONLINE } ?: throw NoOnlineMandate()
+        val mandate = of(userId).keptMandate?.takeIf { it.kind == MandateKind.ONLINE } ?: throw NoOnlineMandate()
         val sealed = SealedAccount(requireNotNull(mandate.sealedIban), requireNotNull(mandate.sealedAccountHolder), mandate.sealedAddress)
         val (account, address) = sealing.openOnline(userId, sealed)
         val version = requireNotNull(mandate.wordingVersion) { "An online mandate records its wording" }
@@ -261,6 +310,8 @@ class Mandates(
             mandate.sealedAccountHolder ?: throw NoMandateRecorded(),
         ),
     )
+
+    private fun today(): LocalDate = LocalDate.now(clock)
 
     private fun referenceFor(
         userId: Long,

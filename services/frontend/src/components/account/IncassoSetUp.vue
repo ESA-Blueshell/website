@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import FormControl from "@/components/island/FormControl.vue"
 import CheckBox from "@/components/island/CheckBox.vue"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 /* A member's own bank details for incasso. Saving authorises an online mandate at that moment,
    under the wording shown and the address confirmed here; the account number is shown back only
@@ -12,7 +13,16 @@ import {onMounted, ref, watch} from "vue"
 import CountrySelect from "@/components/form/fields/CountrySelect.vue"
 import {StepUpDialog, readTwoFactor} from "@/domains/auth"
 import {maskedIban} from "@/domains/contribution"
-import {IncassoStanding, MANDATE_WORDING, type MandateAddressRequest, type OwnMandateResponse, readAddress, readOwnMandate, setUpIncasso} from "@/domains/user"
+import {
+  IncassoStanding,
+  MANDATE_WORDING,
+  type MandateAddressRequest,
+  type OwnMandateResponse,
+  readAddress,
+  readOwnMandate,
+  setUpIncasso,
+  stopOwnIncasso,
+} from "@/domains/user"
 
 defineOptions({name: "IncassoSetUp"})
 
@@ -37,6 +47,30 @@ const saved = ref(false)
 const saving = ref(false)
 const stepUpOpen = ref(false)
 const twoFactorOn = ref(false)
+const stopOpen = ref(false)
+const stopping = ref(false)
+// What a step-up was asked for, so proving it carries on with that.
+const afterStepUp = ref<"save" | "stop">("save")
+
+const stop = async () => {
+  if (stopping.value) return
+  stopping.value = true
+  failure.value = null
+  const answered = await stopOwnIncasso()
+  stopping.value = false
+  stopOpen.value = false
+  if (!answered.ok) {
+    if (answered.needsStepUp) {
+      afterStepUp.value = "stop"
+      stepUpOpen.value = true
+      return
+    }
+    failure.value = answered.reason
+    return
+  }
+  own.value = answered.saved
+  saved.value = false
+}
 
 const save = async () => {
   if (saving.value) return
@@ -49,6 +83,7 @@ const save = async () => {
   saving.value = false
   if (!answered.ok) {
     if ("needsStepUp" in answered && answered.needsStepUp) {
+      afterStepUp.value = "save"
       stepUpOpen.value = true
       return
     }
@@ -99,6 +134,12 @@ onMounted(async () => {
       data-testid="incasso-current"
     >
       Your contribution is collected by incasso from the account {{ maskedIban(own) }}.
+    </p>
+    <p
+      v-else-if="own?.standing === IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS"
+      data-testid="incasso-without-details"
+    >
+      You pay by incasso, but we do not have your bank details yet. Set up incasso to add them.
     </p>
     <p
       v-else
@@ -212,7 +253,33 @@ onMounted(async () => {
     <step-up-dialog
       v-model="stepUpOpen"
       :two-factor-on="twoFactorOn"
-      @proved="save"
+      @proved="afterStepUp === 'stop' ? stop() : save()"
+    />
+    <cut-button
+      v-if="!open && !signupToken && own && own.standing !== IncassoStanding.NONE"
+      tone="danger"
+      data-testid="incasso-stop"
+      @click="stopOpen = true"
+    >
+      Stop incasso
+    </cut-button>
+    <p
+      v-if="failure && !open"
+      class="incasso__failure"
+      data-testid="incasso-stop-failure"
+      role="alert"
+    >
+      {{ failure }}
+    </p>
+    <confirm-dialog
+      v-model:open="stopOpen"
+      confirm-label="Stop incasso"
+      question="We will no longer collect your contribution from your bank account. From then on you pay each contribution yourself, by bank transfer or in cash."
+      testid="incasso-stop-dialog"
+      title="Stop incasso?"
+      :working="stopping"
+      working-label="Stopping"
+      @confirm="stop"
     />
   </section>
 </template>

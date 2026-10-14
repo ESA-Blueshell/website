@@ -95,6 +95,9 @@ enum class SecurityEventKind(
     ROLES_CHANGED(false),
     BANK_DETAILS_CHANGED(true),
 
+    /** The person's direct debit mandate ended, so they pay by transfer from now on. */
+    MANDATE_ENDED(true),
+
     /** A board member opened the person's full IBAN. */
     IBAN_REVEALED(false),
 

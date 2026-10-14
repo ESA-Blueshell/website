@@ -441,10 +441,6 @@ export type BulkContributionEmailRowResponse = {
      * Follows from the fee type and the period. Never typed.
      */
     amount?: number | null;
-    /**
-     * The email this member gets unless the treasurer switches it.
-     */
-    defaultKind: ContributionEmailKind;
     disposition: BulkRowDisposition;
     /**
      * Absent only for honorary members, who owe nothing.
@@ -521,7 +517,7 @@ export enum BulkRowReason {
     ALREADY_PAID = 'ALREADY_PAID',
     NOT_PAID = 'NOT_PAID',
     HONORARY = 'HONORARY',
-    INCASSO_MISMATCH = 'INCASSO_MISMATCH',
+    PAYS_BY_DIRECT_DEBIT = 'PAYS_BY_DIRECT_DEBIT',
     NO_ACTIVE_MEMBERSHIP = 'NO_ACTIVE_MEMBERSHIP',
     NOT_MEMBER_IN_PERIOD = 'NOT_MEMBER_IN_PERIOD',
     STARTED_TODAY = 'STARTED_TODAY',
@@ -2569,6 +2565,10 @@ export type MandateResponse = {
      */
     bankDetailsWiped: boolean;
     /**
+     * The day the mandate ended; null while it stands. A person pays by direct debit only while it stands.
+     */
+    endedOn?: string | null;
+    /**
      * The IBAN's country code; with the last two, all a response carries of it.
      */
     ibanCountry?: string | null;
@@ -2576,10 +2576,6 @@ export type MandateResponse = {
      * The IBAN's last two characters.
      */
     ibanLastTwo?: string | null;
-    /**
-     * Pays by incasso rather than by transfer, whether or not a mandate is recorded.
-     */
-    incasso: boolean;
     /**
      * Online where the member authorised it on the site, paper where the board recorded it.
      */
@@ -2758,16 +2754,11 @@ export type PaymentEmailRun = {
 };
 
 export type PaymentEmailsResultResponse = {
-    incassoNotificationsSent: number;
     /**
      * Members in the selection who were not written to.
      */
     notWrittenTo: number;
     remindersSent: number;
-};
-
-export type PaysByRequest = {
-    incasso: boolean;
 };
 
 /**
@@ -3266,6 +3257,7 @@ export enum SecurityEventKind {
     SIGNED_OUT_ELSEWHERE = 'SIGNED_OUT_ELSEWHERE',
     ROLES_CHANGED = 'ROLES_CHANGED',
     BANK_DETAILS_CHANGED = 'BANK_DETAILS_CHANGED',
+    MANDATE_ENDED = 'MANDATE_ENDED',
     IBAN_REVEALED = 'IBAN_REVEALED',
     INCASSO_FILE_DOWNLOADED = 'INCASSO_FILE_DOWNLOADED',
     MANDATE_PDF_DOWNLOADED = 'MANDATE_PDF_DOWNLOADED'
@@ -3292,10 +3284,6 @@ export type SecurityEventResponse = {
 export type SendPaymentEmailsRequest = {
     contributionPeriodId: number | null;
     /**
-     * Required exactly when somebody here is getting a pre-notification.
-     */
-    debitDate?: string | null;
-    /**
      * Fee type per member, where the treasurer changed it.
      */
     feeTypeOverrides: {
@@ -3306,13 +3294,7 @@ export type SendPaymentEmailsRequest = {
      */
     forciblyIncludedUserIds: Array<number>;
     /**
-     * Members moved off the email their direct-debit flag chose.
-     */
-    kindOverrides: {
-        [key: string]: ContributionEmailKind;
-    };
-    /**
-     * Required exactly when somebody here is getting a payment request.
+     * Required exactly when somebody here is sent a reminder.
      */
     paymentDueDate?: string | null;
     userIds: Array<number>;
@@ -14989,6 +14971,47 @@ export type SetUpOwnMandateResponses = {
 
 export type SetUpOwnMandateResponse = SetUpOwnMandateResponses[keyof SetUpOwnMandateResponses];
 
+export type EndOwnMandateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/mandate/end';
+};
+
+export type EndOwnMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndOwnMandateError = EndOwnMandateErrors[keyof EndOwnMandateErrors];
+
+export type EndOwnMandateResponses = {
+    /**
+     * OK
+     */
+    200: OwnMandateResponse;
+};
+
+export type EndOwnMandateResponse = EndOwnMandateResponses[keyof EndOwnMandateResponses];
+
 export type FindOwnMembershipsData = {
     body?: never;
     path?: never;
@@ -16135,6 +16158,49 @@ export type RecordMandateResponses = {
 
 export type RecordMandateResponse = RecordMandateResponses[keyof RecordMandateResponses];
 
+export type EndMandateData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/users/{userId}/mandate/end';
+};
+
+export type EndMandateErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EndMandateError = EndMandateErrors[keyof EndMandateErrors];
+
+export type EndMandateResponses = {
+    /**
+     * OK
+     */
+    200: MandateResponse;
+};
+
+export type EndMandateResponse = EndMandateResponses[keyof EndMandateResponses];
+
 export type DownloadMandatePdfData = {
     body?: never;
     path: {
@@ -16435,49 +16501,6 @@ export type SetNameOnRostersResponses = {
 };
 
 export type SetNameOnRostersResponse = SetNameOnRostersResponses[keyof SetNameOnRostersResponses];
-
-export type SetPaysByData = {
-    body: PaysByRequest;
-    path: {
-        userId: number;
-    };
-    query?: never;
-    url: '/users/{userId}/pays-by';
-};
-
-export type SetPaysByErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type SetPaysByError = SetPaysByErrors[keyof SetPaysByErrors];
-
-export type SetPaysByResponses = {
-    /**
-     * OK
-     */
-    200: MandateResponse;
-};
-
-export type SetPaysByResponse = SetPaysByResponses[keyof SetPaysByResponses];
 
 export type RestoreDeletedUserByIdData = {
     body?: never;

@@ -28,10 +28,10 @@ membership type. Whether someone pays by direct debit is whether they have a man
   one after the other. Only the board records them. NONE goes, as regular.
 - A new membership starts only after a real gap. Back-to-back memberships already on file are
   merged into one, with a membership type per old row.
-- The fee a member is asked follows their membership type on the day they are asked. What they owe for
-  a period is the latest ask's amount, or before any ask what their membership type today would be
-  asked. Honorary owes nothing from its first day, which drops the current period's unpaid
-  contribution; earlier unpaid periods stay owed.
+- The fee a member is asked follows their membership type today. What they owe for a period is
+  the latest ask's amount, or before any ask what their membership type today would be asked.
+  Honorary owes nothing from its first day, which drops the current period's unpaid contribution;
+  a period that ended before it stays owed at the membership type held then.
 - A **mandate**, online or paper, is the only "pays by direct debit". The separate switch goes.
   A mandate ends when the member stops it, when the bank account it was given for is replaced or
   deleted, or when the membership ends. A member can sign one while signing up.

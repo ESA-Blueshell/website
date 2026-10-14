@@ -236,8 +236,9 @@ does, and rejoining after one starts a new membership.
 What kind of member someone is during a membership: **regular**, **alumni** or **honorary**,
 each from a date, as in "alumni since 1 September 2025". A membership has one or more of them,
 one after the other, and only the board records them. The fee a member is asked follows their
-membership type on the day they are asked. Honorary owes nothing from the day it starts, which also
-drops what is still unpaid for the current period.
+membership type today. Honorary owes nothing from the day it starts, which also drops what is
+still unpaid for the current period; a period that ended before it stays owed at the membership
+type they held then.
 
 _Avoid_: standing, status.
 
@@ -524,7 +525,8 @@ Not a "season" — that word belongs to esports and means something else.
 Which of the period's three fees applies to a member: the **full-year fee**, the
 **half-year fee** or the **alumni fee**. It is the thing chosen; the amount follows
 from it and the period. An amount is never typed and never stored as a choice. It
-follows the member's **membership type** on the day they are asked; in an **incasso run** the
+follows the member's **membership type** today, or the one they held then for a period that
+ended before they turned honorary; in an **incasso run** the
 treasurer may pick another of the three for a member.
 
 `BulkFeeType` in the code, because it arrived with the bulk vocabulary and the

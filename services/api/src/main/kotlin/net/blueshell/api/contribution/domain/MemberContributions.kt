@@ -16,7 +16,7 @@ data class MemberPeriodContribution(
     val periodId: Long,
     val startDate: LocalDate,
     val endDate: LocalDate,
-    /** Null for an honorary member, who owes nothing. */
+    /** What the latest ask said, or before any ask what today would ask; null once honorary owes nothing. */
     val feeType: BulkFeeType?,
     val fee: Double?,
     val paid: Boolean,
@@ -38,12 +38,12 @@ class MemberContributions(
     fun of(userId: Long): List<MemberPeriodContribution> {
         val held = memberships.findByUserId(userId)
         val payments = contributions.findByIdUserId(userId).associateBy { it.contributionPeriodId }
-        val asked = reminders.findByUser_Id(userId).map { Triple(it.contributionPeriodId, it.askedAt, ContributionEmailKind.REMINDER) }
-        val told =
-            notifications.findByUser_Id(userId).map {
-                Triple(it.contributionPeriodId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION)
-            }
+        val reminded = reminders.findByUser_Id(userId)
+        val notified = notifications.findByUser_Id(userId)
+        val asked = reminded.map { Triple(it.contributionPeriodId, it.askedAt, ContributionEmailKind.REMINDER) }
+        val told = notified.map { Triple(it.contributionPeriodId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION) }
         val emails = asked + told
+        val asks = asksBy(reminded, notified, { it.contributionPeriodId }, { it.contributionPeriodId })
         return periods
             .findAll()
             .sortedByDescending { it.startDate }
@@ -56,14 +56,14 @@ class MemberContributions(
                         .maxByOrNull { it.startDate }
                 // A payment recorded outside every membership is still listed, so it can be withdrawn.
                 if (membership == null && payment == null) return@mapNotNull null
-                val feeType = membership?.let { resolveFeeType(it.memberType, it.startDate, period) }
+                val owes = membership?.let { owed(it, period, asks[periodId].orEmpty()) }
                 val lastEmail = emails.filter { it.first == periodId }.maxByOrNull { it.second }
                 MemberPeriodContribution(
                     periodId = periodId,
                     startDate = period.startDate,
                     endDate = period.endDate,
-                    feeType = feeType,
-                    fee = feeType?.let { resolveFeeAmount(it, period) },
+                    feeType = owes?.feeType,
+                    fee = owes?.amount,
                     paid = payment != null,
                     paidAt = payment?.createdAt,
                     lastEmailAt = lastEmail?.second,

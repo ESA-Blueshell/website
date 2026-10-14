@@ -17,7 +17,7 @@ data class PeriodMember(
     val userId: Long,
     val name: String,
     val username: String,
-    /** Null for an honorary member, who owes nothing. */
+    /** What the latest ask said, or before any ask what today would ask; null once honorary owes nothing. */
     val feeType: BulkFeeType?,
     val fee: Double?,
     val incasso: Boolean,
@@ -57,25 +57,26 @@ class PeriodContributions(
     fun of(periodId: Long): PeriodContributionsView {
         val period = periods.findById(periodId)
         val paid = contributions.findByIdContributionPeriodId(periodId).associate { it.userId to it.createdAt }
+        val reminded = reminders.findByContributionPeriod_Id(periodId)
+        val notified = notifications.findByContributionPeriod_Id(periodId)
         val emails =
-            reminders.findByContributionPeriod_Id(periodId).map { Triple(it.userId, it.askedAt, ContributionEmailKind.REMINDER) } +
-                notifications.findByContributionPeriod_Id(periodId).map {
-                    Triple(it.userId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION)
-                }
+            reminded.map { Triple(it.userId, it.askedAt, ContributionEmailKind.REMINDER) } +
+                notified.map { Triple(it.userId, it.askedAt, ContributionEmailKind.INCASSO_NOTIFICATION) }
         val lastEmail = emails.groupBy { it.first }.mapValues { (_, sent) -> sent.maxBy { it.second } }
+        val asks = asksBy(reminded, notified, { it.userId }, { it.userId })
         val overlapping = memberships.findOverlappingWithMembers(period.startDate, period.endDate).groupBy { it.userId }
         val paying = payments.of(overlapping.keys)
         val members =
             overlapping
                 .map { (userId, held) ->
                     val latest = held.maxBy { it.startDate }
-                    val feeType = resolveFeeType(latest.memberType, latest.startDate, period)
+                    val owes = owed(latest, period, asks[userId].orEmpty())
                     PeriodMember(
                         userId = userId,
                         name = latest.user.fullName,
                         username = latest.user.username,
-                        feeType = feeType,
-                        fee = feeType?.let { resolveFeeAmount(it, period) },
+                        feeType = owes?.feeType,
+                        fee = owes?.amount,
                         incasso = paying.getValue(userId).incasso,
                         paid = userId in paid,
                         paidAt = paid[userId],

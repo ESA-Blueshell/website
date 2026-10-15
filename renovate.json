@@ -113,6 +113,18 @@
       "depNameTemplate": "fluxcd/flux2",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "The api's buildpack builder, which no Docker manager reads in the Gradle build.",
+      "managerFilePatterns": [
+        "/^services/api/build\\.gradle\\.kts$/"
+      ],
+      "matchStrings": [
+        "\"(?<depName>paketobuildpacks/builder-noble-java-tiny):(?<currentValue>[^\"@]+)\" \\+\\s+\"@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "loose"
     }
   ],
   "packageRules": [
@@ -262,6 +274,14 @@
         "mariadb"
       ],
       "enabled": false
+    },
+    {
+      "matchPackageNames": [
+        "paketobuildpacks/builder-noble-java-tiny"
+      ],
+      "addLabels": [
+        "docker"
+      ]
     }
   ]
 }

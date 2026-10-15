@@ -101,13 +101,13 @@ This:
 
 ### Build Production Image
 
-The image packages the boot jar Gradle builds.
+Cloud Native Buildpacks build the image from the boot jar, with no Dockerfile and no shell, and
+train its AOT cache on the way (architecture ADR-013 and ADR-015). It needs Docker running.
 
 ```bash
-# From the repository root. clean drops a boot jar of an earlier version, which
-# would give the Dockerfile's COPY two sources.
-./gradlew :services:api:clean :services:api:bootJar
-docker build -f services/api/Dockerfile -t blueshell-api:latest services/api/build/libs
+# From the repository root.
+./gradlew :services:api:bootBuildImage -PapiImage=blueshell-api:latest
+scripts/check-aot-cache.sh blueshell-api:latest
 ```
 
 ## Database

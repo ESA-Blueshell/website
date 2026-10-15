@@ -686,7 +686,7 @@ jobs:
           if-no-files-found: error
 
   build-images:
-    # Builds the production images so a broken Dockerfile is caught on the pull
+    # Builds the production images so a broken image build is caught on the pull
     # request rather than on main. Nothing downstream waits for it: the tests
     # run against the jar and the bundle, so this job's wall clock no longer
     # sits in front of them.
@@ -705,8 +705,6 @@ jobs:
       matrix:
         service:
           - name: api
-            context: services/api/build/libs
-            dockerfile: services/api/Dockerfile
           - name: frontend
             context: services/frontend
             dockerfile: services/frontend/Dockerfile
@@ -722,11 +720,31 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: api-jar
-          path: services/api/build/libs
+          path: /tmp/api-jar
+
+      - name: Set up Java + Gradle
+        if: matrix.service.name == 'api'
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Find the api jar
+        if: matrix.service.name == 'api'
+        id: jar
+        run: echo "path=$(find /tmp/api-jar -name '*-boot.jar' | head -1)" >> "$GITHUB_OUTPUT"
+
+      - name: Build the api image and boot it from its AOT cache
+        if: matrix.service.name == 'api'
+        uses: ./.github/actions/build-api-image
+        with:
+          image: blueshell-website/api:ci
+          jar: ${{ steps.jar.outputs.path }}
 
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+        if: matrix.service.name != 'api'
 
       - name: Build ${{ matrix.service.name }} image
+        if: matrix.service.name != 'api'
         run: |
           set -euo pipefail
           docker buildx build \
@@ -737,12 +755,6 @@ jobs:
             --cache-from "type=gha,scope=${{ matrix.service.name }}" \
             --cache-to "type=gha,mode=max,scope=${{ matrix.service.name }}" \
             "${{ matrix.service.context }}"
-
-      # A JVM whose flags differ from the training run's ignores the AOT cache and boots cold
-      # without a word; the check makes that a failure (architecture ADR-013).
-      - name: Boot the api image from its AOT cache
-        if: matrix.service.name == 'api'
-        run: scripts/check-aot-cache.sh blueshell-website/api:ci
 
       # The system tests serve the bundle with vite preview, so only the image runs the SSI.
       - name: Check link previews

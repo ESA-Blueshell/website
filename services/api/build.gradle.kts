@@ -1,6 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.springframework.boot.gradle.tasks.run.BootRun
+import java.security.SecureRandom
+import java.util.Base64
 
 plugins {
     id("spring-conventions")
@@ -188,6 +190,47 @@ tasks.named<Jar>("jar") {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveClassifier.set("boot")
+}
+
+// Architecture ADR-015.
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
+    builder.set(
+        "paketobuildpacks/builder-noble-java-tiny:0.0.197" +
+            "@sha256:b95da27fce97b58037f0c11ae934760c50730da4c9a24976205b53638592eba9",
+    )
+    imageName.set(providers.gradleProperty("apiImage").orElse("blueshell-website/api:local"))
+    providers.gradleProperty("apiJar").orNull?.let { archiveFile.set(file(it)) }
+
+    // Only for the training run; the buildpack logs them.
+    fun throwawayKey(bytes: Int) = Base64.getEncoder().encodeToString(ByteArray(bytes).also(SecureRandom()::nextBytes))
+
+    environment.putAll(
+        mapOf(
+            "BP_JVM_VERSION" to "25",
+            "BP_JVM_AOTCACHE_ENABLED" to "true",
+            "BP_SPRING_CLOUD_BINDINGS_DISABLED" to "true",
+            "TRAINING_RUN_JAVA_TOOL_OPTIONS" to
+                listOf(
+                    "-XX:MaxRAM=2g",
+                    "-XX:+UseG1GC",
+                    "-Dspring.context.exit=onRefresh",
+                    "-Dspring.profiles.active=training",
+                    "-Dstorage.location=/tmp/training-storage",
+                    "-Dapp.jwt.secret=${throwawayKey(64)}",
+                    "-Dapp.two-factor.key=${throwawayKey(32)}",
+                    "-Dauth.clients.vault.secret=${throwawayKey(24)}",
+                ).joinToString(" "),
+            // Must match the training run, or the cache is ignored.
+            "BPE_DELIM_JAVA_TOOL_OPTIONS" to " ",
+            "BPE_APPEND_JAVA_TOOL_OPTIONS" to "-XX:+UseG1GC",
+            "BPE_DEFAULT_SPRING_PROFILES_ACTIVE" to "prod",
+            "BPE_DEFAULT_BPL_JAVA_NMT_ENABLED" to "false",
+        ),
+    )
+
+    providers.gradleProperty("buildpackCache").orNull?.let { root ->
+        buildCache { bind { source.set(root) } }
+    }
 }
 
 // Spring Boot registers `bootArchives` as a consumable configuration with

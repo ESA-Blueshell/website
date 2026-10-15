@@ -52,6 +52,9 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
+            # Must fit the limit with what the image's memory calculator adds (architecture ADR-015).
+            - name: JAVA_TOOL_OPTIONS
+              value: -Xmx1200M -XX:MaxDirectMemorySize=64M
             # Secrets are not set here: the prod profile reads them from Vault as
             # this pod's ServiceAccount (api ADR-033).
             - name: MYSQL_HOST
@@ -180,9 +183,9 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /srv/storage
-      # The api image runs as an Alpine `-S` system user with a
-      # dynamic uid that changes across image rebuilds, so we can't
-      # fsGroup our way onto the hostPath mount. Instead, on every
+      # The api image runs as the buildpack's cnb user (1002:1001), and
+      # the volume holds files earlier images wrote under other uids, so
+      # we can't fsGroup our way onto the hostPath mount. Instead, on every
       # pod start, walk the volume and force directories to 0777 and
       # regular files to 0666 (u+rwX,g+rwX,o+rwX — capital X means
       # +x only on directories and already-executable files). This

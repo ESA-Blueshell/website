@@ -37,8 +37,9 @@ stack.
 | # | Title | Status | Summary |
 |---|-------|--------|---------|
 | [011](ADR-011-backups-go-off-site-to-scaleway-under-a-compliance-object-lock.md) | Backups Go Off-Site to Scaleway Under a Compliance Object Lock | Accepted | Kopia nightly to Standard One Zone in `nl-ams`, in a backup-only organization; a 30-day COMPLIANCE lock bounds how long erased data survives; OpenTofu runs on an owner's user key |
-| [013](ADR-013-the-api-boots-from-a-jvm-aot-cache.md) | The Api Boots From a JVM AOT Cache | Accepted | Trained at image build under the `training` profile; flags only in the image; G1, named; an `AOTMode=on` boot in each pod's shape proves it loads |
+| [013](ADR-013-the-api-boots-from-a-jvm-aot-cache.md) | The Api Boots From a JVM AOT Cache | Accepted, amended by 015 | Trained at image build under the `training` profile; G1, named; an `AOTMode=on` boot in each pod's shape proves it loads |
 | [014](ADR-014-uploaded-images-are-decoded-in-an-isolated-service.md) | Uploaded Images Are Decoded in an Isolated Service | Accepted | A Go service decodes stills and animations and links libwebp; shell-less, no token, no egress, pixel and frame limits before decoding; imgproxy rejected for its Pro-only lossless WebP |
+| [015](ADR-015-the-api-image-is-built-by-cloud-native-buildpacks.md) | The Api Image Is Built by Cloud Native Buildpacks | Accepted | `bootBuildImage` with the tiny builder pinned by digest; no shell, no Dockerfile; explicit heap and direct memory in the manifests; SBOM and provenance as artifact attestations |
 
 ### Getting there
 

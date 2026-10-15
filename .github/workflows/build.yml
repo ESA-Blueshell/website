@@ -91,8 +91,8 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # Its context is the jar Gradle builds below.
-          - {name: api, context: services/api/build/libs, file: services/api/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
+          # No Dockerfile: buildpacks build it from the jar, on the runner (architecture ADR-015).
+          - {name: api, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           - {name: frontend, context: services/frontend, file: services/frontend/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           # The apply sidecar for the Stalwart Deployment. Its Dockerfile
           # copies infra/stalwart/*, so the context is the repo root.
@@ -121,11 +121,16 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Build the api jar
+      # Built into the runner's Docker daemon and booted from its AOT cache before anything is
+      # pushed, so an image whose cache would be ignored never reaches the registry.
+      - name: Build the api image and boot it from its AOT cache
         if: matrix.target.name == 'api'
-        run: ./gradlew --no-daemon --build-cache :services:api:bootJar
+        uses: ./.github/actions/build-api-image
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:sha-${{ github.sha }}-${{ matrix.target.arch }}
 
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+        if: matrix.target.name != 'api'
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -134,7 +139,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # The merge job assembles the manifest list from this digest, as from the others', and
+      # attests it, since a buildpack build records no provenance or SBOM of its own.
+      - name: Push the api image
+        if: matrix.target.name == 'api'
+        id: push
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:sha-${{ github.sha }}-${{ matrix.target.arch }}
+        run: |
+          set -euo pipefail
+          docker push "$IMAGE"
+          echo "digest=$(docker image inspect "$IMAGE" --format '{{index .RepoDigests 0}}' | cut -d@ -f2)" >> "$GITHUB_OUTPUT"
+
       - name: Build & push by digest
+        if: matrix.target.name != 'api'
         id: build
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
@@ -151,19 +169,11 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.version.outputs.version }}
 
-      # Before the merge job names it, so an image whose cache would be ignored never gets a tag
-      # (architecture ADR-013).
-      - name: Boot the api image from its AOT cache
-        if: matrix.target.name == 'api'
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api@${{ steps.build.outputs.digest }}
-        run: scripts/check-aot-cache.sh "$IMAGE"
-
       - name: Export digest
         run: |
           set -euo pipefail
           mkdir -p /tmp/digests
-          digest='${{ steps.build.outputs.digest }}'
+          digest='${{ steps.build.outputs.digest || steps.push.outputs.digest }}'
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
@@ -187,6 +197,8 @@ jobs:
       # Keyless signing: cosign exchanges this run's OIDC token for a
       # short-lived certificate, so there is no key to hold or rotate.
       id-token: write
+      # The api's provenance and SBOM, written as GitHub artifact attestations.
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -286,3 +298,32 @@ jobs:
           set -euo pipefail
           echo "::notice::signing ${IMAGE}@${DIGEST}"
           cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      # A buildpack build records neither provenance nor an SBOM the way BuildKit does for the
+      # other images, so the api's manifest list is attested here, and the attestations pushed
+      # beside it in the registry (architecture ADR-015).
+      - name: Describe the api image's contents
+        if: matrix.service == 'api'
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api@${{ steps.manifest.outputs.digest }}
+          format: spdx-json
+          output-file: /tmp/api.spdx.json
+          upload-artifact: false
+
+      - name: Attest the api image's SBOM
+        if: matrix.service == 'api'
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          sbom-path: /tmp/api.spdx.json
+          push-to-registry: true
+
+      - name: Attest the api image's provenance
+        if: matrix.service == 'api'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api
+          subject-digest: ${{ steps.manifest.outputs.digest }}
+          push-to-registry: true

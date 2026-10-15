@@ -206,15 +206,33 @@ ssh old-vps 'mysqldump --single-transaction --routines --triggers blueshell' | k
 cat /path/to/blueshell.sql | kubectl -n data-system exec -i mariadb-0 -- mysql -uroot -p"$MARIADB_ROOT" blueshell
 ```
 
-User-uploaded storage:
+User-uploaded storage goes through a pod that mounts the api's storage claim, since the api
+image has no shell or `tar` (architecture ADR-015):
 
 ```bash
-ssh old-vps 'tar -C /src/website -cf - storage' | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
+kubectl -n default run storage-copy --image=busybox:1.38-musl --restart=Never --overrides='{
+  "spec": {"containers": [{"name": "storage-copy", "image": "busybox:1.38-musl", "command": ["sleep", "3600"],
+    "volumeMounts": [{"name": "storage", "mountPath": "/srv/storage"}]}],
+    "volumes": [{"name": "storage", "persistentVolumeClaim": {"claimName": "api-storage"}}]}}'
+kubectl -n default wait --for=condition=Ready pod/storage-copy --timeout=180s
+```
+
+Then stream the files in, from the old VPS or from a local copy:
+
+```bash
+ssh old-vps 'tar -C /src/website/storage -cf - .' | kubectl -n default exec -i storage-copy -- tar -C /srv/storage -xf -
 ```
 
 ```bash
-tar -C /path/to/storage-parent -cf - storage | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
+tar -C /path/to/storage -cf - . | kubectl -n default exec -i storage-copy -- tar -C /srv/storage -xf -
 ```
+
+```bash
+kubectl -n default delete pod storage-copy
+```
+
+Restart the api afterwards, so its init container makes the copied files writable for it:
+`kubectl -n default rollout restart deployment/api-primary`.
 
 If the direct pipes are flaky over the uplink, relay via a scratch
 S3/B2 bucket: dump → upload → `kubectl cp` from workstation → restore.

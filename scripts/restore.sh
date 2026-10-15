@@ -126,6 +126,7 @@ cleanup() {
     kubectl --context "$context" -n flux-system patch kustomization "$entry" --type=merge \
       -p '{"spec":{"suspend":false}}' >/dev/null 2>&1 && echo "- Flux reconciles $entry again."
   done
+  kubectl --context "$context" -n default delete pod uploads-lister --ignore-not-found --wait=false >/dev/null 2>&1 || true
   if $apply; then
     for ns in default data-system mail-system utility-system; do
       kubectl --context "$context" -n "$ns" delete pod restore-helper --ignore-not-found --wait=false >/dev/null 2>&1 || true
@@ -376,14 +377,28 @@ rehearse_database() {
 # "size path" for every file under a directory, sorted; run where the files are.
 LIST_FILES='cd "$1" && find . -type f -exec stat -c "%s %n" {} + | sort -k2'
 
+# The live uploads, listed by a pod that mounts the api's claim read-only: the api image has no
+# shell to list them with (architecture ADR-015), and a rehearsal writes nothing.
+list_live_uploads() {
+  k -n default run uploads-lister --image=busybox:1.38-musl --restart=Never --overrides='{
+    "spec": {"containers": [{"name": "uploads-lister", "image": "busybox:1.38-musl", "command": ["sleep", "600"],
+      "volumeMounts": [{"name": "store", "mountPath": "/store", "readOnly": true}]}],
+      "volumes": [{"name": "store", "persistentVolumeClaim": {"claimName": "api-storage", "readOnly": true}}]}}' >/dev/null ||
+    return 1
+  local listed
+  k -n default wait --for=condition=Ready pod/uploads-lister --timeout=180s >/dev/null || return 1
+  listed=$(k -n default exec uploads-lister -- sh -c "$LIST_FILES" sh /store) || return 1
+  k -n default delete pod uploads-lister --wait=false >/dev/null
+  printf '%s\n' "$listed"
+}
+
 rehearse_uploads() {
   download uploads
   echo "uploads"
   local restored live_list missing=0 differ=0 size name count bytes
   restored=$(docker run --rm -v "$work/restore/uploads:/u:ro" busybox:1.38-musl sh -c "$LIST_FILES" sh /u)
   [[ -n $restored ]] || { check FAILED "the snapshot holds no files"; return; }
-  live_list=$(k -n default exec deploy/api-primary -c api -- sh -c "$LIST_FILES" sh /srv/storage) ||
-    die "The api pod did not list its uploads."
+  live_list=$(list_live_uploads) || die "The api's uploads could not be listed."
   declare -A live_size=()
   while read -r size name; do live_size[$name]=$size; done <<<"$live_list"
   while read -r size name; do
@@ -600,7 +615,8 @@ restore_database() {
 
 restore_uploads() {
   step "uploads: the files come back beside the live ones."
-  helper default api-storage 100 101
+  # The buildpack image's cnb user (architecture ADR-015).
+  helper default api-storage 1002 1001
   push default "$work/restore/uploads" || die "The uploads did not reach the cluster."
   helper_done default
   check ok "the uploads hold every file of $(taken uploads)"

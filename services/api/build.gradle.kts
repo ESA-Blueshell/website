@@ -1,6 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.springframework.boot.gradle.tasks.run.BootRun
+import java.security.SecureRandom
+import java.util.Base64
 
 plugins {
     id("spring-conventions")
@@ -188,6 +190,58 @@ tasks.named<Jar>("jar") {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveClassifier.set("boot")
+}
+
+// The api image: Cloud Native Buildpacks, with no Dockerfile and no shell (architecture ADR-015).
+// The builder is pinned by digest and Renovate bumps it; the run image is the one it names.
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
+    builder.set(
+        "paketobuildpacks/builder-noble-java-tiny:0.0.197" +
+            "@sha256:b95da27fce97b58037f0c11ae934760c50730da4c9a24976205b53638592eba9",
+    )
+    imageName.set(providers.gradleProperty("apiImage").orElse("blueshell-website/api:local"))
+    // A boot jar built already, by an earlier CI job, packaged as it is rather than built again.
+    providers.gradleProperty("apiJar").orNull?.let { archiveFile.set(file(it)) }
+
+    // Drawn for each build: they satisfy the hardening guard during the training run and are
+    // never used again, which is why the buildpack may print them (architecture ADR-013).
+    fun throwawayKey(bytes: Int) = Base64.getEncoder().encodeToString(ByteArray(bytes).also(SecureRandom()::nextBytes))
+
+    environment.putAll(
+        mapOf(
+            "BP_JVM_VERSION" to "25",
+            "BP_JVM_AOTCACHE_ENABLED" to "true",
+            // Nothing here reads Kubernetes service bindings, so the library that would is left out.
+            "BP_SPRING_CLOUD_BINDINGS_DISABLED" to "true",
+            // The cache's training run: one start as far as a refreshed context, under the training
+            // profile, which reaches nothing. MaxRAM stands in for a pod, and G1 matches every start.
+            "TRAINING_RUN_JAVA_TOOL_OPTIONS" to
+                listOf(
+                    "-XX:MaxRAM=2g",
+                    "-XX:+UseG1GC",
+                    "-Dspring.context.exit=onRefresh",
+                    "-Dspring.profiles.active=training",
+                    "-Dstorage.location=/tmp/training-storage",
+                    "-Dapp.jwt.secret=${throwawayKey(64)}",
+                    "-Dapp.two-factor.key=${throwawayKey(32)}",
+                    "-Dauth.clients.vault.secret=${throwawayKey(24)}",
+                ).joinToString(" "),
+            // The flags every start shares with the training run, appended to whatever the pod sets:
+            // a JVM on another collector ignores the cache, and below 1792 MB the JVM picks Serial.
+            "BPE_DELIM_JAVA_TOOL_OPTIONS" to " ",
+            "BPE_APPEND_JAVA_TOOL_OPTIONS" to "-XX:+UseG1GC",
+            "BPE_DEFAULT_SPRING_PROFILES_ACTIVE" to "prod",
+            // Native memory tracking costs memory and time on every start, and nobody reads it.
+            "BPE_DEFAULT_BPL_JAVA_NMT_ENABLED" to "false",
+        ),
+    )
+
+    // CI keeps the buildpacks' build cache, the JRE among it, in a directory it saves between runs;
+    // elsewhere Docker keeps it in a volume. The launch cache holds this build's own layers, which
+    // the next build replaces, so it is not worth saving.
+    providers.gradleProperty("buildpackCache").orNull?.let { root ->
+        buildCache { bind { source.set(root) } }
+    }
 }
 
 // Spring Boot registers `bootArchives` as a consumable configuration with

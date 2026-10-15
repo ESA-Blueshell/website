@@ -1,7 +1,10 @@
 # ADR-013: The Api Boots From a JVM AOT Cache
 
 ## Status
-Accepted
+Accepted, amended by
+[ADR-015](ADR-015-the-api-image-is-built-by-cloud-native-buildpacks.md): the image is built by
+buildpacks, which train the cache themselves; the collector is baked into the image, and the heap
+and direct memory are named in the Deployment and the migrate Job.
 
 ## Context
 
@@ -36,8 +39,7 @@ Alternatives considered:
   the migrate profile both depend on deciding at start.
 - **Cloud Native Buildpacks.** Paketo trains the same cache with `BP_JVM_AOTCACHE_ENABLED`, but
   its run images had no `cwebp`, which the api checked for at start. Image conversion has since
-  left the api (architecture ADR-014), and Buildpacks are the planned way to build its image
-  (#2449).
+  left the api (ADR-014), and buildpacks build its image (ADR-015).
 - **More CPU.** It helps every start, cached or not, and is weighed on its own (#2444).
 
 ## Decision

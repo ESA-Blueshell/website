@@ -52,6 +52,12 @@ towards coverage, and the report reads its branch and function totals from the
 with the `start-imaging` action and find it through `IMAGING_URL`, and a local run builds it with
 Testcontainers. `Workflow checks` runs on every pull request.
 
+`Build Image (api)` has no Dockerfile to build: the `build-api-image` action runs Gradle's
+`bootBuildImage` on the jar `api-static` built, with the buildpacks' build cache restored from the
+Actions cache, then boots the image under `-XX:AOTMode=on` with the limits and
+`JAVA_TOOL_OPTIONS` the Deployment and the migrate Job give it (architecture ADR-015). The main
+and release builds use the same action before they push.
+
 `Frontend typecheck, lint and build` also runs the job-catalogue test, which holds
 `src/utils/jobCatalog.ts` to the job types the api's sources register. The frontend unit job runs
 on `frontend` alone, so an api pull request adding a job needs the check on the `app` side.

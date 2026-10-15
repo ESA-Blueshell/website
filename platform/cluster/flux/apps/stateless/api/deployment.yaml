@@ -177,8 +177,8 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
+            # No CPU limit: a 1500m cap stretched each start from 24s to 38s (#2444).
             limits:
-              cpu: 1500m
               memory: 2Gi
           volumeMounts:
             - name: storage

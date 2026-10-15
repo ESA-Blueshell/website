@@ -184,6 +184,17 @@ class JdaChannelKeeperTest {
 
         doThrow(unseen).whenever(text).delete()
         assertThatThrownBy { keeper().delete("1") }.isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
+
+        val refused: net.dv8tion.jda.api.exceptions.ErrorResponseException = mock()
+        whenever(refused.meaning).thenReturn("Missing Access")
+        doThrow(refused).whenever(voice).delete()
+        assertThatThrownBy { keeper().delete("2") }
+            .isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
+            .hasMessageContaining("Missing Access")
+
+        whenever(guild.getCategoriesByName("Committees", true)).thenThrow(unseen)
+        assertThatThrownBy { keeper().createPrivate("sitecie", "Committees", "900") }
+            .isInstanceOf(net.blueshell.api.discord.api.DiscordRefused::class.java)
     }
 
     @Test

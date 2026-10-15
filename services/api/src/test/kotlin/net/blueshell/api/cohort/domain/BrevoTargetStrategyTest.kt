@@ -34,6 +34,8 @@ class BrevoTargetStrategyTest {
 
         assertThat(paid.folderLabel).isEqualTo("Contribution periods")
         assertThat(paid.memberCount).isEqualTo(728L)
+        // Brevo may hold a list the catalogue has not read yet, so one is linked by its id.
+        assertThat(strategy.linksListedOnly).isFalse()
     }
 
     @Test

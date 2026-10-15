@@ -1,11 +1,13 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.api.RoleHolder
 import net.blueshell.api.testsupport.configuredDiscordSettings
 import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.GuildMemberResponse
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.SelfMember
@@ -31,12 +33,14 @@ class JdaRoleKeeperTest {
         name: String,
         public: Boolean = false,
         managed: Boolean = false,
+        permissions: Long = 0L,
     ): Role =
         mock {
             on { this.id } doReturn id
             on { this.name } doReturn name
             on { isPublicRole } doReturn public
             on { isManaged } doReturn managed
+            on { permissionsRaw } doReturn permissions
         }
 
     private val admin = role("905", "Admin")
@@ -44,6 +48,7 @@ class JdaRoleKeeperTest {
     private val claim = role("903", "Valorant")
     private val board = role("902", "Board")
     private val everyone = role("324", "@everyone", public = true)
+    private val moderators = role("907", "Moderators", permissions = Permission.BAN_MEMBERS.rawValue)
     private val self: SelfMember =
         mock {
             on { canInteract(admin) } doReturn false
@@ -51,10 +56,11 @@ class JdaRoleKeeperTest {
         }
     private val guild: Guild =
         mock {
-            on { roles } doReturn listOf(admin, bot, claim, board, everyone)
+            on { roles } doReturn listOf(admin, bot, claim, board, everyone, moderators)
             on { selfMember } doReturn self
             on { getRoleById("902") } doReturn board
             on { getRoleById("903") } doReturn claim
+            on { getRoleById("907") } doReturn moderators
         }
     private val api: DiscordApi = mock()
 
@@ -114,6 +120,13 @@ class JdaRoleKeeperTest {
     }
 
     @Test
+    fun `a role with powers over the server is neither offered nor handed out`() {
+        assertThat(keeper().roles().map { it.id }).doesNotContain("907")
+        assertThat(keeper().role("907")).isNull()
+        assertThatThrownBy { keeper().add("907", "11") }.isInstanceOf(DiscordRefused::class.java)
+    }
+
+    @Test
     fun `adds, removes, makes, renames and deletes roles through the gateway`() {
         val adding: AuditableRestAction<Void> = mock()
         val removing: AuditableRestAction<Void> = mock()
@@ -142,6 +155,23 @@ class JdaRoleKeeperTest {
         verify(removing).complete()
         verify(manager).complete()
         verify(deleting).complete()
+    }
+
+    @Test
+    fun `a role it does not keep is neither handed out nor taken away, and a change Discord refuses is said`() {
+        assertThatThrownBy { keeper().add("903", "11") }.isInstanceOf(DiscordRefused::class.java)
+        assertThatThrownBy { keeper().remove("907", "11") }.isInstanceOf(DiscordRefused::class.java)
+
+        val above: net.dv8tion.jda.api.exceptions.HierarchyException = mock()
+        whenever(guild.addRoleToMember(any<UserSnowflake>(), eq(board))).thenThrow(above)
+        assertThatThrownBy { keeper().add("902", "11") }.isInstanceOf(DiscordRefused::class.java)
+        val refused: net.dv8tion.jda.api.exceptions.ErrorResponseException = mock()
+        whenever(refused.meaning).thenReturn("Unknown Member")
+        whenever(guild.removeRoleFromMember(any<UserSnowflake>(), eq(board))).thenThrow(refused)
+        assertThatThrownBy { keeper().remove("902", "11") }.isInstanceOf(DiscordRefused::class.java).hasMessage("Unknown Member")
+        val noRight: net.dv8tion.jda.api.exceptions.InsufficientPermissionException = mock()
+        whenever(guild.createRole()).thenThrow(noRight)
+        assertThatThrownBy { keeper().create("Sitecie") }.isInstanceOf(DiscordRefused::class.java)
     }
 
     @Test

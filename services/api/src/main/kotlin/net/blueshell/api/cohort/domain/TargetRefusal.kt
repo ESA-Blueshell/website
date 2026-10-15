@@ -40,6 +40,35 @@ class TargetLinksOwnAccounts(
         mapOf("system" to system.shownName),
     )
 
+class TargetLinkedElsewhere(
+    system: TargetSystem,
+    externalId: String,
+    cohort: String,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetLinkedElsewhere",
+        "Another cohort already follows that target.",
+        mapOf("system" to system.shownName, "externalId" to externalId, "cohort" to cohort),
+    )
+
+class ChannelOutsideCategory(
+    channel: String,
+    category: String,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "ChannelOutsideCategory",
+        "Only a channel under the category is opened to the role.",
+        mapOf("channel" to channel, "category" to category),
+    )
+
+class BoardCommitteeHasNoRole :
+    TargetRefusal(
+        HttpStatus.CONFLICT,
+        "BoardCommitteeHasNoRole",
+        "The board's committee has no Discord role.",
+        emptyMap(),
+    )
+
 class TargetNotFound(
     system: TargetSystem,
     externalId: String,

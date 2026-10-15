@@ -18,11 +18,15 @@ import RecordHead from "@/components/island/RecordHead.vue"
 import type {Picture} from "@/components/island/pictures"
 import EventGamesPicker from "@/domains/games/island/EventGamesPicker.vue"
 import {useCasualGames} from "@/domains/games"
+import {DiscordPlaceFields} from "@/domains/discord"
 import {
   addCommittee,
   type Committee,
+  type DiscordPlaceRequest,
   listCommittees,
+  readCommitteeDiscord,
   saveCommitteeAsBoard,
+  saveCommitteeDiscord,
   saveOwnCommitteePage,
   storeCommitteeBanner,
   storeCommitteeIcon,
@@ -57,6 +61,9 @@ const emit = defineEmits<{
 const adding = computed(() => props.committee == null)
 const name = ref("")
 const slug = ref("")
+// TWIN: `CohortDiscord.BOARD_COMMITTEE`, which refuses this committee a role.
+const boardsCommittee = computed(() => name.value.trim().toLowerCase() === "board")
+const discord = ref<DiscordPlaceRequest | null>(null)
 const description = ref("")
 const banner = ref<Picture | null>(null)
 const icon = ref<Picture | null>(null)
@@ -151,6 +158,11 @@ const submit = async () => {
     if (!result.ok) {
       failure.value = result.reason
       return
+    }
+    // The committee is saved either way; Discord refusing only means its role and channels wait.
+    if (props.asBoard && !boardsCommittee.value && discord.value) {
+      const set = await saveCommitteeDiscord(result.saved.id, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     await refreshSharedLists()
     emit("saved", result.saved)
@@ -267,6 +279,15 @@ const removed = async () => {
       >
         <committee-seats v-model="seats" />
       </form-section>
+
+      <!-- The board's own committee gets no Discord role. -->
+      <discord-place-fields
+        v-if="asBoard && !boardsCommittee"
+        v-model="discord"
+        :name="name"
+        :read="committee ? () => readCommitteeDiscord(committee!.id) : null"
+        :slug="slug"
+      />
 
       <notice-box
         v-if="failure"

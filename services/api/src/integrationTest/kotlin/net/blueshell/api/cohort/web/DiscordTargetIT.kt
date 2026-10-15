@@ -6,6 +6,8 @@ import net.blueshell.api.cohort.domain.SyncCohortMembershipIntent
 import net.blueshell.api.cohort.persistence.Cohort
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.cohort.persistence.Target
+import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.job.JobTrigger
@@ -21,7 +23,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.util.UUID
 
-/** Without a bot a Discord role links by hand, and its writes and reconciles skip rather than fail. */
+/** Without a bot no Discord role is made or linked, and the writes and reconciles of one linked before skip rather than fail. */
 @SpringBootTest
 class DiscordTargetIT : UserTestSupport() {
     @Autowired
@@ -37,7 +39,7 @@ class DiscordTargetIT : UserTestSupport() {
     private lateinit var remediation: CohortRemediation
 
     @Test
-    fun `a role links by hand, cannot be made without a bot, and its sync and reconcile report Discord absent`() {
+    fun `without a bot a role is neither made nor linked, and a linked one's sync and reconcile report Discord absent`() {
         val board = createUserWithRole(Role.BOARD)
         val cohort = cohorts.save(Cohort(type = CohortType.COMMITTEE_MEMBERS, label = "Discord ${UUID.randomUUID()}"))
 
@@ -55,14 +57,15 @@ class DiscordTargetIT : UserTestSupport() {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"system":"DISCORD","externalId":"123456789012345678"}""")
                     .with(signedIn(board)),
-            ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.kind").value("ROLE"))
+            ).andExpect(status().isServiceUnavailable)
+            .andExpect(jsonPath("$.code").value("TargetSystemUnavailable"))
         mvc
             .perform(get("/management/cohort-targets/{system}", "DISCORD").with(signedIn(board)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
 
-        val role = targets.findByCohortIdAndSystem(cohort.id!!, "DISCORD")!!
+        // A role linked while the bot was there.
+        val role = targets.save(Target("DISCORD", TargetKind.ROLE, "Sitecie", cohortId = cohort.id, externalId = "123456789012345678"))
         assertThat(membership.sync(board.id!!, role.id!!, SyncCohortMembershipIntent.ADD)).contains("Discord cannot be reached")
         assertThat(remediation.verifyTarget(role.id!!, JobTrigger.BY_HAND)).contains("Discord cannot be reached")
     }

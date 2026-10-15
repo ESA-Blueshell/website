@@ -22,6 +22,9 @@ class DiscordTargetStrategy(
 
     override fun available(): Boolean = roles.available()
 
+    // A role the site does not keep (one with powers over the server, or the claim bot's) is never linked.
+    override val linksListedOnly = true
+
     override fun catalog(query: String?): List<ExternalTarget> {
         if (!roles.available()) return emptyList()
         val wanted = query?.trim()?.lowercase().orEmpty()

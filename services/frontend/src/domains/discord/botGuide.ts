@@ -2,6 +2,8 @@ import type {BotStanding} from "./adapters/bot"
 
 /** The tabs every page of the Discord section carries. */
 export const DISCORD_TABS = [
+  {label: "Roles", to: "/management/platforms/discord/roles"},
+  {label: "Channels", to: "/management/platforms/discord/channels"},
   {label: "Bot", to: "/management/platforms/discord/bot"},
   {label: "Settings", to: "/management/platforms/discord/settings"},
 ]

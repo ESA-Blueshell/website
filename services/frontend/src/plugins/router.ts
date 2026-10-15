@@ -515,7 +515,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/RecoveryManager.vue"),
         meta: {title: "Account recovery"},
       },
-      {path: "platforms/discord", redirect: "/management/platforms/discord/bot"},
+      {path: "platforms/discord", redirect: "/management/platforms/discord/roles"},
+      {
+        path: "platforms/discord/roles",
+        name: "discordRoles",
+        component: () => import("@/pages/management/DiscordRoles.vue"),
+        meta: {title: "Discord roles"},
+      },
+      {
+        path: "platforms/discord/channels",
+        name: "discordChannels",
+        component: () => import("@/pages/management/DiscordChannels.vue"),
+        meta: {title: "Discord channels"},
+      },
       {
         path: "platforms/discord/bot",
         name: "discordBot",

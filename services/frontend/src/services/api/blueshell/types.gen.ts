@@ -656,6 +656,22 @@ export type CasualGameResponse = {
     sortIndex: number;
 };
 
+export type CataloguedChannel = {
+    category?: string | null;
+    game?: ChannelGame | null;
+    id: string;
+    kind: 'TEXT' | 'VOICE' | 'CATEGORY';
+    name: string;
+    private: boolean;
+    roleIds: Array<string>;
+};
+
+export type ChannelGame = {
+    code: string;
+    kind: 'CASUAL' | 'COMPETITION';
+    name: string;
+};
+
 export type CodeRequest = {
     code: string;
 };
@@ -11452,6 +11468,47 @@ export type FindBotStandingResponses = {
 };
 
 export type FindBotStandingResponse = FindBotStandingResponses[keyof FindBotStandingResponses];
+
+export type ListCataloguedChannelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/catalogue';
+};
+
+export type ListCataloguedChannelsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListCataloguedChannelsError = ListCataloguedChannelsErrors[keyof ListCataloguedChannelsErrors];
+
+export type ListCataloguedChannelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<CataloguedChannel>;
+};
+
+export type ListCataloguedChannelsResponse = ListCataloguedChannelsResponses[keyof ListCataloguedChannelsResponses];
 
 export type ListKeptChannelsData = {
     body?: never;

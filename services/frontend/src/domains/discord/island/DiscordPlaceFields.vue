@@ -15,8 +15,6 @@ import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles
 defineOptions({name: "DiscordPlaceFields"})
 
 const NEW_ROLE = "__new__"
-// TWIN: `discord.archive-category` in the api, where archived channels are kept for history.
-const ARCHIVE = "archive"
 
 const {read, name, slug, holders = "Everyone with a seat holds it.", category = "Committees", testid = "committee-edit-discord"} = defineProps<{
   /** Reads the place as it stands, or nothing where the record is being added. */
@@ -47,8 +45,9 @@ const roleOptions = computed(() => [
   {key: NEW_ROLE, label: `A new role, @${name.trim() || "named after it"}`},
   ...roles.value.filter((one) => one.assignable).map((one) => ({key: one.id, label: `@${one.name}`})),
 ])
+// TWIN: `CohortDiscord.channelsUnder`, which opens nothing outside the category.
 const channelOptions = computed(() => channels.value
-  .filter((one) => one.kind !== "CATEGORY" && one.category?.toLowerCase() !== ARCHIVE)
+  .filter((one) => one.kind !== "CATEGORY" && one.category?.toLowerCase() === category.toLowerCase())
   .map((one) => ({key: one.id, label: one.name, note: one.category ?? undefined})))
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))

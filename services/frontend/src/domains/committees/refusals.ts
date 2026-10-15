@@ -10,6 +10,8 @@ interface RefusalBody extends RefusalCode {
   address?: string
   gameName?: string
   cohort?: string
+  channel?: string
+  category?: string
   reason?: string
 }
 
@@ -25,6 +27,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   TargetSystemUnavailable: () => "Discord cannot be reached now, so its role and channels are left as they were.",
   TargetSystemRefused: r => `Discord refused it: ${r.reason}`,
   TargetLinkedElsewhere: r => `${r.cohort} already follows that role. Pick another role.`,
+  ChannelOutsideCategory: r => `#${r.channel} is not under ${r.category}, so it cannot be opened to the committee's role.`,
   BoardCommitteeHasNoRole: () => "The board's committee gets no Discord role.",
 }
 

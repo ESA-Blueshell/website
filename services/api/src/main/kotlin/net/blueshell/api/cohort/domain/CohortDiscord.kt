@@ -75,8 +75,13 @@ class CohortDiscord(
         val roleId = linked ?: refusedBy(TargetSystem.DISCORD) { roleFor(cohortId, choice) } ?: return read(key)
         refusedBy(TargetSystem.DISCORD) {
             val opened = channels.openedTo(roleId)
+            val toOpen = choice.channelIds - opened.map { it.id }.toSet()
+            val inCategory = channelsUnder(category)
+            toOpen.firstOrNull { id -> inCategory.none { it.id == id } }?.let { id ->
+                throw ChannelOutsideCategory(channels.channels().firstOrNull { it.id == id }?.name ?: id, category)
+            }
             // An existing channel is let in to the role and stays open to whoever it was open to.
-            (choice.channelIds - opened.map { it.id }.toSet()).forEach { channels.open(it, roleId, private = false) }
+            toOpen.forEach { channels.open(it, roleId, private = false) }
             // The form showed a linked role's channels, not those of a role it is linking now; a
             // category is opened from elsewhere and never named on a form.
             if (linked != null) {
@@ -88,7 +93,7 @@ class CohortDiscord(
                 ?.trim()
                 ?.removePrefix("#")
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { createOrOpen(it, category, roleId, held = choice.channelIds) }
+                ?.let { createOrOpen(it, category, inCategory, roleId, held = choice.channelIds) }
         }
         return read(key)
     }
@@ -102,6 +107,10 @@ class CohortDiscord(
         val label = owner.cohortId?.let { cohorts.findById(it).map { cohort -> cohort.label }.orElse(null) } ?: owner.label
         throw TargetLinkedElsewhere(TargetSystem.DISCORD, roleId, label)
     }
+
+    // The board fills a committee's seats, so a channel anywhere else would let it open any room to anybody.
+    private fun channelsUnder(category: String): List<KeptChannel> =
+        channels.channels().filter { it.kind != KeptChannelKind.CATEGORY && it.category.equals(category, ignoreCase = true) }
 
     // Only a role the site keeps, which carries no powers over the server, and the bot can hand out.
     private fun refuseUnless(handable: String) {
@@ -130,10 +139,11 @@ class CohortDiscord(
     private fun createOrOpen(
         name: String,
         category: String,
+        inCategory: List<KeptChannel>,
         roleId: String,
         held: Collection<String>,
     ) {
-        val existing = channels.channels().firstOrNull { it.kind == KeptChannelKind.TEXT && plainName(it.name) == plainName(name) }
+        val existing = inCategory.firstOrNull { it.kind == KeptChannelKind.TEXT && plainName(it.name) == plainName(name) }
         when {
             existing == null -> channels.createPrivate(name, category, roleId)
             existing.id !in held -> channels.open(existing.id, roleId, private = false)

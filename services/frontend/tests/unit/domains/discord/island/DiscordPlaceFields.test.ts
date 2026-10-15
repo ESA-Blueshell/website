@@ -13,7 +13,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 const channels = [
   {id: "10", name: "Committees", kind: "CATEGORY"},
   {id: "1", name: "sitecie", kind: "TEXT", category: "Committees"},
-  {id: "2", name: "sitecie-voice", kind: "VOICE"},
+  {id: "2", name: "sitecie-voice", kind: "VOICE", category: "committees"},
   {id: "3", name: "sitecie-2023", kind: "TEXT", category: "Archive"},
 ]
 
@@ -43,7 +43,7 @@ describe("a committee's Discord on its form", () => {
     expect(choice(wrapper)).toEqual({roleId: null, createRole: true, channelIds: [], createChannel: "pub-quiz"})
     const picker = wrapper.findComponent({name: "SearchPicker"})
     expect(picker.props("options")).toEqual([{key: "__new__", label: "A new role, @Pub Quiz"}, {key: "900", label: "@Sitecie"}])
-    // An archived channel is kept for history, and a category is never linked from here.
+    // Only a channel under the committees' category is offered, never a category itself.
     expect(wrapper.findComponent({name: "ChipPicker"}).props("options").map((one: {key: string}) => one.key)).toEqual(["1", "2"])
     expect(wrapper.find('[data-testid="committee-edit-discord-keeps"]').exists()).toBe(false)
 
@@ -51,7 +51,7 @@ describe("a committee's Discord on its form", () => {
     wrapper.findComponent({name: "ChipPicker"}).vm.$emit("add", ["2"])
     wrapper.findComponent({name: "CheckBox"}).vm.$emit("update:modelValue", false)
     await settle()
-    expect(wrapper.findComponent({name: "ChipPicker"}).props("chosen")).toEqual([{key: "2", label: "sitecie-voice", note: undefined}])
+    expect(wrapper.findComponent({name: "ChipPicker"}).props("chosen")).toEqual([{key: "2", label: "sitecie-voice", note: "committees"}])
     expect(wrapper.get('[data-testid="committee-edit-discord-keeps"]').text()).toBe("Linking a role keeps the channels it already has access to.")
     expect(choice(wrapper)).toEqual({roleId: "900", createRole: false, channelIds: ["2"], createChannel: null})
     wrapper.findComponent({name: "ChipPicker"}).vm.$emit("remove", "2")

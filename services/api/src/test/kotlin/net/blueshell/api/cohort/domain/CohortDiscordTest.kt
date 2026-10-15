@@ -36,6 +36,8 @@ class CohortDiscordTest {
     private val cohort = Entities.cohort(id = 5, type = CohortType.COMMITTEE_MEMBERS, label = "Sitecie")
     private val role = Entities.target(id = 50, system = "DISCORD", cohortId = 5, externalId = "900")
     private val sitecie = KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees")
+    private val lancie = KeptChannel("2", "lancie", KeptChannelKind.TEXT, "committees")
+    private val boardRoom = KeptChannel("8", "board", KeptChannelKind.TEXT, "Board")
 
     private fun given(linked: Boolean) {
         whenever(roles.available()).thenReturn(true)
@@ -45,6 +47,7 @@ class CohortDiscordTest {
         whenever(targets.findByCohortIdAndSystem(5, "DISCORD")).thenReturn(if (linked) role else null)
         whenever(targetIds.find(role)).thenReturn("900")
         whenever(roles.role("900")).thenReturn(KeptRole("900", "Sitecie", true))
+        whenever(channels.channels()).thenReturn(listOf(sitecie, lancie, boardRoom))
     }
 
     @Test
@@ -97,6 +100,23 @@ class CohortDiscordTest {
         verify(channels, never()).close("9", "900")
         verify(targeting, never()).linkExisting(5, TargetSystem.DISCORD, "902")
         verify(channels, never()).createPrivate(any(), any(), any())
+    }
+
+    @Test
+    fun `only a channel under the committees' category is opened to a committee's role`() {
+        given(linked = true)
+        whenever(channels.openedTo("900")).thenReturn(emptyList())
+
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("2", "8")), "Committees") }
+            .isInstanceOfSatisfying(ChannelOutsideCategory::class.java) { assertThat(it.facts["channel"]).isEqualTo("board") }
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("99")), "Committees") }
+            .isInstanceOf(ChannelOutsideCategory::class.java)
+        verify(channels, never()).open(any(), any(), any())
+
+        // A channel by the committee's name elsewhere is no reason to open it: a new one is made.
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createChannel = "board"), "Committees")
+        verify(channels).createPrivate("board", "Committees", "900")
+        verify(channels, never()).open(any(), any(), any())
     }
 
     @Test

@@ -33,6 +33,7 @@ class DriftResolutions(
     private val users: UserService,
     private val jobs: JobQueue,
     private val actors: ActorProvider,
+    private val strategies: TargetStrategies,
 ) {
     /** Queues a push of each ours-only person in [userIds]; anyone already on the target is skipped. */
     @Transactional
@@ -84,7 +85,7 @@ class DriftResolutions(
         targetId: Long,
         externalUserIds: Collection<String>,
     ): List<LinkProposal> {
-        target(cohortId, targetId)
+        linkable(target(cohortId, targetId))
         val theirsOnly = members.findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(targetId, externalUserIds)
         val byEmail = users.findAllByEmails(theirsOnly.mapNotNull { it.label }).associateBy { it.email.trim().lowercase() }
         return theirsOnly.map { row ->
@@ -103,8 +104,7 @@ class DriftResolutions(
         targetId: Long,
         links: List<LinkChoice>,
     ): LinkOutcome {
-        val target = target(cohortId, targetId)
-        val system = TargetSystem.valueOf(target.system)
+        val system = linkable(target(cohortId, targetId))
         val labels =
             members
                 .findAllByTargetIdAndExternalUserIdInAndUserIdIsNull(targetId, links.map { it.externalUserId })
@@ -170,6 +170,13 @@ class DriftResolutions(
         if (target == null || target.cohortId != cohortId) throw TargetNotOfCohort(targetId)
         if (target.externalId.isNullOrBlank()) throw TargetNotCreated(targetId)
         return target
+    }
+
+    // Where people link their own account, a link from drift would bind somebody else's to them.
+    private fun linkable(target: Target): TargetSystem {
+        val system = TargetSystem.valueOf(target.system)
+        if (strategies.find(system)?.makesMemberIds != true) throw TargetLinksOwnAccounts(system)
+        return system
     }
 
     private fun TargetMember.person() = Person(userId, externalUserId, label)

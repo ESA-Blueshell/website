@@ -12,6 +12,8 @@ class TargetStrategies(
 ) {
     private val bySystem = strategies.associateBy { it.system }
 
+    fun find(system: TargetSystem): TargetStrategy? = bySystem[system]
+
     fun require(system: TargetSystem): TargetStrategy =
         bySystem[system]
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "$system is not a cohort target")

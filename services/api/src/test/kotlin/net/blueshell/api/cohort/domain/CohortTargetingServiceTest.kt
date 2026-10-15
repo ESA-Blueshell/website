@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
@@ -388,5 +389,16 @@ class CohortTargetingServiceTest {
         org.mockito.kotlin
             .verify(strategy, org.mockito.kotlin.never())
             .create(any(), anyOrNull())
+    }
+
+    @Test
+    fun `create says the system is away when it goes away while making the target`() {
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        val away = DiscordUnavailable("The bot left.")
+        whenever(discord.create("Activists", null)).thenThrow(away)
+
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { service.create(1L, TargetSystem.DISCORD, "Activists", null) }
+            .isInstanceOf(TargetSystemUnavailable::class.java)
     }
 }

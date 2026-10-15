@@ -31,6 +31,15 @@ class TargetSystemUnavailable(
         mapOf("system" to system.shownName),
     )
 
+class TargetLinksOwnAccounts(
+    system: TargetSystem,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetLinksOwnAccounts",
+        "People link their own account on this system.",
+        mapOf("system" to system.shownName),
+    )
+
 class TargetNotFound(
     system: TargetSystem,
     externalId: String,

@@ -4,6 +4,7 @@ import net.blueshell.api.cohort.persistence.TargetDeletion
 import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.shared.dto.bulk.BulkSelectionRejected
 import net.blueshell.api.shared.enums.TargetSystem
@@ -265,4 +266,6 @@ internal fun <T> refusedBy(
         throw TargetSystemRefused(system, e.message ?: "no reason given").apply { initCause(e) }
     } catch (e: DiscordUnavailable) {
         throw TargetSystemUnavailable(system).apply { initCause(e) }
+    } catch (e: DiscordRefused) {
+        throw TargetSystemRefused(system, e.message ?: "no reason given").apply { initCause(e) }
     }

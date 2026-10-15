@@ -66,7 +66,7 @@ class CohortJobHandlersTest {
     @Test
     fun `a membership sync that pushes nothing is skipped with its reason, and other jobs end done`() {
         val membership = mockk<CohortMembershipSyncService>()
-        every { membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE) } returns "The cohort has no BREVO list linked."
+        every { membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE, "777") } returns "The cohort has no BREVO list linked."
         val bound =
             CohortJobHandlers(
                 objectMapper,
@@ -77,7 +77,7 @@ class CohortJobHandlersTest {
                 inbound = mockk(relaxed = true),
             )
 
-        assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
+        assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE","pushedTo":"777"}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
         assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
     }

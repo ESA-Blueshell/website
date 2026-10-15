@@ -94,7 +94,7 @@ class CohortTargetingService(
         val strategy = strategies.require(system)
         val folder = if (strategy.folderKeeper == null) null else folderHint ?: CohortFolders.forType(cohort.type)
         if (!strategy.available()) throw TargetSystemUnavailable(system)
-        val external = outsideTransaction.execute { strategy.create(label, folder) }
+        val external = outsideTransaction.execute { refusedBy(system) { strategy.create(label, folder) } }
 
         return writeTransaction.execute {
             val target =

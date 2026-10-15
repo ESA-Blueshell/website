@@ -6,6 +6,7 @@ import net.blueshell.api.cohort.persistence.TargetDeletionRepository
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.contact.api.ContactServiceException
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
@@ -208,6 +209,10 @@ class TargetCatalogTest {
         whenever(brevo.createFolder("Gone")).thenThrow(DiscordUnavailable("The bot is not in the server right now."))
         assertThatThrownBy { catalogWith(brevo).createFolder(TargetSystem.BREVO, "Gone") }
             .isInstanceOf(TargetSystemUnavailable::class.java)
+
+        whenever(brevo.createFolder("High")).thenThrow(DiscordRefused("The bot's role is below that role."))
+        assertThatThrownBy { catalogWith(brevo).createFolder(TargetSystem.BREVO, "High") }
+            .isInstanceOf(TargetSystemRefused::class.java)
     }
 
     @Test

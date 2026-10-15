@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.discord.api.DiscordRoleKeeper
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.api.RoleHolder
 import net.blueshell.api.shared.enums.TargetSystem
@@ -51,6 +52,7 @@ class DiscordTargetStrategyTest {
         whenever(users.findAllByIds(setOf(1L, 2L, 3L))).thenReturn(listOf(linked, blank, none))
         whenever(users.findAllByDiscordIds(setOf("d1", "d9"))).thenReturn(listOf(linked))
         whenever(roles.holders("902")).thenReturn(listOf(RoleHolder("d1", "Ann")))
+        whenever(roles.role("902")).thenReturn(board)
 
         assertThat(strategy.memberIds(setOf(1L, 2L, 3L))).isEqualTo(mapOf(1L to "d1"))
         assertThat(strategy.ownersOf(setOf("d1", "d9"))).isEqualTo(mapOf("d1" to 1L))
@@ -74,5 +76,13 @@ class DiscordTargetStrategyTest {
         verify(roles).remove("902", "d2")
         verify(roles).delete("902")
         assertThatThrownBy { strategy.createFolder("Committees") }.isInstanceOf(UnsupportedOperationException::class.java)
+    }
+
+    @Test
+    fun `a role deleted on Discord is not read as a role nobody holds`() {
+        whenever(roles.role("902")).thenReturn(null)
+
+        assertThatThrownBy { strategy.members(target(board)) }.isInstanceOf(DiscordUnavailable::class.java)
+        verify(roles, times(0)).holders("902")
     }
 }

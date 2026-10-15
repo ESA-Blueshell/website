@@ -99,7 +99,7 @@ class CohortMembershipUpdater(
         memberships.delete(member) // soft delete: the row is kept for historical statistics
         jobs.runAsync(
             CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, targetId, SyncCohortMembershipIntent.REMOVE),
+            CohortJobs.SyncCohortMembershipPayload(userId, targetId, SyncCohortMembershipIntent.REMOVE, member.externalUserId),
             JobTrigger.MEMBERSHIP_CHANGED,
         )
     }

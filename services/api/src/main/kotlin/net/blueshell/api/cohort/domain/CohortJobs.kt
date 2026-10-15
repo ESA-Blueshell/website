@@ -143,6 +143,8 @@ object CohortJobs {
         @get:JsonProperty("cohortId")
         val targetId: Long,
         val intent: SyncCohortMembershipIntent,
+        /** For a removal, the account the ledger pushed to: the user may have unlinked it or be gone. */
+        val pushedTo: String? = null,
     )
 
     data class ReconcileAllContributionPeriodCohortsPayload(

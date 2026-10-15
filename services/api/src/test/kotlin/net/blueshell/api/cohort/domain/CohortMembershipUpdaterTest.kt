@@ -40,7 +40,7 @@ class CohortMembershipUpdaterTest {
 
         updater.updateMember(7L)
 
-        val row = TargetMember(target = target, userId = 7L, cohort = cohort)
+        val row = TargetMember(target = target, userId = 7L, cohort = cohort).apply { externalUserId = "777" }
         every { definitions.definitionsFor(7L) } returns emptyList()
         every { memberships.findAllByUserIdAndUserIdIsNotNull(7L) } returns listOf(row)
 
@@ -54,7 +54,7 @@ class CohortMembershipUpdaterTest {
             )
             jobs.runAsync(
                 CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(7L, 99L, SyncCohortMembershipIntent.REMOVE),
+                CohortJobs.SyncCohortMembershipPayload(7L, 99L, SyncCohortMembershipIntent.REMOVE, pushedTo = "777"),
                 JobTrigger.MEMBERSHIP_CHANGED,
             )
         }

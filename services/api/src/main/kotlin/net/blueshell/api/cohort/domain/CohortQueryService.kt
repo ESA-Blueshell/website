@@ -89,8 +89,7 @@ class CohortQueryService(
                 row.externalUserId?.let { system to it }
             }.groupBy({ it.first }, { it.second })
             .forEach { (system, externalUserIds) ->
-                runCatching { strategies.require(system).ownersOf(externalUserIds.toSet()) }
-                    .onSuccess(byExternalId::putAll)
+                strategies.find(system)?.ownersOf(externalUserIds.toSet())?.let(byExternalId::putAll)
             }
         return byExternalId
     }

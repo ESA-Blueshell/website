@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.TargetKind
 import net.blueshell.api.discord.api.DiscordRoleKeeper
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.user.api.UserService
@@ -32,8 +33,11 @@ class DiscordTargetStrategy(
 
     override fun resolve(externalId: String): ExternalTarget? = if (roles.available()) roles.role(externalId)?.let(::targetOf) else null
 
-    override fun members(external: ExternalTarget): List<ExternalMember> =
-        roles.holders(external.externalId).map { ExternalMember(it.discordUserId, it.name) }
+    // A role deleted on Discord would otherwise read as one nobody holds, and empty its ledger.
+    override fun members(external: ExternalTarget): List<ExternalMember> {
+        roles.role(external.externalId) ?: throw DiscordUnavailable("Discord has no role ${external.externalId}.")
+        return roles.holders(external.externalId).map { ExternalMember(it.discordUserId, it.name) }
+    }
 
     override fun memberIds(userIds: Set<Long>): Map<Long, String> =
         users

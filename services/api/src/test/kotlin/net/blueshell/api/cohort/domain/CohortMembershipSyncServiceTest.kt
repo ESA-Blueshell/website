@@ -11,6 +11,7 @@ import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.util.Optional
 
 class CohortMembershipSyncServiceTest {
@@ -117,15 +118,29 @@ class CohortMembershipSyncServiceTest {
     }
 
     @Test
-    fun `a system that cannot be reached skips both writes`() {
+    fun `a system that cannot be reached skips an add and retries a removal`() {
         givenTarget(id = 10L, system = "BREVO", label = "Members")
         every { brevoTarget.available() } returns false
 
         assertThat(service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.ADD))
             .isEqualTo("Brevo cannot be reached now; the next reconcile catches up.")
-        assertThat(service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.REMOVE)).isNotNull()
+        // The next reconcile no longer counts the person as ours, so it would never remove them.
+        assertThrows<CohortMembershipNotReadyException> {
+            service.sync(userId = 1L, targetId = 10L, intent = SyncCohortMembershipIntent.REMOVE)
+        }
         verify(exactly = 0) { brevoTarget.add(any(), any()) }
         verify(exactly = 0) { brevoTarget.remove(any(), any()) }
+    }
+
+    @Test
+    fun `REMOVE takes the account the ledger pushed to, even one the user no longer holds`() {
+        givenTarget(id = 10L, system = "BREVO", label = "Members")
+        every { brevoTarget.memberIds(setOf(1L)) } returns mapOf(1L to "888")
+        every { targetExternalIds.find(any()) } returns "42"
+
+        assertThat(service.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE, pushedTo = "777")).isNull()
+
+        verify { brevoTarget.remove(target42, "777") }
     }
 
     @Test

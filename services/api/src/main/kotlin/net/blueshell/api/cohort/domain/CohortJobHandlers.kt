@@ -26,7 +26,7 @@ class CohortJobHandlers(
     @Bean
     fun syncCohortMembershipHandler() =
         bindSkipping(CohortJobs.SyncCohortMembership) {
-            membership.sync(it.userId, it.targetId, it.intent)
+            membership.sync(it.userId, it.targetId, it.intent, it.pushedTo)
         }
 
     @Bean

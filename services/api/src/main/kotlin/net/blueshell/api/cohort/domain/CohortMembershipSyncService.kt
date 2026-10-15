@@ -51,6 +51,7 @@ class CohortMembershipSyncService(
         userId: Long,
         targetId: Long,
         intent: SyncCohortMembershipIntent,
+        pushedTo: String? = null,
     ): String? {
         val target =
             targets.findById(targetId).orElseThrow {
@@ -61,11 +62,17 @@ class CohortMembershipSyncService(
                 throw NonRetryableJobException("Target $targetId has unknown system '${target.system}'")
             }
         val strategy = strategies.requireForJob(system)
-        if (!strategy.available()) return "${system.shownName} cannot be reached now; the next reconcile catches up."
+        if (!strategy.available()) {
+            // A reconcile pushes a missing add again, but no longer counts a removed person as ours.
+            if (intent == SyncCohortMembershipIntent.REMOVE) {
+                throw CohortMembershipNotReadyException("$system cannot be reached; will retry")
+            }
+            return "${system.shownName} cannot be reached now; the next reconcile catches up."
+        }
 
         return when (intent) {
             SyncCohortMembershipIntent.ADD -> add(userId, target, strategy)
-            SyncCohortMembershipIntent.REMOVE -> remove(userId, target, strategy)
+            SyncCohortMembershipIntent.REMOVE -> remove(userId, target, strategy, pushedTo)
         }
     }
 
@@ -101,11 +108,12 @@ class CohortMembershipSyncService(
         userId: Long,
         target: Target,
         strategy: TargetStrategy,
+        pushedTo: String?,
     ): String? {
         val targetId = target.id!!
         val system = target.system
         val externalUserId =
-            strategy.memberIds(setOf(userId))[userId]
+            pushedTo ?: strategy.memberIds(setOf(userId))[userId]
                 ?: return "The user has no $system account, so holds no $system target."
         val externalTargetId = targetExternalIds.find(target) ?: return "The cohort has no $system list linked."
         outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalTargetId), externalUserId) }

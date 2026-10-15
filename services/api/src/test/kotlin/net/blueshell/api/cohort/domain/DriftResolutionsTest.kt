@@ -33,7 +33,18 @@ class DriftResolutionsTest {
     private val users: UserService = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
     private val actors: ActorProvider = mockk()
-    private val service = DriftResolutions(targets, members, resolutions, remediation, users, jobs, actors)
+    private val brevo: TargetStrategy =
+        mockk {
+            every { system } returns TargetSystem.BREVO
+            every { makesMemberIds } returns true
+        }
+    private val discord: TargetStrategy =
+        mockk {
+            every { system } returns TargetSystem.DISCORD
+            every { makesMemberIds } returns false
+        }
+    private val strategies = TargetStrategies(listOf(brevo, discord))
+    private val service = DriftResolutions(targets, members, resolutions, remediation, users, jobs, actors, strategies)
 
     private val cohort = Entities.cohort(id = 1L)
     private val target = Entities.target(id = 2L, cohortId = 1L, externalId = "list-2")
@@ -124,6 +135,16 @@ class DriftResolutionsTest {
         assertThatThrownBy { service.push(1L, 3L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
         assertThatThrownBy { service.push(1L, 5L, listOf(1L)) }.isInstanceOf(TargetNotOfCohort::class.java)
         assertThatThrownBy { service.remove(1L, 4L, listOf("x")) }.isInstanceOf(TargetNotCreated::class.java)
+    }
+
+    @Test
+    fun `on a system where people link their own account, nobody is linked from drift`() {
+        val role = Entities.target(id = 6L, cohortId = 1L, system = "DISCORD", externalId = "role-6")
+        every { targets.findById(6L) } returns Optional.of(role)
+
+        assertThatThrownBy { service.proposeLinks(1L, 6L, listOf("d1")) }.isInstanceOf(TargetLinksOwnAccounts::class.java)
+        assertThatThrownBy { service.link(1L, 6L, listOf(LinkChoice("d1", 3L))) }.isInstanceOf(TargetLinksOwnAccounts::class.java)
+        verify(exactly = 0) { remediation.linkUser(any(), any(), any(), any()) }
     }
 
     @Test

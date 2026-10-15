@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.24.0](https://github.com/ESA-Blueshell/website/compare/v1.23.2...v1.24.0) (2026-10-15)
+
+
+### Features
+
+* a separate imaging service converts uploaded stills ([#2473](https://github.com/ESA-Blueshell/website/issues/2473)) ([608ad43](https://github.com/ESA-Blueshell/website/commit/608ad43d6a267a6563eed40859e7b255c44f1e06))
+* animated banners are converted by the imaging service ([#2494](https://github.com/ESA-Blueshell/website/issues/2494)) ([993a878](https://github.com/ESA-Blueshell/website/commit/993a87894354bc8dde42fb3fc544c8b0690f2b52))
+* **api:** the api image carries only the JRE ([#2496](https://github.com/ESA-Blueshell/website/issues/2496)) ([9f90bc7](https://github.com/ESA-Blueshell/website/commit/9f90bc73497fa176d1e904fd76d7d1e3d90ba75d))
+
+
+### Bug Fixes
+
+* **frontend:** on a phone an agenda row's actions take the whole row, and the organiser's actions wrap as one ([#2482](https://github.com/ESA-Blueshell/website/issues/2482)) ([a6800bb](https://github.com/ESA-Blueshell/website/commit/a6800bb7a3851c4b067104c1e93c13abf8e239aa))
+
+
+### Documentation
+
+* keep LICENSE plain MIT so it is recognised, and say what it covers in the README ([#2507](https://github.com/ESA-Blueshell/website/issues/2507)) ([2e79f24](https://github.com/ESA-Blueshell/website/commit/2e79f249650ad488de3753a2acb869437f811fce))
+* license the code under MIT, and keep images, identity, documents and data reserved ([#2506](https://github.com/ESA-Blueshell/website/issues/2506)) ([a7919e3](https://github.com/ESA-Blueshell/website/commit/a7919e397fb0392afe69e074b031066d67eeb2c3))
+
+
+### Build and Dependencies
+
+* **api:** the api image is built by Cloud Native Buildpacks, with no shell and no Dockerfile ([#2501](https://github.com/ESA-Blueshell/website/issues/2501)) ([9bd5dea](https://github.com/ESA-Blueshell/website/commit/9bd5dea619880d851bc9e44385545ff6ec7f2f52))
+
 ## [1.23.2](https://github.com/ESA-Blueshell/website/compare/v1.23.1...v1.23.2) (2026-10-14)
 
 

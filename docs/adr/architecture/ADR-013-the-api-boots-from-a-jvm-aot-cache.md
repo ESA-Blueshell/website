@@ -35,8 +35,9 @@ Alternatives considered:
   and `@ConditionalOnProperty` beans are decided at build time, which `DatabaseLoginRotation` and
   the migrate profile both depend on deciding at start.
 - **Cloud Native Buildpacks.** Paketo trains the same cache with `BP_JVM_AOTCACHE_ENABLED`, but
-  its run images have no `cwebp`, which the api checks for at start. It is the planned way to
-  build the api image once image conversion leaves the api (#2449).
+  its run images had no `cwebp`, which the api checked for at start. Image conversion has since
+  left the api (architecture ADR-014), and Buildpacks are the planned way to build its image
+  (#2449).
 - **More CPU.** It helps every start, cached or not, and is weighed on its own (#2444).
 
 ## Decision

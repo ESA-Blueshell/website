@@ -3,34 +3,43 @@ package net.blueshell.api.file.domain
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class ImageDimensionsTest {
-    private fun encoded(
-        format: String,
+    /** The head of an extended WebP container: its chunk header and the canvas it declares. */
+    private fun webpHeader(
         width: Int,
         height: Int,
     ): ByteArray =
-        ByteArrayOutputStream()
-            .also { out ->
-                ImageIO.write(BufferedImage(width, height, BufferedImage.TYPE_INT_RGB), format, out)
-            }.toByteArray()
+        ByteBuffer
+            .allocate(30)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .put("RIFF".toByteArray())
+            .putInt(22)
+            .put("WEBPVP8X".toByteArray())
+            .putInt(10)
+            .putInt(0)
+            .put(uint24(width - 1))
+            .put(uint24(height - 1))
+            .array()
+
+    private fun uint24(value: Int) = byteArrayOf(value.toByte(), (value shr 8).toByte(), (value shr 16).toByte())
 
     private fun sizeOf(bytes: ByteArray) = ImageDimensions.of(ByteArrayInputStream(bytes))
 
+    /** A tall picture, so a transposed width and height would not pass as the right answer. */
     @Test
-    fun `reads the size of a png`() {
-        assertThat(sizeOf(encoded("png", 7, 3)))
-            .isEqualTo(ImageDimensions.Size(7, 3))
+    fun `reads the size of a webp from its header`() {
+        assertThat(sizeOf(webpHeader(4, 19))).isEqualTo(ImageDimensions.Size(4, 19))
     }
 
+    /** The api decodes no uploaded picture, so a format other than WebP has no size here. */
     @Test
-    fun `reads the size of a jpeg`() {
-        assertThat(sizeOf(encoded("jpg", 40, 25)))
-            .isEqualTo(ImageDimensions.Size(40, 25))
+    fun `answers nothing for a png, whose header it does not read`() {
+        val png = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10) + ByteArray(24)
+        assertThat(sizeOf(png)).isNull()
     }
 
     /**
@@ -78,13 +87,6 @@ class ImageDimensionsTest {
         }
     }
 
-    /** A tall picture, so a transposed width and height would not pass as the right answer. */
-    @Test
-    fun `does not transpose width and height`() {
-        assertThat(sizeOf(encoded("png", 4, 19)))
-            .isEqualTo(ImageDimensions.Size(4, 19))
-    }
-
     @Test
     fun `answers nothing for bytes that are not a picture`() {
         assertThat(sizeOf("this is not a picture".toByteArray())).isNull()
@@ -97,11 +99,10 @@ class ImageDimensionsTest {
 
     /**
      * A header that announces a picture and then stops. This is the case that decides whether
-     * an unreadable upload is stored without its size or refused outright — it is stored.
+     * an unreadable upload is stored without its size or refused outright: it is stored.
      */
     @Test
     fun `answers nothing for a truncated picture`() {
-        val truncated = encoded("png", 12, 12).copyOfRange(0, 16)
-        assertThat(sizeOf(truncated)).isNull()
+        assertThat(sizeOf(webpHeader(12, 12).copyOfRange(0, 16))).isNull()
     }
 }

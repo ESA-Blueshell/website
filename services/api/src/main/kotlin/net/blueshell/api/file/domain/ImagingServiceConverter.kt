@@ -3,8 +3,6 @@ package net.blueshell.api.file.domain
 import net.blueshell.api.shared.enums.FileType
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
-import org.springframework.context.annotation.Primary
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import java.io.IOException
@@ -19,7 +17,7 @@ import java.time.Duration
 
 /**
  * The converter in the imaging service, which decodes uploaded pictures away from the api
- * (architecture ADR-014). Chosen wherever `app.imaging.url` names one.
+ * (architecture ADR-014). The api decodes none itself.
  *
  * Stills and animations alike: the service keeps an animation's frames at every width and draws
  * one whose frames will not decode as its first frame (api ADR-029). A service that cannot be
@@ -27,8 +25,6 @@ import java.time.Duration
  * and the rendition job meets as a failure it retries.
  */
 @Component
-@Primary
-@ConditionalOnExpression($$"!'${app.imaging.url:}'.isBlank()")
 class ImagingServiceConverter(
     @Value($$"${app.imaging.url}") url: String,
     private val scratch: ScratchSpace,
@@ -81,7 +77,7 @@ class ImagingServiceConverter(
             override fun close() = Unit
         }
 
-    /** What cwebp was told when the api ran it: lossless, or the kind's quality. */
+    /** Lossless, or the kind's quality, as the api told cwebp when it converted pictures itself. */
     private fun encodingOf(type: FileType): String =
         if (type.webpLossless) "lossless=true" else "quality=${type.webpQuality ?: DEFAULT_QUALITY}"
 

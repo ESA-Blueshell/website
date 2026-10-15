@@ -22,11 +22,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install WebP tools
-      shell: bash
-      # ImageRenditionWriter shells out to cwebp; the production image installs
-      # libwebp-tools for the same reason.
-      run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
+    # The api converts every upload through it, and reads IMAGING_URL to find it.
+    - name: Start the imaging service
+      uses: ./.github/actions/start-imaging
 
     - name: Set up Node.js and Yarn
       uses: ./.github/actions/setup-node-yarn

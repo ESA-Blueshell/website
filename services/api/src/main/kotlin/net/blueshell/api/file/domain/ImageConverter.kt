@@ -4,8 +4,8 @@ import net.blueshell.api.shared.enums.FileType
 
 /**
  * Turns pictures into WebP: an upload into its master at the kind's ceiling, and a master into
- * the renditions it is served at. The one door to the converters, so what decodes uploaded bytes
- * can move without its callers changing.
+ * the renditions it is served at. The one door to the imaging service, and what the unit tests
+ * stand in for.
  */
 interface ImageConverter {
     /**
@@ -22,7 +22,7 @@ interface ImageConverter {
 
     /**
      * The renditions of a stored [master], written one width at a time as they are asked for, so a
-     * ladder that is mostly stored already costs one decode and not one per width.
+     * ladder that is mostly stored already costs only the widths it is missing.
      *
      * [recorded] is the size on the master's record; [name] is what a log line calls the picture.
      */
@@ -40,7 +40,7 @@ interface ImageConverter {
     )
 
     interface Renditions : AutoCloseable {
-        /** What the widths are measured against: an animation's canvas, or the recorded size of a still. */
+        /** What the widths are measured against: the size on the master's record. */
         val size: ImageDimensions.Size
 
         /** One width, written into [output]. A [WebpConversionException] where the converter refuses it. */

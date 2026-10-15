@@ -15,9 +15,13 @@ A Spring Boot 4.0.3 REST API for the Blueshell student association management sy
 # Run with Docker, from the repository root
 docker compose up api
 
-# Or run locally
-./gradlew :services:api:bootRun
+# Or run locally, with the imaging service every upload is converted by
+docker compose up -d imaging
+IMAGING_URL=http://localhost:8090 ./gradlew :services:api:bootRun
 ```
+
+The api decodes no picture itself (architecture ADR-014). The integration tests start the
+imaging service with Testcontainers, or use the one `IMAGING_URL` names.
 
 Access Swagger UI: `http://localhost:8080/swagger-ui`
 

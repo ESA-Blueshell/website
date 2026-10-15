@@ -62,9 +62,12 @@ answers bytes and can reach nothing.**
   every frame. One conversion runs at a time and the next waits up to 30 seconds, which keeps
   the decoded picture and libwebp's copy of it inside the pod's 1 GiB: a 50 megapixel animation
   peaks at about 610 MiB.
-- **The api speaks to it through the conversion port.** `ImagingServiceConverter` implements
-  `ImageConverter` wherever `app.imaging.url` names the service, which production and the dev
-  stack both do. The tests and a native run leave it blank and convert in process.
+- **The api decodes nothing itself.** `ImagingServiceConverter` is the only `ImageConverter`,
+  and the api reads a picture's size only from the WebP header the service hands back. A file
+  stored as it was sent, in a format other than WebP, has no size. `app.imaging.url` defaults to
+  the service's name on the compose network and in the cluster's namespace. The integration
+  tests and CI's system-test stack run the image as the cluster does, and a native run points
+  the api at a container it started. The api image carries only the JRE.
 - **A service that is down is the site's problem, not the uploader's.** The api answers an
   upload with 503. A master is converted before anything is stored, so a failed upload leaves no
   record. A picture the service refuses is a 400, as it was. An animation's widths are a job,
@@ -87,5 +90,6 @@ answers bytes and can reach nothing.**
 - The service is a Go module with its own lint, vulnerability check, unit suite held to every
   statement, container tests and Renovate rules; see `services/imaging/README.md` and
   `docs/agents/ci.md`.
-- The api still carries its in-process converter and the libwebp tools, for a run with no
-  `app.imaging.url`, until #2448 removes them.
+- Every job that boots the api and uploads a picture needs the service running: CI's
+  integration shards and system tests start it from the layers main's image build caches, and
+  the integration tests start it with Testcontainers where CI has not.

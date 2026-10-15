@@ -517,9 +517,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install WebP tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
-
       - name: Set up Java + Gradle
         uses: ./.github/actions/setup-java-gradle
         with:
@@ -585,8 +582,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install WebP tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
+      # Every upload a test makes is converted by it; the tests find it through IMAGING_URL.
+      - name: Start the imaging service
+        uses: ./.github/actions/start-imaging
 
       - name: Prepare test database schema
         run: |
@@ -1089,9 +1087,6 @@ jobs:
 
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
-
-      - name: Install WebP tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends webp
 
       - name: Generate Blueshell OpenAPI spec and frontend client
         run: |

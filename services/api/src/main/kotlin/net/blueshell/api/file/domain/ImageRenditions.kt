@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component
 /**
  * Asks for the widths a picture is served at, and decides who does the work.
  *
- * A still is one converter run per width, which is quick enough to do while the caller waits.
- * An animation is one run per frame per width, which is not: a banner of two hundred frames
+ * A still is one conversion per width, which is quick enough to do while the caller waits. An
+ * animation is a decode and an encode per frame per width, which is not: a banner of two hundred frames
  * would hold a start open or leave somebody watching an upload spinner for minutes. So it is
  * queued, on its own job row, where it can fail and be retried and be read about.
  *
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component
 @Component
 class ImageRenditions(
     private val writer: ImageRenditionWriter,
-    private val animated: AnimatedImages,
     private val blobs: BlobStore,
     private val jobs: JobQueue,
 ) {
@@ -38,8 +37,19 @@ class ImageRenditions(
     /**
      * Whether this picture has frames to replay, asked of its header rather than the converter.
      *
+     * A WebP answers from its container flags. A GIF has no such flag, and only the rows stored
+     * before WebP masters hold one, so a GIF is taken at its word: the service draws one of a
+     * single frame as a still anyway.
+     *
      * A picture whose bytes are gone has none. It takes the ordinary path, where the writer
      * reports the missing bytes in its own words rather than a job failing to find them.
      */
-    private fun moves(source: File): Boolean = blobs.exists(source.path) && animated.animates(source.mediaType) { blobs.open(source.path) }
+    private fun moves(source: File): Boolean {
+        if (!blobs.exists(source.path)) return false
+        return when (source.mediaType.substringBefore(';').trim()) {
+            "image/gif" -> true
+            "image/webp" -> blobs.open(source.path).use(WebpDimensions::isAnimated)
+            else -> false
+        }
+    }
 }

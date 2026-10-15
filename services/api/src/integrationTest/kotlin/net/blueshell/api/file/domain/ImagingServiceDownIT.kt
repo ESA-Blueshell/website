@@ -14,6 +14,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
@@ -26,7 +30,8 @@ import javax.imageio.ImageIO
  * With the imaging service down, a still upload is refused for now and nothing of it is kept,
  * and an animation's widths wait on a job that fails and is retried.
  */
-@SpringBootTest(properties = ["app.imaging.url=http://127.0.0.1:1"])
+@SpringBootTest
+@Import(ImagingServiceDownIT.Down::class)
 class ImagingServiceDownIT : UserTestSupport() {
     @Autowired
     private lateinit var files: FileRepository
@@ -91,5 +96,13 @@ class ImagingServiceDownIT : UserTestSupport() {
         assertThat(retried.nextAttemptAt).isNotNull()
         assertThat(retried.errorType).isEqualTo(ImagingUnavailableException::class.java.name)
         assertThat(files.findByPath(key).orElseThrow().renditions).isEmpty()
+    }
+
+    /** The converter pointed at a port nothing listens on, in place of the running service. */
+    @TestConfiguration(proxyBeanMethods = false)
+    class Down {
+        @Bean
+        @Primary
+        fun downConverter(scratch: ScratchSpace): ImageConverter = ImagingServiceConverter("http://127.0.0.1:1", scratch)
     }
 }

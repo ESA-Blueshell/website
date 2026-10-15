@@ -11,9 +11,9 @@ import java.nio.file.Paths
  * Somewhere to put bytes that are on their way somewhere else.
  *
  * Deliberately not the blob store. The store keeps what the site serves and would follow the
- * site to an object store; this exists only because the converter is a subprocess that will
- * take a file and nothing else, so bytes have to touch a disk on the way through whatever the
- * store is made of. Uploads are staged here too, since an upload is hashed and possibly
+ * site to an object store; this holds the bytes sent to and answered by the imaging service,
+ * which an upload of 50 MB should not hold on the heap, whatever the store is made of. Uploads
+ * are staged here too, since an upload is hashed and possibly
  * converted before its address is known and neither can be done to a stream that is gone.
  *
  * Cut on the same volume as the uploads, which is the one this deployment is willing to fill.

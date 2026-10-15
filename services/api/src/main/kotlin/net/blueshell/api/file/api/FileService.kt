@@ -197,8 +197,8 @@ class FileService
 
             val stored = if (entity.id != null) update(entity) else create(entity)
             // The widths this picture is served at, asked for now rather than at the first
-            // request for one: a converter run while somebody is waiting for an image is a
-            // request that waits for a subprocess. A picture that moves is queued instead.
+            // request for one, which would wait on the imaging service while somebody waits for
+            // an image. A picture that moves is queued instead.
             imageRenditions.request(stored)
             return stored
         }

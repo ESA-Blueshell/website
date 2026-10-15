@@ -19,6 +19,7 @@ import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -136,6 +137,23 @@ class ContributionEmailPlannerTest {
             assertThat(row.feeType).isNull()
             assertThat(row.amount).isNull()
             assertThat(row.isHardExcluded).isTrue()
+        }
+
+        @Test
+        fun `a member who turned honorary after the period ended still owes that period`() {
+            val honoured =
+                membership(1L, "Ann Honoured", incasso = false, startDate = LocalDate.of(2022, 9, 1)).apply {
+                    addType(MembershipType(this, MemberType.REGULAR, startDate))
+                    addType(MembershipType(this, MemberType.HONORARY, period.endDate.plusDays(15)))
+                    memberType = MemberType.HONORARY
+                }
+            given(honoured)
+
+            val row = planner.plan(periodId, listOf(1L)).rows.single()
+
+            assertThat(row.disposition).isEqualTo(BulkRowDisposition.INCLUDED)
+            assertThat(row.memberType).isEqualTo(MemberType.REGULAR)
+            assertThat(row.feeType).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
         }
 
         @Test

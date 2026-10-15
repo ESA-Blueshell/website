@@ -74,8 +74,8 @@ class MemberContributionsTest {
                 periodId = 2,
                 startDate = LocalDate.of(2025, 9, 1),
                 endDate = LocalDate.of(2026, 8, 31),
-                feeType = BulkFeeType.ALUMNI_FEE,
-                fee = newer.alumniFee,
+                feeType = BulkFeeType.FULL_YEAR_FEE,
+                fee = 45.0,
                 paid = false,
                 paidAt = null,
                 lastEmailAt = asked,
@@ -96,6 +96,38 @@ class MemberContributionsTest {
             "\"lastEmailAt\":null",
             "\"lastEmailKind\":null",
         )
+    }
+
+    @Test
+    fun `a member owes the latest ask, and before any ask what their type today would be asked`() {
+        val ann = Entities.user(id = 7)
+        val period = Entities.period(1, startDate = LocalDate.of(2025, 9, 1))
+        whenever(periods.findAll()).thenReturn(listOf(period))
+        whenever(memberships.findByUserId(7)).thenReturn(
+            mutableListOf(
+                Entities.membership(user = ann, startDate = LocalDate.of(2022, 9, 1)).apply { memberType = MemberType.ALUMNI },
+            ),
+        )
+        whenever(contributions.findByIdUserId(7)).thenReturn(emptyList())
+        whenever(reminders.findByUser_Id(7)).thenReturn(emptyList())
+        whenever(notifications.findByUser_Id(7)).thenReturn(emptyList())
+        assertThat(controller.findMemberContributions(7).single().feeType).isEqualTo(BulkFeeType.ALUMNI_FEE)
+
+        whenever(reminders.findByUser_Id(7)).thenReturn(
+            listOf(
+                Entities.reminder(user = ann, period = period).apply {
+                    feeType = BulkFeeType.FULL_YEAR_FEE
+                    amount = 28.0
+                    askedAt = Instant.parse("2025-10-01T10:00:00Z")
+                },
+                // A reminder that quoted every fee option asked no one amount.
+                Entities.reminder(user = ann, period = period).apply { askedAt = Instant.parse("2025-11-01T10:00:00Z") },
+            ),
+        )
+        val one = controller.findMemberContributions(7).single()
+
+        assertThat(one.feeType).isEqualTo(BulkFeeType.FULL_YEAR_FEE)
+        assertThat(one.fee).isEqualTo(28.0)
     }
 
     @Test

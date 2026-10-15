@@ -49,6 +49,8 @@ class CohortDiscord(
     private val registrar: CohortRegistrar,
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
+    private val definitions: CohortDefinitionRegistry,
+    private val updater: CohortMembershipUpdater,
 ) {
     fun read(key: String): DiscordPlace {
         if (!roles.available() || !channels.available()) return DiscordPlace(false, null, null, emptyList())
@@ -73,6 +75,8 @@ class CohortDiscord(
             refuseUnless(handable = choice.roleId)
         }
         val roleId = linked ?: refusedBy(TargetSystem.DISCORD) { roleFor(cohortId, choice) } ?: return read(key)
+        // A role the cohort did not have yet is given to its people now, not as each of them changes.
+        if (linked == null) definitions.byKey(key)?.let(updater::updateCohort)
         refusedBy(TargetSystem.DISCORD) {
             val opened = channels.openedTo(roleId)
             val toOpen = choice.channelIds - opened.map { it.id }.toSet()
@@ -96,27 +100,6 @@ class CohortDiscord(
                 ?.let { createOrOpen(it, category, inCategory, roleId, held = choice.channelIds) }
         }
         return read(key)
-    }
-
-    /**
-     * Takes the cohort's role, and the channels under [category] it opens, off Discord, and the role
-     * off the cohort: the board's deliberate removal of a team that stopped.
-     */
-    fun remove(
-        key: String,
-        category: String,
-    ) {
-        if (!roles.available() || !channels.available()) throw TargetSystemUnavailable(TargetSystem.DISCORD)
-        val target = targets.findByCohortIdAndSystem(cohortIdOf(key), TargetSystem.DISCORD.name) ?: return
-        val roleId = targetIds.find(target)
-        refusedBy(TargetSystem.DISCORD) {
-            roleId?.let { role ->
-                val inCategory = channelsUnder(category).map { it.id }.toSet()
-                channels.openedTo(role).filter { it.id in inCategory }.forEach { channels.delete(it.id) }
-                roles.delete(role)
-            }
-        }
-        targets.delete(target)
     }
 
     private fun refuseIfFollowed(

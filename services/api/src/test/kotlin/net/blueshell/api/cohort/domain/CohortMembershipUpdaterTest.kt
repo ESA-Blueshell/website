@@ -77,6 +77,26 @@ class CohortMembershipUpdaterTest {
     }
 
     @Test
+    fun `a target added to a cohort later is filled for the people already in it, both ways round`() {
+        val role = Entities.target(id = 100L, system = "DISCORD", cohortId = 3L)
+        every { cohorts.findByDefinitionKey("PERIOD_MEMBERS:1") } returns cohort
+        every { cohorts.findById(3L) } returns Optional.of(cohort)
+        every { targets.findAllByCohortId(3L) } returns listOf(target, role)
+        every { definitions.membersOf(definition) } returns setOf(7L)
+        every { definitions.definitionsFor(7L) } returns listOf(definition)
+        val onList = TargetMember(target = target, userId = 7L, cohort = cohort)
+        every { memberships.findAllByCohortIdAndUserIdIsNotNull(3L) } returns listOf(onList)
+        every { memberships.findAllByUserIdAndUserIdIsNotNull(7L) } returns listOf(onList)
+        every { memberships.save(any<TargetMember>()) } answers { firstArg() }
+
+        assertThat(updater.updateCohort(definition).joined).containsExactly(7L)
+        assertThat(updater.updateMember(7L).joined).containsExactly(3L)
+
+        verify(exactly = 2) { memberships.save(match<TargetMember> { it.target === role && it.userId == 7L }) }
+        verify(exactly = 0) { memberships.save(match<TargetMember> { it.target === target }) }
+    }
+
+    @Test
     fun `a definition with no cohort yet changes nothing, and a target whose cohort is gone fails`() {
         every { cohorts.findByDefinitionKey("PERIOD_MEMBERS:1") } returns null
         assertThat(updater.updateCohort(definition).joined).isEmpty()

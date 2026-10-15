@@ -32,7 +32,9 @@ class CohortDiscordTest {
     private val registrar: CohortRegistrar = mock()
     private val roles: DiscordRoleKeeper = mock()
     private val channels: DiscordChannelKeeper = mock()
-    private val discord = CohortDiscord(cohorts, targets, targetIds, targeting, registrar, roles, channels)
+    private val definitions: CohortDefinitionRegistry = mock()
+    private val updater: CohortMembershipUpdater = mock()
+    private val discord = CohortDiscord(cohorts, targets, targetIds, targeting, registrar, roles, channels, definitions, updater)
     private val cohort = Entities.cohort(id = 5, type = CohortType.COMMITTEE_MEMBERS, label = "Sitecie")
     private val role = Entities.target(id = 50, system = "DISCORD", cohortId = 5, externalId = "900")
     private val sitecie = KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees")
@@ -72,9 +74,14 @@ class CohortDiscordTest {
         whenever(targeting.create(5, TargetSystem.DISCORD, "Sitecie", null)).thenReturn(CohortTargetRow(role, "900"))
         whenever(channels.openedTo("900")).thenReturn(emptyList())
 
+        val definition = CommitteeMembersDefinition(Entities.committee(id = 7), mock())
+        whenever(definitions.byKey("COMMITTEE_MEMBERS:7")).thenReturn(definition)
+
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true, createChannel = " sitecie "), "Committees")
 
         verify(channels).createPrivate("sitecie", "Committees", "900")
+        // The new role is given to the people the committee has now.
+        verify(updater).updateCohort(definition)
     }
 
     @Test
@@ -234,24 +241,5 @@ class CohortDiscordTest {
             .isInstanceOfSatisfying(TargetSystemRefused::class.java) {
                 assertThat(it.facts["reason"].toString()).contains("lacks View Channels")
             }
-    }
-
-    @Test
-    fun `removes the role and the channels under the category it opens, and unlinks it, only where asked`() {
-        given(linked = true)
-        val elsewhere = KeptChannel("8", "board", KeptChannelKind.TEXT, "Board")
-        whenever(channels.openedTo("900")).thenReturn(listOf(sitecie, elsewhere))
-
-        discord.remove("COMMITTEE_MEMBERS:7", "Committees")
-
-        verify(channels).delete("1")
-        verify(channels, never()).delete("8")
-        verify(roles).delete("900")
-        verify(targets).delete(role)
-
-        given(linked = false)
-        discord.remove("COMMITTEE_MEMBERS:7", "Committees")
-        whenever(roles.available()).thenReturn(false)
-        assertThatThrownBy { discord.remove("COMMITTEE_MEMBERS:7", "Committees") }.isInstanceOf(TargetSystemUnavailable::class.java)
     }
 }

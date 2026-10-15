@@ -5,7 +5,7 @@ import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
 import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
 import {loadCasualGames} from "@/domains/games/adapters/games"
 import {forgetGames, useGames} from "@/domains/esports/island/useGames"
-import {fieldExistingTeam, publishLineup, readTeamDiscord, removeTeamDiscord, saveTeamDiscord} from "@/domains/esports/adapters/lineup"
+import {fieldExistingTeam, publishLineup, readTeamDiscord, saveTeamDiscord} from "@/domains/esports/adapters/lineup"
 import {loadMemberAccounts} from "@/domains/user"
 import {settle} from "../../../helpers/testUtils"
 import {TeamRole} from "@/services/api"
@@ -38,7 +38,6 @@ vi.mock("@/domains/esports/adapters/lineup", async (importOriginal) => ({
   publishLineup: vi.fn(),
   readTeamDiscord: vi.fn(),
   saveTeamDiscord: vi.fn(),
-  removeTeamDiscord: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -416,29 +415,5 @@ describe("the team's Discord", () => {
     await wrapper.get("[data-testid=lineup-save]").trigger("click")
     await settle()
     expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
-  })
-
-  it("removes the team's role and channel only once confirmed, and says why where it could not", async () => {
-    vi.mocked(loadRoster).mockResolvedValue([entry(1, "ace")])
-    vi.mocked(loadTeamSeasons).mockResolvedValue([])
-    const wrapper = await openEditor()
-    expect(wrapper.find("[data-testid=lineup-discord-remove]").exists()).toBe(false)
-    wrapper.findComponent({name: "DiscordPlaceFields"}).vm.$emit("loaded", {available: true, roleId: "900", roleName: "Blueshell", channels: []})
-    await settle()
-    await wrapper.get("[data-testid=lineup-discord-remove]").trigger("click")
-    const dialog = () => wrapper.findAllComponents({name: "ConfirmDialog"}).find(one => one.attributes("testid") === "lineup-discord-remove-dialog")!
-    expect(dialog().attributes("open")).toBe("true")
-
-    vi.mocked(removeTeamDiscord).mockResolvedValueOnce({ok: false, reason: "Discord cannot be reached now."})
-    dialog().vm.$emit("confirm")
-    await settle()
-    expect(dialog().attributes("failure")).toBe("Discord cannot be reached now.")
-    vi.mocked(removeTeamDiscord).mockResolvedValueOnce({ok: true})
-    dialog().vm.$emit("confirm")
-    await settle()
-    expect(removeTeamDiscord).toHaveBeenCalledWith(7)
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "The team's role and channel are removed from Discord.")
-    expect(wrapper.find("[data-testid=lineup-discord-remove]").exists()).toBe(false)
-    dialog().vm.$emit("update:open", false)
   })
 })

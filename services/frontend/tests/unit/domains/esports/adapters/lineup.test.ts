@@ -3,15 +3,14 @@ import {
   fieldExistingTeam,
   isBlank,
   publishLineup,
-  removeTeamDiscord,
   saveTeamDiscord,
   type DraftEntry,
   type LineupDraft,
 } from "@/domains/esports/adapters/lineup"
-import {addRosterEntry, fieldTeam, publishLineup as sendLineup, removeTeamDiscord as dropTeamDiscord, setTeamDiscord} from "@/services/api"
+import {addRosterEntry, fieldTeam, publishLineup as sendLineup, setTeamDiscord} from "@/services/api"
 import {TeamRole} from "@/services/api"
 import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
-import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
+import {answer, refusal} from "../../../helpers/sdkAnswers"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -19,7 +18,6 @@ vi.mock("@/services/api", async (importOriginal) => ({
   fieldTeam: vi.fn(),
   publishLineup: vi.fn(),
   setTeamDiscord: vi.fn(),
-  removeTeamDiscord: vi.fn(),
 }))
 
 const entry = (over: Partial<DraftEntry> = {}): DraftEntry => ({
@@ -159,7 +157,7 @@ describe("isBlank", () => {
 })
 
 describe("a team's Discord", () => {
-  it("is set and removed through the api, and a Discord that cannot be reached says so", async () => {
+  it("is set through the api, and a Discord that cannot be reached says so", async () => {
     const place = {available: true, roleId: "900", channels: []}
     vi.mocked(setTeamDiscord).mockResolvedValueOnce(answer(setTeamDiscord, place))
     await expect(saveTeamDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({ok: true, saved: place})
@@ -178,8 +176,5 @@ describe("a team's Discord", () => {
     expect(await refused({code: "ChannelOutsideCategory", channel: "board", category: "Esports"}))
       .toBe("#board is not under Esports, so it cannot be opened to the team's role.")
 
-    vi.mocked(dropTeamDiscord).mockResolvedValueOnce(emptyAnswer(dropTeamDiscord))
-    await expect(removeTeamDiscord(7)).resolves.toEqual({ok: true})
-    expect(dropTeamDiscord).toHaveBeenCalledWith({path: {id: 7}})
   })
 })

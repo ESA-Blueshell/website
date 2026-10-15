@@ -10,13 +10,10 @@ import net.blueshell.api.cohort.domain.DiscordPlace
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.security.BoardOnly
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @Schema(name = "DiscordPlaceRequest", description = "The role a cohort's people hold, and the channels it opens.")
@@ -64,13 +61,6 @@ class DiscordPlaceController(
         @PathVariable id: Long,
         @Valid @RequestBody request: DiscordPlaceRequest,
     ): DiscordPlace = discord.apply(team(id), request.choice(), esports)
-
-    /** Takes the team's role and its private channels off Discord: the board's explicit removal. */
-    @DeleteMapping("/management/teams/{id}/discord")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun removeTeamDiscord(
-        @PathVariable id: Long,
-    ) = discord.remove(team(id), esports)
 
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
 

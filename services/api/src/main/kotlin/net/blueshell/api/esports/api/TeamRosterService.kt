@@ -71,18 +71,14 @@ class TeamRosterService(
     @Transactional(readOnly = true)
     fun teamNames(): Map<Long, String> = teams.pool().associate { requireNotNull(it.id) to it.name }
 
-    /**
-     * The people on [teamId]'s line-up in the season fielded now. A season ending takes nobody off
-     * anything; they simply stop being here.
-     */
+    /** The people on each team's line-up in the season fielded now, by team, read in one go. */
     @Transactional(readOnly = true)
-    fun currentPlayersOf(teamId: Long): Set<Long> {
-        val seasonId = fielded.fieldedSeasonNow() ?: return emptySet()
-        return fielded
-            .seasonsOf(teamId)
-            .filter { it.season.id == seasonId }
-            .flatMap { entries.findAllByTeamAndSeason(teamId, it.game, seasonId) }
-            .mapNotNullTo(mutableSetOf()) { it.userId }
+    fun currentLineups(): Map<Long, Set<Long>> {
+        val seasonId = fielded.fieldedSeasonNow() ?: return emptyMap()
+        return entries
+            .findTeamPlayersInSeason(seasonId)
+            .groupBy({ it.teamId }, { it.userId })
+            .mapValues { it.value.toSet() }
     }
 
     @Transactional(readOnly = true)

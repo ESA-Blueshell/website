@@ -7,6 +7,7 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
+import net.blueshell.api.esports.persistence.TeamPlayer
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
@@ -99,31 +100,15 @@ class TeamRosterServicePublishTest {
     }
 
     @Test
-    fun `names every team, and reads a team's players in the season fielded now`() {
+    fun `names every team, and reads every team's players in the season fielded now`() {
         whenever(teams.pool()).thenReturn(listOf(team))
         whenever(fielded.fieldedSeasonNow()).thenReturn(5L)
-        whenever(fielded.seasonsOf(3)).thenReturn(
-            listOf(
-                fielding,
-                TeamSeason(
-                    team = team,
-                    game = "CS2",
-                    season =
-                        Season(name = "Old", startDate = LocalDate.of(2029, 1, 1), endDate = LocalDate.of(2029, 6, 1)).also {
-                            it.id =
-                                4
-                        },
-                ),
-            ),
-        )
-        whenever(
-            entries.findAllByTeamAndSeason(3, "CS2", 5),
-        ).thenReturn(listOf(TeamRosterEntry(teamSeason = fielding, handle = "a", userId = 7), kept))
+        whenever(entries.findTeamPlayersInSeason(5)).thenReturn(listOf(TeamPlayer(3, 7), TeamPlayer(3, 8), TeamPlayer(4, 7)))
 
         assertThat(service.teamNames()).isEqualTo(mapOf(3L to "BS Draft"))
-        assertThat(service.currentPlayersOf(3)).containsExactly(7L)
+        assertThat(service.currentLineups()).isEqualTo(mapOf(3L to setOf(7L, 8L), 4L to setOf(7L)))
         whenever(fielded.fieldedSeasonNow()).thenReturn(null)
-        assertThat(service.currentPlayersOf(3)).isEmpty()
+        assertThat(service.currentLineups()).isEmpty()
     }
 
     @Test

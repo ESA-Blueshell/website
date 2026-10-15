@@ -12537,49 +12537,6 @@ export type CheckSendingAddressResponses = {
 
 export type CheckSendingAddressResponse = CheckSendingAddressResponses[keyof CheckSendingAddressResponses];
 
-export type RemoveTeamDiscordData = {
-    body?: never;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/teams/{id}/discord';
-};
-
-export type RemoveTeamDiscordErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type RemoveTeamDiscordError = RemoveTeamDiscordErrors[keyof RemoveTeamDiscordErrors];
-
-export type RemoveTeamDiscordResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemoveTeamDiscordResponse = RemoveTeamDiscordResponses[keyof RemoveTeamDiscordResponses];
-
 export type FindTeamDiscordData = {
     body?: never;
     path: {

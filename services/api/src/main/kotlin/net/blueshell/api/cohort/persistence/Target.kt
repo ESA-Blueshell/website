@@ -13,23 +13,23 @@ import org.hibernate.annotations.SQLRestriction
 import java.time.Instant
 
 /**
- * The list, role or group on one external system that mirrors one cohort; stored in `cohort`
- * until that table is renamed. [externalId] is null until the cohort's create-target job, or an
- * operator, creates or links it on the system, and `CohortTargetIds` owns it.
+ * The list, role or group on one external system that mirrors one cohort, stored in `target`.
+ * [externalId] is null until the cohort's create-target job, or an operator, creates or links it
+ * on the system, and `CohortTargetIds` owns it.
  *
  * `system` is a plain string holding a `TargetSystem.name()`: persistence cannot depend on the
  * `sync.port` package under the layered architecture rule.
  */
 @Entity
 @Table(
-    name = "cohort",
+    name = "target",
     indexes = [
         Index(name = "idx_cohort_system_kind", columnList = "system, kind, deleted_at"),
         Index(name = "idx_cohort_folder", columnList = "folder"),
         Index(name = "idx_cohort_deleted_at", columnList = "deleted_at"),
     ],
 )
-@SQLDelete(sql = "UPDATE cohort SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE target SET ${SoftDelete.STAMP}, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction(SoftDelete.ACTIVE)
 class Target(
     @Column(name = "system", nullable = false, length = 32)
@@ -50,7 +50,7 @@ class Target(
     @Column(name = "folder", nullable = true, length = 64)
     var folder: String? = null,
     /** The cohort this target mirrors; nullable only so soft-deleted rows from before V72 stay readable. */
-    @Column(name = "subject_id", nullable = true)
+    @Column(name = "cohort_id", nullable = true)
     var cohortId: Long? = null,
     /**
      * Native id of this target on [system] (e.g. a Brevo list id).
@@ -62,4 +62,7 @@ class Target(
     /** When a create-target job first set out to make this target; a retry that finds it looks the target up first. */
     @Column(name = "target_claimed_at", nullable = true)
     var targetClaimedAt: Instant? = null,
+    /** Whether each reconcile removes the target's theirs-only people. Only an admin sets it. */
+    @Column(name = "enforced", nullable = false)
+    var enforced: Boolean = false,
 ) : AuditedAutoIdEntity()

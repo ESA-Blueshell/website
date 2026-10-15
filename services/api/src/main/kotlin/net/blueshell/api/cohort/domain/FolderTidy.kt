@@ -1,0 +1,157 @@
+package net.blueshell.api.cohort.domain
+
+import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.cohort.persistence.AppliedTidy
+import net.blueshell.api.cohort.persistence.AppliedTidyRepository
+import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.tracking.ActorProvider
+import net.blueshell.api.user.api.UserService
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+
+/**
+ * The one-off folder tidy: every list linked to a cohort that is not in its cohort type's folder is
+ * proposed a move there, and so is a list made by hand whose name is a cohort's, matched as plain
+ * letters and digits. A proposal, not a rule: once applied, Brevo's folder is the truth again and
+ * nothing moves a list back.
+ */
+@Service
+class FolderTidy(
+    private val strategies: TargetStrategies,
+    private val targets: TargetRepository,
+    private val cohorts: CohortRepository,
+    private val applied: AppliedTidyRepository,
+    private val actors: ActorProvider,
+    private val users: UserService,
+) {
+    /** What the tidy would do; changes nothing. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun preview(system: TargetSystem): TidyPlan = plan(system, strategies.require(system).catalog(null).associateBy { it.externalId })
+
+    private fun plan(
+        system: TargetSystem,
+        catalog: Map<String, ExternalTarget>,
+    ): TidyPlan {
+        val strategy = strategies.require(system)
+        val all = cohorts.findAll()
+        val typeOf = all.associate { it.id to it.type }
+        val linked = targets.findAllBySystem(system.name)
+        val linkedMoves =
+            linked.mapNotNull { target ->
+                val external = target.externalId?.let(catalog::get) ?: return@mapNotNull null
+                val type = typeOf[target.cohortId] ?: return@mapNotNull null
+                moveOf(external, CohortFolders.forType(type), byName = false)
+            }
+        // A list nobody linked, named as a cohort is: proposed apart, for the reader to tick.
+        val linkedIds = linked.mapNotNull { it.externalId }.toSet()
+        // A name two kinds of cohort share, or one with no letters or digits, says nothing about where a list goes.
+        val typeByName =
+            all
+                .groupBy({ plainName(it.label) }, { it.type })
+                .filter { (name, types) -> name.isNotEmpty() && types.distinct().size == 1 }
+                .mapValues { it.value.first() }
+        val namedMoves =
+            catalog.values
+                .filter { it.externalId !in linkedIds }
+                .mapNotNull { external ->
+                    typeByName[plainName(external.label)]?.let { moveOf(external, CohortFolders.forType(it), byName = true) }
+                }
+        val moves = (linkedMoves + namedMoves).sortedWith(compareBy({ it.byName }, { it.to }, { it.label }))
+        val known = strategy.folders().map { it.lowercase() }.toSet()
+        val toCreate = moves.map { it.to }.distinct().filter { it.lowercase() !in known }
+        return TidyPlan(moves, toCreate, lastApplied(system))
+    }
+
+    /** Moves the lists picked out of the preview, making their folders first; each failure keeps its reason. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    fun apply(
+        system: TargetSystem,
+        externalIds: Collection<String>,
+    ): BulkTargetMoveResult {
+        val strategy = strategies.require(system)
+        val catalog = strategy.catalog(null).associateBy { it.externalId }
+        val proposed = plan(system, catalog).moves.associateBy { it.externalId }
+        val chosen = externalIds.distinct().mapNotNull(proposed::get)
+        val stale =
+            (externalIds.distinct() - proposed.keys).map {
+                FailedTargetMove(it, it, "The tidy no longer proposes this list. Open it again.")
+            }
+        val unmade =
+            chosen
+                .map { it.to }
+                .distinct()
+                .mapNotNull { folder -> runCatching { strategy.createFolder(folder) }.exceptionOrNull()?.let { folder to it } }
+                .toMap()
+        val moved = mutableListOf<ExternalTarget>()
+        val failed = stale.toMutableList()
+        chosen.forEach { move ->
+            val outcome =
+                unmade[move.to]?.let { Result.failure(it) }
+                    ?: runCatching { strategy.move(catalog.getValue(move.externalId), move.to) }
+            outcome
+                .onSuccess { moved += it }
+                .onFailure { failed += FailedTargetMove(move.externalId, move.label, it.message ?: "refused") }
+        }
+        // Only a tidy that tried a move is on record; a stale pick moves nothing.
+        if (chosen.isNotEmpty()) {
+            applied.save(AppliedTidy(system.name, moved.size, failed.size - stale.size, actors.currentOrSystem().userId, Instant.now()))
+        }
+        return BulkTargetMoveResult(moved, failed)
+    }
+
+    private fun moveOf(
+        external: ExternalTarget,
+        folder: String,
+        byName: Boolean,
+    ): TidyMove? =
+        // An archived list stays archived, linked or not.
+        if (external.folderLabel.equals(folder, ignoreCase = true) ||
+            external.folderLabel.equals(TargetCatalog.ARCHIVE_FOLDER, ignoreCase = true)
+        ) {
+            null
+        } else {
+            TidyMove(external.externalId, external.label, external.folderLabel, folder, byName)
+        }
+
+    private fun lastApplied(system: TargetSystem): LastTidy? =
+        applied.findFirstBySystemOrderByAppliedAtDesc(system.name)?.let { tidy ->
+            val by = tidy.appliedBy?.let { id -> users.findAllByIds(setOf(id)).firstOrNull()?.fullName }
+            LastTidy(tidy.appliedAt, by, tidy.moved, tidy.failed)
+        }
+}
+
+@Schema(name = "TidyPlan", description = "The folder tidy's proposal: the moves, and the folders it would make.")
+data class TidyPlan(
+    val moves: List<TidyMove>,
+    @field:Schema(description = "Folders the moves need that the system does not have yet.")
+    val foldersToCreate: List<String>,
+    @field:Schema(description = "The newest applied tidy on the system, if any.")
+    val lastApplied: LastTidy? = null,
+)
+
+@Schema(name = "LastTidy", description = "When a tidy was applied, by whom, and what it moved.")
+data class LastTidy(
+    val appliedAt: Instant,
+    @field:Schema(description = "Who applied it; null when the api did on its own behalf.")
+    val appliedByName: String?,
+    val moved: Int,
+    val failed: Int,
+)
+
+@Schema(name = "TidyMove", description = "One list the tidy would move into its cohort type's folder.")
+data class TidyMove(
+    val externalId: String,
+    val label: String,
+    @field:Schema(description = "The folder it is in now; null at the top level.")
+    val from: String?,
+    val to: String,
+    @field:Schema(description = "Whether the list follows no cohort and is proposed only because its name is a cohort's")
+    val byName: Boolean = false,
+)
+
+// Names match whatever their case, spaces and punctuation: "Paid 2025-2026" is "paid 20252026".
+internal fun plainName(name: String) = name.lowercase().filter { it.isLetterOrDigit() }

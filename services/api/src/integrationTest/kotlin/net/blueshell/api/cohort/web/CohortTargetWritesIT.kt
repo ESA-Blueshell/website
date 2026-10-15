@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -100,15 +102,15 @@ class CohortTargetWritesIT : UserTestSupport() {
     }
 
     @Test
-    fun `nobody but an admin makes a list`() {
-        val board = createUserWithRole(Role.BOARD)
+    fun `nobody off the board makes a list`() {
+        val member = createUserWithRole(Role.MEMBER)
 
         mvc
             .perform(
                 post("/management/cohort-targets/{system}", "BREVO")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("""{"name":"Sneaky","folder":"Committees"}""")
-                    .with(signedIn(board)),
+                    .with(signedIn(member)),
             ).andExpect(status().isForbidden)
     }
 
@@ -126,6 +128,27 @@ class CohortTargetWritesIT : UserTestSupport() {
 
         val folders = contactLists.listFolders()
         assertThat(folders[contactLists.listAll().single { it.externalListId == listId }.folderId]).isEqualTo("Archive")
+    }
+
+    @Test
+    fun `the board makes a list but cannot delete one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val listId = contactLists.createList("Board test list", null)
+
+        mvc
+            .perform(
+                post("/management/cohort-targets/{system}", "BREVO")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Pub quiz","folder":"Committees"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isOk)
+        mvc
+            .perform(
+                post("/management/cohort-targets/{system}/{externalId}/delete", "BREVO", listId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"name":"Board test list"}""")
+                    .with(signedIn(board)),
+            ).andExpect(status().isForbidden)
     }
 
     @Test
@@ -182,13 +205,17 @@ class CohortTargetWritesIT : UserTestSupport() {
     }
 
     @Test
-    fun `nobody but an admin archives or deletes a list`() {
+    fun `the board archives a list, a member cannot, and only an admin deletes one`() {
         val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
         val listId = contactLists.createList("Board test list", "Committees")
 
         mvc
-            .perform(post("/management/cohort-targets/{system}/{externalId}/archive", "BREVO", listId).with(signedIn(board)))
+            .perform(post("/management/cohort-targets/{system}/{externalId}/archive", "BREVO", listId).with(signedIn(member)))
             .andExpect(status().isForbidden)
+        mvc
+            .perform(post("/management/cohort-targets/{system}/{externalId}/archive", "BREVO", listId).with(signedIn(board)))
+            .andExpect(status().isOk)
         mvc
             .perform(
                 post("/management/cohort-targets/{system}/{externalId}/delete", "BREVO", listId)
@@ -198,5 +225,32 @@ class CohortTargetWritesIT : UserTestSupport() {
             ).andExpect(status().isForbidden)
 
         assertThat(contactLists.listAll().single { it.externalListId == listId }.name).isEqualTo("Board test list")
+    }
+
+    @Test
+    fun `the board reads the folders, and only an admin merges them or removes an empty one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val admin = createUserWithRole(Role.ADMIN)
+        contactLists.createFolder("Leftover")
+        val leftover =
+            contactLists
+                .listFolders()
+                .entries
+                .single { it.value == "Leftover" }
+                .key
+
+        mvc
+            .perform(get("/management/cohort-targets/{system}/folders/states", "BREVO").with(signedIn(board)))
+            .andExpect(status().isOk)
+        mvc
+            .perform(post("/management/cohort-targets/{system}/folders/merge", "BREVO").with(signedIn(board)))
+            .andExpect(status().isForbidden)
+        mvc
+            .perform(delete("/management/cohort-targets/{system}/folders/{id}", "BREVO", leftover).with(signedIn(board)))
+            .andExpect(status().isForbidden)
+        mvc
+            .perform(delete("/management/cohort-targets/{system}/folders/{id}", "BREVO", leftover).with(signedIn(admin)))
+            .andExpect(status().isNoContent)
+        assertThat(contactLists.listFolders().values).doesNotContain("Leftover")
     }
 }

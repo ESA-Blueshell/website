@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** One of the targets, with the system it lives in and how many are in it. */
+/** One of the cohorts, with the system it lives in and how many are in it. */
 import {computed, onMounted, ref} from "vue"
 import {useFieldName} from "@/components/form/fields/fieldName"
 import {firstSaid} from "@/components/form/fields/saidWrong"

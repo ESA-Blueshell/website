@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
 
 @Schema(name = "CreateExternalTargetRequest", description = "A new target, linked to no cohort.")
@@ -34,4 +35,23 @@ data class CreateTargetFolderRequest(
 data class DeleteExternalTargetRequest(
     @field:NotBlank(message = "Type the list's name to delete it")
     val name: String,
+)
+
+@Schema(name = "ApplyTidyRequest", description = "The lists picked out of the tidy's preview.")
+data class ApplyTidyRequest(
+    @field:NotEmpty(message = "Pick at least one list to move")
+    @field:Size(max = 500, message = "Pick at most 500 lists at a time")
+    val externalIds: List<String>,
+)
+
+@Schema(name = "CreateMissingTargetsRequest", description = "The missing lists to create, by target; none creates every one.")
+data class CreateMissingTargetsRequest(
+    @field:Size(max = 500, message = "Name at most 500 lists at a time")
+    val targetIds: List<Long> = emptyList(),
+)
+
+@Schema(name = "CreateMissingTargetsResponse")
+data class CreateMissingTargetsResponse(
+    @param:Schema(description = "How many lists are queued to be created")
+    val queued: Int,
 )

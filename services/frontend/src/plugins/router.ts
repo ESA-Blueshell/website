@@ -1,4 +1,4 @@
-import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
+import {createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw} from "vue-router"
 import {SECURITY_PAGES} from "@/domains/auth/securityPages"
 import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger/sntpings"
 import store from "./store"
@@ -11,6 +11,14 @@ declare module "vue-router" {
     /** Where an editor the site and Management share goes back to when it is opened inside Management. */
     portal?: string
   }
+}
+
+/** The Brevo list a link naming a cohort means, or Brevo where the cohort has none. */
+export async function cohortListRoute(to: RouteLocationNormalized): Promise<string> {
+  const {TargetSystem, fetchCohort} = await import("@/domains/cohorts")
+  const cohort = await fetchCohort(Number(to.params.id)).catch(() => null)
+  const externalId = cohort?.mappings.find((mapping) => mapping.system === TargetSystem.BREVO)?.externalId
+  return externalId ? `/management/platforms/brevo/lists/${externalId}` : "/management/platforms/brevo"
 }
 
 const routes: RouteRecordRaw[] = [
@@ -520,6 +528,23 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/DiscordSettings.vue"),
         meta: {title: "Discord settings"},
       },
+      {
+        path: "platforms/brevo",
+        name: "brevo",
+        component: () => import("@/pages/management/BrevoPage.vue"),
+        meta: {title: "Brevo"},
+      },
+      // Brevo's lists and cohort categories were pages of their own; every list is on Brevo now.
+      {path: "platforms/brevo/lists", redirect: "/management/platforms/brevo"},
+      {
+        path: "platforms/brevo/lists/:externalId",
+        name: "brevoList",
+        component: () => import("@/pages/management/BrevoList.vue"),
+        meta: {title: "Brevo list"},
+      },
+      // A cohort's page was its own; old links name the cohort, so they land on its list.
+      {path: "platforms/brevo/cohort/:id", component: () => import("@/pages/management/BrevoList.vue"), beforeEnter: cohortListRoute},
+      {path: "platforms/brevo/:category(committees|periods|members)", redirect: "/management/platforms/brevo"},
       {path: "mail/sent", name: "sentEmails", component: () => import("@/pages/management/SentEmails.vue"), meta: {title: "Sent"}},
       {path: "mail/inbox", name: "inbox", component: () => import("@/pages/management/InboxPage.vue"), meta: {title: "Inbox"}},
       {path: "mail/inbox/:id(\\d+)", name: "inboxMessage", component: () => import("@/pages/management/InboxMessage.vue"), meta: {title: "Message"}},
@@ -586,30 +611,10 @@ const routes: RouteRecordRaw[] = [
   {path: "/recovery/manage", redirect: "/management/recovery"},
   // The page moved into the portal; old links and bookmarks still land on it.
   {path: "/management/emails", redirect: "/management/mail/sent"},
-  {
-    path: "/management/cohorts",
-    name: "cohortDashboard",
-    component: () => import("@/pages/management/CohortDashboard.vue"),
-    meta: {title: "Manage cohorts", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohorts/targets",
-    name: "cohortTargets",
-    component: () => import("@/pages/management/CohortTargets.vue"),
-    meta: {title: "Cohort targets", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohort/:id",
-    name: "cohortDetail",
-    component: () => import("@/pages/management/CohortDetail.vue"),
-    meta: {title: "Cohort", requiresAuth: true, requiresAdmin: true},
-  },
-  {
-    path: "/management/cohorts/:category",
-    name: "cohortCategory",
-    component: () => import("@/pages/management/CohortCategory.vue"),
-    meta: {title: "Cohort category", requiresAuth: true, requiresAdmin: true},
-  },
+  {path: "/management/cohorts", redirect: "/management/platforms/brevo"},
+  {path: "/management/cohorts/targets", redirect: "/management/platforms/brevo"},
+  {path: "/management/cohort/:id", redirect: (to) => `/management/platforms/brevo/cohort/${String(to.params.id)}`},
+  {path: "/management/cohorts/:category", redirect: "/management/platforms/brevo"},
   {
     path: "/blogs",
     name: "BlogList",

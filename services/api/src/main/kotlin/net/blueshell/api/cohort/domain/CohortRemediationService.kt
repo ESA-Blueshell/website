@@ -2,7 +2,12 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.domain.CohortLedger.DesiredConfirmation
 import net.blueshell.api.cohort.persistence.CohortRepository
+import net.blueshell.api.cohort.persistence.DriftResolution
+import net.blueshell.api.cohort.persistence.DriftResolutionAction
+import net.blueshell.api.cohort.persistence.DriftResolutionRepository
 import net.blueshell.api.cohort.persistence.TargetMemberRepository
+import net.blueshell.api.cohort.persistence.TargetReconcileRun
+import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
 import net.blueshell.api.contact.api.ContactJobs
@@ -20,15 +25,17 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
+import java.time.Instant
 import java.time.LocalDateTime
 
 /**
  * Operator/scheduled remediation against external membership. The list
  * reconcile is now a *verifier*: the per-member sync path establishes
  * health (`syncedAt`), and this confirms it (`verifiedAt`), demotes
- * vanished members, and records strangers.
+ * vanished members, records strangers and the run's drift, and on an
+ * enforced target queues the strangers' removal.
  *
- * All `cohort_member` writes go through [CohortLedger]; this service only
+ * All `target_member` writes go through [CohortLedger]; this service only
  * decides which transition applies and enqueues follow-up jobs.
  */
 @Service
@@ -41,6 +48,8 @@ class CohortRemediationService(
     private val targetExternalIds: CohortTargetIds,
     private val strategies: TargetStrategies,
     private val jobs: JobQueue,
+    private val runs: TargetReconcileRunRepository,
+    private val resolutions: DriftResolutionRepository,
     transactionManager: PlatformTransactionManager,
 ) : CohortRemediation {
     private val readOnlyTransaction = TransactionTemplate(transactionManager).apply { isReadOnly = true }
@@ -87,11 +96,71 @@ class CohortRemediationService(
      * the ledger against it. One network call per run; runs the fetch
      * outside any DB transaction.
      */
-    override fun verifyTarget(targetId: Long) {
+    override fun verifyTarget(
+        targetId: Long,
+        trigger: JobTrigger?,
+    ) {
+        val startedAt = Instant.now()
         val plan = readOnlyTransaction.execute { loadPlan(targetId) }
         val strategy = strategies.requireForJob(plan.system)
         val remote = outsideTransaction.execute { strategy.members(strategy.handle(plan.externalTargetId)) }
-        writeTransaction.executeWithoutResult { applySnapshot(plan, remote) }
+        writeTransaction.executeWithoutResult {
+            val claimed = applySnapshot(plan, remote)
+            recordRun(targetId, startedAt, trigger)
+            enforce(targetId, claimed)
+        }
+    }
+
+    // An enforced target loses its theirs-only people on every reconcile; ours-only drift is
+    // never resolved by itself. A contact a member's account claims stays, even where two accounts
+    // claim it and the reconcile could confirm neither: removing it would only be pushed back.
+    private fun enforce(
+        targetId: Long,
+        claimed: Set<String>,
+    ) {
+        if (targetRepo.findById(targetId).orElse(null)?.enforced != true) return
+        val strangers =
+            memberRepo.findAllByTargetIdAndUserIdIsNull(targetId).filter { it.externalUserId != null && it.externalUserId !in claimed }
+        strangers.forEach { row ->
+            jobs.runAsync(
+                CohortJobs.RemoveExternalMember,
+                CohortJobs.RemoveExternalMemberPayload(targetId, row.externalUserId!!),
+                JobTrigger.ANOTHER_JOB,
+            )
+        }
+        // A removal still under way is queued again but recorded once.
+        val fresh =
+            strangers.filterNot {
+                resolutions.existsByTargetIdAndExternalUserIdAndActionAndResolvedAtAfter(
+                    targetId,
+                    it.externalUserId!!,
+                    DriftResolutionAction.ENFORCED_REMOVE,
+                    it.createdAt,
+                )
+            }
+        val at = Instant.now()
+        resolutions.saveAll(
+            fresh.map { DriftResolution(targetId, DriftResolutionAction.ENFORCED_REMOVE, null, it.externalUserId, it.label, null, at) },
+        )
+    }
+
+    // The ledger after the snapshot is the drift: confirmed present, ours only, theirs only.
+    private fun recordRun(
+        targetId: Long,
+        startedAt: Instant,
+        trigger: JobTrigger?,
+    ) {
+        val states = memberRepo.findAllByTargetId(targetId).groupingBy { it.state }.eachCount()
+        runs.save(
+            TargetReconcileRun(
+                targetId = targetId,
+                startedAt = startedAt,
+                trigger = trigger,
+                inSync = states[TargetMemberState.VERIFIED] ?: 0,
+                oursOnly = (states[TargetMemberState.DESIRED] ?: 0) + (states[TargetMemberState.SYNCED] ?: 0),
+                theirsOnly = states[TargetMemberState.STRANGER] ?: 0,
+            ),
+        )
     }
 
     private fun loadPlan(targetId: Long): ReconcilePlan {
@@ -111,10 +180,11 @@ class CohortRemediationService(
         return ReconcilePlan(targetId, cohortId, system, externalTargetId)
     }
 
+    /** Answers every external id a desired member's account holds, ambiguous ones included. */
     private fun applySnapshot(
         plan: ReconcilePlan,
         remote: List<ExternalMember>,
-    ) {
+    ): Set<String> {
         val target =
             targetRepo.findById(plan.targetId).orElseThrow {
                 NonRetryableJobException("Target ${plan.targetId} not found")
@@ -126,38 +196,38 @@ class CohortRemediationService(
         val remoteByExtId = remote.associateBy { it.externalUserId }
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByTargetIdAndUserIdIsNotNull(plan.targetId)
-        val externalIdByUserId = loadCurrentExternalIds(plan.targetId, desiredRows, plan.system)
+        val mappings =
+            externalIds
+                .findBatch(USER_AGGREGATE, desiredRows.mapNotNull { it.userId }.toSet(), plan.system.name)
+                .filter { !it.externalId.isNullOrBlank() }
+        val externalIdByUserId = uniqueExternalIds(plan.targetId, mappings)
 
         val confirmed = confirmPresentDesiredRows(desiredRows, externalIdByUserId, remoteByExtId, now)
         demoteVanishedDesiredRows(desiredRows, externalIdByUserId, remoteByExtId.keys)
         enqueueFollowUpsForMissing(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
         reconcileStrangers(target, cohort, remoteByExtId, confirmed, now)
+        return mappings.mapNotNull { it.externalId }.toSet()
     }
 
-    private fun loadCurrentExternalIds(
+    private fun uniqueExternalIds(
         targetId: Long,
-        desiredRows: List<net.blueshell.api.cohort.persistence.TargetMember>,
-        system: TargetSystem,
-    ): Map<Long, String> {
-        val desiredUserIds = desiredRows.mapNotNull { it.userId }.toSet()
-        return externalIds
-            .findBatch(USER_AGGREGATE, desiredUserIds, system.name)
-            .filter { !it.externalId.isNullOrBlank() }
+        mappings: List<ExternalIdMapping>,
+    ): Map<Long, String> =
+        mappings
             .groupBy { it.externalId }
             .also { grouped ->
-                grouped.filterValues { it.size > 1 }.forEach { (externalId, mappings) ->
+                grouped.filterValues { it.size > 1 }.forEach { (externalId, owners) ->
                     log.warn(
                         "Ignoring duplicate external id mapping for target {} and external id {} across user ids {}",
                         targetId,
                         externalId,
-                        mappings.map { it.aggregateId },
+                        owners.map { it.aggregateId },
                     )
                 }
             }.filterValues { it.size == 1 }
             .values
             .flatten()
             .associate { it.aggregateId to it.externalId!! }
-    }
 
     /** Desired rows present in the snapshot: confirm and collapse any matching stranger. */
     private fun confirmPresentDesiredRows(

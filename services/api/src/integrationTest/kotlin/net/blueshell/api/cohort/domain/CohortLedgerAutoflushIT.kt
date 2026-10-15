@@ -70,7 +70,7 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
         )
         externalIds.saveAndFlush(ExternalIdMapping("USER", user.id!!, TargetSystem.BREVO.name, externalUserId))
 
-        assertThatCode { remediation.verifyTarget(target.id!!) }.doesNotThrowAnyException()
+        assertThatCode { remediation.verifyTarget(target.id!!, null) }.doesNotThrowAnyException()
 
         val desired = members.findByTargetIdAndUserId(target.id!!, user.id!!)!!
         assertThat(desired.externalUserId).isEqualTo(externalUserId)
@@ -116,8 +116,8 @@ class CohortLedgerAutoflushIT : UserTestSupport() {
                 .createNativeQuery(
                     """
                     SELECT DATE_FORMAT(deleted_at, '%Y-%m-%d %H:%i:%s.%f')
-                    FROM cohort_member
-                    WHERE cohort_id = :cohortId
+                    FROM target_member
+                    WHERE target_id = :cohortId
                       AND external_user_id = :externalUserId
                       AND deleted_at <> '9999-12-31 23:59:59'
                     ORDER BY id

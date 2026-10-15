@@ -187,6 +187,13 @@ export type ApiError = {
     type?: string;
 };
 
+/**
+ * The lists picked out of the tidy's preview.
+ */
+export type ApplyTidyRequest = {
+    externalIds: Array<string>;
+};
+
 export type ArchiveCommitteeRequest = {
     archived: boolean;
 };
@@ -674,6 +681,10 @@ export type CohortDetail = {
      * True when no definition produces this cohort any more
      */
     orphaned: boolean;
+    /**
+     * The latest drift resolutions across the cohort's targets, newest first
+     */
+    resolutions: Array<DriftResolutionEntry>;
     type: CohortType;
 };
 
@@ -723,6 +734,10 @@ export type CohortSummary = {
 };
 
 export type CohortTarget = {
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
     externalId?: string | null;
     /**
      * False when the system could not say which folder the target is in
@@ -738,6 +753,10 @@ export type CohortTarget = {
      * Where the target sits on its system, outside in: the system, then any folder holding it, read from the system itself.
      */
     path: Array<string>;
+    /**
+     * The target's recent reconciles, newest first; the first is its current drift
+     */
+    runs: Array<ReconcileRun>;
     /**
      * External system this mapping targets
      */
@@ -1063,6 +1082,20 @@ export type CreateMemberProfileRequest = {
     nationality: string;
     studentNumber?: string | null;
     userId: number;
+};
+
+/**
+ * The missing lists to create, by target; none creates every one.
+ */
+export type CreateMissingTargetsRequest = {
+    targetIds: Array<number>;
+};
+
+export type CreateMissingTargetsResponse = {
+    /**
+     * How many lists are queued to be created
+     */
+    queued: number;
 };
 
 export type CreateSponsorRequest = {
@@ -1434,6 +1467,45 @@ export type DiscordVoiceRoomResponse = {
     people: Array<DiscordVoicePersonResponse>;
 };
 
+/**
+ * How a person's drift on a target was resolved
+ */
+export enum DriftResolutionAction {
+    PUSH = 'PUSH',
+    REMOVE = 'REMOVE',
+    LINK = 'LINK',
+    ADOPT = 'ADOPT',
+    ENFORCED_REMOVE = 'ENFORCED_REMOVE'
+}
+
+export type DriftResolutionEntry = {
+    action: DriftResolutionAction;
+    externalUserId?: string | null;
+    /**
+     * The account's name, or what the target calls a person with none
+     */
+    personName?: string | null;
+    resolvedAt: string;
+    /**
+     * The account that resolved it; null when the api did so on its own behalf
+     */
+    resolvedById?: number | null;
+    /**
+     * Who resolved it; null when the api did so on its own behalf
+     */
+    resolvedByName?: string | null;
+    system: TargetSystem;
+    targetId: number;
+    userId?: number | null;
+};
+
+export type DriftResolved = {
+    /**
+     * How many people the action resolved; anyone no longer drifting is skipped
+     */
+    resolved: number;
+};
+
 export type EarlierMail = {
     at?: string | null;
     emailId?: number | null;
@@ -1515,6 +1587,13 @@ export type EmailStats = {
     queuedCount: number;
     sentCount: number;
     totalCount: number;
+};
+
+export type EnforceTarget = {
+    /**
+     * Whether each reconcile removes the target's theirs-only people
+     */
+    enforced: boolean;
 };
 
 export type EnqueueJobRequest = {
@@ -1626,6 +1705,10 @@ export type EventSignUpResponse = {
     updatedAt: string;
     user?: UserSummaryResponse | null;
     version: number;
+};
+
+export type ExternalDrift = {
+    externalUserIds: Array<string>;
 };
 
 export type ExternalTarget = {
@@ -1783,6 +1866,29 @@ export type FirstContribution = {
     periodEndDate?: string | null;
     periodId?: number | null;
     periodStartDate?: string | null;
+};
+
+/**
+ * What merging the folders that share a name did.
+ */
+export type FolderMerge = {
+    /**
+     * How many targets moved into the folder that stayed.
+     */
+    moved: number;
+    /**
+     * How many folders were removed.
+     */
+    removed: number;
+};
+
+/**
+ * A folder on the system and how many targets it holds.
+ */
+export type FolderState = {
+    id: string;
+    name: string;
+    targets: number;
 };
 
 /**
@@ -2235,6 +2341,19 @@ export type LastRecoveryEmailsResponse = {
 };
 
 /**
+ * When a tidy was applied, by whom, and what it moved.
+ */
+export type LastTidy = {
+    appliedAt: string;
+    /**
+     * Who applied it; null when the api did on its own behalf.
+     */
+    appliedByName?: string | null;
+    failed: number;
+    moved: number;
+};
+
+/**
  * The SiteCie house line, the members ranked by total sent and by peak rate, and the combined record
  */
 export type LeaderboardResponse = {
@@ -2294,9 +2413,35 @@ export type LinkBoardMemberRequest = {
     userId?: number | null;
 };
 
+export type LinkChoice = {
+    externalUserId: string;
+    userId: number;
+};
+
+export type LinkConflict = {
+    existingUserId: number;
+    externalUserId: string;
+};
+
+export type LinkDrift = {
+    links: Array<LinkChoice>;
+};
+
 export type LinkExistingTarget = {
     externalId: string;
     system: TargetSystem;
+};
+
+export type LinkOutcome = {
+    conflicts: Array<LinkConflict>;
+    linked: number;
+};
+
+export type LinkProposal = {
+    externalUserId: string;
+    label?: string | null;
+    userFullName?: string | null;
+    userId?: number | null;
 };
 
 /**
@@ -2306,16 +2451,19 @@ export type LinkRosterEntryRequest = {
     userId?: number | null;
 };
 
-export type LinkUser = {
-    externalUserId: string;
-    system: TargetSystem;
-    userId: number;
-};
-
-export type LinkedUser = {
-    externalUserId: string;
-    system: TargetSystem;
-    userId: number;
+export type ListedTarget = {
+    cohortId?: number | null;
+    cohortLabel?: string | null;
+    cohortType?: CohortType | null;
+    enforced: boolean;
+    externalId: string;
+    extra?: number | null;
+    folderLabel?: string | null;
+    label: string;
+    lastReconciledAt?: string | null;
+    memberCount?: number | null;
+    missing?: number | null;
+    targetId?: number | null;
 };
 
 export type LockResponse = {
@@ -2469,6 +2617,16 @@ export type MembershipTypeResponse = {
     id: number;
     since: string;
     type: MemberType;
+};
+
+export type MissingTarget = {
+    cohortId: number;
+    cohortLabel: string;
+    cohortType: CohortType;
+    creating: boolean;
+    folder?: string | null;
+    memberCount: number;
+    targetId: number;
 };
 
 /**
@@ -2671,6 +2829,10 @@ export type PublishedLineupResponse = {
     team: TeamResponse;
 };
 
+export type PushDrift = {
+    userIds: Array<number>;
+};
+
 export type QuestionRequest = {
     choiceLabels?: Array<string> | null;
     idx: number;
@@ -2732,6 +2894,20 @@ export type ReachResponse = {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+/**
+ * One reconcile of a target and the drift it found.
+ */
+export type ReconcileRun = {
+    inSync: number;
+    oursOnly: number;
+    startedAt: string;
+    theirsOnly: number;
+    /**
+     * What queued it; null for a run queued before runs recorded it
+     */
+    trigger?: JobTrigger | null;
 };
 
 export type RecordMandateRequest = {
@@ -3369,6 +3545,7 @@ export type StepUpRequest = {
 };
 
 export type SummaryTarget = {
+    externalId?: string | null;
     label: string;
     made: boolean;
     system: TargetSystem;
@@ -3416,6 +3593,12 @@ export type TargetOption = {
      */
     memberCount: number;
     system: string;
+};
+
+export type TargetOverviewResult = {
+    lastReconciledAt?: string | null;
+    lists: Array<ListedTarget>;
+    missing: Array<MissingTarget>;
 };
 
 export enum TargetSystem {
@@ -3476,6 +3659,38 @@ export type TelemetryResponse = {
     updatedAt: string;
     url: string;
     version: number;
+};
+
+/**
+ * One list the tidy would move into its cohort type's folder.
+ */
+export type TidyMove = {
+    /**
+     * Whether the list follows no cohort and is proposed only because its name is a cohort's
+     */
+    byName: boolean;
+    externalId: string;
+    /**
+     * The folder it is in now; null at the top level.
+     */
+    from?: string | null;
+    label: string;
+    to: string;
+};
+
+/**
+ * The folder tidy's proposal: the moves, and the folders it would make.
+ */
+export type TidyPlan = {
+    /**
+     * Folders the moves need that the system does not have yet.
+     */
+    foldersToCreate: Array<string>;
+    /**
+     * The newest applied tidy on the system, if any.
+     */
+    lastApplied?: LastTidy | null;
+    moves: Array<TidyMove>;
 };
 
 export enum TokenPurpose {
@@ -9901,6 +10116,352 @@ export type CreateTargetFolderResponses = {
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
 
+export type MergeTargetFoldersData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/merge';
+};
+
+export type MergeTargetFoldersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MergeTargetFoldersError = MergeTargetFoldersErrors[keyof MergeTargetFoldersErrors];
+
+export type MergeTargetFoldersResponses = {
+    /**
+     * OK
+     */
+    200: FolderMerge;
+};
+
+export type MergeTargetFoldersResponse = MergeTargetFoldersResponses[keyof MergeTargetFoldersResponses];
+
+export type ListTargetFolderStatesData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/states';
+};
+
+export type ListTargetFolderStatesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListTargetFolderStatesError = ListTargetFolderStatesErrors[keyof ListTargetFolderStatesErrors];
+
+export type ListTargetFolderStatesResponses = {
+    /**
+     * OK
+     */
+    200: Array<FolderState>;
+};
+
+export type ListTargetFolderStatesResponse = ListTargetFolderStatesResponses[keyof ListTargetFolderStatesResponses];
+
+export type RemoveTargetFolderData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        folderId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/{folderId}';
+};
+
+export type RemoveTargetFolderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTargetFolderError = RemoveTargetFolderErrors[keyof RemoveTargetFolderErrors];
+
+export type RemoveTargetFolderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveTargetFolderResponse = RemoveTargetFolderResponses[keyof RemoveTargetFolderResponses];
+
+export type FindListedTargetData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        externalId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/lists/{externalId}';
+};
+
+export type FindListedTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindListedTargetError = FindListedTargetErrors[keyof FindListedTargetErrors];
+
+export type FindListedTargetResponses = {
+    /**
+     * OK
+     */
+    200: ListedTarget;
+};
+
+export type FindListedTargetResponse = FindListedTargetResponses[keyof FindListedTargetResponses];
+
+export type CreateMissingTargetsData = {
+    body: CreateMissingTargetsRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/missing';
+};
+
+export type CreateMissingTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateMissingTargetsError = CreateMissingTargetsErrors[keyof CreateMissingTargetsErrors];
+
+export type CreateMissingTargetsResponses = {
+    /**
+     * OK
+     */
+    200: CreateMissingTargetsResponse;
+};
+
+export type CreateMissingTargetsResponse2 = CreateMissingTargetsResponses[keyof CreateMissingTargetsResponses];
+
+export type FindTargetOverviewData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/overview';
+};
+
+export type FindTargetOverviewErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTargetOverviewError = FindTargetOverviewErrors[keyof FindTargetOverviewErrors];
+
+export type FindTargetOverviewResponses = {
+    /**
+     * OK
+     */
+    200: TargetOverviewResult;
+};
+
+export type FindTargetOverviewResponse = FindTargetOverviewResponses[keyof FindTargetOverviewResponses];
+
+export type PreviewFolderTidyData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/tidy';
+};
+
+export type PreviewFolderTidyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PreviewFolderTidyError = PreviewFolderTidyErrors[keyof PreviewFolderTidyErrors];
+
+export type PreviewFolderTidyResponses = {
+    /**
+     * OK
+     */
+    200: TidyPlan;
+};
+
+export type PreviewFolderTidyResponse = PreviewFolderTidyResponses[keyof PreviewFolderTidyResponses];
+
+export type ApplyFolderTidyData = {
+    body: ApplyTidyRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/tidy';
+};
+
+export type ApplyFolderTidyErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApplyFolderTidyError = ApplyFolderTidyErrors[keyof ApplyFolderTidyErrors];
+
+export type ApplyFolderTidyResponses = {
+    /**
+     * OK
+     */
+    200: BulkTargetMoveResult;
+};
+
+export type ApplyFolderTidyResponse = ApplyFolderTidyResponses[keyof ApplyFolderTidyResponses];
+
 export type ArchiveExternalTargetData = {
     body?: never;
     path: {
@@ -10159,6 +10720,49 @@ export type ListTargetOptionsResponses = {
 
 export type ListTargetOptionsResponse = ListTargetOptionsResponses[keyof ListTargetOptionsResponses];
 
+export type EvaluateUserData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/users/{userId}/evaluate';
+};
+
+export type EvaluateUserErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EvaluateUserError = EvaluateUserErrors[keyof EvaluateUserErrors];
+
+export type EvaluateUserResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EvaluateUserResponse = EvaluateUserResponses[keyof EvaluateUserResponses];
+
 export type FindCohortByIdData = {
     body?: never;
     path: {
@@ -10201,49 +10805,6 @@ export type FindCohortByIdResponses = {
 };
 
 export type FindCohortByIdResponse = FindCohortByIdResponses[keyof FindCohortByIdResponses];
-
-export type LinkUserData = {
-    body: LinkUser;
-    path: {
-        id: number;
-    };
-    query?: never;
-    url: '/management/cohorts/{id}/drift/link-user';
-};
-
-export type LinkUserErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type LinkUserError = LinkUserErrors[keyof LinkUserErrors];
-
-export type LinkUserResponses = {
-    /**
-     * OK
-     */
-    200: LinkedUser;
-};
-
-export type LinkUserResponse = LinkUserResponses[keyof LinkUserResponses];
 
 export type LinkExistingTargetData = {
     body: LinkExistingTarget;
@@ -10375,6 +10936,226 @@ export type SwitchTargetResponses = {
 
 export type SwitchTargetResponse = SwitchTargetResponses[keyof SwitchTargetResponses];
 
+export type LinkDriftData = {
+    body: LinkDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/link';
+};
+
+export type LinkDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type LinkDriftError = LinkDriftErrors[keyof LinkDriftErrors];
+
+export type LinkDriftResponses = {
+    /**
+     * OK
+     */
+    200: LinkOutcome;
+};
+
+export type LinkDriftResponse = LinkDriftResponses[keyof LinkDriftResponses];
+
+export type ProposeLinksData = {
+    body: ExternalDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/link/preview';
+};
+
+export type ProposeLinksErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ProposeLinksError = ProposeLinksErrors[keyof ProposeLinksErrors];
+
+export type ProposeLinksResponses = {
+    /**
+     * OK
+     */
+    200: Array<LinkProposal>;
+};
+
+export type ProposeLinksResponse = ProposeLinksResponses[keyof ProposeLinksResponses];
+
+export type PushDriftData = {
+    body: PushDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/push';
+};
+
+export type PushDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type PushDriftError = PushDriftErrors[keyof PushDriftErrors];
+
+export type PushDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftResolved;
+};
+
+export type PushDriftResponse = PushDriftResponses[keyof PushDriftResponses];
+
+export type RemoveDriftData = {
+    body: ExternalDrift;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/drift/remove';
+};
+
+export type RemoveDriftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveDriftError = RemoveDriftErrors[keyof RemoveDriftErrors];
+
+export type RemoveDriftResponses = {
+    /**
+     * OK
+     */
+    200: DriftResolved;
+};
+
+export type RemoveDriftResponse = RemoveDriftResponses[keyof RemoveDriftResponses];
+
+export type EnforceTargetData = {
+    body: EnforceTarget;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/enforced';
+};
+
+export type EnforceTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type EnforceTargetError = EnforceTargetErrors[keyof EnforceTargetErrors];
+
+export type EnforceTargetResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type EnforceTargetResponse = EnforceTargetResponses[keyof EnforceTargetResponses];
+
 export type ApplyInboundReconcileData = {
     body: InboundReconcileApplyRequest;
     path: {
@@ -10462,6 +11243,50 @@ export type PreviewInboundReconcileResponses = {
 };
 
 export type PreviewInboundReconcileResponse = PreviewInboundReconcileResponses[keyof PreviewInboundReconcileResponses];
+
+export type ReconcileTargetData = {
+    body?: never;
+    path: {
+        id: number;
+        targetId: number;
+    };
+    query?: never;
+    url: '/management/cohorts/{id}/targets/{targetId}/reconcile';
+};
+
+export type ReconcileTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReconcileTargetError = ReconcileTargetErrors[keyof ReconcileTargetErrors];
+
+export type ReconcileTargetResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
 
 export type FindBotStandingData = {
     body?: never;

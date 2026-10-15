@@ -3,16 +3,13 @@ import {
   fetchCohortTargets,
   fetchCohort,
   fetchCohorts,
-  queueCohortJob,
 } from "@/domains/cohorts/adapters/cohorts"
-import {enqueue, findCohortById, findCohorts, listTargetOptions} from "@/services/api"
-import {aJob} from "../../../helpers/apiFixtures"
-import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
+import {findCohortById, findCohorts, listTargetOptions} from "@/services/api"
+import {answer, emptyAnswer} from "../../../helpers/sdkAnswers"
 import {TargetKind, CohortCategory, CohortType, TargetSystem} from "@/services/api"
 
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
-  enqueue: vi.fn(),
   findCohortById: vi.fn(),
   findCohorts: vi.fn(),
   listTargetOptions: vi.fn(),
@@ -34,10 +31,11 @@ const rawCohort = (over: Record<string, unknown> = {}) => ({
   orphaned: false,
   mappings: [],
   members: [],
+  resolutions: [],
   ...over,
 })
 
-describe("a cohort arrives with its absences already decided", () => {
+describe("a cohort cohort arrives with its absences already decided", () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -83,9 +81,20 @@ describe("a cohort arrives with its absences already decided", () => {
     ])
   })
 
+  it("a target's runs keep their counts, and a run too old to say what started it names nothing", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: true, enforced: false,
+          runs: [{startedAt: "2026-09-29T03:00:00Z", inSync: 40, oursOnly: 1, theirsOnly: 2}]}],
+      })))
+
+    const cohort = await fetchCohort(7)
+
+    expect(cohort?.mappings[0]?.runs).toEqual([{startedAt: "2026-09-29T03:00:00Z", trigger: null, inSync: 40, missing: 1, extra: 2}])
+  })
+
   it("a target that has never agreed, and one filed nowhere, both read as nothing", async () => {
     vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
-        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: false}],
+        mappings: [{targetId: 3, system: TargetSystem.BREVO, kind: TargetKind.LIST, label: "Newsletter", path: [], folderKnown: false, runs: [], enforced: false}],
       })))
 
     const cohort = await fetchCohort(7)
@@ -99,7 +108,29 @@ describe("a cohort arrives with its absences already decided", () => {
       lastReconciledAt: null,
       path: [],
       folderKnown: false,
+      runs: [],
+      enforced: false,
     })
+  })
+
+  it("a resolution by the api itself names nobody as its maker", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        resolutions: [{targetId: 3, system: TargetSystem.BREVO, action: "REMOVE", resolvedAt: "2026-09-29T20:00:00Z"}],
+      })))
+
+    const cohort = await fetchCohort(7)
+
+    expect(cohort?.resolutions).toEqual([
+      {system: TargetSystem.BREVO, action: "REMOVE", personName: null, userId: null, resolvedByName: null, resolvedById: null, resolvedAt: "2026-09-29T20:00:00Z"},
+    ])
+  })
+
+  it("a resolution carries the accounts of the person and of who resolved it, for the page to link", async () => {
+    vi.mocked(findCohortById).mockResolvedValue(answer(findCohortById, rawCohort({
+        resolutions: [{targetId: 3, system: TargetSystem.BREVO, action: "PUSH", userId: 9, personName: "Bo Board", resolvedById: 4, resolvedByName: "Ada Admin", resolvedAt: "2026-10-04T19:36:00Z"}],
+      })))
+
+    expect((await fetchCohort(7))?.resolutions[0]).toMatchObject({userId: 9, personName: "Bo Board", resolvedById: 4, resolvedByName: "Ada Admin"})
   })
 
   it("a listing that came back with nothing reads as no cohorts", async () => {
@@ -154,41 +185,5 @@ describe("the cohorts a picker offers", () => {
     vi.mocked(listTargetOptions).mockResolvedValue(emptyAnswer(listTargetOptions))
 
     await expect(fetchCohortTargets()).resolves.toEqual([])
-  })
-})
-
-describe("a cohort job answers rather than throwing", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it("carries the id it was queued under", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: 42})))
-
-    await expect(queueCohortJob("cohort.evaluate-user", {userId: 3})).resolves.toEqual({
-      ok: true,
-      jobId: 42,
-    })
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.evaluate-user", payload: {userId: 3}},
-    })
-  })
-
-  it("queues with nothing where the job takes no payload", async () => {
-    vi.mocked(enqueue).mockResolvedValue(answer(enqueue, aJob({id: null})))
-
-    await expect(queueCohortJob("cohort.reconcile-all-users")).resolves.toEqual({
-      ok: true,
-      jobId: null,
-    })
-    expect(enqueue).toHaveBeenCalledWith({
-      body: {jobType: "cohort.reconcile-all-users", payload: {}},
-    })
-  })
-
-  it("a refusal is an answer, not a thrown error", async () => {
-    vi.mocked(enqueue).mockResolvedValue(refusal(enqueue, {status: 403}, 403))
-
-    await expect(queueCohortJob("cohort.evaluate-user", {userId: 3})).resolves.toEqual({ok: false})
   })
 })

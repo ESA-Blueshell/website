@@ -106,8 +106,9 @@ class SealedBankDetailsIT : UserTestSupport() {
 
         for (row in rows) {
             val (sealedIban, sealedHolder) = row.values.map { it.toString() }
-            assertThat(sealedIban).doesNotContain("0417").doesNotContain("ABNA")
-            assertThat(sealedHolder).doesNotContain("Ann").doesNotContain("Vos")
+            // Whole values only: a short piece such as "Vos" turns up in random base64 now and then.
+            assertThat(sealedIban).doesNotContain(iban)
+            assertThat(sealedHolder).doesNotContain("Ann Vos")
             assertThat(keyVersionOf(sealedIban)).isEqualTo(keyVersionOf(sealedHolder))
         }
     }

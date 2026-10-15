@@ -1397,6 +1397,35 @@ export type DiscordNameResponse = {
     name: string;
 };
 
+export type DiscordPlace = {
+    available: boolean;
+    channels: Array<KeptChannel>;
+    roleId?: string | null;
+    roleName?: string | null;
+};
+
+/**
+ * The role a cohort's people hold, and the channels it opens.
+ */
+export type DiscordPlaceRequest = {
+    /**
+     * Every channel the role opens; one left out of a linked role is closed to it
+     */
+    channelIds: Array<string>;
+    /**
+     * A new private channel to make for the role, by name
+     */
+    createChannel?: string | null;
+    /**
+     * Make a new role, where there is none yet and no role is named
+     */
+    createRole: boolean;
+    /**
+     * An existing role to link, where there is none yet
+     */
+    roleId?: string | null;
+};
+
 export type DiscordRole = {
     colour?: number | null;
     id: string;
@@ -11294,6 +11323,92 @@ export type ReconcileTargetResponses = {
 };
 
 export type ReconcileTargetResponse = ReconcileTargetResponses[keyof ReconcileTargetResponses];
+
+export type FindCommitteeDiscordData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/discord';
+};
+
+export type FindCommitteeDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindCommitteeDiscordError = FindCommitteeDiscordErrors[keyof FindCommitteeDiscordErrors];
+
+export type FindCommitteeDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type FindCommitteeDiscordResponse = FindCommitteeDiscordResponses[keyof FindCommitteeDiscordResponses];
+
+export type SetCommitteeDiscordData = {
+    body: DiscordPlaceRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/management/committees/{id}/discord';
+};
+
+export type SetCommitteeDiscordErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SetCommitteeDiscordError = SetCommitteeDiscordErrors[keyof SetCommitteeDiscordErrors];
+
+export type SetCommitteeDiscordResponses = {
+    /**
+     * OK
+     */
+    200: DiscordPlace;
+};
+
+export type SetCommitteeDiscordResponse = SetCommitteeDiscordResponses[keyof SetCommitteeDiscordResponses];
 
 export type FindBotStandingData = {
     body?: never;

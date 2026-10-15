@@ -10,6 +10,8 @@ import {
   saveGameOrganisers,
   saveOwnCommitteePage,
   readEventsToHandOver,
+  readCommitteeDiscord,
+  saveCommitteeDiscord,
   setCommitteeArchived,
   storeCommitteeBanner,
   storeCommitteeIcon,
@@ -33,6 +35,8 @@ vi.mock("@/services/api", async (importOriginal) => ({
   uploadCommitteeIcon: vi.fn(),
   uploadPublicImage: vi.fn(),
   setGameOrganisers: vi.fn(),
+  findCommitteeDiscord: vi.fn(),
+  setCommitteeDiscord: vi.fn(),
 }))
 
 const banner = anImage({url: "/files/public/committee-banners/l.webp", path: "committee-banners/l.webp", width: null, height: null, renditions: [{url: "/files/public/640/l.webp", width: 640}]})
@@ -163,5 +167,35 @@ describe("writing committees", () => {
     expect(await readEventsToHandOver(5)).toBe(3)
     expect(api.findCommitteeDeletion).toHaveBeenCalledWith({path: {id: 5}})
     expect(await readEventsToHandOver(5)).toBeNull()
+  })
+})
+
+describe("a committee's Discord", () => {
+  const place = {available: true, roleId: "900", roleName: "Sitecie", channels: []}
+
+  it("reads its role and channels, and nothing where they could not be read", async () => {
+    vi.mocked(api.findCommitteeDiscord).mockResolvedValueOnce(answer(api.findCommitteeDiscord, place))
+    await expect(readCommitteeDiscord(7)).resolves.toEqual(place)
+    expect(api.findCommitteeDiscord).toHaveBeenCalledWith({path: {id: 7}})
+
+    vi.mocked(api.findCommitteeDiscord).mockResolvedValueOnce(refusal(api.findCommitteeDiscord, null, 500))
+    await expect(readCommitteeDiscord(7)).resolves.toBeNull()
+  })
+
+  it("sets them, and says in words why Discord refused", async () => {
+    const body = {roleId: "901", createRole: false, channelIds: [], createChannel: null}
+    vi.mocked(api.setCommitteeDiscord).mockResolvedValueOnce(answer(api.setCommitteeDiscord, place))
+    await expect(saveCommitteeDiscord(7, body)).resolves.toEqual({ok: true, saved: place})
+    expect(api.setCommitteeDiscord).toHaveBeenCalledWith({path: {id: 7}, body})
+
+    const refused = async (facts: Record<string, unknown>, status = 409) => {
+      vi.mocked(api.setCommitteeDiscord).mockResolvedValueOnce(refusal(api.setCommitteeDiscord, facts, status))
+      return ((await saveCommitteeDiscord(7, body)) as {reason: string}).reason
+    }
+    expect(await refused({code: "TargetLinkedElsewhere", cohort: "Activists"})).toBe("Activists already follows that role. Pick another role.")
+    expect(await refused({code: "BoardCommitteeHasNoRole"})).toBe("The board's committee gets no Discord role.")
+    expect(await refused({code: "TargetSystemRefused", reason: "The bot's role is too low."}, 502)).toBe("Discord refused it: The bot's role is too low.")
+    expect(await refused({code: "TargetSystemUnavailable", system: "Discord"}, 503))
+      .toBe("Discord cannot be reached now, so its role and channels are left as they were.")
   })
 })

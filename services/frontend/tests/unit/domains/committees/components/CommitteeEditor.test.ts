@@ -13,6 +13,8 @@ const adapter = vi.hoisted(() => ({
   storeCommitteeIcon: vi.fn(),
   listCommittees: vi.fn(),
   removeCommittee: vi.fn(),
+  readCommitteeDiscord: vi.fn(),
+  saveCommitteeDiscord: vi.fn(),
 }))
 const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn(), getters: {isAdmin: true} as Record<string, unknown>}}))
 vi.mock("@/plugins/store", () => ({default: mockStore}))
@@ -39,10 +41,11 @@ const DeleteCommitteeDialog = {name: "DeleteCommitteeDialog", props: ["open", "c
 const ArtCells = {name: "ArtCells", props: ["cells", "testidPrefix"], template: "<div />"}
 const RecordHead = {name: "RecordHead", props: ["title", "archived"], template: "<div data-testid=head><slot /><slot name=\"facts\" /></div>"}
 const MarkdownEditor = {name: "MarkdownEditor", props: ["modelValue"], emits: ["update:modelValue"], template: "<div />"}
+const DiscordPlaceFields = {name: "DiscordPlaceFields", props: ["modelValue", "name", "read", "slug"], emits: ["update:modelValue"], template: "<div />"}
 const stubs = {
   EditPage: {...passThrough("EditPage"), props: ["title", "eyebrow", "back", "testid", "accent"]},
   PreviewFrame: passThrough("PreviewFrame"),
-  ImagePicker, EventGamesPicker, CommitteeSeats, DeleteCommitteeDialog, ArtCells, RecordHead, MarkdownEditor,
+  ImagePicker, EventGamesPicker, CommitteeSeats, DeleteCommitteeDialog, ArtCells, RecordHead, MarkdownEditor, DiscordPlaceFields,
   CutButton: {props: ["href", "testid"], template: "<a :href='href' :data-testid='testid'><slot /></a>"},
 }
 
@@ -93,6 +96,29 @@ describe("the committee edit page, for the board", () => {
       name: "Pub Quiz Cie", slug: "quiz", description: "Questions.", banner: null, icon: null, members: [{userId: 4, role: "Chair"}], gameCodes: ["CHESS"],
     })
     expect(wrapper.emitted("saved")).toEqual([[lan]])
+  })
+
+  it("sets the committee's Discord once it is saved, and a refusal from Discord leaves the committee saved", async () => {
+    adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, saved: lan})
+    adapter.listCommittees.mockResolvedValue([lan])
+    adapter.saveCommitteeDiscord.mockResolvedValue({ok: false, reason: "Discord cannot be reached now, so its role and channels are left as they were."})
+    const wrapper = mountEditor(lan, true)
+    await flushPromises()
+    const discord = wrapper.getComponent(DiscordPlaceFields)
+    await discord.props("read")()
+    expect(adapter.readCommitteeDiscord).toHaveBeenCalledWith(lan.id)
+    discord.vm.$emit("update:modelValue", {roleId: null, createRole: true, channelIds: [], createChannel: "lancie"})
+
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+
+    expect(adapter.saveCommitteeDiscord).toHaveBeenCalledWith(lan.id, {roleId: null, createRole: true, channelIds: [], createChannel: "lancie"})
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now, so its role and channels are left as they were.")
+    expect(wrapper.emitted("saved")).toEqual([[lan]])
+
+    // The board's own committee gets no role, so it is not asked about one.
+    await input(wrapper, "name").setValue(" Board ")
+    expect(wrapper.findComponent(DiscordPlaceFields).exists()).toBe(false)
   })
 
   it("corrects a committee from its seats as the board's list holds them, and keeps what was typed when refused", async () => {

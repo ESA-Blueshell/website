@@ -7,6 +7,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MembershipFields from "@/components/management/MembershipFields.vue"
+import MembershipTypes from "@/components/management/MembershipTypes.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import {
   deleteOneMembership,
@@ -37,6 +38,12 @@ const COLUMNS: TableColumn<MembershipResponse>[] = [
   {key: "ends", label: "Ends", sortBy: (row) => row.endDate},
   {key: "type", label: "Type", sortBy: (row) => memberTypeLabel(row.memberType)},
 ]
+
+// The type history, "Regular from 1 Sep 2022" then "Alumni since 1 Sep 2025"; a single type needs no date.
+const typeLines = (m: MembershipResponse): string[] => (m.types.length > 1
+  ? m.types.map((one, at) => `${memberTypeLabel(one.type)} ${at === m.types.length - 1 ? "since" : "from"} ${formatDay(one.since)}`)
+  : [memberTypeLabel(m.memberType)])
+const typeText = (m: MembershipResponse): string => typeLines(m).join(", ")
 
 const memberships = ref<MembershipResponse[]>([])
 const deletedMemberships = ref<MembershipResponse[]>([])
@@ -95,6 +102,12 @@ async function onCreated() {
 
 async function onEdited(m: MembershipResponse) {
   toggleInlineEdit(m)
+  await loadMemberships()
+  emit("changed")
+}
+
+// The edit pane stays open, so the board can record the next type straight after.
+async function onTypesChanged() {
   await loadMemberships()
   emit("changed")
 }
@@ -186,7 +199,7 @@ defineExpose({
         :row-key="(m) => m.id"
         :row-testid="(m) => `manage-membership-row-${m.id}`"
         search-label="Search memberships"
-        :search-text="(m) => `${memberTypeLabel(m.memberType)} ${formatDay(m.startDate)}`"
+        :search-text="(m) => `${typeText(m)} ${formatDay(m.startDate)}`"
         :rows="memberships"
       >
         <template #started="{row}">
@@ -204,7 +217,11 @@ defineExpose({
           </template>
         </template>
         <template #type="{row}">
-          {{ memberTypeLabel(row.memberType) }}
+          <span
+            v-for="line in typeLines(row)"
+            :key="line"
+            class="membership-panel__type"
+          >{{ line }}</span>
         </template>
         <template #acts="{row}">
           <mini-button
@@ -254,6 +271,10 @@ defineExpose({
             :submit-testid="`manage-membership-save-btn-${m.id}`"
             :user-id="userId"
             @saved="onEdited(m)"
+          />
+          <membership-types
+            :membership="m"
+            @changed="onTypesChanged"
           />
         </div>
       </template>
@@ -333,6 +354,10 @@ defineExpose({
 .membership-panel__note {
   font-size: 0.9rem;
   color: var(--color-ash);
+}
+
+.membership-panel__type {
+  display: block;
 }
 
 .membership-panel__date {

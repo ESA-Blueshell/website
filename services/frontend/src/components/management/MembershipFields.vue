@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-/* A membership as the board adds or edits it: when it starts, when it ends and what kind it is,
-   on one row. How the person pays is not set here. */
+/* A membership as the board adds or edits it: when it starts and when it ends, on one row, and
+   for a new one the type it starts as. Later types are recorded under it; how the person pays is
+   not set here. */
 import {vFirstField} from "@/utils/firstField"
 import {ref} from "vue"
 import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
@@ -37,11 +38,11 @@ const said = (name: string) => checks.errorsOf(name).join(" ")
 const save = async () => {
   if (saving.value || !checks.attempt()) return
   saving.value = true
-  const fields = {userId, startDate: startDate.value, endDate: endDate.value || null, memberType: memberType.value as MemberType}
+  const fields = {userId, startDate: startDate.value, endDate: endDate.value || null}
   try {
     emit("saved", membership
-      ? await saveMembership(membership.id, {...membership, ...fields})
-      : await startMembershipAsBoard(userId, fields))
+      ? await saveMembership(membership.id, {...fields, version: membership.version})
+      : await startMembershipAsBoard(userId, {...fields, memberType: memberType.value as MemberType}))
   } catch (error) {
     reportRefusal(checks, error)
   } finally {
@@ -54,6 +55,7 @@ const save = async () => {
   <form
     v-first-field
     class="membership-fields"
+    :class="{'membership-fields--edit': membership}"
     novalidate
     @submit.prevent="save"
   >
@@ -88,6 +90,7 @@ const save = async () => {
       />
     </form-field>
     <member-type-select
+      v-if="!membership"
       v-model="memberType"
       :error-messages="checks.errorsOf('memberType')"
       testid="membership-form-member-type"
@@ -119,8 +122,14 @@ const save = async () => {
   margin-top: 0.35rem;
 }
 
+/* An edit has no type to pick: later types are recorded under the membership. */
+.membership-fields--edit {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
 @media (--phone) {
-  .membership-fields {
+  .membership-fields,
+  .membership-fields--edit {
     grid-template-columns: minmax(0, 1fr);
   }
 }

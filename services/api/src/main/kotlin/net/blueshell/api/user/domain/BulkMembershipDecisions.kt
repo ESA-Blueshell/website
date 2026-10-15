@@ -57,7 +57,7 @@ object BulkMembershipDecisions {
     ): BulkMembershipDecision =
         when (operation) {
             BulkMembershipOperation.END -> decideEnd(held, today)
-            BulkMembershipOperation.START -> decideStart(held)
+            BulkMembershipOperation.START -> decideStart(held, today)
         }
 
     private fun decideEnd(
@@ -85,8 +85,12 @@ object BulkMembershipDecisions {
      * The member type carries over: a returning alumnus is still an alumnus, and the fee is read
      * off it. How somebody pays stands on the person, so a new spell leaves it as it was.
      */
-    private fun decideStart(held: List<Membership>): BulkMembershipDecision {
+    private fun decideStart(
+        held: List<Membership>,
+        today: LocalDate,
+    ): BulkMembershipDecision {
         if (held.any { it.endDate == null }) return BulkMembershipDecision.Skip(BulkRowReason.ALREADY_ACTIVE)
+        if (held.any { it.endDate == today }) return BulkMembershipDecision.Skip(BulkRowReason.ENDED_TODAY)
 
         // No two spells can share a start date — they would overlap, which the interval
         // invariants refuse — so the most recent one is unambiguous.

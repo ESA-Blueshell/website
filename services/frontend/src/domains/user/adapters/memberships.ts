@@ -16,9 +16,13 @@ import {
   endMemberships,
   findDeletedMemberships,
   findMemberships,
+  findOwnMemberships,
   type MembershipResponse,
+  type MembershipTypeRequest,
   previewBulkEnd,
   previewBulkStart,
+  recordMembershipType,
+  removeMembershipType,
   reopenMembership,
   restoreMembership,
   type SignupOutcomeResponse,
@@ -27,6 +31,10 @@ import {
   type UpdateMembershipRequest,
 } from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
+import type {Refused} from "@/types/api"
+import {readOr} from "@/utils/answers"
+import type {Saved} from "@/utils/refusals"
+import {refusable} from "../refusals"
 
 export const readMembershipStart = previewBulkStart
 export const readMembershipEnd = previewBulkEnd
@@ -38,6 +46,9 @@ export async function listMembershipsFor(userId: number): Promise<MembershipResp
   const res = await findMemberships({query: {userId}, throwOnError: true})
   return res.data ?? []
 }
+
+/** The reader's own memberships, each with its types. Nothing when they cannot be read. */
+export const listOwnMemberships = (): Promise<MembershipResponse[]> => readOr(findOwnMemberships(), [])
 
 /** The memberships of one account that were deleted, which only an admin may read. Throws on a refusal. */
 export async function listDeletedMembershipsFor(userId: number): Promise<MembershipResponse[]> {
@@ -107,3 +118,12 @@ export async function startMembershipAsBoard(
   const res = await boardCreateMembership({path: {userId}, body, throwOnError: true})
   return res.data!
 }
+
+type TypeWrite = Promise<Saved<MembershipResponse> | Refused>
+
+/** Records that the member is another type from a day on; one already starting that day is replaced. */
+export const recordTypeOn = (id: number, body: MembershipTypeRequest): TypeWrite =>
+  refusable(recordMembershipType({path: {id}, body}), "The membership type could not be added.")
+
+export const removeTypeFrom = (id: number, typeId: number): TypeWrite =>
+  refusable(removeMembershipType({path: {id, typeId}}), "The membership type could not be removed.")

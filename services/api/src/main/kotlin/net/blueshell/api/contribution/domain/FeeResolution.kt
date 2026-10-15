@@ -28,7 +28,6 @@ fun resolveFeeType(
         }
         MemberType.ALUMNI -> BulkFeeType.ALUMNI_FEE
         MemberType.HONORARY -> null // Excluded
-        MemberType.NONE -> BulkFeeType.FULL_YEAR_FEE // Fallback for no membership
     }
 
 /**

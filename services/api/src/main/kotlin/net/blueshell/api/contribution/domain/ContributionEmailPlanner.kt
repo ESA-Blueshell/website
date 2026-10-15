@@ -97,7 +97,7 @@ class ContributionEmailPlanner(
         lastNotifiedOn: LocalDate?,
     ): ContributionEmailRow {
         val judged = judgedMembership(held)
-        val memberType = judged?.memberType ?: MemberType.NONE
+        val memberType = judged?.memberType ?: MemberType.REGULAR
         val feeType = resolveFeeType(memberType, judged?.startDate, period)
         val (disposition, reason) = decide(member, held, period, alreadyPaid, isDeleted, feeType == null)
 

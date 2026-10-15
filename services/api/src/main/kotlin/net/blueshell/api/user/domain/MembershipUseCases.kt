@@ -10,8 +10,10 @@ import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.SignupCompletion
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.LocalDate
@@ -54,10 +56,11 @@ class MembershipUseCases(
         return service.create(membership)
     }
 
+    /** Corrects the dates; the first membership type moves with the start. */
+    @Transactional
     fun correct(
         id: Long,
         userId: Long,
-        memberType: MemberType?,
         startDate: LocalDate?,
         endDate: LocalDate?,
         version: Long,
@@ -65,9 +68,49 @@ class MembershipUseCases(
         val membership = service.findById(id)
         membership.requireVersion(version)
         validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
-        memberType?.let { membership.memberType = it }
-        membership.startDate = startDate!!
+        val start = startDate!!
+        val first = membership.types.minByOrNull { it.since }
+        requireInside(membership.types.filter { it !== first }.map { it.since }, start.plusDays(1), endDate)
+        first?.since = start
+        membership.startDate = start
         membership.endDate = endDate
+        return service.update(membership)
+    }
+
+    /** Records the member as [type] from [since] on; a type already starting that day becomes [type]. */
+    @Transactional
+    fun recordType(
+        id: Long,
+        type: MemberType,
+        since: LocalDate,
+    ): Membership {
+        val membership = service.findById(id)
+        requireInside(listOf(since), membership.startDate, membership.endDate)
+        val sameDay = membership.types.firstOrNull { it.since == since }
+        if (sameDay != null) sameDay.type = type else membership.addType(MembershipType(membership, type, since))
+        return retyped(membership, since.takeIf { type == MemberType.HONORARY })
+    }
+
+    @Transactional
+    fun removeType(
+        id: Long,
+        typeId: Long,
+    ): Membership {
+        val membership = service.findById(id)
+        val entry = membership.typeById(typeId)
+        if (entry.since == membership.startDate) throw FirstMembershipTypeStartsTheMembership()
+        membership.removeType(entry)
+        return retyped(membership)
+    }
+
+    // No type starts after today, so the latest is in force today. Honorary owes nothing, so a
+    // pending membership is active from the day it became honorary (api ADR-036).
+    private fun retyped(
+        membership: Membership,
+        honorarySince: LocalDate? = null,
+    ): Membership {
+        membership.memberType = membership.types.maxBy { it.since }.type
+        if (membership.activatedOn == null) membership.activatedOn = honorarySince
         return service.update(membership)
     }
 
@@ -82,6 +125,7 @@ class MembershipUseCases(
     ): Membership {
         val membership = service.findById(id)
         validate(membership.intervalEndingOn(effectiveDate))
+        requireInside(membership.types.map { it.since }, membership.startDate, effectiveDate)
         membership.endDate = effectiveDate
         return service.update(membership)
     }
@@ -132,6 +176,21 @@ class MembershipUseCases(
         val violations = validator.validate(interval)
         if (violations.isNotEmpty()) throw ConstraintViolationException(violations)
     }
+}
+
+private fun Membership.typeById(typeId: Long): MembershipType =
+    types.firstOrNull { it.id == typeId } ?: throw MembershipTypeNotFound(typeId)
+
+/**
+ * Throws unless every one of [days] falls from [start] up to [end], the day a membership stopped,
+ * so a membership type starts while it runs (api ADR-040). TWIN: the day bounds in `MembershipTypes.vue`.
+ */
+private fun requireInside(
+    days: List<LocalDate>,
+    start: LocalDate,
+    end: LocalDate?,
+) {
+    if (days.any { it.isBefore(start) || (end != null && !it.isBefore(end)) }) throw MembershipTypeOutsideMembership(start, end)
 }
 
 private fun Membership.intervalEndingOn(endDate: LocalDate?): MembershipInterval =

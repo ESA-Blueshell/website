@@ -52,6 +52,18 @@ class MembershipValidator
                 context.addViolation("Membership interval overlaps with an existing membership", "startDate")
                 valid = false
             }
+            // Back to back is one membership whose type changed (api ADR-040), so a new one needs a gap.
+            if (others.any { it.endDate == start }) {
+                context.addViolation(
+                    "Another membership ends on this day. Resume that membership and add a membership type to it instead.",
+                    "startDate",
+                )
+                valid = false
+            }
+            if (end != null && others.any { it.startDate == end }) {
+                context.addViolation("Another membership starts on this day. End this one earlier, so there is a gap of a day.", "endDate")
+                valid = false
+            }
             return valid
         }
 

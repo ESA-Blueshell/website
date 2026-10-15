@@ -526,6 +526,7 @@ export enum BulkRowReason {
     NO_EMAIL = 'NO_EMAIL',
     DELETED = 'DELETED',
     ALREADY_ACTIVE = 'ALREADY_ACTIVE',
+    ENDED_TODAY = 'ENDED_TODAY',
     NO_CONTRIBUTION_PERIOD = 'NO_CONTRIBUTION_PERIOD',
     WILL_RESUME = 'WILL_RESUME',
     WILL_START_NEW = 'WILL_START_NEW'
@@ -2577,8 +2578,7 @@ export type MemberProfileResponse = {
 export enum MemberType {
     ALUMNI = 'ALUMNI',
     HONORARY = 'HONORARY',
-    REGULAR = 'REGULAR',
-    NONE = 'NONE'
+    REGULAR = 'REGULAR'
 }
 
 export type MembershipApplicationRequest = {
@@ -2590,15 +2590,33 @@ export type MembershipResponse = {
     createdAt: string;
     endDate?: string | null;
     id: number;
+    /**
+     * The type in force today, the last of types.
+     */
     memberType: MemberType;
     /**
      * Running and waiting for its first contribution, so it carries no member role yet.
      */
     pending: boolean;
     startDate: string;
+    /**
+     * Every membership type this membership has had, earliest first; the first starts with it.
+     */
+    types: Array<MembershipTypeResponse>;
     updatedAt: string;
     userId: number;
     version: number;
+};
+
+export type MembershipTypeRequest = {
+    since: string | null;
+    type: MemberType | null;
+};
+
+export type MembershipTypeResponse = {
+    id: number;
+    since: string;
+    type: MemberType;
 };
 
 export type MissingTarget = {
@@ -3841,7 +3859,6 @@ export type UpdateMemberProfileRequest = {
 
 export type UpdateMembershipRequest = {
     endDate?: string | null;
-    memberType?: MemberType | null;
     startDate: string | null;
     userId: number;
     version: number;
@@ -12986,6 +13003,93 @@ export type RestoreMembershipResponses = {
 
 export type RestoreMembershipResponse = RestoreMembershipResponses[keyof RestoreMembershipResponses];
 
+export type RecordMembershipTypeData = {
+    body: MembershipTypeRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/types';
+};
+
+export type RecordMembershipTypeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RecordMembershipTypeError = RecordMembershipTypeErrors[keyof RecordMembershipTypeErrors];
+
+export type RecordMembershipTypeResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type RecordMembershipTypeResponse = RecordMembershipTypeResponses[keyof RecordMembershipTypeResponses];
+
+export type RemoveMembershipTypeData = {
+    body?: never;
+    path: {
+        id: number;
+        typeId: number;
+    };
+    query?: never;
+    url: '/memberships/{id}/types/{typeId}';
+};
+
+export type RemoveMembershipTypeErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveMembershipTypeError = RemoveMembershipTypeErrors[keyof RemoveMembershipTypeErrors];
+
+export type RemoveMembershipTypeResponses = {
+    /**
+     * OK
+     */
+    200: MembershipResponse;
+};
+
+export type RemoveMembershipTypeResponse = RemoveMembershipTypeResponses[keyof RemoveMembershipTypeResponses];
+
 export type ForwardAuthData = {
     body?: never;
     path?: never;
@@ -14608,6 +14712,47 @@ export type SetUpOwnMandateResponses = {
 };
 
 export type SetUpOwnMandateResponse = SetUpOwnMandateResponses[keyof SetUpOwnMandateResponses];
+
+export type FindOwnMembershipsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/memberships';
+};
+
+export type FindOwnMembershipsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnMembershipsError = FindOwnMembershipsErrors[keyof FindOwnMembershipsErrors];
+
+export type FindOwnMembershipsResponses = {
+    /**
+     * OK
+     */
+    200: Array<MembershipResponse>;
+};
+
+export type FindOwnMembershipsResponse = FindOwnMembershipsResponses[keyof FindOwnMembershipsResponses];
 
 export type ChangePasswordData = {
     body: PasswordChangeRequest;

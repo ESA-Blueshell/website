@@ -99,15 +99,11 @@ export const aBlog = (over: Partial<BlogResponse> = {}): BlogResponse => ({
   ...over,
 })
 
-export const aMembership = (over: Partial<MembershipResponse> = {}): MembershipResponse => ({
-  ...stamped,
-  id: 1,
-  userId: 42,
-  memberType: MemberType.REGULAR,
-  pending: false,
-  startDate: "2026-09-01",
-  ...over,
-})
+// One type from the start, as a membership holds unless a test names its types.
+export const aMembership = (over: Partial<MembershipResponse> = {}): MembershipResponse => {
+  const held = {...stamped, id: 1, userId: 42, memberType: MemberType.REGULAR, pending: false, startDate: "2026-09-01", ...over}
+  return {...held, types: over.types ?? [{id: held.id * 10, type: held.memberType, since: held.startDate}]}
+}
 
 export const anAddress = (over: Partial<AddressResponse> = {}): AddressResponse => ({
   ...stamped,

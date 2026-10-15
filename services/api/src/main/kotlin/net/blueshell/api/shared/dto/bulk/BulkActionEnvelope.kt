@@ -64,6 +64,9 @@ enum class BulkRowReason {
     /** Resume/start-new: the user already has an active (endDate=null) membership. */
     ALREADY_ACTIVE,
 
+    /** Start: a membership ended on the start day, and a new one starts only after a gap (api ADR-040). */
+    ENDED_TODAY,
+
     /** Resume/start-new: no contribution period exists at all. */
     NO_CONTRIBUTION_PERIOD,
 

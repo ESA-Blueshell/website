@@ -11,6 +11,7 @@ import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -195,7 +196,7 @@ class MembershipUseCasesTest {
     @Nested
     inner class Correct {
         @Test
-        fun `corrects membership fields, keeping the version it was read at`() {
+        fun `corrects membership dates, keeping the version it was read at and the type it holds`() {
             noViolations()
             val membership =
                 Membership(
@@ -211,13 +212,12 @@ class MembershipUseCasesTest {
                 useCases.correct(
                     id = 3L,
                     userId = 2L,
-                    memberType = MemberType.HONORARY,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 12, 31),
                     version = 1L,
                 )
 
-            assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
+            assertThat(membership.memberType).isEqualTo(MemberType.ALUMNI)
             assertThat(membership.startDate).isEqualTo(LocalDate.of(2025, 1, 1))
             assertThat(membership.endDate).isEqualTo(LocalDate.of(2025, 12, 31))
             assertThat(membership.version).isEqualTo(1L)
@@ -239,7 +239,6 @@ class MembershipUseCasesTest {
                 useCases.correct(
                     id = 3L,
                     userId = 2L,
-                    memberType = MemberType.HONORARY,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = LocalDate.of(2025, 12, 31),
                     version = 1L,
@@ -266,7 +265,6 @@ class MembershipUseCasesTest {
                 useCases.correct(
                     id = 3L,
                     userId = 2L,
-                    memberType = null,
                     startDate = LocalDate.of(2025, 1, 1),
                     endDate = null,
                     version = 5L,
@@ -308,6 +306,106 @@ class MembershipUseCasesTest {
             assertThatThrownBy { useCases.end(5L) }
                 .isInstanceOf(ConstraintViolationException::class.java)
             verify(membershipService, never()).update(any())
+        }
+    }
+
+    @Nested
+    inner class Types {
+        private val start = LocalDate.of(2022, 9, 1)
+        private val alumniSince = LocalDate.of(2025, 9, 1)
+
+        private fun held(endDate: LocalDate? = null): Membership =
+            Membership(user = testUser("john"), startDate = start, endDate = endDate).apply {
+                addType(MembershipType(this, MemberType.REGULAR, start))
+                addType(MembershipType(this, MemberType.ALUMNI, alumniSince))
+                types.forEachIndexed { at, type -> type.id = at + 1L }
+                whenever(membershipService.findById(9L)).thenReturn(this)
+                whenever(membershipService.update(this)).thenReturn(this)
+            }
+
+        @Test
+        fun `records a type on a free day while the membership runs`() {
+            val membership = held()
+
+            useCases.recordType(9L, MemberType.HONORARY, LocalDate.of(2026, 1, 1))
+
+            assertThat(membership.types.map { it.type }).containsExactly(MemberType.REGULAR, MemberType.ALUMNI, MemberType.HONORARY)
+            assertThat(membership.types.last().membership).isSameAs(membership)
+            assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
+        }
+
+        @Test
+        fun `a type loads as the database holds it`() {
+            assertThat(MembershipType::class.java.getDeclaredConstructor().newInstance()).isNotNull
+        }
+
+        @Test
+        fun `refuses a type before the start, or on or after the end`() {
+            held(endDate = LocalDate.of(2026, 1, 1))
+
+            assertThatThrownBy { useCases.recordType(9L, MemberType.HONORARY, start.minusDays(1)) }
+                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
+            assertThatThrownBy { useCases.recordType(9L, MemberType.HONORARY, LocalDate.of(2026, 1, 1)) }
+                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
+            verify(membershipService, never()).update(any())
+        }
+
+        @Test
+        fun `a type recorded on a day another starts replaces it, the first included`() {
+            val membership = held()
+
+            useCases.recordType(9L, MemberType.HONORARY, alumniSince)
+            useCases.recordType(9L, MemberType.ALUMNI, start)
+
+            assertThat(membership.types.map { it.type to it.since })
+                .containsExactly(MemberType.ALUMNI to start, MemberType.HONORARY to alumniSince)
+            assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
+        }
+
+        @Test
+        fun `a pending membership turned honorary is active from that day, and an active one keeps its day`() {
+            val pending = held()
+            val honorarySince = LocalDate.of(2026, 1, 1)
+
+            useCases.recordType(9L, MemberType.HONORARY, honorarySince)
+            assertThat(pending.activatedOn).isEqualTo(honorarySince)
+
+            useCases.recordType(9L, MemberType.HONORARY, alumniSince)
+            assertThat(pending.activatedOn).isEqualTo(honorarySince)
+        }
+
+        @Test
+        fun `removes a later type, never the first`() {
+            val membership = held()
+
+            assertThatThrownBy { useCases.removeType(9L, 1L) }.isInstanceOf(FirstMembershipTypeStartsTheMembership::class.java)
+            assertThatThrownBy { useCases.removeType(9L, 7L) }.isInstanceOf(MembershipTypeNotFound::class.java)
+            useCases.removeType(9L, 2L)
+
+            assertThat(membership.types.map { it.type }).containsExactly(MemberType.REGULAR)
+            assertThat(membership.memberType).isEqualTo(MemberType.REGULAR)
+        }
+
+        @Test
+        fun `moving the start moves the first type, and a later type must stay inside`() {
+            noViolations()
+            val membership = held().apply { version = 1L }
+
+            useCases.correct(9L, 2L, start.plusDays(10), null, version = 1L)
+            assertThat(membership.types.first().since).isEqualTo(start.plusDays(10))
+
+            assertThatThrownBy { useCases.correct(9L, 2L, alumniSince, null, version = 1L) }
+                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
+            assertThatThrownBy { useCases.correct(9L, 2L, start, alumniSince, version = 1L) }
+                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
+        }
+
+        @Test
+        fun `a membership cannot end on or before a type it holds`() {
+            noViolations()
+            held()
+
+            assertThatThrownBy { useCases.end(9L, alumniSince) }.isInstanceOf(MembershipTypeOutsideMembership::class.java)
         }
     }
 

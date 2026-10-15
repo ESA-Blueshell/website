@@ -9,7 +9,7 @@ vi.mock("@/domains/user", async (importOriginal) => ({...(await importOriginal<t
 
 const held: MembershipResponse = {
   id: 9, userId: 42, startDate: "2025-01-01", endDate: null, memberType: MemberType.ALUMNI,
-  pending: false, version: 3, createdAt: "", updatedAt: "",
+  pending: false, version: 3, createdAt: "", updatedAt: "", types: [{id: 90, type: MemberType.ALUMNI, since: "2025-01-01"}],
 }
 
 describe("a membership's fields", () => {
@@ -42,16 +42,16 @@ describe("a membership's fields", () => {
     expect(wrapper.get('[data-testid="membership-save"]').attributes("data-submit-mode")).toBe("create")
   })
 
-  it("edits a membership and leaves how it is paid as it was", async () => {
+  it("edits a membership's dates and leaves its types and how it is paid as they were", async () => {
     user.saveMembership.mockResolvedValue({...held, endDate: "2026-08-31"})
     const wrapper = fields(held)
 
     expect((input(wrapper, "start-date").element as HTMLInputElement).value).toBe("01/01/2025")
-    expect(wrapper.findComponent({name: "MemberTypeSelect"}).props("modelValue")).toBe(MemberType.ALUMNI)
+    expect(wrapper.findComponent({name: "MemberTypeSelect"}).exists()).toBe(false)
     await input(wrapper, "end-date").setValue("2026-08-31")
     await submit(wrapper)
 
-    expect(user.saveMembership).toHaveBeenCalledWith(9, expect.objectContaining({version: 3, startDate: "2025-01-01", endDate: "2026-08-31", memberType: MemberType.ALUMNI}))
+    expect(user.saveMembership).toHaveBeenCalledWith(9, {userId: 42, version: 3, startDate: "2025-01-01", endDate: "2026-08-31"})
     expect(wrapper.emitted("saved")).toHaveLength(1)
     expect(wrapper.get('[data-testid="membership-save"]').attributes("data-submit-mode")).toBe("update")
   })

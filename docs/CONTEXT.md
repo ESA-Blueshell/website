@@ -225,6 +225,22 @@ Never granted and never revoked by hand. Ticking one would be a lie — the list
 that owns it takes it straight back off — so the panel shows it read-only, naming the
 thing to go and change instead.
 
+### Membership
+
+One unbroken spell in which someone is a member, from its start date to its end date, or open
+while it lasts. Becoming alumni or honorary does not start a new membership; only a real gap
+does, and rejoining after one starts a new membership.
+
+### Membership type
+
+What kind of member someone is during a membership: **regular**, **alumni** or **honorary**,
+each from a date, as in "alumni since 1 September 2025". A membership has one or more of them,
+one after the other, and only the board records them. The fee a member is asked follows their
+membership type on the day they are asked. Honorary owes nothing from the day it starts, which also
+drops what is still unpaid for the current period.
+
+_Avoid_: standing, status.
+
 ### Pending membership
 
 A membership waiting for its first contribution. Signing up starts one, and it becomes
@@ -507,7 +523,9 @@ Not a "season" — that word belongs to esports and means something else.
 
 Which of the period's three fees applies to a member: the **full-year fee**, the
 **half-year fee** or the **alumni fee**. It is the thing chosen; the amount follows
-from it and the period. An amount is never typed and never stored as a choice.
+from it and the period. An amount is never typed and never stored as a choice. It
+follows the member's **membership type** on the day they are asked; in an **incasso run** the
+treasurer may pick another of the three for a member.
 
 `BulkFeeType` in the code, because it arrived with the bulk vocabulary and the
 generated client publishes it under that name.
@@ -530,22 +548,20 @@ sits beside contribution period and contribution reminder.
 
 ### Contribution reminder and incasso notification
 
-The two emails a send puts out. A **contribution reminder** asks a member paying by
-transfer to pay what they owe by a due date. An **incasso notification** tells a member
-paying by direct debit what will be taken and on what date, and asks for nothing.
+The two emails that ask a member for a contribution. A **contribution reminder** asks a member
+paying by transfer to pay what they owe by a due date; the payment-emails wizard sends it. An
+**incasso notification** tells a member with a **mandate** what will be taken and on what date,
+at least 14 days ahead, and asks for nothing; only an **incasso run** sends it.
 
 A contribution reminder is not always a treasurer's doing. A membership starting through
 the signup form asks the new member for their contribution in the same breath, and that
-ask is a contribution reminder too — same row, same **last payment email**. The member
-reads a welcome rather than a chase, but the association has asked them once either way.
+ask is a contribution reminder too, unless they chose direct debit while signing up. The
+member reads a welcome rather than a chase, but the association has asked them once either way.
 
-Which one a member gets is their `incasso` flag's choice, stated per row as the
-member's **kind** — `ContributionEmailKind`, whose values are `REMINDER` and
-`INCASSO_NOTIFICATION`. A default rather than a rule: the treasurer may move a member
-onto the other one, and a **switched** row says so.
-
-Different statements, so different records: the treasurer's question is which one a
-member received. Neither quotes an amount without the reason that amount applies.
+Members with a mandate start unticked in the wizard, with a warning; the treasurer ticks one on
+purpose, after a **storno** or for an older unpaid period. Different statements, so different
+records: the treasurer's question is which one a member received. Neither quotes an amount
+without the reason that amount applies.
 
 ### Send to
 
@@ -581,8 +597,11 @@ and never pre-notified. That fact is worth a warning rather than a column, so th
 confirmation keeps it — it names only the members about to get the very same email again,
 and a **duplicate** is what it fires on.
 
-An **incasso** is the direct debit itself; the record of one of these is an
-`IncassoNotification`, which is the Dutch word the association uses for the mandate.
+What a member owes for a period is the amount of the latest ask for it, or, before any ask,
+what their membership type today would be asked.
+
+An **incasso** is the direct debit itself; the record of telling a member about one is an
+`IncassoNotification`.
 
 ### Duplicate
 
@@ -590,6 +609,45 @@ A second ask of the same kind, to the same member, for the same contribution per
 of different kinds are not duplicates of each other: they say different things, and a member
 who has had one may still need the other. The only thing in the interface that reasons per
 kind, because it is the only question where the kind changes the answer.
+
+### Bank account
+
+A person's one bank account on the site: the account holder, the IBAN and, for a bank outside
+the Netherlands, the BIC. It is **sealed** and kept once, apart from anything that uses it, and
+replaced whole rather than edited. Beside it a preview stays open, the country and the last
+four digits, which is all the site shows its owner. Declarations are paid to it and a
+**mandate** collects from it. It is deleted 13 months after its last use, a collection or a
+declaration paid to it, unless a mandate still stands.
+
+_Avoid_: payout account, IBAN (for the whole record).
+
+### Mandate
+
+A member's permission for the association to collect their contribution from their **bank
+account** by direct debit, given online, also while signing up, or on the paper form. Someone
+pays by direct debit exactly while they have a mandate that has not ended; there is no separate
+switch. Stopping direct debit, replacing or deleting the bank account it was given for, or the
+end of the membership ends it. A paper mandate can stand before its bank details are on the
+site; an incasso run then lists the member as needing them.
+
+_Avoid_: incasso flag, pays-by switch.
+
+### Incasso run
+
+The treasurer's collection of one contribution period on one date. It decides who is collected
+and for how much, sends each of them an **incasso notification** at least 14 days ahead, and
+makes the file for the bank. It is the only thing that sends incasso notifications. A collected
+contribution counts as paid on the collection date.
+
+_Avoid_: batch, collection round.
+
+### Storno
+
+The bank taking back a collected contribution, because the bank refused it or the member asked
+for a refund. The treasurer records it: the contribution is unpaid again and the member can be
+asked by transfer. The mandate stays unless the treasurer ends it.
+
+_Avoid_: chargeback, reversal (in the interface).
 
 ## Boards
 

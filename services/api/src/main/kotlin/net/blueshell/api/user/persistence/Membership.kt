@@ -1,5 +1,6 @@
 package net.blueshell.api.user.persistence
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -8,6 +9,8 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Index
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.model.AuditedAutoIdEntity
@@ -37,12 +40,28 @@ class Membership(
     var startDate: LocalDate,
     @Column(name = "end_date")
     var endDate: LocalDate? = null,
+    /** The membership type in force today: the latest of [types], kept here so a query can filter on it. */
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     var memberType: MemberType = MemberType.REGULAR,
     @Column(name = "activated_on")
     var activatedOn: LocalDate? = null,
 ) : AuditedAutoIdEntity() {
+    /** Every membership type it has had (api ADR-040); ordered on load only. */
+    @OneToMany(mappedBy = "membership", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OrderBy("since")
+    private val _types: MutableList<MembershipType> = mutableListOf()
+    val types: List<MembershipType>
+        get() = _types
+
+    fun addType(type: MembershipType) {
+        _types.add(type)
+    }
+
+    fun removeType(type: MembershipType) {
+        _types.remove(type)
+    }
+
     /** Running and not yet paid for, so it carries no member role. */
     val isPending: Boolean
         get() = activatedOn == null && endDate == null

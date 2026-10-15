@@ -110,10 +110,21 @@ class MembershipValidatorTest {
     }
 
     @Test
-    fun `allows touching endpoints because end dates are exclusive`() {
+    fun `refuses a membership that starts the day another ends, or ends the day another starts`() {
         others(existing(2L, LocalDate.of(2020, 1, 1), LocalDate.of(2021, 1, 1)))
         assertThat(
             validator.isValid(candidate(1L, null, LocalDate.of(2021, 1, 1), LocalDate.of(2022, 1, 1)), context),
+        ).isFalse()
+        assertThat(
+            validator.isValid(candidate(1L, null, LocalDate.of(2019, 1, 1), LocalDate.of(2020, 1, 1)), context),
+        ).isFalse()
+    }
+
+    @Test
+    fun `allows a membership after a gap of a day`() {
+        others(existing(2L, LocalDate.of(2020, 1, 1), LocalDate.of(2021, 1, 1)))
+        assertThat(
+            validator.isValid(candidate(1L, null, LocalDate.of(2021, 1, 2), LocalDate.of(2022, 1, 1)), context),
         ).isTrue()
     }
 

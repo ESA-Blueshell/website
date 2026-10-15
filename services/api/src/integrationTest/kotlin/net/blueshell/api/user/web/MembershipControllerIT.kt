@@ -1,6 +1,5 @@
 package net.blueshell.api.user.web
 
-import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.MemberRepository
@@ -35,7 +34,7 @@ class MembershipControllerIT : UserTestSupport() {
         version: Long,
         startDate: LocalDate = LocalDate.now().minusDays(7),
         endDate: LocalDate = LocalDate.now().minusDays(1),
-    ): String = """{"userId":$userId,"memberType":"ALUMNI","startDate":"$startDate","endDate":"$endDate","version":$version}"""
+    ): String = """{"userId":$userId,"startDate":"$startDate","endDate":"$endDate","version":$version}"""
 
     @Nested
     inner class FindMemberships {
@@ -215,10 +214,10 @@ class MembershipControllerIT : UserTestSupport() {
                 ).andExpect(status().isOk)
                 .andExpect(jsonPath("$.id").value(membership.id))
                 .andExpect(jsonPath("$.userId").value(membership.userId))
-                .andExpect(jsonPath("$.memberType").value("ALUMNI"))
+                .andExpect(jsonPath("$.endDate").value(LocalDate.now().minusDays(1).toString()))
 
             val updated = membershipRepository.findById(membership.id!!).orElseThrow()
-            assertThat(updated.memberType).isEqualTo(MemberType.ALUMNI)
+            assertThat(updated.startDate).isEqualTo(LocalDate.now().minusDays(7))
         }
 
         @Test

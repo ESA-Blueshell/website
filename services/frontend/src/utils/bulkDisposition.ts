@@ -56,6 +56,7 @@ const REASON_LABELS: Record<BulkRowReason, string> = {
   NO_EMAIL: "No email address on file",
   DELETED: "Account deleted",
   ALREADY_ACTIVE: "Already has an active membership",
+  ENDED_TODAY: "Membership ended today",
   NO_CONTRIBUTION_PERIOD: "No contribution period",
   WILL_RESUME: "Will resume",
   WILL_START_NEW: "Will start new",

@@ -456,13 +456,17 @@ class CohortQueryServiceTest {
             )
         val cohort = cohort(21L)
         val role = Target(system = "DISCORD", kind = TargetKind.ROLE, label = "Sitecie").apply { id = 210L }
-        stubDetail(cohort, role, listOf(member(role, cohort, userId = 5L), member(role, cohort, userId = 6L)))
+        val rows = listOf(5L, 6L, 7L).map { member(role, cohort, userId = it) }
+        stubDetail(cohort, role, rows)
+        every { discord.memberIds(setOf(5L, 6L, 7L)) } returns mapOf(5L to "d5")
         every { users.findAllByIds(any()) } returns emptyList()
-        every { users.isSoftDeleted(any()) } returns false
+        every { users.isSoftDeleted(any()) } answers { firstArg<Long>() == 7L }
 
         val detail = withDiscord.detail(21L)
 
-        assertThat(detail.members.associate { it.member.userId to it.unreachable }).isEqualTo(mapOf(5L to false, 6L to true))
+        // A deleted account is gone, not somebody still to link Discord.
+        assertThat(detail.members.associate { it.member.userId to it.unreachable })
+            .isEqualTo(mapOf(5L to false, 6L to true, 7L to false))
     }
 
     private fun stubDetail(

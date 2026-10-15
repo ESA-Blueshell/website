@@ -28,7 +28,7 @@ const fits: Record<DriftAction, (row: CohortMember) => boolean> = {
 }
 
 const DONE: Record<DriftAction, (count: number) => string> = {
-  push: (count) => `${count} pushed.`,
+  push: (count) => `${count} added.`,
   remove: (count) => `${count} removed.`,
   link: (count) => `${count} linked.`,
   adopt: (count) => `${count} queued to be taken in.`,

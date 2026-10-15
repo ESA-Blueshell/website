@@ -104,7 +104,7 @@ describe("one Discord role", () => {
 
   it("says when the role is gone, could not be read, follows nothing or its channels could not be read", async () => {
     api.findListedTarget.mockResolvedValueOnce({status: 404, error: {}, response: {status: 404}})
-    expect((await mount()).get('[data-testid="discord-role-unread"]').text()).toContain("Discord has no such role")
+    expect((await mount()).get('[data-testid="discord-role-unread"]').text()).toContain("Discord has no role with this id")
     api.findListedTarget.mockResolvedValueOnce({status: 500, error: {}, response: {status: 500}})
     expect((await mount()).get('[data-testid="discord-role-unread"]').text()).toContain("could not be read")
 

@@ -211,7 +211,8 @@ class CohortQueryService(
                             system = systemByTargetId[member.target.id],
                             state = member.state,
                             resolvedUserId = if (member.userId == null) ownerId else null,
-                            unreachable = member.id in unreachableIds,
+                            // A deleted account links nothing any more, which is not something to ask of them.
+                            unreachable = member.id in unreachableIds && ownerId !in softDeletedIds,
                         )
                     }.sortedWith(
                         compareBy(

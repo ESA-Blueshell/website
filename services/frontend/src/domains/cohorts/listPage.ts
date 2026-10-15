@@ -70,7 +70,7 @@ export const ROLE_DRIFT_WORDS: DriftWords = {
     [DriftResolutionAction.PUSH]: "Added to the role",
     [DriftResolutionAction.REMOVE]: "Removed from the role",
     [DriftResolutionAction.LINK]: "Linked to an account",
-    [DriftResolutionAction.ADOPT]: "Taken in from the role",
+    [DriftResolutionAction.ADOPT]: "Added to the cohort from the role",
     [DriftResolutionAction.ENFORCED_REMOVE]: "Removed by enforcing",
   },
 }

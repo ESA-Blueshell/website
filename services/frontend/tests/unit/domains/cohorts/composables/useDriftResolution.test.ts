@@ -100,7 +100,7 @@ describe("useDriftResolution", () => {
     await drift.confirm()
 
     expect(pushDriftPeople).toHaveBeenCalledWith(3, 40, [5, 6])
-    expect(drift.message.value).toBe("2 pushed.")
+    expect(drift.message.value).toBe("2 added.")
     expect(drift.plan.value).toBeNull()
     expect(drift.selection.value.size).toBe(0)
     expect(reload).toHaveBeenCalled()

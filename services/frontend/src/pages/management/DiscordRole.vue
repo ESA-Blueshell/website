@@ -104,7 +104,7 @@ watch(externalId, load)
       class="role__note"
       data-testid="discord-role-unread"
     >
-      {{ gone ? "Discord has no such role the site could keep. It may have been deleted there." : "The role could not be read from Discord. Try again later." }}
+      {{ gone ? "Discord has no role with this id. It may have been deleted there." : "The role could not be read from Discord. Try again later." }}
     </p>
   </management-page>
 
@@ -182,7 +182,7 @@ watch(externalId, load)
       class="role__note"
       data-testid="discord-role-channels-none"
     >
-      No channel is opened to this role by name.
+      This role has no channels of its own.
     </p>
     <ul
       v-else

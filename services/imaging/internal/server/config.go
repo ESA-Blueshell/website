@@ -19,7 +19,9 @@ func FromEnv(getenv func(string) string, log *slog.Logger) (*http.Server, error)
 		into     func(int)
 	}{
 		{"IMAGING_MAX_BYTES", 20 << 20, func(n int) { limits.MaxBytes = int64(n) }},
-		{"IMAGING_MAX_PIXELS", 50_000_000, func(n int) { limits.MaxPixels = int64(n) }},
+		{"IMAGING_MAX_PIXELS", 50_000_000, func(n int) { limits.Picture.MaxPixels = int64(n) }},
+		{"IMAGING_MAX_FRAMES", 1000, func(n int) { limits.Picture.MaxFrames = n }},
+		{"IMAGING_MAX_ANIMATION_PIXELS", 1_000_000_000, func(n int) { limits.Picture.MaxAnimationPixels = int64(n) }},
 		{"IMAGING_WAIT_SECONDS", 30, func(n int) { limits.Wait = time.Duration(n) * time.Second }},
 		{"IMAGING_CONCURRENCY", 1, func(n int) { concurrency = n }},
 	} {
@@ -38,7 +40,8 @@ func FromEnv(getenv func(string) string, log *slog.Logger) (*http.Server, error)
 	if listen == "" {
 		listen = ":8080"
 	}
-	log.Info("configured", "address", listen, "max_bytes", limits.MaxBytes, "max_pixels", limits.MaxPixels,
+	log.Info("configured", "address", listen, "max_bytes", limits.MaxBytes, "max_pixels", limits.Picture.MaxPixels,
+		"max_frames", limits.Picture.MaxFrames, "max_animation_pixels", limits.Picture.MaxAnimationPixels,
 		"wait", limits.Wait, "concurrency", concurrency)
 
 	// The read timeout covers the largest body over a slow link, and the write timeout a request

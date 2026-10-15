@@ -7,6 +7,7 @@ import java.io.IOException
 
 /**
  * The converter run inside the api: ImageIO for GIF frames and the libwebp tools for the rest.
+ * Chosen only where no imaging service is configured, which is the tests and a native run.
  *
  * Where frames will not co-operate, a picture is drawn still rather than not at all: a banner
  * that does not move still keeps a phone from fetching the master.

@@ -11,6 +11,7 @@ import (
 	"hash/crc32"
 	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -159,5 +160,82 @@ func TestPictureClaimingTooManyPixelsIsRefusedFromItsHeader(t *testing.T) {
 func TestBodyOverTheByteLimitIsRefused(t *testing.T) {
 	if got := convert(t, "max-edge=2560&quality=82", make([]byte, 21<<20)); got.status != http.StatusRequestEntityTooLarge {
 		t.Fatalf("answered %d", got.status)
+	}
+}
+
+// banner is an animated GIF of frames frames, each a different colour, shown for 100ms each.
+func banner(t *testing.T, width, height, frames int) []byte {
+	t.Helper()
+	g := &gif.GIF{}
+	for i := range frames {
+		m := image.NewPaletted(image.Rect(0, 0, width, height), color.Palette{
+			color.RGBA{R: uint8(i * 40), G: 80, B: 200, A: 255}, //nolint:gosec // a pattern; wrapping is fine
+			color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		})
+		for x := range width / 4 {
+			m.SetColorIndex(x+i*width/(4*frames), height/2, 1)
+		}
+		g.Image = append(g.Image, m)
+		g.Delay = append(g.Delay, 10)
+	}
+	return encoded(t, func(w io.Writer) error { return gif.EncodeAll(w, g) })
+}
+
+// framesIn counts the frames of an animated WebP, which is none for a still.
+func framesIn(body []byte) int {
+	return bytes.Count(body, []byte("ANMF"))
+}
+
+func TestAnimatedBannerStaysAnimatedAtEveryWidth(t *testing.T) {
+	master := convert(t, "max-edge=2560&quality=82", banner(t, 800, 450, 4))
+	expectWebP(t, master, 800, 450)
+	if framesIn(master.body) != 4 {
+		t.Fatalf("the master holds %d frames", framesIn(master.body))
+	}
+	for _, width := range []int{160, 320, 640} {
+		height := width * 9 / 16
+		rendition := convert(t, "width="+strconv.Itoa(width)+"&height="+strconv.Itoa(height)+"&quality=82", master.body)
+		expectWebP(t, rendition, width, height)
+		if framesIn(rendition.body) != 4 {
+			t.Fatalf("the %dpx rendition holds %d frames", width, framesIn(rendition.body))
+		}
+	}
+}
+
+func TestGifOfOneFrameIsAStill(t *testing.T) {
+	got := convert(t, "max-edge=2560&quality=82", banner(t, 200, 100, 1))
+	expectWebP(t, got, 200, 100)
+	if framesIn(got.body) != 0 {
+		t.Fatal("a still came out animated")
+	}
+}
+
+// A banner whose last frame cannot be decoded is served as its first frame, not refused.
+func TestBannerWithABrokenFrameIsServedAsItsFirst(t *testing.T) {
+	source := banner(t, 200, 100, 3)
+	last := bytes.LastIndexByte(source, 0x2C)
+	source[last+10+6] = 12 // past the two-colour table, an LZW code size no GIF has
+	got := convert(t, "max-edge=2560&quality=82", source)
+	expectWebP(t, got, 200, 100)
+	if framesIn(got.body) != 0 {
+		t.Fatal("a banner with a broken frame came out animated")
+	}
+}
+
+func TestAnimationOverTheFrameLimitIsRefused(t *testing.T) {
+	got := convert(t, "max-edge=2560&quality=82", banner(t, 4, 4, 1001))
+	if got.status != http.StatusUnprocessableEntity || !bytes.Contains(got.body, []byte("too many frames")) {
+		t.Fatalf("answered %d: %s", got.status, got.body)
+	}
+}
+
+// A GIF whose screen claims 65535 by 65535: refused from its frame table, before a canvas of
+// 17 GB could be allocated for it.
+func TestAnimationClaimingTooManyPixelsIsRefusedFromItsHeader(t *testing.T) {
+	source := banner(t, 4, 4, 2)
+	binary.LittleEndian.PutUint16(source[6:], 65535)
+	binary.LittleEndian.PutUint16(source[8:], 65535)
+	if got := convert(t, "max-edge=2560&quality=82", source); got.status != http.StatusUnprocessableEntity {
+		t.Fatalf("answered %d: %s", got.status, got.body)
 	}
 }

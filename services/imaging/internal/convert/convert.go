@@ -1,4 +1,5 @@
-// Package convert turns an uploaded still into WebP.
+// Package convert turns an uploaded picture into WebP: a still into a still, and a GIF or an
+// animated WebP into an animation.
 //
 // The picture is decoded by Go's own decoders, which are memory safe, and only the decoded
 // pixels reach libwebp. A picture is measured from its header before it is decoded, so one
@@ -12,8 +13,7 @@ import (
 	"image/draw"
 	"math"
 
-	// The formats an upload is converted from, registered with image.Decode. GIF is not among
-	// them: an animation is still converted by the api (#2447).
+	// The still formats, registered with image.Decode. A GIF is read frame by frame instead.
 	_ "image/jpeg"
 	_ "image/png"
 
@@ -41,16 +41,48 @@ type Target struct {
 	Lossless bool
 }
 
+// Limits bound what one picture may cost.
+type Limits struct {
+	// MaxPixels is the largest still, or animation canvas, decoded.
+	MaxPixels int64
+	// MaxFrames is the most frames an animation may have.
+	MaxFrames int
+	// MaxAnimationPixels is the most pixels an animation may draw: its canvas times its frames.
+	// This is what bounds how long a conversion holds its slot.
+	MaxAnimationPixels int64
+}
+
 // Result is the WebP bytes and the size they were drawn at.
 type Result struct {
 	WebP   []byte
 	Width  int
 	Height int
+	// Frames is how many frames the WebP holds.
+	Frames int
+	// Unanimated is why an animation was drawn as a still of its first frame, where it was.
+	Unanimated error
 }
 
-// Convert decodes data and encodes it as WebP at target, refusing a picture of more than
-// maxPixels.
-func Convert(data []byte, target Target, maxPixels int64) (Result, error) {
+// Convert decodes data and encodes it as WebP at target, refusing a picture over limits.
+func Convert(data []byte, target Target, limits Limits) (Result, error) {
+	switch {
+	case bytes.HasPrefix(data, []byte("GIF8")):
+		a, err := gifAnimation(data)
+		if a == nil {
+			return Result{}, ErrUndecodable
+		}
+		return animate(a, err, target, limits)
+	case isAnimatedWebP(data):
+		a, err := webpAnimation(data)
+		if a == nil {
+			return Result{}, ErrUndecodable
+		}
+		return animate(a, err, target, limits)
+	}
+	return still(data, target, limits.MaxPixels)
+}
+
+func still(data []byte, target Target, maxPixels int64) (Result, error) {
 	config, _, err := image.DecodeConfig(bytes.NewReader(data))
 	if err != nil {
 		return Result{}, ErrUndecodable
@@ -79,7 +111,7 @@ func Convert(data []byte, target Target, maxPixels int64) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{WebP: webp, Width: targetWidth, Height: targetHeight}, nil
+	return Result{WebP: webp, Width: targetWidth, Height: targetHeight, Frames: 1}, nil
 }
 
 // fittedWithin brings a size under maxEdge keeping its shape, rounding as the api's

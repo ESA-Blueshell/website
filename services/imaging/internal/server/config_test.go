@@ -22,11 +22,13 @@ func TestDefaultsSuitAPodOfOneGibibyte(t *testing.T) {
 
 func TestSettingsAreRead(t *testing.T) {
 	srv, err := FromEnv(env(map[string]string{
-		"IMAGING_LISTEN":       "127.0.0.1:9000",
-		"IMAGING_MAX_BYTES":    "100",
-		"IMAGING_MAX_PIXELS":   "100",
-		"IMAGING_WAIT_SECONDS": "5",
-		"IMAGING_CONCURRENCY":  "2",
+		"IMAGING_LISTEN":               "127.0.0.1:9000",
+		"IMAGING_MAX_BYTES":            "100",
+		"IMAGING_MAX_PIXELS":           "100",
+		"IMAGING_MAX_FRAMES":           "10",
+		"IMAGING_MAX_ANIMATION_PIXELS": "1000",
+		"IMAGING_WAIT_SECONDS":         "5",
+		"IMAGING_CONCURRENCY":          "2",
 	}), quiet)
 	if err != nil {
 		t.Fatal(err)

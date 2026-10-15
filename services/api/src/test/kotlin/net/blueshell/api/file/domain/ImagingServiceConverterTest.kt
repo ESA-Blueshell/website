@@ -8,11 +8,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.nio.file.Files
@@ -26,8 +21,6 @@ class ImagingServiceConverterTest {
     @TempDir
     private lateinit var directory: Path
 
-    private val animated: AnimatedImages = mock()
-    private val inProcess: InProcessImageConverter = mock()
     private val scratch: ScratchSpace by lazy { ScratchSpace(directory.resolve("scratch").toString()) }
 
     private val server: HttpServer = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).also { it.start() }
@@ -46,8 +39,7 @@ class ImagingServiceConverterTest {
     @AfterEach
     fun stop() = server.stop(0)
 
-    private fun converter(url: String = "http://127.0.0.1:${server.address.port}/") =
-        ImagingServiceConverter(url, scratch, animated, inProcess)
+    private fun converter(url: String = "http://127.0.0.1:${server.address.port}/") = ImagingServiceConverter(url, scratch)
 
     private fun picture(bytes: String = "png bytes") = scratch.cut(".png").also { Files.writeString(it.path, bytes) }
 
@@ -73,16 +65,11 @@ class ImagingServiceConverterTest {
     }
 
     @Test
-    fun `a picture with frames is still converted in the api`() {
-        val source = picture()
-        whenever(animated.animates(eq("image/gif"), any())).thenReturn(true)
+    fun `an animation is sent as any picture is, and the service keeps its frames`() {
+        converter().master(picture("GIF89a frames"), "image/gif", FileType.EVENT_BANNER)
 
-        converter().master(source, "image/gif", FileType.EVENT_BANNER)
-        converter().renditionsOf(source, "image/gif", FileType.EVENT_BANNER, ImageDimensions.Size(10, 10), "a.gif")
-
-        verify(inProcess).master(source, "image/gif", FileType.EVENT_BANNER)
-        verify(inProcess).renditionsOf(source, "image/gif", FileType.EVENT_BANNER, ImageDimensions.Size(10, 10), "a.gif")
-        assertThat(asked).isNull()
+        assertThat(asked).isEqualTo("max-edge=2560&quality=82")
+        assertThat(sent).isEqualTo("GIF89a frames".toByteArray())
     }
 
     @Test

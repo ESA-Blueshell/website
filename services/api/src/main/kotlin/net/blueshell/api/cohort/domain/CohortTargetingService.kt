@@ -265,6 +265,7 @@ class CohortTargetingService(
         externalId: String,
     ): String {
         val strategy = strategies.require(system)
+        if (strategy.linksListedOnly && !strategy.available()) throw TargetSystemUnavailable(system)
         val found = outsideTransaction.execute { strategy.resolve(externalId) }
         if (found == null && strategy.linksListedOnly) throw TargetNotFound(system, externalId)
         return found?.externalId ?: externalId

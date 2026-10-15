@@ -400,6 +400,11 @@ class CohortTargetingServiceTest {
         org.assertj.core.api.Assertions
             .assertThatThrownBy { service.linkExisting(1L, TargetSystem.DISCORD, "907") }
             .isInstanceOf(TargetNotFound::class.java)
+        // Without the bot no role can be checked, so none is linked.
+        whenever(discord.available()).thenReturn(false)
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { service.linkExisting(1L, TargetSystem.DISCORD, "902") }
+            .isInstanceOf(TargetSystemUnavailable::class.java)
         verify(targetExternalIds, never()).record(any(), any())
     }
 

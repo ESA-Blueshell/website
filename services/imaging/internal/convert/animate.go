@@ -8,14 +8,11 @@ import (
 	"math"
 )
 
-// ErrTooManyFrames is an animation over the frame limit, or one whose frames at its size would
-// take longer to convert than one request may. Counted before any frame is decoded.
+// ErrTooManyFrames is an animation over the frame or animation pixel limit.
 var ErrTooManyFrames = errors.New("the animation has too many frames for its size")
 
 var errTooLong = errors.New("the animation runs longer than WebP can say")
 
-// animation is a GIF or an animated WebP as its frame table describes it: a canvas, and frames
-// that are decoded one at a time as the canvas is drawn.
 type animation struct {
 	width, height int
 	frames        []frame
@@ -25,14 +22,11 @@ type disposal int
 
 const (
 	disposeNone disposal = iota
-	// disposeBackground clears the frame's rectangle once it has been shown.
 	disposeBackground
-	// disposePrevious puts back what the canvas held before the frame was drawn.
 	disposePrevious
 )
 
-// frameEncoder assembles an animation from canvases. libwebp's is the one; tests replace it to
-// reach what it does only when it runs out of memory.
+// frameEncoder is a seam for tests: libwebp fails only when out of memory.
 type frameEncoder interface {
 	add(canvas *image.NRGBA, timestamp int) error
 	assemble(end int) ([]byte, error)
@@ -46,18 +40,13 @@ var newFrameEncoder = func(width, height int, lossless bool, quality float32) (f
 type frame struct {
 	rect     image.Rectangle
 	duration int
-	// blend draws the frame over the canvas; without it the frame replaces its rectangle.
-	blend   bool
-	dispose disposal
-	decode  func() (image.Image, error)
+	blend    bool
+	dispose  disposal
+	decode   func() (image.Image, error)
 }
 
-// animate converts an animation, keeping its frames and their durations.
-//
-// Only the canvas and the frame being drawn are held, never the whole animation decoded. A frame
-// that will not decode turns the picture into a still of its first frame, which is what api
-// ADR-029 serves rather than nothing: a ladder that does not move still keeps a phone from
-// fetching the master.
+// animate holds one canvas and one frame at a time. A frame that will not decode makes the picture
+// a still of its first frame (api ADR-029).
 func animate(a *animation, broken error, target Target, limits Limits) (Result, error) {
 	pixels := int64(a.width) * int64(a.height)
 	if pixels > limits.MaxPixels {
@@ -73,7 +62,7 @@ func animate(a *animation, broken error, target Target, limits Limits) (Result, 
 	if broken != nil || len(a.frames) == 1 {
 		return firstFrame(a, broken, width, height, target)
 	}
-	// The still is drawn after moving returns, so the two canvases are never held at once.
+	// After moving returns, so two canvases are never held at once.
 	result, undecoded, err := moving(a, width, height, target)
 	if undecoded != nil {
 		return firstFrame(a, undecoded, width, height, target)
@@ -81,8 +70,7 @@ func animate(a *animation, broken error, target Target, limits Limits) (Result, 
 	return result, err
 }
 
-// moving draws every frame of a and encodes them as one animation. The second error is why a
-// frame would not decode, which the caller turns into a still; the third is the encoder's.
+// moving answers the animation, a frame's decode error, or the encoder's error.
 func moving(a *animation, width, height int, target Target) (Result, error, error) {
 	encoder, err := newFrameEncoder(width, height, target.Lossless, target.Quality)
 	if err != nil {
@@ -98,7 +86,7 @@ func moving(a *animation, width, height int, target Target) (Result, error, erro
 			return Result{}, err, nil
 		}
 		if f.dispose == disposePrevious {
-			// Sized once: grown by append, a full-canvas rectangle would cost up to twice itself.
+			// Sized once: append growth would double a full-canvas copy.
 			if size := f.rect.Intersect(canvas.Rect).Size(); cap(previous) < size.X*size.Y*4 {
 				previous = make([]byte, 0, size.X*size.Y*4)
 			}
@@ -126,8 +114,6 @@ func moving(a *animation, width, height int, target Target) (Result, error, erro
 	return Result{WebP: webp, Width: width, Height: height, Frames: len(a.frames)}, nil, nil
 }
 
-// firstFrame is the animation as a still of its first frame, saying why where it was meant to
-// move.
 func firstFrame(a *animation, broken error, width, height int, target Target) (Result, error) {
 	picture, err := a.frames[0].decode()
 	if err != nil {
@@ -142,12 +128,8 @@ func firstFrame(a *animation, broken error, width, height int, target Target) (R
 	return Result{WebP: webp, Width: width, Height: height, Frames: 1, Unanimated: broken}, nil
 }
 
-// paint puts picture onto canvas with its top left corner at at, over what is there where blend
-// is set, in place of it where it is not. Both are straight alpha, blended as the WebP container
-// specification gives it.
-//
-// The picture is read a row at a time rather than converted whole, so a frame costs no second
-// canvas.
+// paint blends straight alpha as the WebP container spec does, a row at a time so a frame costs
+// no second canvas.
 func paint(canvas *image.NRGBA, picture image.Image, at image.Point, blend bool) {
 	bounds := picture.Bounds()
 	area := image.Rectangle{Min: at, Max: at.Add(bounds.Size())}.Intersect(canvas.Rect)
@@ -168,7 +150,6 @@ func paint(canvas *image.NRGBA, picture image.Image, at image.Point, blend bool)
 	}
 }
 
-// rowsOf reads width pixels of picture from x, y as straight-alpha RGBA, into a buffer it reuses.
 func rowsOf(picture image.Image, width int) func(x, y int) []byte {
 	switch p := picture.(type) {
 	case *image.NRGBA:
@@ -177,7 +158,7 @@ func rowsOf(picture image.Image, width int) func(x, y int) []byte {
 			return p.Pix[at : at+width*4]
 		}
 	case *image.Paletted:
-		// Every index has an entry, so a pixel past the palette is transparent rather than a panic.
+		// 256 entries, so an index past the palette is transparent rather than a panic.
 		var colours [256 * 4]byte
 		for i, c := range p.Palette {
 			n := color.NRGBAModel.Convert(c).(color.NRGBA)
@@ -192,7 +173,7 @@ func rowsOf(picture image.Image, width int) func(x, y int) []byte {
 			return buffer
 		}
 	case *image.YCbCr:
-		// Opaque, so premultiplied and straight are the same bytes, and drawing into RGBA is fast.
+		// Opaque, so RGBA's premultiplied bytes are already straight.
 		buffer := image.NewRGBA(image.Rect(0, 0, width, 1))
 		return func(x, y int) []byte {
 			draw.Draw(buffer, buffer.Rect, p, image.Pt(x, y), draw.Src)
@@ -207,8 +188,7 @@ func rowsOf(picture image.Image, width int) func(x, y int) []byte {
 	}
 }
 
-// over blends a partly transparent source pixel, whose alpha is above zero, onto a destination
-// pixel, in straight alpha.
+// over needs a source alpha above zero.
 func over(d, s []byte) {
 	sa, da := uint32(s[3]), uint32(d[3])*(255-uint32(s[3]))/255
 	a := sa + da
@@ -218,8 +198,6 @@ func over(d, s []byte) {
 	d[3] = byte(a) //nolint:gosec // sa + da is at most 255
 }
 
-// rows hands each row of rect on canvas to do, in order, threading carry through: how a frame's
-// rectangle is cleared, saved and put back.
 func rows(canvas *image.NRGBA, rect image.Rectangle, carry []byte, do func(row, carry []byte) []byte) []byte {
 	area := rect.Intersect(canvas.Rect)
 	for y := area.Min.Y; y < area.Max.Y; y++ {

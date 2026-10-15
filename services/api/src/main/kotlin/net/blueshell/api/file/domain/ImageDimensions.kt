@@ -4,14 +4,7 @@ import java.io.InputStream
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-/**
- * How large a stored picture is, read from its WebP header and never by decoding it: the api
- * decodes no uploaded picture (architecture ADR-014). Every picture a page shows is stored as
- * WebP, so every one of them has a size.
- *
- * Anything else answers null. That is an answer, not a failure: the file is still stored and
- * served, just drawn without its space reserved, and never a reason to refuse an upload.
- */
+/** A stored picture's size from its WebP header; anything else has none (architecture ADR-014). */
 object ImageDimensions {
     data class Size(
         val width: Int,

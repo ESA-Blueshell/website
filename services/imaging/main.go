@@ -1,5 +1,4 @@
-// The imaging service: converts the pictures the api is sent into WebP, away from the api, so that
-// decoding an uploaded picture reaches nothing the api can (architecture ADR-014).
+// The imaging service, which decodes uploads away from the api (architecture ADR-014).
 package main
 
 import (

@@ -15,15 +15,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.Duration
 
-/**
- * The converter in the imaging service, which decodes uploaded pictures away from the api
- * (architecture ADR-014). The api decodes none itself.
- *
- * Stills and animations alike: the service keeps an animation's frames at every width and draws
- * one whose frames will not decode as its first frame (api ADR-029). A service that cannot be
- * reached is an [ImagingUnavailableException], which a master meets before anything is stored
- * and the rendition job meets as a failure it retries.
- */
+/** Converts through the imaging service; the api decodes nothing itself (architecture ADR-014). */
 @Component
 class ImagingServiceConverter(
     @Value($$"${app.imaging.url}") url: String,
@@ -77,14 +69,9 @@ class ImagingServiceConverter(
             override fun close() = Unit
         }
 
-    /** Lossless, or the kind's quality, as the api told cwebp when it converted pictures itself. */
     private fun encodingOf(type: FileType): String =
         if (type.webpLossless) "lossless=true" else "quality=${type.webpQuality ?: DEFAULT_QUALITY}"
 
-    /**
-     * [input] converted into [output] at the target [query] names, answering the size it was
-     * drawn at. A picture the service refuses becomes what [refused] makes of its reason.
-     */
     private fun convert(
         input: ScratchFile,
         output: ScratchFile,
@@ -139,7 +126,7 @@ class ImagingServiceConverter(
             .map(String::toIntOrNull)
             .orElse(null)
 
-    /** The service's own words, which name no path: a sentence such as "the picture has too many pixels". */
+    /** The service's reason names no path, so it is safe to show the uploader. */
     private fun reasonIn(body: InputStream): String =
         body
             .readNBytes(MAX_REASON_BYTES)
@@ -151,8 +138,7 @@ class ImagingServiceConverter(
         val log = LoggerFactory.getLogger(ImagingServiceConverter::class.java)
         val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(2)
 
-        // The service waits up to 30 seconds for a free conversion, and its frame limits keep the
-        // longest animation it takes inside the rest.
+        // A 30s wait for a slot plus the longest conversion the frame limits allow.
         val REQUEST_TIMEOUT: Duration = Duration.ofSeconds(90)
         const val DEFAULT_QUALITY = 82
         const val MAX_REASON_BYTES = 200

@@ -8,19 +8,12 @@ import (
 	"golang.org/x/image/webp"
 )
 
-// isAnimatedWebP is whether data declares itself an animated WebP. A still WebP, which
-// x/image/webp reads, is converted as any other still.
 func isAnimatedWebP(data []byte) bool {
 	return len(data) >= 21 && string(data[0:4]) == "RIFF" && string(data[8:16]) == "WEBPVP8X" && data[20]&0x02 != 0
 }
 
-// webpAnimation reads the frame table of an animated WebP without decoding any frame. Each frame
-// is decoded on its own later, by x/image/webp, from a still WebP of that frame alone, which
-// declares the frame's size: the decoder checks the bitstream against it before allocating, so a
-// frame cannot claim to be small and decode large.
-//
-// As for a GIF, a frame table that breaks off after its first frame answers the frames before the
-// break and the error.
+// webpAnimation reads the frame table without decoding. Each frame is later decoded as a still that
+// declares the frame's size, which x/image/webp checks the bitstream against before allocating.
 func webpAnimation(data []byte) (*animation, error) {
 	if len(data) < 30 {
 		return nil, errMalformed
@@ -70,7 +63,6 @@ func webpAnimation(data []byte) (*animation, error) {
 	return a, err
 }
 
-// webpFrame decodes one frame's chunks as a still of the size its frame header gives.
 func webpFrame(chunks []byte, width, height int) (image.Image, error) {
 	flags := byte(0)
 	if bytes.HasPrefix(chunks, []byte("ALPH")) {
@@ -85,7 +77,6 @@ func webpFrame(chunks []byte, width, height int) (image.Image, error) {
 	return webp.Decode(bytes.NewReader(still))
 }
 
-// appendU24 appends n, a frame edge and so under 2^24, as three little-endian bytes.
 func appendU24(b []byte, n int) []byte {
 	b = binary.LittleEndian.AppendUint32(b, uint32(n)) //nolint:gosec // under 2^24
 	return b[:len(b)-1]

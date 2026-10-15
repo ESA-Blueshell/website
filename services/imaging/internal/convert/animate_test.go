@@ -20,7 +20,6 @@ var (
 	transparent = color.NRGBA{}
 )
 
-// gifFrameOf is a frame of one colour over rect, with a transparent first palette entry.
 func gifFrameOf(rect image.Rectangle, c color.NRGBA) *image.Paletted {
 	m := image.NewPaletted(rect, color.Palette{color.NRGBA{}, red, green, blue})
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
@@ -40,8 +39,7 @@ func gifOf(t *testing.T, g *gif.GIF) []byte {
 	return b.Bytes()
 }
 
-// threeFrames is a 40x20 GIF: red, then green over its left half, then blue over its right half,
-// shown for 50ms, the 100ms a delay of none stands for, and 200ms.
+// threeFrames: red, then green on the left half, then blue on the right; 50, 100 and 200ms.
 func threeFrames(t *testing.T, disposal byte) []byte {
 	t.Helper()
 	return gifOf(t, &gif.GIF{
@@ -55,7 +53,6 @@ func threeFrames(t *testing.T, disposal byte) []byte {
 	})
 }
 
-// played is an animated WebP as it is shown: every frame's canvas, and how long it is shown.
 func played(t *testing.T, data []byte) ([]*image.NRGBA, []int) {
 	t.Helper()
 	a, err := webpAnimation(data)
@@ -131,7 +128,6 @@ func TestGifDisposalIsReplayed(t *testing.T) {
 	}
 }
 
-// Two frames that each put back what was under them: the second reuses the first's saved rows.
 func TestRestoreToPreviousTwiceKeepsTheCanvasUnderneath(t *testing.T) {
 	data := gifOf(t, &gif.GIF{
 		Image: []*image.Paletted{
@@ -154,8 +150,6 @@ func TestRestoreToPreviousTwiceKeepsTheCanvasUnderneath(t *testing.T) {
 	assertColour(t, shown[3], 35, 10, green)
 }
 
-// A GIF whose frames carry no graphic control extension: every frame is shown for the tenth of a
-// second a browser gives it, and nothing is disposed.
 func TestGifWithoutControlExtensionsIsShownAtATenthOfASecond(t *testing.T) {
 	data := threeFrames(t, gif.DisposalBackground)
 	bare := make([]byte, 0, len(data))
@@ -190,7 +184,6 @@ func TestAnimatedMasterIsBroughtUnderItsCeiling(t *testing.T) {
 	}
 }
 
-// A rendition is drawn from the stored master, an animated WebP, and keeps its frames.
 func TestAnimatedMasterRendersAnimatedAtEveryWidth(t *testing.T) {
 	master, err := Convert(threeFrames(t, gif.DisposalBackground), Target{MaxEdge: 2560, Quality: 82}, roomy)
 	if err != nil {
@@ -297,8 +290,6 @@ func TestGifWithoutItsTrailerKeepsEveryFrame(t *testing.T) {
 	}
 }
 
-// A control extension of the wrong length is not one the decoder can trust, so its frame takes the
-// defaults rather than a delay read from the wrong bytes.
 func TestGifControlExtensionOfTheWrongLengthIsIgnored(t *testing.T) {
 	data := threeFrames(t, gif.DisposalNone)
 	first := bytes.Index(data, []byte{0x21, 0xF9, 4})
@@ -359,7 +350,6 @@ func TestAnimationOverItsLimitsIsRefusedBeforeItIsDecoded(t *testing.T) {
 	}
 }
 
-// riffOf wraps chunks in a WebP container.
 func riffOf(chunks ...[]byte) []byte {
 	body := bytes.Join(chunks, nil)
 	out := binary.LittleEndian.AppendUint32([]byte("RIFF"), uint32(4+len(body))) //nolint:gosec // a test fixture
@@ -386,7 +376,6 @@ func anmf(x, y, width, height, duration int, flags byte, bitstream []byte) []byt
 	return chunk("ANMF", append(append(header, flags), bitstream...))
 }
 
-// bitstreamOf is a picture's frame data: the chunks of its lossless WebP after the container.
 func bitstreamOf(t *testing.T, m image.Image) []byte {
 	t.Helper()
 	got, err := Convert(pngOf(t, m), Target{MaxEdge: 2560, Lossless: true, Quality: 75}, roomy)
@@ -471,8 +460,6 @@ func TestAnimationLongerThanWebPCanSayIsAStillOfItsFirstFrame(t *testing.T) {
 	}
 }
 
-// A WebP with the extended header but no animation flag, as a lossy picture with transparency has,
-// is a still.
 func TestExtendedStillWebPIsConvertedAsAStill(t *testing.T) {
 	master, err := Convert(pngOf(t, picture(64, 32, true)), Target{MaxEdge: 2560, Quality: 82}, roomy)
 	if err != nil || !bytes.HasPrefix(master.WebP[12:], []byte("VP8X")) {
@@ -496,8 +483,7 @@ func TestAnimatedWebPWithNoFramesIsRefused(t *testing.T) {
 	}
 }
 
-// What the api wrote before the service took animations over: every frame the whole canvas,
-// blending with nothing. Skipped where webpmux is not installed; the image's check stage has it.
+// The api's old webpmux masters; skipped without webpmux.
 func TestMasterTheApiWroteIsRead(t *testing.T) {
 	webpmux, err := exec.LookPath("webpmux")
 	if err != nil {

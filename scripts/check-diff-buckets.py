@@ -226,8 +226,6 @@ def self_test():
         print(f"self-test FAILED: no fixture exercises {pattern}")
     if unexercised(buckets):
         return 1
-    # The imaging service alone runs its own slice of the system tests; anything that builds the
-    # jar or the bundle runs all of them.
     plans = [
         ({"app": True, "imaging": True}, {"shards": [1, 2, 3, 4, 5, 6], "total": 6, "tags": "system"}),
         ({"app": False, "imaging": True}, {"shards": [1], "total": 1, "tags": "system & imaging"}),
@@ -241,25 +239,18 @@ def self_test():
 
 
 def system_tests(on):
-    """
-    The system tests a run needs, as the `system-tests` output the matrix reads.
-
-    Every test on six shards where the jar or the bundle changed. Where only the imaging service
-    did, the tests tagged `imaging`, which convert a picture through it, on one shard: the api
-    and the frontend they drive are this branch's either way, so those few are what can tell.
-    """
+    """All system tests on six shards, or only the `imaging` ones on one for an imaging-only change."""
     if on["app"]:
         return {"shards": [1, 2, 3, 4, 5, 6], "total": 6, "tags": "system"}
     if on["imaging"]:
         return {"shards": [1], "total": 1, "tags": "system & imaging"}
-    # The job is skipped then, but a matrix still has to name a shard.
+    # Skipped, but a matrix still needs a shard.
     return {"shards": [1], "total": 1, "tags": "system"}
 
 
 def decide(base, head):
     """
-    The `run` output the `changes` job publishes: each bucket, and `app`, as JSON, and the
-    `system-tests` output beside it.
+    The `run` output the `changes` job publishes: each bucket, and `app`, as JSON, plus `system-tests`.
 
     `app` is any bucket but `platform` and `imaging`: what needs the jar and the bundle built.
     A path in no bucket turns every bucket on, and a run with no diff to read

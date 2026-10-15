@@ -98,7 +98,6 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
         assertThat(created.committeeId).isNotEqualTo(committeeAId)
     }
 
-    // Uploads a banner, which the imaging service converts.
     @Test
     @Tag("imaging")
     fun `events page fetches banner for newly created event`() {

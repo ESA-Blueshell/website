@@ -25,7 +25,6 @@ class ImageRenditionsTest {
         whenever(blobs.open(path)).thenAnswer { bytes.inputStream() }
     }
 
-    /** The head of an extended WebP container, with its animation flag set or not. */
     private fun webp(animated: Boolean): ByteArray =
         "RIFF".toByteArray() + byteArrayOf(22, 0, 0, 0) + "WEBPVP8X".toByteArray() + byteArrayOf(10, 0, 0, 0) +
             byteArrayOf(if (animated) 0x02 else 0, 0, 0, 0, 9, 0, 0, 9, 0, 0)

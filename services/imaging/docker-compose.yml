@@ -1,6 +1,5 @@
 services:
-  # The production image, run as the cluster runs it: read-only, with no capabilities. The api
-  # container reaches it at http://imaging:8080, and an api run on the host at localhost:8090.
+  # Hardened as in the cluster; a host-run api uses localhost:8090.
   imaging:
     image: imaging:dev
     pull_policy: never

@@ -10,7 +10,6 @@ import (
 
 var errAnimationRefused = errors.New("libwebp refused the animation")
 
-// encode writes straight-alpha RGBA pixels as WebP at the target size.
 func encode(pix []byte, stride, width, height, targetWidth, targetHeight int, lossless bool, quality float32) ([]byte, error) {
 	webp, code := libwebp.Encode(pix, stride, width, height, targetWidth, targetHeight, lossless, quality)
 	if code != 0 {
@@ -19,7 +18,6 @@ func encode(pix []byte, stride, width, height, targetWidth, targetHeight int, lo
 	return webp, nil
 }
 
-// animationEncoder assembles an animation at one size from canvases of another.
 type animationEncoder struct {
 	animation *libwebp.Animation
 }
@@ -32,7 +30,6 @@ func newAnimationEncoder(width, height int, lossless bool, quality float32) (*an
 	return &animationEncoder{animation: animation}, nil
 }
 
-// add is canvas as the frame shown from timestamp milliseconds in.
 func (e *animationEncoder) add(canvas *image.NRGBA, timestamp int) error {
 	size := canvas.Rect.Size()
 	if e.animation.Add(canvas.Pix, size.X, size.Y, canvas.Stride, timestamp) != 0 {
@@ -41,7 +38,6 @@ func (e *animationEncoder) add(canvas *image.NRGBA, timestamp int) error {
 	return nil
 }
 
-// assemble is the animation, its last frame shown until end milliseconds in.
 func (e *animationEncoder) assemble(end int) ([]byte, error) {
 	webp, code := e.animation.Assemble(end)
 	if code != 0 {

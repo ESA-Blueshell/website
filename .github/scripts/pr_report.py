@@ -221,10 +221,7 @@ GOCOVER_BLOCK = re.compile(r"^(.+):(\d+)\.\d+,(\d+)\.\d+ (\d+) (\d+)$")
 def parse_gocover(text: str, counted: str | None = None) -> tuple[dict[str, float | None], dict[str, dict[str, set[int]]]]:
     """A Go coverprofile's statement total, and its lines, keyed by import path.
 
-    Go counts statements in blocks and has no branch or function counter, so
-    those come from `counted`, the coverage-totals.json the imaging service's
-    coverage.sh writes beside the profile: branches from gobco, functions from
-    the profile. Without it they stay unmeasured.
+    Branches and functions come from `counted`, coverage.sh's coverage-totals.json.
 
     A line is covered only where every block on it ran: a line that also
     holds a block that never ran is still owed a test. Blocks repeat across

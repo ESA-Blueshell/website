@@ -2,30 +2,16 @@ package net.blueshell.api.file.domain
 
 import net.blueshell.api.shared.enums.FileType
 
-/**
- * Turns pictures into WebP: an upload into its master at the kind's ceiling, and a master into
- * the renditions it is served at. The one door to the imaging service, and what the unit tests
- * stand in for.
- */
+/** The port to the imaging service, and what unit tests stub. */
 interface ImageConverter {
-    /**
-     * [source] as a WebP master within [type]'s ceiling, keeping its frames where it has more than
-     * one. [declaredMediaType] is the uploader's claim and says which decoder to try first.
-     *
-     * The caller closes the answer. A picture that cannot be decoded is an [InvalidFileException].
-     */
+    /** The caller closes the answer; an undecodable picture is an [InvalidFileException]. */
     fun master(
         source: ScratchFile,
         declaredMediaType: String,
         type: FileType,
     ): Converted
 
-    /**
-     * The renditions of a stored [master], written one width at a time as they are asked for, so a
-     * ladder that is mostly stored already costs only the widths it is missing.
-     *
-     * [recorded] is the size on the master's record; [name] is what a log line calls the picture.
-     */
+    /** Writes one width at a time, so a mostly stored ladder costs only its missing widths. */
     fun renditionsOf(
         master: ScratchFile,
         mediaType: String,
@@ -40,10 +26,9 @@ interface ImageConverter {
     )
 
     interface Renditions : AutoCloseable {
-        /** What the widths are measured against: the size on the master's record. */
         val size: ImageDimensions.Size
 
-        /** One width, written into [output]. A [WebpConversionException] where the converter refuses it. */
+        /** A [WebpConversionException] where the service refuses the width. */
         fun write(
             size: ImageDimensions.Size,
             output: ScratchFile,

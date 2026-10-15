@@ -1,11 +1,7 @@
 name: Start the imaging service
 description: Build the imaging image and run it as the cluster runs it, for a job whose api converts uploads.
 
-# The api converts every upload through the imaging service (architecture ADR-014), so a job that
-# boots it and uploads a picture needs one running. Built from the layers main's image build
-# caches, which every pull request may read, or the ones this pull request's imaging job wrote,
-# so a build whose service has not changed takes seconds. Run read-only, as nobody and with no
-# capabilities. The job then points the api, or its tests, at IMAGING_URL.
+# Exports IMAGING_URL. main's image cache is readable from every pull request.
 
 inputs:
   port:

@@ -189,6 +189,11 @@ Runbook: [`platform/docs/runbook.md`](platform/docs/runbook.md).
 
 ---
 
+## Licence
+
+The source code is under the [MIT licence](LICENSE). Images, artwork, fonts, documents and data
+are not: [`NOTICE.md`](NOTICE.md) lists which files those are.
+
 ## Support
 
 Questions or issues: **board@blueshell.utwente.nl**

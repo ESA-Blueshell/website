@@ -4,6 +4,7 @@ import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.MemberRepository
 import net.blueshell.api.user.persistence.MembershipSpecifications
+import net.blueshell.api.user.persistence.MembershipType
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,7 +29,7 @@ class MembershipService @Autowired constructor(
 ) {
     @Transactional
     fun create(entity: Membership): Membership {
-        if (entity.types.isEmpty()) entity.recordType(entity.memberType, entity.startDate)
+        if (entity.types.isEmpty()) entity.types += MembershipType(entity, entity.memberType, entity.startDate)
         // Only an honorary membership owes nothing, so only it starts active (api ADR-036).
         if (entity.memberType == MemberType.HONORARY && entity.activatedOn == null) entity.activatedOn = entity.startDate
         val saved = written(entity)

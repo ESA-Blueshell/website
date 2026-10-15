@@ -40,52 +40,17 @@ class Membership(
     var startDate: LocalDate,
     @Column(name = "end_date")
     var endDate: LocalDate? = null,
-    memberType: MemberType = MemberType.REGULAR,
+    /** The membership type in force today: the latest of [types], kept here so a query can filter on it. */
+    @Column(name = "type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    var memberType: MemberType = MemberType.REGULAR,
     @Column(name = "activated_on")
     var activatedOn: LocalDate? = null,
 ) : AuditedAutoIdEntity() {
-    /** The type in force today, kept as the latest of [types] so a query can filter on it. */
-    @Column(name = "type", nullable = false)
-    @Enumerated(EnumType.STRING)
-    var memberType: MemberType = memberType
-
-    @OneToMany(mappedBy = "membership", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    /** Every membership type it has had (api ADR-040); ordered on load only. */
+    @OneToMany(mappedBy = "membership", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("since")
-    private val _types: MutableList<MembershipType> = mutableListOf()
-
-    /** Every type this membership has had, earliest first. */
-    val types: List<MembershipType>
-        get() = _types.sortedBy { it.since }
-
-    /** The type in force on [day]; a day before the first type reads the first. */
-    fun typeOn(day: LocalDate): MemberType {
-        val held = types.ifEmpty { return memberType }
-        return (held.lastOrNull { !it.since.isAfter(day) } ?: held.first()).type
-    }
-
-    fun recordType(
-        type: MemberType,
-        since: LocalDate,
-    ): MembershipType = MembershipType(this, type, since).also { _types += it }.also { followLatest() }
-
-    fun correctType(
-        entry: MembershipType,
-        type: MemberType,
-        since: LocalDate,
-    ) {
-        entry.type = type
-        entry.since = since
-        followLatest()
-    }
-
-    fun removeType(entry: MembershipType) {
-        _types.remove(entry)
-        followLatest()
-    }
-
-    private fun followLatest() {
-        types.lastOrNull()?.let { memberType = it.type }
-    }
+    val types: MutableList<MembershipType> = mutableListOf()
 
     /** Running and not yet paid for, so it carries no member role. */
     val isPending: Boolean

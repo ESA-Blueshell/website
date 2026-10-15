@@ -67,7 +67,8 @@ Alternatives considered:
   paid-on-collection and storno.
 - A merge of back-to-back memberships rewrites history for those members; the merge keeps every
   old start date as the start of a membership type, so nothing that was known is lost.
-- Anything that reads the membership type now reads it on a day, and must say which day.
+- No membership type starts after today, so the latest is the one in force today. The membership
+  keeps it as its current type, and a fee asked today reads that.
 - ADR-038's retention line is amended to count declarations as a use of the bank account.
 
 ## Related Documentation

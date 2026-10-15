@@ -11,6 +11,7 @@ import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -315,8 +316,8 @@ class MembershipUseCasesTest {
 
         private fun held(endDate: LocalDate? = null): Membership =
             Membership(user = testUser("john"), startDate = start, endDate = endDate).apply {
-                recordType(MemberType.REGULAR, start)
-                recordType(MemberType.ALUMNI, alumniSince)
+                types += MembershipType(this, MemberType.REGULAR, start)
+                types += MembershipType(this, MemberType.ALUMNI, alumniSince)
                 types.forEachIndexed { at, type -> type.id = at + 1L }
                 whenever(membershipService.findById(9L)).thenReturn(this)
                 whenever(membershipService.update(this)).thenReturn(this)
@@ -395,7 +396,7 @@ class MembershipUseCasesTest {
             assertThat(membership.types.first().since).isEqualTo(start.plusDays(10))
 
             assertThatThrownBy { useCases.correct(9L, 2L, alumniSince, null, version = 1L) }
-                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
+                .isInstanceOf(MembershipTypeOnTakenDay::class.java)
             assertThatThrownBy { useCases.correct(9L, 2L, start, alumniSince, version = 1L) }
                 .isInstanceOf(MembershipTypeOutsideMembership::class.java)
         }

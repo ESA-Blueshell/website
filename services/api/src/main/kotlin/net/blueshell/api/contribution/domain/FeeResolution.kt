@@ -3,7 +3,6 @@ package net.blueshell.api.contribution.domain
 import net.blueshell.api.contribution.persistence.ContributionPeriod
 import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.shared.enums.MemberType
-import net.blueshell.api.user.persistence.Membership
 import java.time.LocalDate
 
 /**
@@ -30,13 +29,6 @@ fun resolveFeeType(
         MemberType.ALUMNI -> BulkFeeType.ALUMNI_FEE
         MemberType.HONORARY -> null // Excluded
     }
-
-/** The fee [membership] is asked on [day]: its membership type that day, with the cutoff read off its start (api ADR-040). */
-fun resolveFeeType(
-    membership: Membership,
-    day: LocalDate,
-    period: ContributionPeriod,
-): BulkFeeType? = resolveFeeType(membership.typeOn(day), membership.startDate, period)
 
 /**
  * Resolves the € amount for a given [BulkFeeType] from the contribution period.

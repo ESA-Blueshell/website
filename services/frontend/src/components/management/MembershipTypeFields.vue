@@ -26,7 +26,7 @@ const first = entry != null && entry.id === membership.types[0]?.id
 const type = ref<string>(entry?.type ?? MemberType.ALUMNI)
 const since = ref(entry?.since ?? "")
 const refusal = ref("")
-// The end is the day the membership stopped, and no type starts after today. TWIN: `runsOn` in
+// The end is the day the membership stopped, and no type starts after today. TWIN: `requireTypesFit` in
 // `user/domain/MembershipUseCases.kt` and `MembershipTypeRequest`'s @PastOrPresent.
 const latest = membership.endDate
   ? DateTime.fromISO(membership.endDate).minus({days: 1}).toISODate()!

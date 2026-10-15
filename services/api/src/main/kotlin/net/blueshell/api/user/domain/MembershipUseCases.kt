@@ -56,7 +56,7 @@ class MembershipUseCases(
         return service.create(membership)
     }
 
-    /** Corrects the dates; the first type moves with the start, and every later type must still fit. */
+    /** Corrects the dates; the first membership type moves with the start. */
     @Transactional
     fun correct(
         id: Long,
@@ -69,10 +69,8 @@ class MembershipUseCases(
         membership.requireVersion(version)
         validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
         val start = startDate!!
-        if (membership.types.drop(1).any { it.since == start || !runsOn(it.since, start, endDate) }) {
-            throw MembershipTypeOutsideMembership(start, endDate)
-        }
-        membership.types.firstOrNull()?.let { membership.correctType(it, it.type, start) }
+        membership.requireTypesFit(listOf(start) + membership.types.map { it.since }.sorted().drop(1), start, endDate)
+        membership.types.minByOrNull { it.since }?.since = start
         membership.startDate = start
         membership.endDate = endDate
         return service.update(membership)
@@ -85,12 +83,11 @@ class MembershipUseCases(
         since: LocalDate,
     ): Membership {
         val membership = service.findById(id)
-        requireFreeDay(membership, since, except = null)
-        membership.recordType(type, since)
-        return service.update(membership.activatedIfHonorary(type, since))
+        membership.requireTypesFit(membership.types.map { it.since } + since)
+        membership.types += MembershipType(membership, type, since)
+        return retyped(membership, since.takeIf { type == MemberType.HONORARY })
     }
 
-    /** The first type takes another kind only: it starts with the membership, so its day is the start. */
     @Transactional
     fun correctType(
         id: Long,
@@ -100,13 +97,10 @@ class MembershipUseCases(
     ): Membership {
         val membership = service.findById(id)
         val entry = membership.typeById(typeId)
-        if (entry == membership.types.first()) {
-            if (since != membership.startDate) throw FirstMembershipTypeStartsTheMembership()
-        } else {
-            requireFreeDay(membership, since, except = entry)
-        }
-        membership.correctType(entry, type, since)
-        return service.update(membership.activatedIfHonorary(type, since))
+        membership.requireTypesFit(membership.types.map { if (it === entry) since else it.since })
+        entry.type = type
+        entry.since = since
+        return retyped(membership, since.takeIf { type == MemberType.HONORARY })
     }
 
     @Transactional
@@ -116,29 +110,21 @@ class MembershipUseCases(
     ): Membership {
         val membership = service.findById(id)
         val entry = membership.typeById(typeId)
-        if (entry == membership.types.first()) throw FirstMembershipTypeStartsTheMembership()
-        membership.removeType(entry)
+        if (entry.since == membership.startDate) throw FirstMembershipTypeStartsTheMembership()
+        membership.types -= entry
+        return retyped(membership)
+    }
+
+    // No type starts after today, so the latest is in force today. Honorary owes nothing, so a
+    // pending membership is active from the day it became honorary (api ADR-036).
+    private fun retyped(
+        membership: Membership,
+        honorarySince: LocalDate? = null,
+    ): Membership {
+        membership.memberType = membership.types.maxBy { it.since }.type
+        if (membership.activatedOn == null) membership.activatedOn = honorarySince
         return service.update(membership)
     }
-
-    private fun requireFreeDay(
-        membership: Membership,
-        since: LocalDate,
-        except: MembershipType?,
-    ) {
-        if (!runsOn(since, membership.startDate, membership.endDate)) {
-            throw MembershipTypeOutsideMembership(membership.startDate, membership.endDate)
-        }
-        if (membership.types.any { it != except && it.since == since }) throw MembershipTypeOnTakenDay(since)
-    }
-
-    // A set end date is the day the membership stopped, so a type cannot start on it. TWIN: the
-    // day bounds in `MembershipTypeFields.vue`.
-    private fun runsOn(
-        day: LocalDate,
-        startDate: LocalDate,
-        endDate: LocalDate?,
-    ): Boolean = !day.isBefore(startDate) && (endDate == null || day.isBefore(endDate))
 
     /**
      * [effectiveDate] is the day the membership stops, pinned by a bulk end so a batch running
@@ -151,9 +137,7 @@ class MembershipUseCases(
     ): Membership {
         val membership = service.findById(id)
         validate(membership.intervalEndingOn(effectiveDate))
-        if (membership.types.any { !it.since.isBefore(effectiveDate) }) {
-            throw MembershipTypeOutsideMembership(membership.startDate, effectiveDate)
-        }
+        membership.requireTypesFit(membership.types.map { it.since }, end = effectiveDate)
         membership.endDate = effectiveDate
         return service.update(membership)
     }
@@ -209,11 +193,20 @@ class MembershipUseCases(
 private fun Membership.typeById(typeId: Long): MembershipType =
     types.firstOrNull { it.id == typeId } ?: throw MembershipTypeNotFound(typeId)
 
-// Honorary owes nothing, so a pending membership is active from the day it became honorary (api ADR-036).
-private fun Membership.activatedIfHonorary(
-    type: MemberType,
-    since: LocalDate,
-): Membership = apply { if (type == MemberType.HONORARY && activatedOn == null) activatedOn = since }
+/**
+ * Membership types on [days] fit a membership from [start] to [end]: each starts inside it, the
+ * earliest on its first day, and no two on one day (api ADR-040). An end is the day it stopped.
+ * TWIN: the day bounds in `MembershipTypeFields.vue`.
+ */
+private fun Membership.requireTypesFit(
+    days: List<LocalDate>,
+    start: LocalDate = startDate,
+    end: LocalDate? = endDate,
+) {
+    if (days.any { it.isBefore(start) || (end != null && !it.isBefore(end)) }) throw MembershipTypeOutsideMembership(start, end)
+    if (days.isNotEmpty() && days.min() != start) throw FirstMembershipTypeStartsTheMembership()
+    days.firstOrNull { day -> days.count { it == day } > 1 }?.let { throw MembershipTypeOnTakenDay(it) }
+}
 
 private fun Membership.intervalEndingOn(endDate: LocalDate?): MembershipInterval =
     MembershipInterval(userId = this.userId, id = this.id, startDate = this.startDate, endDate = endDate)

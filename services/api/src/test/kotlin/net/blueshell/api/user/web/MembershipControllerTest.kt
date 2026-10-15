@@ -8,6 +8,7 @@ import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.MembershipService
 import net.blueshell.api.user.domain.MembershipUseCases
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -24,9 +25,10 @@ class MembershipControllerTest {
 
     private fun held(): Membership =
         Entities.membership(id = 9, startDate = LocalDate.of(2022, 9, 1)).apply {
-            recordType(MemberType.REGULAR, startDate)
-            recordType(MemberType.ALUMNI, alumniSince)
-            types.forEachIndexed { at, type -> type.id = at + 1L }
+            memberType = MemberType.ALUMNI
+            // Out of order, as a type added after the load is.
+            types += MembershipType(this, MemberType.ALUMNI, alumniSince).apply { id = 2 }
+            types += MembershipType(this, MemberType.REGULAR, startDate).apply { id = 1 }
             createdAt = Instant.EPOCH
             updatedAt = Instant.EPOCH
         }

@@ -14,7 +14,6 @@ import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -33,7 +32,6 @@ class ContributionEmailPlanner(
     private val preNotifications: IncassoNotificationService,
     private val erasure: UserErasureService,
     private val payments: PaymentDirectory,
-    private val clock: Clock = Clock.systemUTC(),
 ) {
     @Transactional(readOnly = true)
     fun plan(
@@ -99,7 +97,7 @@ class ContributionEmailPlanner(
         lastNotifiedOn: LocalDate?,
     ): ContributionEmailRow {
         val judged = judgedMembership(held)
-        val memberType = judged?.typeOn(LocalDate.now(clock)) ?: MemberType.REGULAR
+        val memberType = judged?.memberType ?: MemberType.REGULAR
         val feeType = resolveFeeType(memberType, judged?.startDate, period)
         val (disposition, reason) = decide(member, held, period, alreadyPaid, isDeleted, feeType == null)
 

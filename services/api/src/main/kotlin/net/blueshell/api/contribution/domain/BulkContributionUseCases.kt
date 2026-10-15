@@ -12,8 +12,6 @@ import net.blueshell.api.user.api.UserErasureService
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Clock
-import java.time.LocalDate
 
 /**
  * Records or removes contributions for a set of users in one period.
@@ -31,7 +29,6 @@ class BulkContributionUseCases(
     private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
     private val erasure: UserErasureService,
-    private val clock: Clock = Clock.systemUTC(),
 ) {
     @Transactional
     fun execute(
@@ -105,7 +102,7 @@ class BulkContributionUseCases(
         // Only actionable ids are inspected; the others have no membership worth reading.
         val honorary =
             selection.usable.filter { userId ->
-                memberships.findByUserId(userId).maxByOrNull { it.startDate }?.typeOn(LocalDate.now(clock)) == MemberType.HONORARY
+                memberships.findByUserId(userId).maxByOrNull { it.startDate }?.memberType == MemberType.HONORARY
             }
 
         val violations =

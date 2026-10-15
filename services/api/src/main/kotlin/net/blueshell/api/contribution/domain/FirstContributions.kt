@@ -5,7 +5,6 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.user.api.MembershipService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Clock
 import java.time.LocalDate
 
 /** The contribution that makes a pending membership active, for the latest period. */
@@ -23,14 +22,13 @@ data class FirstContribution(
 class FirstContributions(
     private val memberships: MembershipService,
     private val periods: ContributionPeriodService,
-    private val clock: Clock = Clock.systemUTC(),
 ) {
     /** Null where the user holds no pending membership. */
     @Transactional(readOnly = true)
     fun owedBy(userId: Long): FirstContribution? {
         val pending = memberships.findByUserId(userId).firstOrNull { it.isPending } ?: return null
         val period = periods.findLatest()
-        val feeType = period?.let { resolveFeeType(pending, LocalDate.now(clock), it) }
+        val feeType = period?.let { resolveFeeType(pending.memberType, pending.startDate, it) }
         return FirstContribution(
             membershipStartDate = pending.startDate,
             periodId = period?.id,

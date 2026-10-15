@@ -8,7 +8,6 @@ import net.blueshell.api.shared.dto.bulk.BulkFeeType
 import net.blueshell.api.user.api.MembershipService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 
@@ -33,7 +32,6 @@ class MemberContributions(
     private val contributions: ContributionRepository,
     private val reminders: ContributionReminderRepository,
     private val notifications: IncassoNotificationRepository,
-    private val clock: Clock = Clock.systemUTC(),
 ) {
     /** Every period the person held a membership in or paid for, newest first. */
     @Transactional(readOnly = true)
@@ -58,7 +56,7 @@ class MemberContributions(
                         .maxByOrNull { it.startDate }
                 // A payment recorded outside every membership is still listed, so it can be withdrawn.
                 if (membership == null && payment == null) return@mapNotNull null
-                val feeType = membership?.let { resolveFeeType(it, LocalDate.now(clock), period) }
+                val feeType = membership?.let { resolveFeeType(it.memberType, it.startDate, period) }
                 val lastEmail = emails.filter { it.first == periodId }.maxByOrNull { it.second }
                 MemberPeriodContribution(
                     periodId = periodId,

@@ -7,6 +7,7 @@ import net.blueshell.api.user.domain.GrantedRoles
 import net.blueshell.api.user.persistence.Address
 import net.blueshell.api.user.persistence.MemberProfile
 import net.blueshell.api.user.persistence.Membership
+import net.blueshell.api.user.persistence.MembershipType
 import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.User
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -105,7 +106,7 @@ class UserFactory(
             endDate = endDate,
             memberType = memberType,
             activatedOn = activatedOn,
-        ).apply { recordType(memberType, startDate) }
+        ).apply { types += MembershipType(this, memberType, startDate) }
 
     fun createMembership(
         user: User,

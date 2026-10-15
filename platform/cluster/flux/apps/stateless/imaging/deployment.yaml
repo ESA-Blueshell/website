@@ -1,7 +1,4 @@
-# Converts the stills uploaded to the api into WebP, so the decoder an uploaded picture reaches
-# runs here and not in the api (architecture ADR-014). It is handed bytes and answers bytes:
-# nothing to read, nothing to call and nothing to write, which is what every setting below holds
-# it to.
+# Decodes uploads away from the api; it reads, calls and writes nothing (architecture ADR-014).
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -26,7 +23,6 @@ spec:
     spec:
       serviceAccountName: imaging
       automountServiceAccountToken: false
-      # No service variables: it calls nothing, so it has no need to know where anything is.
       enableServiceLinks: false
       imagePullSecrets:
         - name: ghcr-pull-secret
@@ -42,7 +38,7 @@ spec:
           image: ghcr.io/esa-blueshell/imaging
           imagePullPolicy: IfNotPresent
           env:
-            # Below the limit, so the collector works harder before the kernel kills the pod.
+            # Below the limit, so GC tightens before an OOM kill.
             - name: GOMEMLIMIT
               value: 768MiB
           ports:
@@ -64,8 +60,7 @@ spec:
               port: http
             periodSeconds: 20
             failureThreshold: 6
-          # One conversion at a time, of at most 50 megapixels: the decoded picture and libwebp's
-          # copy of it fit in the limit with room for the response.
+          # One conversion at a time keeps a 50 megapixel picture inside the limit.
           resources:
             requests:
               cpu: 100m

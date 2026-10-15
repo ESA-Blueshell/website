@@ -13,10 +13,6 @@ import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.Path
 
-/**
- * What the api sends the imaging service and what it makes of each answer. The service itself is
- * a stub here; `ImagingServiceIT` runs the real one.
- */
 class ImagingServiceConverterTest {
     @TempDir
     private lateinit var directory: Path

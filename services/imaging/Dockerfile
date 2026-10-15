@@ -1,7 +1,5 @@
 # syntax=docker/dockerfile:1.27
-#
-# Build context: services/imaging. One static binary on a base with no shell, no package manager
-# and no libc: libwebp is linked in, and the pictures are decoded by Go (architecture ADR-014).
+# A static binary on a shell-less base (architecture ADR-014).
 
 FROM golang:1.26-alpine@sha256:3082400e369fa24d5fc60bca20edab3f6d604e0c5a690ec66b295eff4dd87ade AS build
 RUN apk add --no-cache build-base libwebp-dev libwebp-static
@@ -11,9 +9,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -linkmode external -extldflags "-static"' -o /out/imaging .
 
-# The unit suite, against the libwebp the image links and the cwebp the api used to run, held to
-# every statement, branch, condition and function by coverage.sh. CI builds this stage alone and reads the
-# profile and its totals out of the next one.
+# CI reads coverage.sh's output from the coverage stage.
 FROM build AS test
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 RUN apk add --no-cache libwebp-tools

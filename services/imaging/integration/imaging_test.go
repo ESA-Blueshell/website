@@ -1,8 +1,6 @@
 //go:build integration
 
-// Package integration drives a running imaging container over HTTP, as the api does. It is the
-// image under test, not the code: the static binary on its shell-less base, run read-only, as
-// nobody, with no capabilities. IMAGING_URL names it; see the README for how CI starts it.
+// Package integration drives the hardened container at IMAGING_URL over HTTP.
 package integration
 
 import (
@@ -35,7 +33,6 @@ func baseURL(t *testing.T) string {
 	return url
 }
 
-// answer is what the service said: its status, its headers and its body, read in full.
 type answer struct {
 	status int
 	header http.Header
@@ -79,7 +76,6 @@ func encoded(t *testing.T, encode func(io.Writer) error) []byte {
 	return b.Bytes()
 }
 
-// expectWebP checks the answer is a WebP of the size its headers name.
 func expectWebP(t *testing.T, got answer, width, height int) {
 	t.Helper()
 	if got.status != http.StatusOK {
@@ -138,8 +134,7 @@ func TestBytesThatAreNoPictureAreRefused(t *testing.T) {
 	}
 }
 
-// A PNG whose header claims 20000 by 20000 and whose body holds nothing: refused from the
-// header, before a bitmap of 1.6 GB could be allocated for it.
+// 20000x20000 in the header only: refused before 1.6 GB is allocated.
 func TestPictureClaimingTooManyPixelsIsRefusedFromItsHeader(t *testing.T) {
 	header := make([]byte, 13)
 	binary.BigEndian.PutUint32(header[0:], 20000)
@@ -163,7 +158,6 @@ func TestBodyOverTheByteLimitIsRefused(t *testing.T) {
 	}
 }
 
-// banner is an animated GIF of frames frames, each a different colour, shown for 100ms each.
 func banner(t *testing.T, width, height, frames int) []byte {
 	t.Helper()
 	g := &gif.GIF{}
@@ -181,7 +175,6 @@ func banner(t *testing.T, width, height, frames int) []byte {
 	return encoded(t, func(w io.Writer) error { return gif.EncodeAll(w, g) })
 }
 
-// framesIn counts the frames of an animated WebP, which is none for a still.
 func framesIn(body []byte) int {
 	return bytes.Count(body, []byte("ANMF"))
 }
@@ -210,7 +203,6 @@ func TestGifOfOneFrameIsAStill(t *testing.T) {
 	}
 }
 
-// A banner whose last frame cannot be decoded is served as its first frame, not refused.
 func TestBannerWithABrokenFrameIsServedAsItsFirst(t *testing.T) {
 	source := banner(t, 200, 100, 3)
 	last := bytes.LastIndexByte(source, 0x2C)
@@ -229,8 +221,7 @@ func TestAnimationOverTheFrameLimitIsRefused(t *testing.T) {
 	}
 }
 
-// A GIF whose screen claims 65535 by 65535: refused from its frame table, before a canvas of
-// 17 GB could be allocated for it.
+// A 65535x65535 screen: refused before 17 GB is allocated.
 func TestAnimationClaimingTooManyPixelsIsRefusedFromItsHeader(t *testing.T) {
 	source := banner(t, 4, 4, 2)
 	binary.LittleEndian.PutUint16(source[6:], 65535)

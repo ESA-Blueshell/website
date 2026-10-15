@@ -47,7 +47,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "The golangci-lint version the CI action installs for the imaging service. The action itself is pinned by digest and bumped by the github-actions manager.",
+      "description": "The golangci-lint version the imaging job installs.",
       "managerFilePatterns": [
         "/^\\.github/workflows/validate\\.yml$/"
       ],

@@ -9,13 +9,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.builder.ImageFromDockerfile
 import java.nio.file.Path
 
-/**
- * The imaging service every upload in a test is converted by, as the cluster runs it: read-only,
- * as nobody, with no capabilities.
- *
- * `IMAGING_URL` where CI has started one already. Otherwise built from its own Dockerfile and
- * started once for the whole run, by the first context that asks for it.
- */
+/** The hardened imaging container: `IMAGING_URL` in CI, otherwise built once with Testcontainers. */
 object ImagingService {
     private const val PORT = 8080
 
@@ -39,7 +33,6 @@ object ImagingService {
             .also { it.start() }
 }
 
-/** Points `app.imaging.url` at [ImagingService], resolved when the converter first reads it. */
 @TestConfiguration(proxyBeanMethods = false)
 class ImagingServiceConfig {
     @Bean

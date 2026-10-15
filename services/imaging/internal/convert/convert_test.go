@@ -137,8 +137,7 @@ func TestBytesNoDecoderReadsAreRefused(t *testing.T) {
 	}
 }
 
-// The bytes cwebp wrote when the api ran it, for the same picture and the same flags. Skipped
-// where cwebp is not installed; the image's check stage installs it.
+// Skipped without cwebp; the image's test stage installs it.
 func TestOutputMatchesCwebp(t *testing.T) {
 	cwebp, err := exec.LookPath("cwebp")
 	if err != nil {
@@ -194,7 +193,7 @@ func TestFittedWithinRoundsAsTheApiDoes(t *testing.T) {
 }
 
 func TestPictureWithNoPixelsIsRefused(t *testing.T) {
-	// The offsets of the height and the width in a JPEG's start-of-frame segment.
+	// Offsets in a JPEG's start-of-frame segment.
 	for name, at := range map[string]int{"no height": 5, "no width": 7} {
 		data := jpegOf(t, picture(8, 8, false))
 		for i := 0; i+1 < len(data); i++ {
@@ -209,7 +208,7 @@ func TestPictureWithNoPixelsIsRefused(t *testing.T) {
 	}
 }
 
-// plain is a picture that says nothing about its own opacity, as an image.Image need not.
+// plain hides Opaque.
 type plain struct{ image.Image }
 
 func TestPictureThatCannotSayItIsOpaqueIsTakenAsTransparent(t *testing.T) {

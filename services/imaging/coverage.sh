@@ -1,8 +1,6 @@
 #!/bin/sh
-# The unit suite, held to every statement, branch, condition and function, with the totals written
-# beside the profile for the pull request report. The image's test stage runs it; so can a host
-# with libwebp installed. Go measures only statements, so branches and conditions come from gobco
-# and functions from the profile itself.
+# Holds the unit suite to every statement, branch, condition and function; branches and conditions
+# come from gobco.
 set -eu
 
 out=${1:-coverage}
@@ -14,8 +12,7 @@ statements=$(awk '/^total:/ { sub("%", "", $3); print $3 }' "$out/functions.txt"
 functions=$(grep -vc '^total:' "$out/functions.txt")
 functions_run=$(awk '!/^total:/ && $NF != "0.0%"' "$out/functions.txt" | wc -l | tr -d ' ')
 
-# gobco cannot read a cgo file, so the packages that call libwebp hold no decision of their own:
-# every branch is in Go it can instrument, and this refuses one written there.
+# gobco cannot read cgo, so cgo packages may hold no branch.
 for package in $(go list -f '{{if .CgoFiles}}{{.Dir}}{{end}}' ./internal/...); do
   for file in "$package"/*.go; do
     if sed -n '/^import "C"/,$p' "$file" | grep -En '^[[:space:]]*(if|for|switch|select)[[:space:]]|&&|\|\|'; then
@@ -25,15 +22,13 @@ for package in $(go list -f '{{if .CgoFiles}}{{.Dir}}{{end}}' ./internal/...); d
   done
 done
 
-# Branch mode counts each branch taken; condition mode counts each operand of && and || both ways,
-# which is where a malformed header's edge cases sit. Each runs the suite again under gobco.
 gobco_total() {
   mode=$1
   shift
   taken=0
   total=0
   for package in $(go list -f '{{if not .CgoFiles}}{{.Dir}}{{end}}' ./internal/...); do
-    # gobco takes a directory relative to the module, not an import path.
+    # gobco wants a module-relative directory.
     report=$(go tool gobco "$@" "./${package#"$PWD"/}")
     echo "$report" >&2
     counted=$(echo "$report" | sed -n "s/^$mode coverage: \([0-9]*\)\/\([0-9]*\)\$/\1 \2/p")
@@ -43,7 +38,7 @@ gobco_total() {
   echo "$taken $total"
 }
 
-# Assigned before they are split, so a gobco run that fails stops the script here.
+# Assigned first, so a failed gobco run stops the script.
 counted=$(gobco_total Branch -branch)
 branches_taken=${counted% *}
 branches=${counted#* }

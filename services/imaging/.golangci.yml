@@ -1,9 +1,6 @@
-# The standard set, and the linters that catch what a small HTTP service gets wrong: an unchecked
-# or mis-wrapped error, a request body left open, a request with no context, and what gosec knows.
 version: "2"
 
 run:
-  # The container tests are Go too, and held to the same rules.
   build-tags:
     - integration
 
@@ -27,14 +24,13 @@ linters:
   settings:
     gosec:
       excludes:
-        # G103: the one unsafe use is handing a Go slice to libwebp, which is what cgo is for.
+        # G103: handing a slice to libwebp is what cgo is for.
         - G103
   exclusions:
     rules:
-      # cgo rewrites the call into libwebp, and gocritic reads the rewrite.
+      # gocritic reads cgo's rewrite.
       - path: internal/libwebp/libwebp\.go
         linters: [gocritic]
-      # The parity test runs cwebp on files it wrote itself.
       - path: _test\.go
         text: "G204|G304"
         linters: [gosec]

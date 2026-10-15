@@ -37,8 +37,7 @@ frontend:
 system:
   - 'tests/**'
 
-# The imaging service's lint, unit suite, image and container tests. It shares nothing with the
-# jar or the bundle, so it turns on none of their suites.
+# The imaging job, the compile jobs and the system tests tagged `imaging`.
 imaging:
   - 'services/imaging/**'
   - '!services/imaging/docker-compose.yml'

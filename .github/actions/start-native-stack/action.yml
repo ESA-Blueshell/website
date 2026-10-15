@@ -22,7 +22,6 @@ inputs:
 runs:
   using: composite
   steps:
-    # The api converts every upload through it, and reads IMAGING_URL to find it.
     - name: Start the imaging service
       uses: ./.github/actions/start-imaging
 

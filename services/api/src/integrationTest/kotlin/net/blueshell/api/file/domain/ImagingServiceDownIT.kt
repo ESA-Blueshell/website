@@ -26,10 +26,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-/**
- * With the imaging service down, a still upload is refused for now and nothing of it is kept,
- * and an animation's widths wait on a job that fails and is retried.
- */
 @SpringBootTest
 @Import(ImagingServiceDownIT.Down::class)
 class ImagingServiceDownIT : UserTestSupport() {
@@ -68,7 +64,7 @@ class ImagingServiceDownIT : UserTestSupport() {
 
     @Test
     fun `an animation's widths are queued, and the job fails and is retried rather than given up`() {
-        // A GIF master, as the rows stored before WebP masters hold, which is what a start's backfill queues.
+        // A legacy GIF master, as the startup backfill queues.
         val key = StoredFileNames.keyOf(FileType.EVENT_BANNER.directory, "down-banner.gif")
         val gif = AnimatedGifs.patched(1000, 400)
         blobs.put(key, gif.inputStream())
@@ -98,7 +94,6 @@ class ImagingServiceDownIT : UserTestSupport() {
         assertThat(files.findByPath(key).orElseThrow().renditions).isEmpty()
     }
 
-    /** The converter pointed at a port nothing listens on, in place of the running service. */
     @TestConfiguration(proxyBeanMethods = false)
     class Down {
         @Bean

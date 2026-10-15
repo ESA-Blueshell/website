@@ -3,12 +3,9 @@ package net.blueshell.api.testsupport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * What a WebP's own frame table says, read from the container rather than decoded: the tests that
- * check an animation kept its timing have no decoder to lean on, and need none.
- */
+/** Frame durations read from a WebP's container, since the tests have no WebP decoder. */
 object WebpFrames {
-    /** How long each frame of [webp] is shown, in order, or nothing where it is a still. */
+    /** Nothing for a still. */
     fun durationsOf(webp: ByteArray): List<Int>? {
         val buffer = ByteBuffer.wrap(webp).order(ByteOrder.LITTLE_ENDIAN)
         val durations = mutableListOf<Int>()
@@ -30,6 +27,5 @@ object WebpFrames {
     private const val RIFF_HEADER = 12
     private const val CHUNK_HEADER = 8
 
-    // An ANMF payload opens with the frame's offset, width and height, three bytes each.
     private const val DURATION_OFFSET = 12
 }

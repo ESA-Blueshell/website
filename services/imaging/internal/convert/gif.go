@@ -10,15 +10,8 @@ import (
 
 var errMalformed = errors.New("the picture's structure could not be read")
 
-// gifAnimation reads the structure of a GIF without decoding any frame, so its size and frame
-// count are known before a pixel is allocated. Each frame is decoded on its own later, by Go's
-// decoder, from a GIF of that frame alone.
-//
-// The canvas is the logical screen where it holds every frame, and grows to hold the ones that
-// reach outside it, as the api's reader did: cropping them would drop what was drawn.
-//
-// A GIF whose structure breaks off after its first frame answers the frames before the break
-// and the error, which the caller turns into a still of the first frame.
+// gifAnimation reads the block structure without decoding, so limits apply before allocation. The
+// canvas grows to hold frames outside the logical screen, as the api's reader did.
 func gifAnimation(data []byte) (*animation, error) {
 	const header = 13
 	if len(data) < header {
@@ -61,7 +54,6 @@ func gifAnimation(data []byte) (*animation, error) {
 				if descriptor[9]&0x80 != 0 {
 					start += 3 << (descriptor[9]&0x07 + 1)
 				}
-				// The LZW code size, then the image data.
 				blocks, err := subBlocks(data, start+1)
 				if err != nil {
 					return err
@@ -95,7 +87,6 @@ func gifAnimation(data []byte) (*animation, error) {
 	return a, err
 }
 
-// subBlocks is the offset just past the sub-blocks that start at at.
 func subBlocks(data []byte, at int) (int, error) {
 	for at < len(data) {
 		size := int(data[at])
@@ -113,11 +104,7 @@ type gifFrame struct {
 	rect    image.Rectangle
 }
 
-// frame is one GIF frame as the compositor draws it.
-//
-// A GIF counts in hundredths of a second, and a frame that asks for none or for one is asking
-// faster than any browser draws: both are held at the tenth of a second every renderer
-// substitutes, as the api did.
+// frame holds a delay of 0 or 1 hundredths at 100ms, as browsers do.
 func (f gifFrame) frame(prefix []byte, width, height int) frame {
 	delay, disposal := 0, 0
 	if f.control != nil {
@@ -144,8 +131,7 @@ func (f gifFrame) frame(prefix []byte, width, height int) frame {
 	}
 }
 
-// decode reads the frame through a GIF that holds it alone, on a logical screen the size of the
-// canvas, so that Go's decoder accepts a frame that reaches outside the screen the file declared.
+// decode uses a one-frame GIF on a canvas-sized screen, so Go accepts frames outside the declared one.
 func (f gifFrame) decode(prefix []byte, width, height int) (image.Image, error) {
 	one := make([]byte, 0, len(prefix)+len(f.control)+len(f.image)+1)
 	one = append(one, prefix...)

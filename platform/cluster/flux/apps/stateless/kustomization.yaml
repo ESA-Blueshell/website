@@ -22,9 +22,7 @@ images:
   - name: ghcr.io/esa-blueshell/frontend
     newTag: v1.23.2 # {"$imagepolicy": "flux-system:frontend:tag"}
     digest: sha256:9990aed83554392bf70adb281f919b2e5bff9019d58cf0b0d76d0c4701a21b9c # {"$imagepolicy": "flux-system:frontend:digest"}
-  # Released with the rest. No release has built it yet, so this names no image and the pod
-  # waits in ImagePullBackOff until the first one does and the scan rewrites both lines. The api
-  # that calls it ships in that same release.
+  # A placeholder until the first release publishes it; the scan rewrites both lines.
   - name: ghcr.io/esa-blueshell/imaging
     newTag: v1.23.2 # {"$imagepolicy": "flux-system:imaging:tag"}
     digest: sha256:0000000000000000000000000000000000000000000000000000000000000000 # {"$imagepolicy": "flux-system:imaging:digest"}

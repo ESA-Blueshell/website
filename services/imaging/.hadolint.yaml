@@ -1,4 +1,3 @@
 ignored:
-  # The base image is pinned by digest, and Alpine drops a package version from its index once a
-  # newer one ships, so a pinned apk version breaks the build rather than holding it still.
+  # Alpine drops old package versions, so pinning apk versions breaks the build.
   - DL3018

@@ -73,8 +73,6 @@ jobs:
       # Every bucket in `.github/buckets.yml`, and `app`, as one JSON object. A
       # job reads one as `fromJSON(needs.changes.outputs.run).<bucket>`.
       run: ${{ steps.decide.outputs.run }}
-      # Which system tests to run and on how many shards, as JSON: all of them on six where the jar
-      # or the bundle changed, only those tagged `imaging` on one where only the imaging service did.
       system-tests: ${{ steps.decide.outputs.system-tests }}
     steps:
       - name: Checkout repository
@@ -224,11 +222,7 @@ jobs:
         run: ./scripts/check-workflow-permissions.py
 
   imaging:
-    # The imaging service shares nothing with the jar or the bundle, so it has a job of its own.
-    # Lint and the vulnerability check read the source on the runner. The unit suite runs in the
-    # image's test stage, against the libwebp the image links and the cwebp the api used to run,
-    # and has to reach every statement, branch, condition and function. The container tests then drive the image the cluster runs,
-    # read-only, as nobody and with no capabilities, and count towards no coverage.
+    # Unit coverage comes from the image's test stage; the container tests count towards none.
     name: Imaging lint, tests and image
     needs: changes
     if: fromJSON(needs.changes.outputs.run).imaging
@@ -246,7 +240,6 @@ jobs:
           go-version-file: services/imaging/go.mod
           cache-dependency-path: services/imaging/go.sum
 
-      # The encoder is cgo, so type-checking it needs libwebp's headers.
       - name: Install libwebp's headers
         run: sudo apt-get install -y --no-install-recommends libwebp-dev
 
@@ -256,9 +249,7 @@ jobs:
           version: v2.14.0
           working-directory: services/imaging
 
-      # Run on the toolchain set up above, which is the one go.mod names. The vulnerability
-      # check's own action sets up the go directive's Go instead, and reports the standard
-      # library of a release the image never builds with.
+      # Not govulncheck-action: it sets up go.mod's go directive, not the toolchain the image uses.
       - name: Check for known vulnerabilities
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 
@@ -289,8 +280,6 @@ jobs:
           docker buildx build --progress=plain --load -t blueshell-website/imaging:ci \
             --cache-from type=gha,scope=imaging --cache-to type=gha,mode=max,scope=imaging .
 
-      # The pod's own limits and restrictions: no writable filesystem, no capabilities and the
-      # image's non-root user.
       - name: Start the image as the cluster runs it
         run: |
           docker run -d --name imaging --read-only --cap-drop ALL --security-opt no-new-privileges \
@@ -313,7 +302,6 @@ jobs:
     # `vite preview`, so building it once here spares six shards a build each.
     name: Frontend typecheck, lint and build
     needs: changes
-    # The imaging service's own system tests serve this branch's bundle too.
     if: fromJSON(needs.changes.outputs.run).app || fromJSON(needs.changes.outputs.run).imaging
     runs-on: ubuntu-latest
     defaults:
@@ -356,7 +344,6 @@ jobs:
     # so building it once here spares six shards a build each.
     name: API compile checks and jar
     needs: changes
-    # The imaging service's own system tests drive this branch's jar too.
     if: fromJSON(needs.changes.outputs.run).app || fromJSON(needs.changes.outputs.run).imaging
     runs-on: ubuntu-latest
     steps:
@@ -589,7 +576,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Every upload a test makes is converted by it; the tests find it through IMAGING_URL.
       - name: Start the imaging service
         uses: ./.github/actions/start-imaging
 
@@ -765,9 +751,7 @@ jobs:
     # Each shard runs its own slice of the test classes, picked by a stable
     # hash of the class name, so a class always lands on the same shard. See
     # `shardByTestClass()` in build-logic/src/main/kotlin/TestSharding.kt.
-    #
-    # A change to the imaging service alone runs the tests tagged `imaging` on one shard: the ones
-    # that convert a picture through it, against this branch's api and frontend.
+    # An imaging-only change runs just the `imaging`-tagged tests on one shard.
     name: System tests (shard ${{ matrix.shard }}/${{ fromJSON(needs.changes.outputs.system-tests).total }})
     runs-on: ubuntu-latest
     timeout-minutes: 45

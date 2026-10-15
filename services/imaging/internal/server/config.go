@@ -8,8 +8,7 @@ import (
 	"time"
 )
 
-// FromEnv is the HTTP server the settings in getenv describe, each with a default that suits a
-// pod of 1 GiB.
+// FromEnv reads the IMAGING_* settings; the defaults suit a 1 GiB pod.
 func FromEnv(getenv func(string) string, log *slog.Logger) (*http.Server, error) {
 	var limits Limits
 	var concurrency int
@@ -44,8 +43,7 @@ func FromEnv(getenv func(string) string, log *slog.Logger) (*http.Server, error)
 		"max_frames", limits.Picture.MaxFrames, "max_animation_pixels", limits.Picture.MaxAnimationPixels,
 		"wait", limits.Wait, "concurrency", concurrency)
 
-	// The read timeout covers the largest body over a slow link, and the write timeout a request
-	// that waited its turn and then converted the largest picture.
+	// The write timeout covers the wait for a slot plus the longest conversion.
 	return &http.Server{
 		Addr:              listen,
 		Handler:           New(limits, concurrency, log),

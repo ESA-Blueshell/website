@@ -8,7 +8,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class ImageDimensionsTest {
-    /** The head of an extended WebP container: its chunk header and the canvas it declares. */
     private fun webpHeader(
         width: Int,
         height: Int,
@@ -29,28 +28,20 @@ class ImageDimensionsTest {
 
     private fun sizeOf(bytes: ByteArray) = ImageDimensions.of(ByteArrayInputStream(bytes))
 
-    /** A tall picture, so a transposed width and height would not pass as the right answer. */
+    // Tall, so a transposed answer fails.
     @Test
     fun `reads the size of a webp from its header`() {
         assertThat(sizeOf(webpHeader(4, 19))).isEqualTo(ImageDimensions.Size(4, 19))
     }
 
-    /** The api decodes no uploaded picture, so a format other than WebP has no size here. */
     @Test
     fun `answers nothing for a png, whose header it does not read`() {
         val png = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 13, 10, 26, 10) + ByteArray(24)
         assertThat(sizeOf(png)).isNull()
     }
 
-    /**
-     * What a kind's ceiling does to a size.
-     *
-     * The rule is the one thing here that is arithmetic rather than I/O, and it is what decides
-     * the width a stored picture actually has, so it is proven without touching a file.
-     */
     @Nested
     inner class FittedWithin {
-        /** Nothing is upscaled: a picture narrower than its ceiling keeps its own width. */
         @Test
         fun `leaves a size already within the ceiling alone`() {
             assertThat(ImageDimensions.Size(400, 240).fittedWithin(2560))
@@ -69,17 +60,12 @@ class ImageDimensionsTest {
                 .isEqualTo(ImageDimensions.Size(2560, 1024))
         }
 
-        /** The ceiling governs the longest edge, so a portrait is capped by its height. */
         @Test
         fun `caps a tall picture by its height`() {
             assertThat(ImageDimensions.Size(1200, 3000).fittedWithin(2560))
                 .isEqualTo(ImageDimensions.Size(1024, 2560))
         }
 
-        /**
-         * A panorama scales its short edge below half a pixel. Rounding it to nothing would
-         * hand the encoder a zero-width target, which it refuses.
-         */
         @Test
         fun `never scales an edge away to nothing`() {
             assertThat(ImageDimensions.Size(8000, 3).fittedWithin(512))
@@ -97,10 +83,7 @@ class ImageDimensionsTest {
         assertThat(sizeOf(ByteArray(0))).isNull()
     }
 
-    /**
-     * A header that announces a picture and then stops. This is the case that decides whether
-     * an unreadable upload is stored without its size or refused outright: it is stored.
-     */
+    // Stored without a size rather than refused.
     @Test
     fun `answers nothing for a truncated picture`() {
         assertThat(sizeOf(webpHeader(12, 12).copyOfRange(0, 16))).isNull()

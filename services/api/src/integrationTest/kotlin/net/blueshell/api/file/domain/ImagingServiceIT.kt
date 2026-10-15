@@ -22,11 +22,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-/**
- * Uploads converted by the real imaging service: a still's master and every width stored as WebP
- * at the sizes the api's own converter drew them at, and an animated banner kept animated at
- * every width.
- */
 @SpringBootTest
 class ImagingServiceIT : UserTestSupport() {
     @Autowired
@@ -99,7 +94,6 @@ class ImagingServiceIT : UserTestSupport() {
 
         val path = stored["path"].asString()
         assertThat(storedSize(path)).isEqualTo(ImageDimensions.Size(300, 300))
-        // VP8L is the lossless bitstream, which carries the alpha in itself.
         val header = blobs.open(path).use { it.readNBytes(16) }
         assertThat(String(header, 12, 4, Charsets.US_ASCII)).isEqualTo("VP8L")
     }
@@ -136,7 +130,6 @@ class ImagingServiceIT : UserTestSupport() {
 
     private fun gif(bytes: ByteArray) = MockMultipartFile("file", "banner.gif", MediaType.IMAGE_GIF_VALUE, bytes)
 
-    /** The frame durations of the WebP stored at [path], or nothing where it is a still. */
     private fun durationsOf(path: String) = blobs.open(path).use { WebpFrames.durationsOf(it.readAllBytes()) }
 
     private fun runRenditionJobOf(fileId: Long) {
@@ -146,7 +139,7 @@ class ImagingServiceIT : UserTestSupport() {
         assertThat(jobExecutions.findById(job.id!!).orElseThrow().status).isEqualTo(JobExecutionStatus.SUCCESS)
     }
 
-    /** [gif] with its last frame's LZW code size made one no GIF has, so that frame alone will not decode. */
+    // An LZW code size no GIF has, so only the last frame fails to decode.
     private fun withBrokenLastFrame(gif: ByteArray): ByteArray {
         val bytes = gif.copyOf()
         var at = 13 + colourTableOf(bytes[10])

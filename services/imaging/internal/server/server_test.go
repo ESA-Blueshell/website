@@ -144,7 +144,6 @@ func TestEncoderFailureIsTheServicesOwn(t *testing.T) {
 	}
 }
 
-// blocking holds the one conversion until released, so a second request finds none free.
 func blocking(started, release chan struct{}) func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
 	return func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
 		close(started)

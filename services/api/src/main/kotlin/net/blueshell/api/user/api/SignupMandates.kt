@@ -30,12 +30,5 @@ class SignupMandates(
         accountHolder: String,
         wordingVersion: String,
         address: AddressFields,
-    ): OwnMandate {
-        val authorisation = OnlineAuthorisation(wordingVersion, address)
-        return if (mandates.collectable(userId) != null) {
-            mandates.changeOwn(userId, iban, accountHolder, authorisation)
-        } else {
-            mandates.setUpOwn(userId, iban, accountHolder, authorisation)
-        }
-    }
+    ): OwnMandate = mandates.setUpOwn(userId, iban, accountHolder, OnlineAuthorisation(wordingVersion, address))
 }

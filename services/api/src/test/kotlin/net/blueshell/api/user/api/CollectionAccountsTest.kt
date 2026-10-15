@@ -15,8 +15,8 @@ class CollectionAccountsTest {
     @Test
     fun `opens mandates' accounts in full in one call, and never logs them`() {
         val mandates: Mandates = mock()
-        val mandate = IncassoMandate("sealed", "sealed", "4300", "BLUESHELL-1", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
-        whenever(mandates.bankDetailsOf(listOf(7L to mandate)))
+        val mandate = IncassoMandate("4300", "BLUESHELL-1", LocalDate.of(2025, 9, 3), null, Instant.EPOCH, accountVersion = 1)
+        whenever(mandates.bankDetailsOf(listOf(7L)))
             .thenReturn(listOf(BankDetails(requireNotNull(Iban.parse("NL91ABNA0417164300")), "Ann Vos")))
 
         val account = CollectionAccounts(mandates).of(listOf(7L to mandate)).single()

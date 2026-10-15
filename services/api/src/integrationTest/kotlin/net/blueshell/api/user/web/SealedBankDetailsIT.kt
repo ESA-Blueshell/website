@@ -94,7 +94,7 @@ class SealedBankDetailsIT : UserTestSupport() {
     }
 
     private fun sealedOf(userId: Long) =
-        jdbc.queryForMap("SELECT mandate_iban, mandate_account_holder FROM payment_details WHERE user_id = ?", userId)
+        jdbc.queryForMap("SELECT account_iban, account_holder FROM payment_details WHERE user_id = ?", userId)
 
     @Test
     fun `a paper and an online mandate hold no plaintext, and their two values share a key version`() {
@@ -122,7 +122,7 @@ class SealedBankDetailsIT : UserTestSupport() {
 
         jdbc.update(
             "UPDATE payment_details theirs JOIN payment_details anns ON anns.user_id = ? " +
-                "SET theirs.mandate_iban = anns.mandate_iban, theirs.mandate_account_holder = anns.mandate_account_holder " +
+                "SET theirs.account_iban = anns.account_iban, theirs.account_holder = anns.account_holder " +
                 "WHERE theirs.user_id = ?",
             annId,
             bobId,
@@ -184,7 +184,7 @@ class SealedBankDetailsIT : UserTestSupport() {
 
         val online =
             jdbc.queryForMap(
-                "SELECT mandate_iban, mandate_account_holder, mandate_address FROM payment_details WHERE user_id = ?",
+                "SELECT account_iban, account_holder, mandate_address FROM payment_details WHERE user_id = ?",
                 applicant.id,
             )
         assertThat((sealedOf(memberId).values + online.values).map { keyVersionOf(it.toString()) }).hasSize(5).containsOnly(newest)

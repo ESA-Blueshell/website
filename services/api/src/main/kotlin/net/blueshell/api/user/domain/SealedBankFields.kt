@@ -20,14 +20,14 @@ class SealedBankFields(
 ) {
     @Bean
     fun mandateIbans(): SealedField =
-        column("mandate IBAN", SealedBankDetails.IBAN, mandates::findSealedMandates, SealedAccountRow::iban, mandates::swapSealedIban)
+        column("mandate IBAN", SealedBankDetails.IBAN, mandates::findSealedAccounts, SealedAccountRow::iban, mandates::swapSealedIban)
 
     @Bean
     fun mandateAccountHolders(): SealedField =
         column(
             "mandate account holder",
             SealedBankDetails.ACCOUNT_HOLDER,
-            mandates::findSealedMandates,
+            mandates::findSealedAccounts,
             SealedAccountRow::accountHolder,
             mandates::swapSealedAccountHolder,
         )
@@ -37,7 +37,7 @@ class SealedBankFields(
         column(
             "mandate address",
             SealedBankDetails.ADDRESS,
-            mandates::findSealedMandates,
+            mandates::findSealedAccounts,
             SealedAccountRow::address,
             mandates::swapSealedAddress,
         )

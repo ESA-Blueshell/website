@@ -27,7 +27,7 @@ class SealedBankFieldsTest {
 
     @Test
     fun `offers each bank column under its own field and person, and swaps a moved value into that column`() {
-        whenever(mandates.findSealedMandates()).thenReturn(listOf(row(12, 7)))
+        whenever(mandates.findSealedAccounts()).thenReturn(listOf(row(12, 7)))
         whenever(mandates.swapSealedIban(12, "a", "b")).thenReturn(1)
         whenever(mandates.swapSealedAccountHolder(12, "a", "b")).thenReturn(0)
 
@@ -44,7 +44,7 @@ class SealedBankFieldsTest {
 
     @Test
     fun `offers an online mandate's address, and nothing for a paper mandate, which has none`() {
-        whenever(mandates.findSealedMandates()).thenReturn(listOf(row(12, 7), row(4, 9)))
+        whenever(mandates.findSealedAccounts()).thenReturn(listOf(row(12, 7), row(4, 9)))
         whenever(mandates.swapSealedAddress(4, "a", "b")).thenReturn(0)
 
         assertThat(fields.mandateAddresses().name).isEqualTo("mandate address")

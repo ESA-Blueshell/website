@@ -1,6 +1,7 @@
 package net.blueshell.api.user.api
 
 import net.blueshell.api.user.domain.Mandates
+import net.blueshell.api.user.persistence.BankAccount
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.PaymentDetailsRepository
@@ -27,11 +28,15 @@ class PaymentDirectoryTest {
     }
 
     private fun mandate() =
-        IncassoMandate("sealed", "sealed", "NL00", "BLUESHELL-1-20260901", LocalDate.of(2026, 9, 1), null, Instant.EPOCH)
+        IncassoMandate("NL00", "BLUESHELL-1-20260901", LocalDate.of(2026, 9, 1), null, Instant.EPOCH, accountVersion = 1)
 
     @Test
     fun `a standing mandate pays by direct debit, an ended one or none pays by transfer`() {
-        val held = PaymentDetails(1).apply { mandate = mandate() }
+        val held =
+            PaymentDetails(1).apply {
+                mandate = mandate()
+                bankAccount = BankAccount("sealed", "sealed", null, "NL00", 1, Instant.EPOCH)
+            }
         whenever(repository.findByUserIdIn(setOf(1L, 2L))).thenReturn(listOf(held))
 
         val paying = directory.of(listOf(1L, 2L))
@@ -39,7 +44,7 @@ class PaymentDirectoryTest {
         assertThat(paying.getValue(1).incasso).isTrue()
         assertThat(paying.getValue(1).collectable?.reference).isEqualTo("BLUESHELL-1-20260901")
         assertThat(paying.getValue(2)).isEqualTo(PersonPayment(incasso = false, mandate = null))
-        held.mandate!!.sealedIban = null
+        held.bankAccount = null
         assertThat(directory.of(listOf(1L, 2L)).getValue(1).collectable).isNull()
         assertThat(directory.of(listOf(1L, 2L)).getValue(1).incasso).isTrue()
         held.mandate!!.endedOn = LocalDate.of(2026, 10, 1)

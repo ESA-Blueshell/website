@@ -11,10 +11,12 @@ data class PersonPayment(
     /** Pays by direct debit: a mandate stands, with or without bank details to collect from. */
     val incasso: Boolean,
     val mandate: IncassoMandate?,
+    /** Whether the bank account the mandate was given for is on file (api ADR-041). */
+    val accountKept: Boolean = mandate?.accountVersion != null,
 ) {
-    /** The mandate they can be collected under: a standing one that still holds its bank details. */
+    /** The mandate they can be collected under: a standing one whose bank account is on file. */
     val collectable: IncassoMandate?
-        get() = mandate?.takeIf { incasso && !it.wiped }
+        get() = mandate?.takeIf { incasso && accountKept }
 }
 
 /** How people pay, read for the contribution reminders, notifications and incasso runs. */
@@ -29,7 +31,7 @@ class PaymentDirectory(
         if (userIds.isEmpty()) return emptyMap()
         val found = payments.findByUserIdIn(userIds.toSet()).associateBy { it.userId }
         return userIds.associateWith { userId ->
-            found[userId]?.let { PersonPayment(mandates.stands(it.mandate), it.mandate) } ?: BY_TRANSFER
+            found[userId]?.let { PersonPayment(mandates.stands(it.mandate), it.mandate, it.mandateAccountKept) } ?: BY_TRANSFER
         }
     }
 

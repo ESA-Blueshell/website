@@ -1,0 +1,22 @@
+# A person's bank account is kept once, apart from the mandate given for it (api ADR-041). Each
+# mandate's sealed details are copied to the person's bank account as they were sealed, and the
+# mandate records the account it was given for. mandate_iban and mandate_account_holder keep their
+# copy for the release before this one; this one only clears them, and a later one drops them.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-15-bank-account.yaml
+      id: bank-account
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: payment_details
+            columns:
+              - column: {name: account_iban, type: VARCHAR(255)}
+              - column: {name: account_holder, type: VARCHAR(512)}
+              - column: {name: account_bic, type: VARCHAR(11)}
+              - column: {name: account_iban_masked, type: CHAR(4)}
+              - column: {name: account_version, type: INT}
+              - column: {name: account_recorded_at, type: DATETIME(6)}
+              - column: {name: mandate_account_version, type: INT}
+        - customChange:
+            class: net.blueshell.api.platform.migration.BankDetailsMoveToTheAccount

@@ -55,7 +55,7 @@ class IncassoFilesTest {
     ) = IncassoRun(4, date, "Contributie", 9, Instant.EPOCH, submittedAt = submittedAt).also { it.id = 11 }
 
     private fun mandate(reference: String) =
-        IncassoMandate("sealed", "sealed", "4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+        IncassoMandate("4300", reference, LocalDate.of(2025, 9, 3), null, Instant.EPOCH, accountVersion = 1)
 
     private fun told(user: User) =
         IncassoNotification(
@@ -89,7 +89,7 @@ class IncassoFilesTest {
             @Suppress("UNCHECKED_CAST")
             (invocation.arguments[0] as Collection<Long>).associateWith { id ->
                 val reference = if (id in changed) "BLUESHELL-NEW" else "BLUESHELL-$id"
-                PersonPayment(incasso = id !in stopped, mandate = mandate(reference).apply { if (id in wiped) sealedIban = null })
+                PersonPayment(incasso = id !in stopped, mandate = mandate(reference), accountKept = id !in wiped)
             }
         }
         // One answer per member asked for, as the one batched call gives them.

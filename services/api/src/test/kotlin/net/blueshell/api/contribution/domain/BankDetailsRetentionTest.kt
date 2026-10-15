@@ -5,7 +5,7 @@ import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.MandateRetention
-import net.blueshell.api.user.api.StoppedMandate
+import net.blueshell.api.user.api.StoppedAccount
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -31,7 +31,8 @@ class BankDetailsRetentionTest {
     private fun stopped(
         userId: Long,
         lastCollection: LocalDate?,
-    ) = StoppedMandate(userId, "BLUESHELL-$userId").also {
+        recordedOn: LocalDate = LocalDate.of(2020, 1, 1),
+    ) = StoppedAccount(userId, "BLUESHELL-$userId", recordedOn).also {
         whenever(notifications.lastCollectionDate(eq(it.userId), eq(it.reference), any())).thenReturn(lastCollection)
     }
 
@@ -55,6 +56,17 @@ class BankDetailsRetentionTest {
         verify(mandates).wipe(never, today)
         // A run not yet marked as submitted, its date still ahead, may be in ING already.
         verify(mandates, never()).wipe(onItsWay, today)
+    }
+
+    @Test
+    fun `an account no mandate was given for waits 13 months from the day it was put on file`() {
+        val recent = StoppedAccount(6, "", LocalDate.of(2025, 9, 4))
+        val old = StoppedAccount(7, "", LocalDate.of(2025, 9, 3))
+        whenever(mandates.stopped(today)).thenReturn(listOf(recent, old))
+        whenever(mandates.wipe(old, today)).thenReturn(true)
+
+        assertThat(retention.wipeExpired()).isEqualTo(1)
+        verify(mandates, never()).wipe(recent, today)
     }
 
     @Test

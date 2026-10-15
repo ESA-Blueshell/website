@@ -75,7 +75,7 @@ class BankDetailsWipeIT : UserTestSupport() {
 
     private fun mandateOf(userId: Long) =
         jdbc.queryForMap(
-            "SELECT mandate_iban, mandate_account_holder, mandate_address, mandate_reference, mandate_signed_on, mandate_iban_masked " +
+            "SELECT account_iban, account_holder, mandate_address, mandate_reference, mandate_signed_on, mandate_iban_masked " +
                 "FROM payment_details WHERE user_id = ?",
             userId,
         )
@@ -87,7 +87,7 @@ class BankDetailsWipeIT : UserTestSupport() {
         mandateOf(userId)
             .filterKeys {
                 it in
-                    setOf("mandate_iban", "mandate_account_holder", "mandate_address")
+                    setOf("account_iban", "account_holder", "mandate_address")
             }.values
 
     private fun runOn(day: LocalDate): JobOutcome {

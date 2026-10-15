@@ -60,7 +60,7 @@ class IncassoRunsTest {
     private val hon = Entities.user(id = 6, username = "hon", firstName = "Hon", lastName = "Ored")
 
     private fun mandate(masked: String) =
-        IncassoMandate("sealed", "sealed", masked, "BLUESHELL-$masked", LocalDate.of(2025, 9, 3), null, Instant.EPOCH)
+        IncassoMandate(masked, "BLUESHELL-$masked", LocalDate.of(2025, 9, 3), null, Instant.EPOCH, accountVersion = 1)
 
     private fun held(
         user: User,
@@ -114,7 +114,7 @@ class IncassoRunsTest {
 
     @Test
     fun `a member whose bank details were wiped has none to collect from, and one off incasso is not collected from whatever is on file`() {
-        val wiped = held(mila, "NL34").also { paying.getValue(1).mandate!!.sealedIban = null }
+        val wiped = held(mila, "NL34").also { paying[1] = paying.getValue(1).copy(accountKept = false) }
         val stopped = held(zoe, "DE18").also { paying[2] = paying.getValue(2).copy(incasso = false) }
         whenever(memberships.findOverlappingWithMembers(period.startDate, period.endDate)).thenReturn(listOf(wiped, stopped))
 

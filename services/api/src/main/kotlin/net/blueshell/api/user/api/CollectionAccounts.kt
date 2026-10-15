@@ -17,12 +17,12 @@ data class CollectionAccount(
     }
 }
 
-/** Opens mandates' sealed accounts, for ING's batch file and for nothing that answers a browser. */
+/** Opens the bank accounts mandates collect from, for ING's batch file and for nothing that answers a browser. */
 @Service
 class CollectionAccounts(
     private val mandates: Mandates,
 ) {
     /** Each member's account, in the order given, opened in one call. */
     fun of(held: List<Pair<Long, IncassoMandate>>): List<CollectionAccount> =
-        mandates.bankDetailsOf(held).map { CollectionAccount(it.iban.value, it.accountHolder) }
+        mandates.bankDetailsOf(held.map { it.first }).map { CollectionAccount(it.iban.value, it.accountHolder) }
 }

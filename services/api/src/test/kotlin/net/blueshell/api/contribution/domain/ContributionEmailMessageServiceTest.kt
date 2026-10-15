@@ -195,12 +195,11 @@ class ContributionEmailMessageServiceTest {
 
     private fun aMandate() =
         IncassoMandate(
-            sealedIban = "sealed",
-            sealedAccountHolder = "sealed",
             ibanMasked = "NL00",
             reference = "BLUESHELL-1-20250901",
             signedOn = LocalDate.of(2025, 9, 1),
             recordedBy = null,
             recordedAt = Instant.EPOCH,
+            accountVersion = 1,
         )
 }

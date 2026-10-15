@@ -136,7 +136,7 @@ class UserFactory(
                 ?: PaymentDetails(userId)
         val mandate = held.mandate
         if (incasso && (mandate == null || mandate.endedOn != null)) {
-            held.mandate = IncassoMandate(null, null, null, "BLUESHELL-$userId-TEST", LocalDate.now(), null, Instant.now())
+            held.mandate = IncassoMandate(null, "BLUESHELL-$userId-TEST", LocalDate.now(), null, Instant.now())
         }
         if (!incasso && mandate != null && mandate.endedOn == null) mandate.endedOn = LocalDate.now()
         return persistence.persist(held)

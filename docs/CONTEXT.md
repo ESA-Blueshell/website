@@ -617,7 +617,7 @@ kind, because it is the only question where the kind changes the answer.
 A person's one bank account on the site: the account holder, the IBAN and, for a bank outside
 the Netherlands, the BIC. It is **sealed** and kept once, apart from anything that uses it, and
 replaced whole rather than edited. Beside it a preview stays open, the country and the last
-four digits, which is all the site shows its owner. Declarations are paid to it and a
+two digits, which is all the site shows its owner. Declarations are paid to it and a
 **mandate** collects from it. The sealed account is opened only for the board's work, such as
 paying a declaration or an incasso run. A declaration is paid to the account as it is when the
 board pays, and the paid declaration records the preview of that account. It is deleted 13 months after its last use, a collection or a

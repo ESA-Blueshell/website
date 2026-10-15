@@ -51,11 +51,11 @@ class MandateIT : UserTestSupport() {
 
         val stored =
             jdbcTemplate.queryForMap(
-                "select mandate_iban, mandate_account_holder, mandate_iban_masked from payment_details where user_id = ?",
+                "select account_iban, account_holder, mandate_iban_masked from payment_details where user_id = ?",
                 member.id,
             )
-        assertThat(stored["mandate_iban"].toString()).doesNotContain("0417").doesNotContain(iban)
-        assertThat(stored["mandate_account_holder"].toString()).doesNotContain("Ann")
+        assertThat(stored["account_iban"].toString()).doesNotContain("0417").doesNotContain(iban)
+        assertThat(stored["account_holder"].toString()).doesNotContain("Ann")
         assertThat(stored["mandate_iban_masked"]).isEqualTo("NL00")
 
         val paths =

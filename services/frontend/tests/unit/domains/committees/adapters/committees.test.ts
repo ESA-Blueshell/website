@@ -198,6 +198,6 @@ describe("a committee's Discord", () => {
       .toBe("#board is not under Committees, so it cannot be opened to the committee's role.")
     expect(await refused({code: "TargetSystemRefused", reason: "The bot's role is too low."}, 502)).toBe("Discord refused it: The bot's role is too low.")
     expect(await refused({code: "TargetSystemUnavailable", system: "Discord"}, 503))
-      .toBe("Discord cannot be reached now, so its role and channels are left as they were.")
+      .toBe("Discord cannot be reached now. Open the committee again to see what was set on Discord.")
   })
 })

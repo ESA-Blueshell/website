@@ -152,7 +152,7 @@ class CohortDiscord(
 
     private fun freeRoleNamed(label: String): String? {
         val linked = targets.findAllBySystem(TargetSystem.DISCORD.name).mapNotNull(targetIds::find).toSet()
-        return roles.roles().firstOrNull { it.id !in linked && plainName(it.name) == plainName(label) }?.id
+        return roles.roles().firstOrNull { it.assignable && it.id !in linked && plainName(it.name) == plainName(label) }?.id
     }
 
     private fun isBoardCommittee(cohortId: Long): Boolean =

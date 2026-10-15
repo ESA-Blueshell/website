@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel
 import net.dv8tion.jda.api.entities.channel.attribute.IPermissionContainer
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
+import net.dv8tion.jda.api.exceptions.ErrorResponseException
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
@@ -70,13 +71,15 @@ class JdaChannelKeeper(
     ): KeptChannel {
         val guild = guild()
         val role = roleOf(guild, roleId)
-        val parent = guild.getCategoriesByName(category, true).firstOrNull() ?: guild.createCategory(category).complete()
         val made =
-            parent
-                .createTextChannel(name)
-                .addPermissionOverride(guild.publicRole, emptyList(), listOf(Permission.VIEW_CHANNEL))
-                .addPermissionOverride(role, TEXT_ACCESS, emptyList())
-                .complete()
+            refusedByDiscord {
+                val parent = guild.getCategoriesByName(category, true).firstOrNull() ?: guild.createCategory(category).complete()
+                parent
+                    .createTextChannel(name)
+                    .addPermissionOverride(guild.publicRole, emptyList(), listOf(Permission.VIEW_CHANNEL))
+                    .addPermissionOverride(role, TEXT_ACCESS, emptyList())
+                    .complete()
+            }
         return requireNotNull(kept(made))
     }
 
@@ -150,6 +153,8 @@ class JdaChannelKeeper(
         change()
     } catch (e: InsufficientPermissionException) {
         throw DiscordRefused("The bot may not change $channel: it lacks ${e.permission.getName()} there.").apply { initCause(e) }
+    } catch (e: ErrorResponseException) {
+        throw DiscordRefused("Discord would not change $channel: ${e.meaning}").apply { initCause(e) }
     }
 
     private fun kept(channel: GuildChannel): KeptChannel? = keptOf(channel)

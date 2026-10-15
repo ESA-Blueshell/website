@@ -24,7 +24,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   ArchivedCommitteeCannotTakeEvents: r => `${r.committeeName} is archived, so it cannot take over events.`,
   GameArchived: r => `${r.gameName} is archived, so it cannot be newly picked.`,
   PictureNotStored: () => "That picture is not in storage.",
-  TargetSystemUnavailable: () => "Discord cannot be reached now, so its role and channels are left as they were.",
+  TargetSystemUnavailable: () => "Discord cannot be reached now. Open the committee again to see what was set on Discord.",
   TargetSystemRefused: r => `Discord refused it: ${r.reason}`,
   TargetLinkedElsewhere: r => `${r.cohort} already follows that role. Pick another role.`,
   ChannelOutsideCategory: r => `#${r.channel} is not under ${r.category}, so it cannot be opened to the committee's role.`,

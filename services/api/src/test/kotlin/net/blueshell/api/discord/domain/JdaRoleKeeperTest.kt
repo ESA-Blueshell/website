@@ -158,6 +158,23 @@ class JdaRoleKeeperTest {
     }
 
     @Test
+    fun `a role it does not keep is neither handed out nor taken away, and a change Discord refuses is said`() {
+        assertThatThrownBy { keeper().add("903", "11") }.isInstanceOf(DiscordRefused::class.java)
+        assertThatThrownBy { keeper().remove("907", "11") }.isInstanceOf(DiscordRefused::class.java)
+
+        val above: net.dv8tion.jda.api.exceptions.HierarchyException = mock()
+        whenever(guild.addRoleToMember(any<UserSnowflake>(), eq(board))).thenThrow(above)
+        assertThatThrownBy { keeper().add("902", "11") }.isInstanceOf(DiscordRefused::class.java)
+        val refused: net.dv8tion.jda.api.exceptions.ErrorResponseException = mock()
+        whenever(refused.meaning).thenReturn("Unknown Member")
+        whenever(guild.removeRoleFromMember(any<UserSnowflake>(), eq(board))).thenThrow(refused)
+        assertThatThrownBy { keeper().remove("902", "11") }.isInstanceOf(DiscordRefused::class.java).hasMessage("Unknown Member")
+        val noRight: net.dv8tion.jda.api.exceptions.InsufficientPermissionException = mock()
+        whenever(guild.createRole()).thenThrow(noRight)
+        assertThatThrownBy { keeper().create("Sitecie") }.isInstanceOf(DiscordRefused::class.java)
+    }
+
+    @Test
     fun `without a bot, a server or a role it refuses`() {
         assertThat(keeper(gateway = null).available()).isFalse()
         assertThat(keeper(client = null).available()).isFalse()

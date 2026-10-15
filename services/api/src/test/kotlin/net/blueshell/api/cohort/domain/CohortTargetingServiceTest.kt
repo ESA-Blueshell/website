@@ -392,6 +392,18 @@ class CohortTargetingServiceTest {
     }
 
     @Test
+    fun `a Discord role the site does not keep is not linked by id`() {
+        whenever(discord.linksListedOnly).thenReturn(true)
+        whenever(discord.resolve("907")).thenReturn(null)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { service.linkExisting(1L, TargetSystem.DISCORD, "907") }
+            .isInstanceOf(TargetNotFound::class.java)
+        verify(targetExternalIds, never()).record(any(), any())
+    }
+
+    @Test
     fun `create says the system is away when it goes away while making the target`() {
         whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
         val away = DiscordUnavailable("The bot left.")

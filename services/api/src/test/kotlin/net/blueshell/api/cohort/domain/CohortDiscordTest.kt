@@ -120,6 +120,20 @@ class CohortDiscordTest {
     }
 
     @Test
+    fun `a role by the committee's name that the bot cannot hand out is not linked, so a new one is made`() {
+        given(linked = false)
+        whenever(roles.roles()).thenReturn(listOf(KeptRole("905", "Sitecie", false)))
+        whenever(targets.findAllBySystem("DISCORD")).thenReturn(emptyList())
+        whenever(targeting.create(5, TargetSystem.DISCORD, "Sitecie", null)).thenReturn(CohortTargetRow(role, "900"))
+        whenever(channels.openedTo("900")).thenReturn(emptyList())
+
+        discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(createRole = true), "Committees")
+
+        verify(targeting, never()).linkExisting(any(), any(), any())
+        verify(targeting).create(5, TargetSystem.DISCORD, "Sitecie", null)
+    }
+
+    @Test
     fun `a role the site may not hand out, or one it does not know, is refused before it is linked`() {
         given(linked = false)
         whenever(roles.role("906")).thenReturn(KeptRole("906", "Owner", false))

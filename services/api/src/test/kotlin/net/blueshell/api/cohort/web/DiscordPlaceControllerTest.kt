@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.web
 
+import jakarta.validation.Validation
 import net.blueshell.api.cohort.domain.CohortDiscord
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
@@ -22,5 +23,13 @@ class DiscordPlaceControllerTest {
         assertThat(controller.findCommitteeDiscord(7)).isEqualTo(place)
         assertThat(controller.setCommitteeDiscord(7, DiscordPlaceRequest(createRole = true, createChannel = "sitecie"))).isEqualTo(place)
         assertThat(DiscordPlaceRequest(roleId = "901").choice()).isEqualTo(DiscordChoice(roleId = "901"))
+    }
+
+    @Test
+    fun `a new channel's name fits Discord's limit`() {
+        val validator = Validation.buildDefaultValidatorFactory().validator
+
+        assertThat(validator.validate(DiscordPlaceRequest(createChannel = "x".repeat(100)))).isEmpty()
+        assertThat(validator.validate(DiscordPlaceRequest(createChannel = "x".repeat(101)))).hasSize(1)
     }
 }

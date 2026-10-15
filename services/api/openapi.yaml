@@ -2676,6 +2676,8 @@ components:
           type: array
         createChannel:
           description: A new private channel to make for the role, by name
+          maxLength: 100
+          minLength: 0
           type:
           - string
           - 'null'

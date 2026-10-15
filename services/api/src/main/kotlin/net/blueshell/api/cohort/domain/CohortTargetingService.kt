@@ -263,7 +263,12 @@ class CohortTargetingService(
     private fun idAsListed(
         system: TargetSystem,
         externalId: String,
-    ): String = outsideTransaction.execute { strategies.require(system).resolve(externalId) }?.externalId ?: externalId
+    ): String {
+        val strategy = strategies.require(system)
+        val found = outsideTransaction.execute { strategy.resolve(externalId) }
+        if (found == null && strategy.linksListedOnly) throw TargetNotFound(system, externalId)
+        return found?.externalId ?: externalId
+    }
 
     private data class Switched(
         val target: Target,

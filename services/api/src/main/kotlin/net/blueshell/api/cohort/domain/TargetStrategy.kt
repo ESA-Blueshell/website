@@ -71,6 +71,9 @@ interface TargetStrategy : MemberIdentity {
 
     fun resolve(externalId: String): ExternalTarget? = catalog(externalId).firstOrNull { it.externalId == externalId }
 
+    /** Whether only a target [resolve] finds may be linked, rather than any id the system might hold. */
+    val linksListedOnly: Boolean get() = false
+
     fun members(external: ExternalTarget): List<ExternalMember>
 
     /**

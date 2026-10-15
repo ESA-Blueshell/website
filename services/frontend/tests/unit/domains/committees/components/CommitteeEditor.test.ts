@@ -101,7 +101,7 @@ describe("the committee edit page, for the board", () => {
   it("sets the committee's Discord once it is saved, and a refusal from Discord leaves the committee saved", async () => {
     adapter.saveCommitteeAsBoard.mockResolvedValue({ok: true, saved: lan})
     adapter.listCommittees.mockResolvedValue([lan])
-    adapter.saveCommitteeDiscord.mockResolvedValue({ok: false, reason: "Discord cannot be reached now, so its role and channels are left as they were."})
+    adapter.saveCommitteeDiscord.mockResolvedValue({ok: false, reason: "Discord cannot be reached now. Open the committee again to see what was set on Discord."})
     const wrapper = mountEditor(lan, true)
     await flushPromises()
     const discord = wrapper.getComponent(DiscordPlaceFields)
@@ -113,7 +113,7 @@ describe("the committee edit page, for the board", () => {
     await flushPromises()
 
     expect(adapter.saveCommitteeDiscord).toHaveBeenCalledWith(lan.id, {roleId: null, createRole: true, channelIds: [], createChannel: "lancie"})
-    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now, so its role and channels are left as they were.")
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now. Open the committee again to see what was set on Discord.")
     expect(wrapper.emitted("saved")).toEqual([[lan]])
 
     // The board's own committee gets no role, so it is not asked about one.

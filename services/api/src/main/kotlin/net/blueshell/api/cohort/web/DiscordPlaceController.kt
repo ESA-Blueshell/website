@@ -2,6 +2,8 @@ package net.blueshell.api.cohort.web
 
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Size
 import net.blueshell.api.cohort.domain.CohortDiscord
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
@@ -23,6 +25,7 @@ data class DiscordPlaceRequest(
     @param:Schema(description = "Every channel the role opens; one left out of a linked role is closed to it")
     val channelIds: List<String> = emptyList(),
     @param:Schema(description = "A new private channel to make for the role, by name")
+    @field:Size(max = 100, message = "A channel's name is at most 100 characters.")
     val createChannel: String? = null,
 ) {
     fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel)
@@ -44,7 +47,7 @@ class DiscordPlaceController(
     @PutMapping("/management/committees/{id}/discord")
     fun setCommitteeDiscord(
         @PathVariable id: Long,
-        @RequestBody request: DiscordPlaceRequest,
+        @Valid @RequestBody request: DiscordPlaceRequest,
     ): DiscordPlace = discord.apply(committee(id), request.choice(), committees)
 
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"

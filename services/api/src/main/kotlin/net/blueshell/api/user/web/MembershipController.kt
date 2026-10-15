@@ -96,14 +96,6 @@ class MembershipController(
     ): MembershipResponse = useCases.recordType(id, request.type!!, request.since!!).asResponse()
 
     @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
-    @PutMapping(value = ["/memberships/{id}/types/{typeId}"])
-    fun correctMembershipType(
-        @PathVariable @Positive id: Long,
-        @PathVariable @Positive typeId: Long,
-        @Valid @RequestBody request: MembershipTypeRequest,
-    ): MembershipResponse = useCases.correctType(id, typeId, request.type!!, request.since!!).asResponse()
-
-    @PreAuthorize("hasPermission(#id, 'Membership', 'write')")
     @DeleteMapping(value = ["/memberships/{id}/types/{typeId}"])
     fun removeMembershipType(
         @PathVariable @Positive id: Long,

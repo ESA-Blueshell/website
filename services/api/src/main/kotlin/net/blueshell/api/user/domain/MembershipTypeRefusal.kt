@@ -22,15 +22,7 @@ class MembershipTypeOutsideMembership(
         listOfNotNull("startDate" to startDate.toString(), endDate?.let { "endDate" to it.toString() }).toMap(),
     )
 
-class MembershipTypeOnTakenDay(
-    since: LocalDate,
-) : MembershipTypeRefusal(
-        "MembershipTypeOnTakenDay",
-        "Another membership type starts on that day.",
-        mapOf("since" to since.toString()),
-    )
-
-/** The first type is what the membership started as, so it is retyped in place but never moved or removed. */
+/** The first type is what the membership started as, so it can be retyped but never removed. */
 class FirstMembershipTypeStartsTheMembership :
     MembershipTypeRefusal(
         "FirstMembershipTypeStartsTheMembership",

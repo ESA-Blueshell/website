@@ -1,16 +1,21 @@
 <script lang="ts" setup>
+import {DateTime} from "luxon"
 import {ref} from "vue"
+import MemberTypeSelect from "@/components/form/fields/MemberTypeSelect.vue"
+import CutButton from "@/components/island/CutButton.vue"
+import DateInput from "@/components/island/DateInput.vue"
+import FormField from "@/components/island/FormField.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
-import MembershipTypeFields from "@/components/management/MembershipTypeFields.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
-import {type MembershipResponse, type MembershipTypeResponse, removeTypeFrom} from "@/domains/user"
+import {type FieldChecks, useFormChecks} from "@/composables/useFormChecks"
+import {MemberType, type MembershipResponse, type MembershipTypeResponse, recordTypeOn, removeTypeFrom} from "@/domains/user"
 import {$showStatusMessage} from "@/plugins/handleNetworkError.ts"
 import {memberTypeLabel} from "@/utils/memberType"
 import {formatDay} from "@/utils/timestamps"
 
 /* The types one membership has had, earliest first, as in "alumni since 1 September 2025". The
-   board adds, corrects and removes them here; the first starts with the membership and stays. */
+   board adds and removes them here; the first starts with the membership and stays. */
 defineOptions({name: "MembershipTypes"})
 
 const {membership} = defineProps<{membership: MembershipResponse}>()
@@ -21,18 +26,38 @@ const COLUMNS: TableColumn<MembershipTypeResponse>[] = [
   {key: "since", label: "Starts on", sortBy: (row) => row.since},
 ]
 
-const editingId = ref<number | null>(null)
+const addTestid = `manage-membership-type-add-btn-${membership.id}`
+const type = ref<string>(MemberType.ALUMNI)
+const since = ref("")
+const refusal = ref("")
+const saving = ref(false)
+// The end is the day the membership stopped, and no type starts after today. TWIN: `requireInside`
+// in `user/domain/MembershipUseCases.kt` and `MembershipTypeRequest`'s @PastOrPresent.
+const latest = membership.endDate
+  ? DateTime.fromISO(membership.endDate).minus({days: 1}).toISODate()!
+  : DateTime.now().toISODate()!
 
-const isFirst = (entry: MembershipTypeResponse) => entry.id === membership.types[0]?.id
+const checks = useFormChecks((): Record<string, FieldChecks> => ({
+  since: {value: () => since.value, checks: [(value: unknown) => (value ? null : "Fill in the day this type starts.")]},
+}))
+const said = () => [...checks.errorsOf("since"), refusal.value].filter(Boolean).join(" ")
 
-const saved = (changed: MembershipResponse) => {
-  editingId.value = null
-  emit("changed", changed)
+const add = async () => {
+  if (saving.value || !checks.attempt()) return
+  saving.value = true
+  refusal.value = ""
+  try {
+    const answer = await recordTypeOn(membership.id, {type: type.value as MemberType, since: since.value})
+    if (answer.ok) emit("changed", answer.saved)
+    else refusal.value = answer.reason
+  } finally {
+    saving.value = false
+  }
 }
 
 const remove = async (entry: MembershipTypeResponse) => {
   const answer = await removeTypeFrom(membership.id, entry.id)
-  if (answer.ok) saved(answer.saved)
+  if (answer.ok) emit("changed", answer.saved)
   else $showStatusMessage(answer.reason)
 }
 </script>
@@ -59,13 +84,7 @@ const remove = async (entry: MembershipTypeResponse) => {
       </template>
       <template #acts="{row}">
         <mini-button
-          :testid="`manage-membership-type-edit-btn-${row.id}`"
-          @click="editingId = editingId === row.id ? null : row.id"
-        >
-          {{ editingId === row.id ? "Close" : "Edit" }}
-        </mini-button>
-        <mini-button
-          v-if="!isFirst(row)"
+          v-if="row.id !== membership.types[0]?.id"
           :testid="`manage-membership-type-remove-btn-${row.id}`"
           tone="danger"
           @click="remove(row)"
@@ -75,28 +94,46 @@ const remove = async (entry: MembershipTypeResponse) => {
       </template>
     </management-table>
 
-    <template
-      v-for="entry in membership.types"
-      :key="entry.id"
-    >
-      <membership-type-fields
-        v-if="editingId === entry.id"
-        :entry="entry"
-        :membership="membership"
-        submit-text="Save type"
-        :submit-testid="`manage-membership-type-save-btn-${entry.id}`"
-        @saved="saved"
-      />
-    </template>
-
     <list-head title="Add a membership type" />
-    <membership-type-fields
-      :key="membership.types.length"
-      :membership="membership"
-      submit-text="Add type"
-      :submit-testid="`manage-membership-type-add-btn-${membership.id}`"
-      @saved="saved"
-    />
+    <p class="membership-types__hint">
+      A type added on a day that already has one replaces it.
+    </p>
+    <form
+      class="membership-types__fields"
+      novalidate
+      @submit.prevent="add"
+    >
+      <member-type-select
+        v-model="type"
+        :testid="`${addTestid}-type`"
+      />
+      <form-field
+        v-slot="field"
+        :error="said()"
+        filled
+        label="Starts on"
+        required
+        :testid="`${addTestid}-since`"
+        variant="inside"
+      >
+        <date-input
+          v-model="since"
+          :control-id="field.controlId"
+          :invalid="field.invalid"
+          :max="latest"
+          :min="membership.startDate"
+        />
+      </form-field>
+      <cut-button
+        class="membership-types__save"
+        :disabled="saving"
+        submit
+        :testid="addTestid"
+        tone="solid"
+      >
+        {{ saving ? "Saving" : "Add type" }}
+      </cut-button>
+    </form>
   </div>
 </template>
 
@@ -106,5 +143,28 @@ const remove = async (entry: MembershipTypeResponse) => {
   flex-direction: column;
   gap: 0.6rem;
   margin-top: 1rem;
+}
+
+.membership-types__hint {
+  font-size: 0.9rem;
+  color: var(--color-ash);
+}
+
+/* One row, as the membership's own fields are. */
+.membership-types__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 0.4rem 1.2rem;
+  align-items: start;
+}
+
+.membership-types__save {
+  margin-top: 0.35rem;
+}
+
+@media (--phone) {
+  .membership-types__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

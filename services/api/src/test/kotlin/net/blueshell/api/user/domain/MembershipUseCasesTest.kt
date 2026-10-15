@@ -334,33 +334,26 @@ class MembershipUseCasesTest {
         }
 
         @Test
-        fun `refuses a type before the start, on or after the end, or on a day another starts`() {
+        fun `refuses a type before the start, or on or after the end`() {
             held(endDate = LocalDate.of(2026, 1, 1))
 
             assertThatThrownBy { useCases.recordType(9L, MemberType.HONORARY, start.minusDays(1)) }
                 .isInstanceOf(MembershipTypeOutsideMembership::class.java)
             assertThatThrownBy { useCases.recordType(9L, MemberType.HONORARY, LocalDate.of(2026, 1, 1)) }
                 .isInstanceOf(MembershipTypeOutsideMembership::class.java)
-            assertThatThrownBy { useCases.recordType(9L, MemberType.HONORARY, alumniSince) }
-                .isInstanceOf(MembershipTypeOnTakenDay::class.java)
             verify(membershipService, never()).update(any())
         }
 
         @Test
-        fun `corrects a later type's kind and day, and only the first type's kind`() {
+        fun `a type recorded on a day another starts replaces it, the first included`() {
             val membership = held()
 
-            useCases.correctType(9L, 2L, MemberType.HONORARY, alumniSince.minusMonths(1))
-            useCases.correctType(9L, 1L, MemberType.ALUMNI, start)
+            useCases.recordType(9L, MemberType.HONORARY, alumniSince)
+            useCases.recordType(9L, MemberType.ALUMNI, start)
 
             assertThat(membership.types.map { it.type to it.since })
-                .containsExactly(MemberType.ALUMNI to start, MemberType.HONORARY to alumniSince.minusMonths(1))
-            assertThatThrownBy { useCases.correctType(9L, 1L, MemberType.ALUMNI, start.plusDays(1)) }
-                .isInstanceOf(FirstMembershipTypeStartsTheMembership::class.java)
-            assertThatThrownBy { useCases.correctType(9L, 2L, MemberType.ALUMNI, start) }
-                .isInstanceOf(MembershipTypeOnTakenDay::class.java)
-            assertThatThrownBy { useCases.correctType(9L, 7L, MemberType.ALUMNI, start) }
-                .isInstanceOf(MembershipTypeNotFound::class.java)
+                .containsExactly(MemberType.ALUMNI to start, MemberType.HONORARY to alumniSince)
+            assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
         }
 
         @Test
@@ -371,7 +364,7 @@ class MembershipUseCasesTest {
             useCases.recordType(9L, MemberType.HONORARY, honorarySince)
             assertThat(pending.activatedOn).isEqualTo(honorarySince)
 
-            useCases.correctType(9L, 2L, MemberType.HONORARY, alumniSince)
+            useCases.recordType(9L, MemberType.HONORARY, alumniSince)
             assertThat(pending.activatedOn).isEqualTo(honorarySince)
         }
 
@@ -396,7 +389,7 @@ class MembershipUseCasesTest {
             assertThat(membership.types.first().since).isEqualTo(start.plusDays(10))
 
             assertThatThrownBy { useCases.correct(9L, 2L, alumniSince, null, version = 1L) }
-                .isInstanceOf(MembershipTypeOnTakenDay::class.java)
+                .isInstanceOf(MembershipTypeOutsideMembership::class.java)
             assertThatThrownBy { useCases.correct(9L, 2L, start, alumniSince, version = 1L) }
                 .isInstanceOf(MembershipTypeOutsideMembership::class.java)
         }

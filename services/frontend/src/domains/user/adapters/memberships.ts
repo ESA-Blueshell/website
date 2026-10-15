@@ -10,7 +10,6 @@ import {
   apply,
   boardCreateMembership,
   type BoardCreateMembershipRequest,
-  correctMembershipType,
   createMembership,
   deleteMembership,
   endMembership,
@@ -122,13 +121,9 @@ export async function startMembershipAsBoard(
 
 type TypeWrite = Promise<Saved<MembershipResponse> | Refused>
 
-/** Records that the member is another type from a day on, inside a running or ended membership. */
+/** Records that the member is another type from a day on; one already starting that day is replaced. */
 export const recordTypeOn = (id: number, body: MembershipTypeRequest): TypeWrite =>
   refusable(recordMembershipType({path: {id}, body}), "The membership type could not be added.")
-
-/** Corrects a type's kind or day; the first type keeps the membership's start. */
-export const correctTypeOn = (id: number, typeId: number, body: MembershipTypeRequest): TypeWrite =>
-  refusable(correctMembershipType({path: {id, typeId}, body}), "The membership type could not be saved.")
 
 export const removeTypeFrom = (id: number, typeId: number): TypeWrite =>
   refusable(removeMembershipType({path: {id, typeId}}), "The membership type could not be removed.")

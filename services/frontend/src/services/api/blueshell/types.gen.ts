@@ -13090,50 +13090,6 @@ export type RemoveMembershipTypeResponses = {
 
 export type RemoveMembershipTypeResponse = RemoveMembershipTypeResponses[keyof RemoveMembershipTypeResponses];
 
-export type CorrectMembershipTypeData = {
-    body: MembershipTypeRequest;
-    path: {
-        id: number;
-        typeId: number;
-    };
-    query?: never;
-    url: '/memberships/{id}/types/{typeId}';
-};
-
-export type CorrectMembershipTypeErrors = {
-    /**
-     * Validation error
-     */
-    400: ApiError;
-    /**
-     * Unauthorized
-     */
-    401: ApiError;
-    /**
-     * Forbidden (access denied)
-     */
-    403: ApiError;
-    /**
-     * Not Found
-     */
-    404: ApiError;
-    /**
-     * Server error
-     */
-    500: ApiError;
-};
-
-export type CorrectMembershipTypeError = CorrectMembershipTypeErrors[keyof CorrectMembershipTypeErrors];
-
-export type CorrectMembershipTypeResponses = {
-    /**
-     * OK
-     */
-    200: MembershipResponse;
-};
-
-export type CorrectMembershipTypeResponse = CorrectMembershipTypeResponses[keyof CorrectMembershipTypeResponses];
-
 export type ForwardAuthData = {
     body?: never;
     path?: never;

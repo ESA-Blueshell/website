@@ -1,6 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {
-  correctTypeOn,
   deleteOneMembership,
   endOneMembership,
   listDeletedMembershipsFor,
@@ -14,7 +13,6 @@ import {
 } from "@/domains/user/adapters/memberships"
 import {
   boardCreateMembership,
-  correctMembershipType,
   deleteMembership,
   endMembership,
   findDeletedMemberships,
@@ -32,7 +30,6 @@ import {answer, emptyAnswer, refusal} from "../../../helpers/sdkAnswers"
 vi.mock("@/services/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   boardCreateMembership: vi.fn(),
-  correctMembershipType: vi.fn(),
   deleteMembership: vi.fn(),
   endMembership: vi.fn(),
   findDeletedMemberships: vi.fn(),
@@ -121,17 +118,14 @@ describe("listOwnMemberships", () => {
 describe("a membership's types", () => {
   const body = {type: MemberType.ALUMNI, since: "2025-09-01"}
 
-  it("records, corrects and removes a type, answering with the membership", async () => {
+  it("records and removes a type, answering with the membership", async () => {
     const held = aMembership({id: 9, memberType: MemberType.ALUMNI})
     vi.mocked(recordMembershipType).mockResolvedValue(answer(recordMembershipType, held))
-    vi.mocked(correctMembershipType).mockResolvedValue(answer(correctMembershipType, held))
     vi.mocked(removeMembershipType).mockResolvedValue(answer(removeMembershipType, held))
 
     await expect(recordTypeOn(9, body)).resolves.toEqual({ok: true, saved: held})
-    await expect(correctTypeOn(9, 2, body)).resolves.toEqual({ok: true, saved: held})
     await expect(removeTypeFrom(9, 2)).resolves.toEqual({ok: true, saved: held})
     expect(recordMembershipType).toHaveBeenCalledWith({path: {id: 9}, body})
-    expect(correctMembershipType).toHaveBeenCalledWith({path: {id: 9, typeId: 2}, body})
     expect(removeMembershipType).toHaveBeenCalledWith({path: {id: 9, typeId: 2}})
   })
 
@@ -147,13 +141,10 @@ describe("a membership's types", () => {
     vi.mocked(recordMembershipType).mockResolvedValueOnce(refusal(recordMembershipType, {code: "MembershipTypeOutsideMembership", startDate: "2022-09-01"}))
     await expect(recordTypeOn(9, body)).resolves.toMatchObject({reason: "Pick a day on or after 1 September 2022."})
 
-    vi.mocked(recordMembershipType).mockResolvedValueOnce(refusal(recordMembershipType, {code: "MembershipTypeOnTakenDay", since: "2025-09-01"}))
-    await expect(recordTypeOn(9, body)).resolves.toMatchObject({reason: expect.stringContaining("starts on 1 September 2025. Pick a different day")})
-
     vi.mocked(removeMembershipType).mockResolvedValueOnce(refusal(removeMembershipType, {code: "FirstMembershipTypeStartsTheMembership"}))
     await expect(removeTypeFrom(9, 1)).resolves.toMatchObject({reason: expect.stringContaining("always starts with the membership")})
 
-    vi.mocked(correctMembershipType).mockResolvedValueOnce(refusal(correctMembershipType, {code: "MembershipTypeNotFound"}, 404))
-    await expect(correctTypeOn(9, 5, body)).resolves.toMatchObject({reason: "That membership type is gone. Reload the page."})
+    vi.mocked(removeMembershipType).mockResolvedValueOnce(refusal(removeMembershipType, {code: "MembershipTypeNotFound"}, 404))
+    await expect(removeTypeFrom(9, 5)).resolves.toMatchObject({reason: "That membership type is gone. Reload the page."})
   })
 })

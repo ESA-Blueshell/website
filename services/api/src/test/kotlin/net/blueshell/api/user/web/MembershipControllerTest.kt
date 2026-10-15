@@ -46,14 +46,12 @@ class MembershipControllerTest {
     }
 
     @Test
-    fun `records, corrects and removes a type, answering with every type the membership holds`() {
+    fun `records and removes a type, answering with every type the membership holds`() {
         val request = MembershipTypeRequest(type = MemberType.ALUMNI, since = alumniSince)
         whenever(useCases.recordType(9, MemberType.ALUMNI, alumniSince)).thenReturn(held())
-        whenever(useCases.correctType(9, 2, MemberType.ALUMNI, alumniSince)).thenReturn(held())
         whenever(useCases.removeType(9, 2)).thenReturn(held())
 
         val recorded = controller.recordMembershipType(9, request)
-        controller.correctMembershipType(9, 2, request)
         controller.removeMembershipType(9, 2)
 
         assertThat(recorded.memberType).isEqualTo(MemberType.ALUMNI)

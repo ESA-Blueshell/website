@@ -1065,17 +1065,16 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     // A membership's types, kept in order with the current one last, as the api answers them.
     const typePath = /^\/memberships\/(\d+)\/types(?:\/(\d+))?$/.exec(path)
-    if (typePath && ["POST", "PUT", "DELETE"].includes(method)) {
+    if (typePath && ["POST", "DELETE"].includes(method)) {
       const held = baseMemberships.find((one) => one.id === Number(typePath[1]))
       if (!held) return route.fulfill({status: 404, body: ""})
       const typeId = Number(typePath[2])
       const body = method === "DELETE" ? null : request.postDataJSON() as Wire<MembershipTypeResponse>
-      if (method === "POST") held.types = [...held.types, {id: Date.now(), type: body!.type, since: body!.since}]
-      if (method === "PUT") held.types = held.types.map((one) => (one.id === typeId ? {...one, ...body!} : one))
+      if (method === "POST") held.types = [...held.types.filter((one) => one.since !== body!.since), {id: Date.now(), type: body!.type, since: body!.since}]
       if (method === "DELETE") held.types = held.types.filter((one) => one.id !== typeId)
       held.types.sort((a, b) => a.since.localeCompare(b.since))
       held.memberType = held.types.at(-1)!.type
-      const operation = method === "POST" ? "recordMembershipType" : method === "PUT" ? "correctMembershipType" : "removeMembershipType"
+      const operation = method === "POST" ? "recordMembershipType" : "removeMembershipType"
       return answer(route, operation, held)
     }
     if (method === "GET" && path === "/memberships") {

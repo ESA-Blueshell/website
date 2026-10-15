@@ -5,7 +5,7 @@ import {MemberType, type MembershipResponse} from "@/services/api"
 import {aMembership} from "../../helpers/apiFixtures"
 import {sortByEveryHead} from "../../pages/helpers"
 
-const user = vi.hoisted(() => ({recordTypeOn: vi.fn(), correctTypeOn: vi.fn(), removeTypeFrom: vi.fn()}))
+const user = vi.hoisted(() => ({recordTypeOn: vi.fn(), removeTypeFrom: vi.fn()}))
 const status = vi.hoisted(() => ({$showStatusMessage: vi.fn(), $handleNetworkError: vi.fn()}))
 
 vi.mock("@/domains/user", async (importOriginal) => ({...(await importOriginal<typeof import("@/domains/user")>()), ...user}))
@@ -58,27 +58,14 @@ describe("a membership's types", () => {
   })
 
   it("puts a refusal under the day, and changes nothing", async () => {
-    user.recordTypeOn.mockResolvedValue({ok: false, reason: "Another membership type starts on 1 September 2025."})
+    user.recordTypeOn.mockResolvedValue({ok: false, reason: "Pick a day on or after 1 September 2022."})
     const wrapper = types()
 
-    await wrapper.get('[data-testid="manage-membership-type-add-btn-9-since"] input').setValue("2025-09-01")
+    await wrapper.get('[data-testid="manage-membership-type-add-btn-9-since"] input').setValue("2021-09-01")
     await submit(wrapper, "manage-membership-type-add-btn-9")
 
-    expect(wrapper.get('[data-testid="manage-membership-type-add-btn-9-since"]').text()).toContain("Another membership type starts")
+    expect(wrapper.get('[data-testid="manage-membership-type-add-btn-9-since"]').text()).toContain("Pick a day on or after")
     expect(wrapper.emitted("changed")).toBeUndefined()
-  })
-
-  it("corrects the first type's kind on the membership's start, its day fixed", async () => {
-    user.correctTypeOn.mockResolvedValue({ok: true, saved: held})
-    const wrapper = types()
-
-    await wrapper.get('[data-testid="manage-membership-type-edit-btn-1"]').trigger("click")
-    expect(wrapper.get('[data-testid="manage-membership-type-save-btn-1-since"] input').attributes("disabled")).toBeDefined()
-    wrapper.findAllComponents({name: "MemberTypeSelect"}).at(0)!.vm.$emit("update:modelValue", MemberType.ALUMNI)
-    await submit(wrapper, "manage-membership-type-save-btn-1")
-
-    expect(user.correctTypeOn).toHaveBeenCalledWith(9, 1, {type: MemberType.ALUMNI, since: "2022-09-01"})
-    expect(wrapper.emitted("changed")).toHaveLength(1)
   })
 
   it("removes a later type, or says why not", async () => {

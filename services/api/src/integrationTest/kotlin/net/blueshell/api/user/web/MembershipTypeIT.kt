@@ -84,43 +84,31 @@ class MembershipTypeIT : UserTestSupport() {
     }
 
     @Test
-    fun `a type is recorded within the membership, one a day`() {
+    fun `a type is recorded within the membership, and one on a taken day replaces that day's`() {
         val membership = started()
 
         record(membership, "ALUMNI", start.minusDays(1))
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.code").value("MembershipTypeOutsideMembership"))
-        record(membership, "ALUMNI", start)
-            .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.code").value("MembershipTypeOnTakenDay"))
         record(membership, "ALUMNI", LocalDate.now().plusDays(1)).andExpect(status().isBadRequest)
+        record(membership, "ALUMNI", start)
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.types.length()").value(1))
+            .andExpect(jsonPath("$.types[0].type").value("ALUMNI"))
     }
 
     @Test
-    fun `the board corrects and removes a later type, never the first`() {
+    fun `the board replaces and removes a later type, never removes the first`() {
         val membership = started()
         record(membership, "ALUMNI", alumniSince).andExpect(status().isOk)
         val (first, alumni) = membershipTypeIds(membership)
 
-        mvc
-            .perform(
-                put("/memberships/$membership/types/$alumni")
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"type":"HONORARY","since":"${alumniSince.minusMonths(1)}"}"""),
-            ).andExpect(status().isOk)
+        record(membership, "HONORARY", alumniSince)
+            .andExpect(status().isOk)
             .andExpect(jsonPath("$.memberType").value("HONORARY"))
             .andExpect(jsonPath("$.pending").value(false))
-            .andExpect(jsonPath("$.types[1].since").value(alumniSince.minusMonths(1).toString()))
+            .andExpect(jsonPath("$.types[1].id").value(alumni))
 
-        mvc
-            .perform(
-                put("/memberships/$membership/types/$first")
-                    .with(signedIn(board))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"type":"ALUMNI","since":"${start.plusDays(1)}"}"""),
-            ).andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.code").value("FirstMembershipTypeStartsTheMembership"))
         mvc
             .perform(delete("/memberships/$membership/types/$first").with(signedIn(board)))
             .andExpect(status().isBadRequest)

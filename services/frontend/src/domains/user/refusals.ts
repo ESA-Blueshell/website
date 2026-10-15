@@ -7,7 +7,6 @@ interface RefusalBody extends RefusalCode {
   authorisedAt?: string
   startDate?: string
   endDate?: string
-  since?: string
 }
 
 const day = (iso?: string): string => (iso ? new Date(iso).toLocaleDateString("en-GB", {day: "numeric", month: "long", year: "numeric"}) : "an earlier day")
@@ -32,9 +31,8 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   MembershipTypeOutsideMembership: r => (r.endDate
     ? `Pick a day from ${day(r.startDate)} to the day before ${day(r.endDate)}.`
     : `Pick a day on or after ${day(r.startDate)}.`),
-  MembershipTypeOnTakenDay: r => `Another membership type starts on ${day(r.since)}. Pick a different day, or change that type.`,
   FirstMembershipTypeStartsTheMembership: () =>
-    "The first membership type always starts with the membership. You can change its type. You cannot change its day or remove it.",
+    "The first membership type always starts with the membership, so it cannot be removed. Add a type on the start day to change it.",
   MembershipTypeNotFound: () => "That membership type is gone. Reload the page.",
   SealingUnavailable: () => "Private details cannot be saved or shown right now, and nothing was changed. Try again in a moment.",
 }

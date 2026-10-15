@@ -52,7 +52,6 @@ export type {
 } from "@/services/api"
 export {
   applyForMembership,
-  correctTypeOn,
   deleteOneMembership,
   endOneMembership,
   endTheMemberships,

@@ -40,9 +40,13 @@ const props = withDefaults(defineProps<{
   mayBeVector?: boolean
   /** Whether this picture may move, which only an event's poster may. */
   mayBeAnimated?: boolean
+  /** Whether a PDF may stand in for the picture, which a receipt may: a webshop sends one. */
+  mayBePdf?: boolean
   /** Whether something outside is busy, which is not the same as this input uploading. */
   busy?: boolean
-}>(), {picture: null, shape: "banner", fit: undefined, say: undefined, layout: "row", mayClear: true, mayBeVector: false, mayBeAnimated: false, busy: false})
+  /** The form says something is wrong with this picture, such as one being required. */
+  invalid?: boolean
+}>(), {picture: null, shape: "banner", fit: undefined, say: undefined, layout: "row", mayClear: true, mayBeVector: false, mayBeAnimated: false, mayBePdf: false, busy: false, invalid: false})
 
 const emit = defineEmits<{
   (event: "update:picture", picture: Picture | null): void
@@ -55,8 +59,12 @@ const controlId = `${useId()}-picture`
 
 /** What the api admits, so a refusal happens here rather than after the upload. */
 const RASTER = "image/png,image/jpeg,image/webp"
-const accept = computed(() => [RASTER, props.mayBeVector && "image/svg+xml", props.mayBeAnimated && "image/gif"]
-  .filter(Boolean).join(","))
+const accept = computed(() => [
+  RASTER,
+  props.mayBeVector && "image/svg+xml",
+  props.mayBeAnimated && "image/gif",
+  props.mayBePdf && "application/pdf",
+].filter(Boolean).join(","))
 const MAX_BYTES = 15 * 1024 * 1024
 
 const RATIOS: Record<Shape, string> = {banner: "16 / 9", icon: "1 / 1", portrait: "2 / 3", poster: "1 / 1.414"}
@@ -65,6 +73,8 @@ const ratio = computed(() => RATIOS[props.shape])
 const fitted = computed(() => props.fit ?? (props.shape === "icon" ? "contain" : "cover"))
 
 const has = computed(() => Boolean(props.picture))
+/* A browser draws no PDF in an img, so its plate says what it is instead. */
+const pdf = computed(() => props.picture?.path.toLowerCase().endsWith(".pdf") === true)
 const working = computed(() => props.busy || uploading.value)
 const srcset = computed(() => srcsetOf(props.picture))
 const noun = computed(() => props.label.toLowerCase())
@@ -108,7 +118,7 @@ const clear = () => {
 <template>
   <div
     class="picture"
-    :class="[`picture--${layout}`, {'picture--wrong': failure, 'picture--held': has, 'picture--busy': working}]"
+    :class="[`picture--${layout}`, {'picture--wrong': failure || invalid, 'picture--held': has, 'picture--busy': working}]"
     :data-testid="testid"
   >
     <input
@@ -129,8 +139,13 @@ const clear = () => {
       :for="controlId"
       :style="{aspectRatio: ratio}"
     >
+      <span
+        v-if="picture && pdf"
+        class="picture__pdf"
+        :data-testid="`${testid}-preview`"
+      >PDF</span>
       <img
-        v-if="picture"
+        v-else-if="picture"
         alt=""
         class="picture__shot"
         :data-testid="`${testid}-preview`"
@@ -252,6 +267,13 @@ const clear = () => {
 
 .picture--busy .picture__plate {
   opacity: 0.7;
+}
+
+.picture__pdf {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-chalk);
 }
 
 .picture__shot {

@@ -26,6 +26,8 @@ import type {
   CreateCommitteeRequest,
   CreateContributionPeriodRequest,
   CreateEventRequest,
+  DeclarationDraftRequest,
+  DeclarationResponse,
   CreateUserRequest,
   ContributionPeriodResponse,
   ContributionResponse,
@@ -48,6 +50,7 @@ import type {
   MembershipTypeResponse,
   OwnMandateResponse,
   PublishLineupRequest,
+  ReceiptResponse,
   Role,
   RosterEntryResponse,
   RosterMemberResponse,
@@ -637,6 +640,32 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const incassoRuns: Wire<IncassoRunView>[] = []
   let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
   let ownBankAccount: Wire<BankAccountPreviewResponse> | null = null
+  // The member's own declarations, and the receipts uploaded for them, as the api keeps them.
+  const ownDeclarations = new Map<number, Wire<DeclarationResponse>>()
+  const uploadedReceipts = new Map<number, Wire<ReceiptResponse>>()
+  let nextDeclarationId = 40
+  const declared = (id: number, body: DeclarationDraftRequest, held?: Wire<DeclarationResponse>): Wire<DeclarationResponse> => ({
+    id,
+    state: held?.state ?? "DRAFT",
+    submitter: "M. Member",
+    confirmed: body.confirmed ?? false,
+    createdAt: held?.createdAt ?? "2026-10-15T10:00:00.000Z",
+    receipts: (body.receipts ?? []).map(one => uploadedReceipts.get(one)!),
+    expenses: (body.expenses ?? []).map((expense, index) => ({
+      id: id * 100 + index,
+      paidOn: expense.paidOn ?? null,
+      description: expense.description ?? "",
+      amountCents: expense.amountCents ?? null,
+      bookedTo: null,
+      receipts: (expense.receipts ?? []).map(one => uploadedReceipts.get(one)!),
+    })),
+    steps: held?.steps ?? [{state: "DRAFT", at: "2026-10-15T10:00:00.000Z", by: "M. Member", reason: null}],
+  })
+  const stepped = (held: Wire<DeclarationResponse>, state: Wire<DeclarationResponse>["state"]) => {
+    const moved = {...held, state, confirmed: state === "DRAFT" ? false : held.confirmed, steps: [...held.steps, {state, at: "2026-10-15T11:00:00.000Z", by: "M. Member", reason: null}]}
+    ownDeclarations.set(held.id, moved)
+    return moved
+  }
   const payingByIncasso = new Set(fixtures.onIncasso ?? [])
   const recordedMandates = new Map<number, Wire<MandateResponse>>()
   // A standing mandate is the only "pays by direct debit"; ending one keeps it as the record.
@@ -946,6 +975,36 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const saved = {ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2), recordedAt: "2026-10-15T10:00:00.000Z"}
       ownBankAccount = saved
       return answer(route, "replaceOwnBankAccount", saved)
+    }
+    if (method === "POST" && path === "/declarations/receipts") {
+      const id = 500 + uploadedReceipts.size + 1
+      const receipt = {id, name: "receipt.webp", mediaType: "image/webp", url: `/declarations/receipts/${id}`}
+      uploadedReceipts.set(id, receipt)
+      return answer(route, "uploadReceipt", receipt, 201)
+    }
+    if (method === "GET" && /^\/declarations\/receipts\/\d+$/.test(path)) {
+      return route.fulfill({status: 200, contentType: "image/webp", body: Buffer.from("UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf", "base64")})
+    }
+    if (path === "/users/me/declarations") {
+      if (method === "GET") return answer(route, "listOwnDeclarations", [...ownDeclarations.values()].reverse())
+      const created = declared(nextDeclarationId++, request.postDataJSON() as DeclarationDraftRequest)
+      ownDeclarations.set(created.id, created)
+      return answer(route, "startDeclaration", created, 201)
+    }
+    const declarationPath = /^\/users\/me\/declarations\/(\d+)(?:\/(submit|withdraw))?$/.exec(path)
+    if (declarationPath) {
+      const held = ownDeclarations.get(Number(declarationPath[1]))
+      if (!held) return fulfillJson(route, {code: "DeclarationNotFound"}, 404)
+      if (declarationPath[2] === "submit") return answer(route, "submitDeclaration", stepped(held, "SUBMITTED"))
+      if (declarationPath[2] === "withdraw") return answer(route, "withdrawDeclaration", stepped(held, "DRAFT"))
+      if (method === "GET") return answer(route, "findOwnDeclaration", held)
+      if (method === "DELETE") {
+        ownDeclarations.delete(held.id)
+        return route.fulfill({status: 204, body: ""})
+      }
+      const saved = declared(held.id, request.postDataJSON() as DeclarationDraftRequest, held)
+      ownDeclarations.set(held.id, saved)
+      return answer(route, "saveDeclarationDraft", saved)
     }
     if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
       if (method === "GET") return answer(route, "findOwnMandate", ownMandate)

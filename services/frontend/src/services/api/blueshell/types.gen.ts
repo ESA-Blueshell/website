@@ -395,6 +395,25 @@ export type BoardResponse = {
     version: number;
 };
 
+export enum BookingKind {
+    COMMITTEE = 'COMMITTEE',
+    EVENT = 'EVENT'
+}
+
+export type BookingRequest = {
+    id: number;
+    kind: BookingKind;
+};
+
+export type BookingResponse = {
+    id: number;
+    kind: BookingKind;
+    /**
+     * The committee's or event's name when the expense was saved.
+     */
+    name: string;
+};
+
 export enum BotChannelProblem {
     CANNOT_SEE = 'CANNOT_SEE',
     CANNOT_CHANGE_ACCESS = 'CANNOT_CHANGE_ACCESS'
@@ -1186,6 +1205,53 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type DeclarationDraftRequest = {
+    confirmed: boolean;
+    expenses: Array<ExpenseRequest>;
+    /**
+     * The receipts for the declaration as a whole, as the ids the upload answered.
+     */
+    receipts: Array<number>;
+};
+
+export type DeclarationResponse = {
+    confirmed: boolean;
+    createdAt: string;
+    expenses: Array<ExpenseResponse>;
+    id: number;
+    /**
+     * The receipts for the declaration as a whole.
+     */
+    receipts: Array<ReceiptResponse>;
+    state: DeclarationState;
+    /**
+     * Every change of state, oldest first. A draft step after the first is a withdrawal or, with a reason, a send back.
+     */
+    steps: Array<DeclarationStepResponse>;
+    /**
+     * The submitter's name as it is now.
+     */
+    submitter: string;
+};
+
+export enum DeclarationState {
+    DRAFT = 'DRAFT',
+    SUBMITTED = 'SUBMITTED',
+    APPROVED = 'APPROVED',
+    PAID = 'PAID',
+    REJECTED = 'REJECTED'
+}
+
+export type DeclarationStepResponse = {
+    at: string;
+    /**
+     * Who made the change, by name, or nothing where their account is gone.
+     */
+    by?: string | null;
+    reason?: string | null;
+    state: DeclarationState;
+};
+
 /**
  * The list's name, typed exactly, to confirm a delete Brevo cannot undo.
  */
@@ -1774,6 +1840,23 @@ export type EventSignUpResponse = {
     version: number;
 };
 
+export type ExpenseRequest = {
+    amountCents?: number | null;
+    bookedTo?: BookingRequest | null;
+    description: string;
+    paidOn?: string | null;
+    receipts: Array<number>;
+};
+
+export type ExpenseResponse = {
+    amountCents?: number | null;
+    bookedTo?: BookingResponse | null;
+    description: string;
+    id: number;
+    paidOn?: string | null;
+    receipts: Array<ReceiptResponse>;
+};
+
 export type ExternalDrift = {
     externalUserIds: Array<string>;
 };
@@ -1923,7 +2006,8 @@ export enum FileType {
     TEAM_ICON = 'TEAM_ICON',
     ROSTER_ICON = 'ROSTER_ICON',
     BOARD_PHOTO = 'BOARD_PHOTO',
-    BOARD_PORTRAIT = 'BOARD_PORTRAIT'
+    BOARD_PORTRAIT = 'BOARD_PORTRAIT',
+    RECEIPT = 'RECEIPT'
 }
 
 export type FirstContribution = {
@@ -2957,6 +3041,16 @@ export type ReachResponse = {
 
 export type ReasonRequest = {
     reason: string;
+};
+
+export type ReceiptResponse = {
+    id: number;
+    mediaType: string;
+    name: string;
+    /**
+     * Where the submitter and the board open it, as a path on the api.
+     */
+    url: string;
 };
 
 /**
@@ -6545,6 +6639,92 @@ export type CsrfResponses = {
 };
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
+
+export type UploadReceiptData = {
+    body?: {
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/declarations/receipts';
+};
+
+export type UploadReceiptErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type UploadReceiptError = UploadReceiptErrors[keyof UploadReceiptErrors];
+
+export type UploadReceiptResponses = {
+    /**
+     * Created
+     */
+    201: ReceiptResponse;
+};
+
+export type UploadReceiptResponse = UploadReceiptResponses[keyof UploadReceiptResponses];
+
+export type OpenReceiptData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/receipts/{id}';
+};
+
+export type OpenReceiptErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type OpenReceiptError = OpenReceiptErrors[keyof OpenReceiptErrors];
+
+export type OpenReceiptResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type OpenReceiptResponse = OpenReceiptResponses[keyof OpenReceiptResponses];
 
 export type PreviewDescriptionData = {
     body: DescriptionPreviewRequest;
@@ -14956,6 +15136,303 @@ export type FindOwnContributionsResponses = {
 };
 
 export type FindOwnContributionsResponse = FindOwnContributionsResponses[keyof FindOwnContributionsResponses];
+
+export type ListOwnDeclarationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/declarations';
+};
+
+export type ListOwnDeclarationsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListOwnDeclarationsError = ListOwnDeclarationsErrors[keyof ListOwnDeclarationsErrors];
+
+export type ListOwnDeclarationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DeclarationResponse>;
+};
+
+export type ListOwnDeclarationsResponse = ListOwnDeclarationsResponses[keyof ListOwnDeclarationsResponses];
+
+export type StartDeclarationData = {
+    body: DeclarationDraftRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/declarations';
+};
+
+export type StartDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type StartDeclarationError = StartDeclarationErrors[keyof StartDeclarationErrors];
+
+export type StartDeclarationResponses = {
+    /**
+     * Created
+     */
+    201: DeclarationResponse;
+};
+
+export type StartDeclarationResponse = StartDeclarationResponses[keyof StartDeclarationResponses];
+
+export type DeleteDeclarationDraftData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/declarations/{id}';
+};
+
+export type DeleteDeclarationDraftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteDeclarationDraftError = DeleteDeclarationDraftErrors[keyof DeleteDeclarationDraftErrors];
+
+export type DeleteDeclarationDraftResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteDeclarationDraftResponse = DeleteDeclarationDraftResponses[keyof DeleteDeclarationDraftResponses];
+
+export type FindOwnDeclarationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/declarations/{id}';
+};
+
+export type FindOwnDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnDeclarationError = FindOwnDeclarationErrors[keyof FindOwnDeclarationErrors];
+
+export type FindOwnDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type FindOwnDeclarationResponse = FindOwnDeclarationResponses[keyof FindOwnDeclarationResponses];
+
+export type SaveDeclarationDraftData = {
+    body: DeclarationDraftRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/declarations/{id}';
+};
+
+export type SaveDeclarationDraftErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SaveDeclarationDraftError = SaveDeclarationDraftErrors[keyof SaveDeclarationDraftErrors];
+
+export type SaveDeclarationDraftResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type SaveDeclarationDraftResponse = SaveDeclarationDraftResponses[keyof SaveDeclarationDraftResponses];
+
+export type SubmitDeclarationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/declarations/{id}/submit';
+};
+
+export type SubmitDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SubmitDeclarationError = SubmitDeclarationErrors[keyof SubmitDeclarationErrors];
+
+export type SubmitDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type SubmitDeclarationResponse = SubmitDeclarationResponses[keyof SubmitDeclarationResponses];
+
+export type WithdrawDeclarationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/users/me/declarations/{id}/withdraw';
+};
+
+export type WithdrawDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type WithdrawDeclarationError = WithdrawDeclarationErrors[keyof WithdrawDeclarationErrors];
+
+export type WithdrawDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type WithdrawDeclarationResponse = WithdrawDeclarationResponses[keyof WithdrawDeclarationResponses];
 
 export type EmailAddressData = {
     body?: never;

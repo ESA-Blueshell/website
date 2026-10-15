@@ -120,6 +120,7 @@ export const accountFor = (reader: NavReader): NavEntry[] => [
   // Always offered: without an address on file, the page is where the first one is written.
   {label: "Address", to: reader.addressId == null ? "/account/addresses" : `/account/addresses/${reader.addressId}`},
   {label: "Payment details", to: "/account/payment-details"},
+  {label: "Declarations", to: "/account/declarations"},
 ]
 
 /**

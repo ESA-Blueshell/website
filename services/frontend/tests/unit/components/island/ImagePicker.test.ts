@@ -54,6 +54,15 @@ describe("ImagePicker", () => {
     expect(accept({})).toBe("image/png,image/jpeg,image/webp")
     expect(accept({mayBeVector: true})).toBe("image/png,image/jpeg,image/webp,image/svg+xml")
     expect(accept({mayBeAnimated: true})).toBe("image/png,image/jpeg,image/webp,image/gif")
+    expect(accept({mayBePdf: true})).toBe("image/png,image/jpeg,image/webp,application/pdf")
+  })
+
+  it("names a PDF it holds rather than drawing it, and turns red when the form says so", () => {
+    const pdf = picker({picture: {path: "receipts/1.pdf", url: "/r/1", renditions: []}, mayBePdf: true, invalid: true})
+
+    expect(pdf.get("[data-testid=art-preview]").text()).toBe("PDF")
+    expect(pdf.find("img").exists()).toBe(false)
+    expect(pdf.classes()).toContain("picture--wrong")
   })
 
   it("stores a chosen file and hands on the picture it became", async () => {

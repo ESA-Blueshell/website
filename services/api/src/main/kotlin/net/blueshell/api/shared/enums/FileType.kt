@@ -15,6 +15,8 @@ private val IMAGE = setOf("image/png", "image/jpeg", "image/jpg", "image/webp")
  */
 const val VECTOR_MEDIA_TYPE = "image/svg+xml"
 
+private const val PDF_MEDIA_TYPE = "application/pdf"
+
 private val LARGE_PUBLIC_IMAGE_WIDTHS = listOf(320, 640, 960, 1280, 1920, 2560)
 private val ICON_WIDTHS = listOf(128, 256, 512)
 
@@ -69,6 +71,11 @@ enum class FileType(
     val webpQuality: Int? = null,
     /** Whether this image kind is encoded as lossless WebP. */
     val webpLossless: Boolean = false,
+    /**
+     * Whether the same bytes from two people are two files. Where they are one, the file's
+     * uploader is whoever sent them last, which must not decide who may read a private one.
+     */
+    val keptPerUploader: Boolean = false,
     /** Candidate rendition widths for this kind, recorded with the ceiling that governs them. */
     val renditionWidths: List<Int> = emptyList(),
 ) {
@@ -80,7 +87,7 @@ enum class FileType(
      * Widen it when something needs to store a document that is not a PDF, rather than
      * leaving it open for a writer that does not exist yet.
      */
-    DOCUMENT("documents", allowedMediaTypes = setOf("application/pdf")),
+    DOCUMENT("documents", allowedMediaTypes = setOf(PDF_MEDIA_TYPE)),
 
     /** A member's own picture. A photograph, so it takes what the other photograph kinds take. */
     PROFILE_PICTURE("profile-pictures", allowedMediaTypes = IMAGE),
@@ -223,7 +230,24 @@ enum class FileType(
         webpQuality = 85,
         renditionWidths = PORTRAIT_WIDTHS,
     ),
+
+    /**
+     * A photo or PDF of a bill on a declaration, which only its submitter and the board open
+     * (api ADR-041). A photo is kept as WebP no larger than a receipt needs to be read; a PDF
+     * as it was sent. TWIN: the declarations adapter crops a photo to the same before sending it.
+     */
+    RECEIPT(
+        "receipts",
+        maxBytes = 15 * MB,
+        allowedMediaTypes = IMAGE + PDF_MEDIA_TYPE,
+        maxImageEdge = 1600,
+        webpQuality = 82,
+        keptPerUploader = true,
+    ),
     ;
+
+    /** Whether a file of this kind may be a PDF, which is stored as it came rather than converted. */
+    val admitsPdf: Boolean get() = PDF_MEDIA_TYPE in allowedMediaTypes
 
     /** Whether a logo of this kind may be a vector, which the banner kinds are not. */
     val admitsVector: Boolean get() = VECTOR_MEDIA_TYPE in allowedMediaTypes

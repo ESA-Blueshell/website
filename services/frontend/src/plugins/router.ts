@@ -268,6 +268,18 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "Bank account", requiresAuth: true},
   },
   {
+    path: "/account/declarations",
+    name: "accountDeclarations",
+    component: () => import("@/pages/login/Declarations.vue"),
+    meta: {title: "Declarations", requiresAuth: true},
+  },
+  {
+    path: "/account/declarations/:id(new|\\d+)",
+    name: "accountDeclaration",
+    component: () => import("@/pages/login/Declaration.vue"),
+    meta: {title: "Declaration", requiresAuth: true},
+  },
+  {
     path: SECURITY_PAGES.hub,
     name: "accountSecurity",
     component: () => import("@/pages/login/Security.vue"),

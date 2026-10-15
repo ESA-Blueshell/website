@@ -24,6 +24,7 @@ class ApplicationModuleDetectionTest {
                 "event",
                 "auth",
                 "contribution",
+                "declaration",
                 "survey",
                 "committee",
                 "board",

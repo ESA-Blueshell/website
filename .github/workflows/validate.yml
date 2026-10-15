@@ -73,6 +73,9 @@ jobs:
       # Every bucket in `.github/buckets.yml`, and `app`, as one JSON object. A
       # job reads one as `fromJSON(needs.changes.outputs.run).<bucket>`.
       run: ${{ steps.decide.outputs.run }}
+      # Which system tests to run and on how many shards, as JSON: all of them on six where the jar
+      # or the bundle changed, only those tagged `imaging` on one where only the imaging service did.
+      system-tests: ${{ steps.decide.outputs.system-tests }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -308,7 +311,8 @@ jobs:
     # `vite preview`, so building it once here spares six shards a build each.
     name: Frontend typecheck, lint and build
     needs: changes
-    if: fromJSON(needs.changes.outputs.run).app
+    # The imaging service's own system tests serve this branch's bundle too.
+    if: fromJSON(needs.changes.outputs.run).app || fromJSON(needs.changes.outputs.run).imaging
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -350,7 +354,8 @@ jobs:
     # so building it once here spares six shards a build each.
     name: API compile checks and jar
     needs: changes
-    if: fromJSON(needs.changes.outputs.run).app
+    # The imaging service's own system tests drive this branch's jar too.
+    if: fromJSON(needs.changes.outputs.run).app || fromJSON(needs.changes.outputs.run).imaging
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -746,15 +751,18 @@ jobs:
     # Each shard runs its own slice of the test classes, picked by a stable
     # hash of the class name, so a class always lands on the same shard. See
     # `shardByTestClass()` in build-logic/src/main/kotlin/TestSharding.kt.
-    name: System tests (shard ${{ matrix.shard }}/6)
+    #
+    # A change to the imaging service alone runs the tests tagged `imaging` on one shard: the ones
+    # that convert a picture through it, against this branch's api and frontend.
+    name: System tests (shard ${{ matrix.shard }}/${{ fromJSON(needs.changes.outputs.system-tests).total }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: [ changes, api-static, fe-static ]
-    if: fromJSON(needs.changes.outputs.run).app
+    if: fromJSON(needs.changes.outputs.run).app || fromJSON(needs.changes.outputs.run).imaging
     strategy:
       fail-fast: false
       matrix:
-        shard: [ 1, 2, 3, 4, 5, 6 ]
+        shard: ${{ fromJSON(needs.changes.outputs.system-tests).shards }}
 
     # MariaDB and Valkey are the only containers left in the loop, and both are
     # pulled rather than built. The api and the frontend run on the runner
@@ -801,10 +809,11 @@ jobs:
 
       - name: Run system tests
         env:
-          SHARD_TOTAL: 6
+          SHARD_TOTAL: ${{ fromJSON(needs.changes.outputs.system-tests).total }}
           SHARD_INDEX: ${{ matrix.shard }}
+          SYSTEM_TAGS: ${{ fromJSON(needs.changes.outputs.system-tests).tags }}
         run: |
-          ./gradlew --no-daemon :tests:system:test \
+          ./gradlew --no-daemon :tests:system:test -PsystemTags="$SYSTEM_TAGS" \
             -Dsystem.frontend.url=http://localhost:3000 \
             -Dtest.frontend.url=http://localhost:3000 \
             -Dtest.api.url=http://localhost:8080 \

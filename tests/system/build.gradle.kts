@@ -76,8 +76,13 @@ tasks.withType<Test>().configureEach {
 // are a separate CI step with their own report, so the engine is excluded here
 // to stop the same behaviour being exercised twice per pipeline.
 tasks.named<Test>("test") {
+    // `-PsystemTags` narrows the run to a JUnit tag expression: CI passes "system & imaging" to
+    // run only the tests that convert a picture when nothing but the imaging service changed.
+    val tags = project.findProperty("systemTags") as String? ?: "system"
+    inputs.property("systemTags", tags)
     useJUnitPlatform {
-        includeTags("system")
+        includeTags.clear()
+        includeTags(tags)
         excludeEngines("cucumber")
     }
 }

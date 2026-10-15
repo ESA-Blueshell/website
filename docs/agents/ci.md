@@ -29,19 +29,27 @@ belongs to. There are five, and each one skips work the others run:
 | `api` | `services/api/**`, detekt config, the changeset scripts | api lint, unit, integration and coverage, `Build has no warnings`, schema compatibility, changeset SQL, and everything `app` runs |
 | `frontend` | `services/frontend/**` | frontend unit and e2e, and everything `app` runs |
 | `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
-| `imaging` | `services/imaging/**` but its compose file | `Imaging lint, tests and image`, and `Changed lines are covered` |
+| `imaging` | `services/imaging/**` but its compose file | `Imaging lint, tests and image`, `Changed lines are covered`, both compile jobs, and the system tests tagged `imaging` on one shard |
 
 `app` is any bucket but `platform` and `imaging`. It runs both compile jobs, the image builds, the
 system tests and the acceptance features, because the system tests drive the api through the
 pages and a change on either side can break them. `Validate OpenAPI client generation` runs on
 `api` or `frontend`, and `Changed lines are covered` on `api`, `frontend` or `imaging`.
 
+The api converts every upload through the imaging service, so a change to the service alone can
+break a page. `imaging` therefore builds the jar and the bundle and runs the system tests tagged
+`imaging`, the ones that convert a picture, on a single shard. `Decide what to validate` publishes
+that plan as its `system-tests` output, and the system-test job passes its tags to Gradle as
+`-PsystemTags`. Tag a new system test `imaging` when it uploads or draws a stored picture. With
+`app` on, every system test runs on six shards as before.
+
 `Imaging lint, tests and image` lints the Go source and the Dockerfile, checks the module for
 known vulnerabilities, runs the unit suite in the image's `test` stage, where it has to reach every
 statement, and then drives the built image with the container tests under `integration/`, run
 read-only, as the image's non-root user and with no capabilities. Only the unit suite counts
-towards coverage. The api's side of the conversation is `ImagingServiceIT`, which builds the same
-image with Testcontainers. `Workflow checks` runs on every pull request.
+towards coverage. The api's integration tests convert through the same image: the shards start it
+with the `start-imaging` action and find it through `IMAGING_URL`, and a local run builds it with
+Testcontainers. `Workflow checks` runs on every pull request.
 
 `Frontend typecheck, lint and build` also runs the job-catalogue test, which holds
 `src/utils/jobCatalog.ts` to the job types the api's sources register. The frontend unit job runs

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test
  * rather than that an image appeared.
  */
 @Tag("system")
+@Tag("imaging")
 class EsportsArtSystemTest : PlaywrightTestBase() {
     @Test
     fun `the index draws the shipped art, offered at the widths it is stored at`() {

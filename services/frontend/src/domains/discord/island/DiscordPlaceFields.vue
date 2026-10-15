@@ -11,7 +11,6 @@ import FormSection from "@/components/island/FormSection.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 import {type KeptChannel, type KeptRole, listKeepableChannels, listKeepableRoles} from "../adapters/keeping"
-import ChannelMark from "./ChannelMark.vue"
 
 defineOptions({name: "DiscordPlaceFields"})
 
@@ -54,7 +53,6 @@ const channelOptions = computed(() => channels.value
 const chosenChannels = computed(() => channelIds.value.map((id) => channelOptions.value.find((one) => one.key === id) ?? {key: id, label: id}))
 const pickable = computed(() => channelOptions.value.filter((one) => !channelIds.value.includes(one.key)))
 const hasRole = computed(() => linkedRole.value != null || roleKey.value != null)
-const isVoice = (id: string) => channels.value.find((one) => one.id === id)?.kind === "VOICE"
 
 watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
   choice.value = available.value
@@ -128,20 +126,7 @@ onMounted(async () => {
               :testid-prefix="`${testid}-channel-picker`"
               @add="(keys: string[]) => channelIds = [...channelIds, ...keys]"
               @remove="(key: string) => channelIds = channelIds.filter((one) => one !== key)"
-            >
-              <template #chip="{option}">
-                <channel-mark
-                  :name="option.label"
-                  :voice="isVoice(option.key)"
-                />
-              </template>
-              <template #option="{option}">
-                <channel-mark
-                  :name="option.label"
-                  :voice="isVoice(option.key)"
-                />
-              </template>
-            </chip-picker>
+            />
           </template>
         </form-field>
         <p

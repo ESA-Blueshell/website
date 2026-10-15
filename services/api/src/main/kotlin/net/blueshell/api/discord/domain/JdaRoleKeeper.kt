@@ -1,10 +1,12 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptRole
 import net.blueshell.api.discord.api.RoleHolder
 import net.blueshell.clients.discord.api.DiscordApi
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.UserSnowflake
@@ -57,7 +59,12 @@ class JdaRoleKeeper(
         discordUserId: String,
     ) {
         val guild = guild()
-        guild.addRoleToMember(UserSnowflake.fromId(discordUserId), roleOf(guild, roleId)).complete()
+        val role = roleOf(guild, roleId)
+        // A cohort's people are whoever the site's data says, so they never gain powers over the server through it.
+        if (role.permissionsRaw and POWERS != 0L) {
+            throw DiscordRefused("The site does not hand out ${role.name}: it has powers over the server.")
+        }
+        guild.addRoleToMember(UserSnowflake.fromId(discordUserId), role).complete()
     }
 
     override fun remove(
@@ -104,7 +111,7 @@ class JdaRoleKeeper(
     private fun keepable(
         role: Role,
         claimed: Set<String>,
-    ) = !role.isPublicRole && !role.isManaged && role.id !in claimed
+    ) = !role.isPublicRole && !role.isManaged && role.id !in claimed && role.permissionsRaw and POWERS == 0L
 
     private fun kept(
         guild: Guild,
@@ -116,3 +123,16 @@ class JdaRoleKeeper(
         const val MAX_PAGES = 20
     }
 }
+
+// What lets a role's holders run the server rather than take part in it.
+private val POWERS =
+    Permission.getRaw(
+        Permission.ADMINISTRATOR,
+        Permission.MANAGE_SERVER,
+        Permission.MANAGE_ROLES,
+        Permission.MANAGE_CHANNEL,
+        Permission.MANAGE_WEBHOOKS,
+        Permission.BAN_MEMBERS,
+        Permission.KICK_MEMBERS,
+        Permission.MODERATE_MEMBERS,
+    )

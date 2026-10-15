@@ -77,12 +77,14 @@ class CohortDiscordTest {
     @Test
     fun `an existing role is linked with the channels it opens, and a linked role's left-out channels are closed`() {
         given(linked = false)
+        whenever(roles.role("901")).thenReturn(KeptRole("901", "Lancie", true))
         whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "901")).thenReturn(CohortTargetRow(role, "901"))
         whenever(channels.openedTo("901")).thenReturn(listOf(sitecie))
 
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "901", channelIds = listOf("2")), "Committees")
 
-        verify(channels).open("2", "901", true)
+        // An existing channel is let in to the role and stays open to whoever it was open to.
+        verify(channels).open("2", "901", false)
         // The form did not know what the role opened, so linking it takes nothing off it.
         verify(channels, never()).close(any(), any())
 
@@ -95,6 +97,18 @@ class CohortDiscordTest {
         verify(channels, never()).close("9", "900")
         verify(targeting, never()).linkExisting(5, TargetSystem.DISCORD, "902")
         verify(channels, never()).createPrivate(any(), any(), any())
+    }
+
+    @Test
+    fun `a role the site may not hand out, or one it does not know, is refused before it is linked`() {
+        given(linked = false)
+        whenever(roles.role("906")).thenReturn(KeptRole("906", "Owner", false))
+
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "906"), "Committees") }
+            .isInstanceOf(TargetSystemRefused::class.java)
+        assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "907"), "Committees") }
+            .isInstanceOf(TargetNotFound::class.java)
+        verify(targeting, never()).linkExisting(any(), any(), any())
     }
 
     @Test
@@ -115,6 +129,7 @@ class CohortDiscordTest {
             .isInstanceOfSatisfying(TargetLinkedElsewhere::class.java) { assertThat(it.facts["cohort"]).isEqualTo("Orphan") }
         val own = Entities.target(id = 62, system = "DISCORD", cohortId = 5)
         whenever(targets.findFirstBySystemAndExternalId("DISCORD", "904")).thenReturn(own)
+        whenever(roles.role("904")).thenReturn(KeptRole("904", "Sitecie", true))
         whenever(targeting.linkExisting(5, TargetSystem.DISCORD, "904")).thenReturn(CohortTargetRow(role, "904"))
         whenever(channels.openedTo("904")).thenReturn(emptyList())
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(roleId = "904"), "Committees")
@@ -147,14 +162,14 @@ class CohortDiscordTest {
 
         verify(targeting).linkExisting(5, TargetSystem.DISCORD, "905")
         verify(targeting, never()).create(any(), any(), any(), anyOrNull())
-        verify(channels).open("1", "905", true)
+        verify(channels).open("1", "905", false)
         verify(channels, never()).createPrivate(any(), any(), any())
 
         // Run again with the channel already open to the role: nothing more is done.
         given(linked = true)
         whenever(channels.openedTo("900")).thenReturn(listOf(sitecie))
         discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("1"), createChannel = "sitecie"), "Committees")
-        verify(channels, never()).open("1", "900", true)
+        verify(channels, never()).open("1", "900", false)
         verify(channels, never()).createPrivate(any(), any(), any())
     }
 
@@ -179,7 +194,7 @@ class CohortDiscordTest {
     fun `a change Discord will not let the bot make is refused with Discord's reason`() {
         given(linked = true)
         whenever(channels.openedTo("900")).thenReturn(emptyList())
-        whenever(channels.open("2", "900", true)).thenThrow(DiscordRefused("The bot may not change lancie: it lacks View Channels there."))
+        whenever(channels.open("2", "900", false)).thenThrow(DiscordRefused("The bot may not change lancie: it lacks View Channels there."))
 
         assertThatThrownBy { discord.apply("COMMITTEE_MEMBERS:7", DiscordChoice(channelIds = listOf("2")), "Committees") }
             .isInstanceOfSatisfying(TargetSystemRefused::class.java) {

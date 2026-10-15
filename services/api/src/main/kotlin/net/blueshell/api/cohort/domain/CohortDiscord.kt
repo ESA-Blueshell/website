@@ -68,11 +68,15 @@ class CohortDiscord(
         val cohortId = cohortIdOf(key)
         if (isBoardCommittee(cohortId) && (choice.roleId != null || choice.createRole)) throw BoardCommitteeHasNoRole()
         val linked = roleOf(cohortId)
-        if (linked == null && choice.roleId != null) refuseIfFollowed(cohortId, choice.roleId)
+        if (linked == null && choice.roleId != null) {
+            refuseIfFollowed(cohortId, choice.roleId)
+            refuseUnless(handable = choice.roleId)
+        }
         val roleId = linked ?: refusedBy(TargetSystem.DISCORD) { roleFor(cohortId, choice) } ?: return read(key)
         refusedBy(TargetSystem.DISCORD) {
             val opened = channels.openedTo(roleId)
-            (choice.channelIds - opened.map { it.id }.toSet()).forEach { channels.open(it, roleId, private = true) }
+            // An existing channel is let in to the role and stays open to whoever it was open to.
+            (choice.channelIds - opened.map { it.id }.toSet()).forEach { channels.open(it, roleId, private = false) }
             // The form showed a linked role's channels, not those of a role it is linking now; a
             // category is opened from elsewhere and never named on a form.
             if (linked != null) {
@@ -97,6 +101,14 @@ class CohortDiscord(
         if (owner.cohortId == cohortId) return
         val label = owner.cohortId?.let { cohorts.findById(it).map { cohort -> cohort.label }.orElse(null) } ?: owner.label
         throw TargetLinkedElsewhere(TargetSystem.DISCORD, roleId, label)
+    }
+
+    // Only a role the site keeps, which carries no powers over the server, and the bot can hand out.
+    private fun refuseUnless(handable: String) {
+        val role = refusedBy(TargetSystem.DISCORD) { roles.role(handable) } ?: throw TargetNotFound(TargetSystem.DISCORD, handable)
+        if (!role.assignable) {
+            throw TargetSystemRefused(TargetSystem.DISCORD, "The bot's role is below ${role.name}, so it cannot hand it out.")
+        }
     }
 
     // A free role already called as the cohort is linked rather than made a second time.
@@ -124,7 +136,7 @@ class CohortDiscord(
         val existing = channels.channels().firstOrNull { it.kind == KeptChannelKind.TEXT && plainName(it.name) == plainName(name) }
         when {
             existing == null -> channels.createPrivate(name, category, roleId)
-            existing.id !in held -> channels.open(existing.id, roleId, private = true)
+            existing.id !in held -> channels.open(existing.id, roleId, private = false)
         }
     }
 

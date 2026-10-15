@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.board.api.BoardMembershipChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
@@ -51,6 +52,11 @@ class CohortRuleListener(
     fun onCommitteeMembershipChanged(evt: CommitteeMembershipChanged) {
         // A committee seated for the first time has a definition but no record yet.
         registrar.register()
+        updater.updateMember(evt.userId)
+    }
+
+    @AfterCommitListener
+    fun onBoardMembershipChanged(evt: BoardMembershipChanged) {
         updater.updateMember(evt.userId)
     }
 

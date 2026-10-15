@@ -276,6 +276,10 @@ class UserService @Autowired constructor(
     @Transactional(readOnly = true)
     fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(Role.allThatInherit(role)).toSet()
 
+    /** Everybody holding [role] itself, as stored; a role above it does not count. */
+    @Transactional(readOnly = true)
+    fun findIdsHoldingItself(role: Role): Set<Long> = repository.findIdsHolding(listOf(role)).toSet()
+
     /** The accounts linked to any of [discordIds]. */
     @Transactional(readOnly = true)
     fun findAllByDiscordIds(discordIds: Collection<String>): List<User> =

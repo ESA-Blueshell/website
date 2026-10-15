@@ -1,5 +1,6 @@
 package net.blueshell.api.cohort.domain
 
+import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
@@ -19,6 +20,8 @@ class CohortVerificationScheduler(
     private val targets: TargetRepository,
     private val targetExternalIds: CohortTargetIds,
     private val jobs: JobQueue,
+    private val definitions: CohortDefinitionRegistry,
+    private val updater: CohortMembershipUpdater,
 ) {
     @Scheduled(cron = "\${cohort.verify-cron:0 0 3 * * *}")
     fun verifyAllTargets() {
@@ -28,6 +31,12 @@ class CohortVerificationScheduler(
             }
         log.info("Scheduling reconcile for {} externally-mapped targets", mapped.size)
         mapped.forEach { jobs.reconcileTarget(it.id!!, JobTrigger.SCHEDULED_RUN) }
+    }
+
+    // The activists follow the board in office, which changes by date and with no event.
+    @Scheduled(cron = "\${cohort.recompute-cron:0 30 2 * * *}")
+    fun recomputeDatedCohorts() {
+        definitions.all().filter { it.type == CohortType.ACTIVISTS }.forEach(updater::updateCohort)
     }
 
     companion object {

@@ -148,6 +148,8 @@ class CohortDefinitionsTest {
                 CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
                 CohortType.COMMITTEE_MEMBERS to "Committees",
                 CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
+                CohortType.ACTIVISTS to "Activists",
+                CohortType.CURRENT_MEMBERS to "Members",
             ),
         )
     }

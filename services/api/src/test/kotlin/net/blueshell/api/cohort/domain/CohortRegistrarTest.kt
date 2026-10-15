@@ -62,6 +62,18 @@ class CohortRegistrarTest {
     }
 
     @Test
+    fun `a cohort that exists for Discord gets no Brevo list`() {
+        val activists = ActivistsDefinition(mockk(), mockk(), mockk())
+        every { definitions.all() } returns listOf(activists)
+        every { cohorts.findAll() } returns emptyList()
+
+        assertThat(registrar.register().created).isEqualTo(1)
+
+        verify(exactly = 0) { targets.save(any()) }
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.CreateCohortTarget, any(), any()) }
+    }
+
+    @Test
     fun `a cohort that already has a target row gets no second one`() {
         every { cohorts.findAll() } returns emptyList()
         every { targets.findByCohortIdAndSystem(3L, "BREVO") } returns Entities.target(id = 30L)

@@ -1,12 +1,16 @@
 package net.blueshell.api.board.domain
 
 import net.blueshell.api.board.api.BoardMemberService
+import net.blueshell.api.board.api.BoardMembershipChanged
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.event.TrackedEventPublisher
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
@@ -16,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -31,7 +36,25 @@ class BoardUseCasesTest {
     private val pictures = mock<StoredPictures>()
     private val userService = mock<UserService>()
     private val boardMemberService = mock<BoardMemberService>()
-    private val useCases = BoardUseCases(boards, boardMemberService, pictures, userService)
+    private val afterCommit = mock<AfterCommitEventPublisher>()
+    private val events = TrackedEventPublisher(afterCommit, mock { on { currentOrSystem() } doReturn Actor.system() }, mock())
+    private val useCases = BoardUseCases(boards, boardMemberService, pictures, userService, events)
+
+    @Test
+    fun `a place gained, moved to another account or given up tells the cohorts, for both accounts on a move`() {
+        val ann = Entities.user(id = 1L)
+        val bob = Entities.user(id = 2L)
+        val place = Entities.boardMember(id = 4L, user = ann)
+        whenever(boardMemberService.findMember(4L)).thenReturn(place)
+        whenever(boardMemberService.update(place)).thenReturn(place)
+        whenever(userService.findById(2L)).thenReturn(bob)
+
+        useCases.linkMember(4L, 2L)
+        useCases.removeMember(4L)
+
+        verify(afterCommit).publish(BoardMembershipChanged(1L))
+        verify(afterCommit, times(2)).publish(BoardMembershipChanged(2L))
+    }
 
     @Nested
     inner class CreateBoard {

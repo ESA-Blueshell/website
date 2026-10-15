@@ -51,6 +51,7 @@ class FolderTidy(
         // A name two kinds of cohort share, or one with no letters or digits, says nothing about where a list goes.
         val typeByName =
             all
+                .filter { it.type.listedOnBrevo }
                 .groupBy({ plainName(it.label) }, { it.type })
                 .filter { (name, types) -> name.isNotEmpty() && types.distinct().size == 1 }
                 .mapValues { it.value.first() }

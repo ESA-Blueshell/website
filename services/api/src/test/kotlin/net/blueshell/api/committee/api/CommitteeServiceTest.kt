@@ -1,6 +1,7 @@
 package net.blueshell.api.committee.api
 
 import net.blueshell.api.committee.persistence.Committee
+import net.blueshell.api.committee.persistence.CommitteeMember
 import net.blueshell.api.committee.persistence.CommitteeRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.game.api.GameArchived
@@ -165,9 +166,12 @@ class CommitteeServiceTest {
     @Test
     fun `archives a committee and brings it back`() {
         val lan = committee(1, "LanCie")
+        lan.replaceMembers(listOf(CommitteeMember(committee = lan, user = Entities.user(id = 8L))))
         stored(lan)
 
         assertThat(service.archive(1, true).archivedAt).isEqualTo(NOW)
+        // Its people may stop counting as activists.
+        verify(afterCommit).publish(CommitteeMembershipChanged(userId = 8L, committeeId = 1L))
         assertThat(lan.archived).isTrue()
         assertThat(service.archive(1, false).archivedAt).isNull()
         assertThat(lan.archived).isFalse()
@@ -226,6 +230,7 @@ class CommitteeServiceTest {
     @Test
     fun `saves a committee as given, and deletes one without events naming no taker`() {
         val lan = committee(1, "LanCie")
+        lan.replaceMembers(listOf(CommitteeMember(committee = lan, user = Entities.user(id = 8L))))
         stored(lan)
 
         assertThat(service.create(lan)).isSameAs(lan)
@@ -233,6 +238,7 @@ class CommitteeServiceTest {
         service.delete(1, null)
 
         verify(repository).delete(lan)
+        verify(afterCommit).publish(CommitteeMembershipChanged(userId = 8L, committeeId = 1L))
     }
 
     @Test

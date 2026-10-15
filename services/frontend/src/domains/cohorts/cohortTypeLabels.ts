@@ -12,6 +12,8 @@ export const COHORT_TYPE_LABELS: Record<CohortType, string> = {
   [CohortType.PERIOD_ACTIVE_MEMBERS]: "Active members in period",
   [CohortType.PERIOD_PAYERS]: "Contribution paid",
   [CohortType.NEWSLETTER_SUBSCRIBERS]: "Newsletter subscribers",
+  [CohortType.ACTIVISTS]: "Activists",
+  [CohortType.CURRENT_MEMBERS]: "Members",
 }
 
 export function cohortTypeLabel(type: CohortType): string {

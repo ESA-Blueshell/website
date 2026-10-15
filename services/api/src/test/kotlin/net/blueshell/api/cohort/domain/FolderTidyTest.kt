@@ -173,6 +173,8 @@ class FolderTidyTest {
                 CohortType.PERIOD_MEMBERS to "Members",
                 CohortType.PERIOD_ACTIVE_MEMBERS to "Active members",
                 CohortType.NEWSLETTER_SUBSCRIBERS to "Newsletter",
+                CohortType.ACTIVISTS to "Activists",
+                CohortType.CURRENT_MEMBERS to "Members",
             ),
         )
     }
@@ -189,5 +191,13 @@ class FolderTidyTest {
         )
 
         assertThat(tidy.preview(TargetSystem.BREVO).moves.filter { it.byName }).isEmpty()
+    }
+
+    @Test
+    fun `a cohort with no Brevo list proposes no hand-made list by its name`() {
+        given(list("400", "Activists", "Old stuff"))
+        whenever(cohorts.findAll()).thenReturn(listOf(Entities.cohort(id = 1L, type = CohortType.ACTIVISTS, label = "Activists")))
+
+        assertThat(tidy.preview(TargetSystem.BREVO).moves).isEmpty()
     }
 }

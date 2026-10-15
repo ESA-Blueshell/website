@@ -131,6 +131,52 @@ func TestGifDisposalIsReplayed(t *testing.T) {
 	}
 }
 
+// Two frames that each put back what was under them: the second reuses the first's saved rows.
+func TestRestoreToPreviousTwiceKeepsTheCanvasUnderneath(t *testing.T) {
+	data := gifOf(t, &gif.GIF{
+		Image: []*image.Paletted{
+			gifFrameOf(image.Rect(0, 0, 40, 20), red),
+			gifFrameOf(image.Rect(0, 0, 20, 20), green),
+			gifFrameOf(image.Rect(0, 0, 10, 10), blue),
+			gifFrameOf(image.Rect(30, 0, 40, 20), green),
+		},
+		Delay:    []int{10, 10, 10, 10},
+		Disposal: []byte{gif.DisposalNone, gif.DisposalPrevious, gif.DisposalPrevious, gif.DisposalNone},
+	})
+	got, err := Convert(data, Target{MaxEdge: 2560, Lossless: true, Quality: 75}, roomy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shown, _ := played(t, got.WebP)
+	assertColour(t, shown[2], 5, 5, blue)
+	assertColour(t, shown[3], 5, 5, red)
+	assertColour(t, shown[3], 15, 15, red)
+	assertColour(t, shown[3], 35, 10, green)
+}
+
+// A GIF whose frames carry no graphic control extension: every frame is shown for the tenth of a
+// second a browser gives it, and nothing is disposed.
+func TestGifWithoutControlExtensionsIsShownAtATenthOfASecond(t *testing.T) {
+	data := threeFrames(t, gif.DisposalBackground)
+	bare := make([]byte, 0, len(data))
+	for i := 0; i < len(data); i++ {
+		if i+8 <= len(data) && data[i] == 0x21 && data[i+1] == 0xF9 && data[i+2] == 4 && data[i+7] == 0 {
+			i += 7
+			continue
+		}
+		bare = append(bare, data[i])
+	}
+	got, err := Convert(bare, Target{MaxEdge: 2560, Lossless: true, Quality: 75}, roomy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shown, durations := played(t, got.WebP)
+	if len(shown) != 3 || durations[0] != 100 || durations[2] != 100 {
+		t.Fatalf("got %d frames shown for %v", len(shown), durations)
+	}
+	assertColour(t, shown[2], 5, 10, green)
+}
+
 func TestAnimatedMasterIsBroughtUnderItsCeiling(t *testing.T) {
 	got, err := Convert(threeFrames(t, gif.DisposalNone), Target{MaxEdge: 20, Quality: 82}, roomy)
 	if err != nil {
@@ -251,6 +297,21 @@ func TestGifWithoutItsTrailerKeepsEveryFrame(t *testing.T) {
 	}
 }
 
+// A control extension of the wrong length is not one the decoder can trust, so its frame takes the
+// defaults rather than a delay read from the wrong bytes.
+func TestGifControlExtensionOfTheWrongLengthIsIgnored(t *testing.T) {
+	data := threeFrames(t, gif.DisposalNone)
+	first := bytes.Index(data, []byte{0x21, 0xF9, 4})
+	long := append(append(bytes.Clone(data[:first+7]), 1, 0), data[first+7:]...)
+	got, err := Convert(long, Target{MaxEdge: 2560, Quality: 82}, roomy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, durations := played(t, got.WebP); durations[0] != 100 {
+		t.Fatalf("the first frame is shown for %dms", durations[0])
+	}
+}
+
 func TestGifThatIsNotOneIsRefused(t *testing.T) {
 	data := threeFrames(t, gif.DisposalNone)
 	table := bytes.Clone(data)
@@ -258,10 +319,13 @@ func TestGifThatIsNotOneIsRefused(t *testing.T) {
 	far := bytes.Clone(data)
 	first := bytes.Index(far, []byte{0x2C, 0, 0, 0, 0, 40, 0})
 	binary.LittleEndian.PutUint16(far[first+1:], 65535)
+	low := bytes.Clone(data)
+	binary.LittleEndian.PutUint16(low[first+3:], 65535)
 	for name, bad := range map[string][]byte{
 		"shorter than a header":         data[:12],
 		"a colour table past its end":   table,
 		"a frame past the largest edge": far,
+		"a frame below the lowest edge": low,
 		"no frames":                     []byte("GIF89a\x01\x00\x01\x00\x00\x00\x00;"),
 	} {
 		if _, err := Convert(bad, Target{MaxEdge: 2560, Quality: 82}, roomy); !errors.Is(err, ErrUndecodable) {
@@ -403,6 +467,19 @@ func TestAnimationLongerThanWebPCanSayIsAStillOfItsFirstFrame(t *testing.T) {
 	}
 	got, err := Convert(riffOf(chunks...), Target{MaxEdge: 2560, Quality: 82}, Limits{MaxPixels: 16, MaxFrames: 200, MaxAnimationPixels: 1 << 20})
 	if err != nil || got.Frames != 1 || !errors.Is(got.Unanimated, errTooLong) {
+		t.Fatalf("got %d frames (%v), %v", got.Frames, got.Unanimated, err)
+	}
+}
+
+// A WebP with the extended header but no animation flag, as a lossy picture with transparency has,
+// is a still.
+func TestExtendedStillWebPIsConvertedAsAStill(t *testing.T) {
+	master, err := Convert(pngOf(t, picture(64, 32, true)), Target{MaxEdge: 2560, Quality: 82}, roomy)
+	if err != nil || !bytes.HasPrefix(master.WebP[12:], []byte("VP8X")) {
+		t.Fatalf("the fixture has no extended header: %v", err)
+	}
+	got, err := Convert(master.WebP, Target{Width: 32, Height: 16, Quality: 82}, roomy)
+	if err != nil || got.Frames != 1 || got.Unanimated != nil {
 		t.Fatalf("got %d frames (%v), %v", got.Frames, got.Unanimated, err)
 	}
 }

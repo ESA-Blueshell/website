@@ -9,14 +9,13 @@ import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.AnimatedGifs
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.WebpFrames
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.awt.image.BufferedImage
@@ -25,14 +24,11 @@ import javax.imageio.ImageIO
 
 /**
  * Uploads converted by the real imaging service: a still's master and every width stored as WebP
- * at the sizes the in-process converter drew them at, and an animated banner kept animated at
+ * at the sizes the api's own converter drew them at, and an animated banner kept animated at
  * every width.
  */
 @SpringBootTest
 class ImagingServiceIT : UserTestSupport() {
-    @Autowired
-    private lateinit var converter: ImageConverter
-
     @Autowired
     private lateinit var blobs: BlobStore
 
@@ -41,12 +37,6 @@ class ImagingServiceIT : UserTestSupport() {
 
     @Autowired
     private lateinit var executor: JobExecutor
-
-    @Autowired
-    private lateinit var webpEncoder: WebpEncoder
-
-    @Autowired
-    private lateinit var scratch: ScratchSpace
 
     private fun picture(
         format: String,
@@ -85,11 +75,6 @@ class ImagingServiceIT : UserTestSupport() {
     )
 
     private fun storedSize(path: String) = blobs.open(path).use { WebpDimensions.of(it) }
-
-    @Test
-    fun `the service converts, not the api`() {
-        assertThat(converter).isInstanceOf(ImagingServiceConverter::class.java)
-    }
 
     @Test
     fun `a photograph over the ceiling is stored as WebP under it, with every width`() {
@@ -152,7 +137,7 @@ class ImagingServiceIT : UserTestSupport() {
     private fun gif(bytes: ByteArray) = MockMultipartFile("file", "banner.gif", MediaType.IMAGE_GIF_VALUE, bytes)
 
     /** The frame durations of the WebP stored at [path], or nothing where it is a still. */
-    private fun durationsOf(path: String) = scratch.hold(blobs.open(path)).use(webpEncoder::animationOf)?.durationsMillis
+    private fun durationsOf(path: String) = blobs.open(path).use { WebpFrames.durationsOf(it.readAllBytes()) }
 
     private fun runRenditionJobOf(fileId: Long) {
         val payload = mapper.writeValueAsString(ImageJobs.DeriveRenditionsPayload(fileId))
@@ -193,11 +178,5 @@ class ImagingServiceIT : UserTestSupport() {
     companion object {
         private const val IMAGE: Byte = 0x2C
         private const val TRAILER: Byte = 0x3B
-
-        @JvmStatic
-        @DynamicPropertySource
-        fun imaging(registry: DynamicPropertyRegistry) {
-            registry.add("app.imaging.url") { ImagingService.url }
-        }
     }
 }

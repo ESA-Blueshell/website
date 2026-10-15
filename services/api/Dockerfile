@@ -13,8 +13,6 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --destination layers
 
 FROM eclipse-temurin:25-jre-alpine@sha256:3c0a9084927a221ccd1d007fcaf614465672c0af37aaa834c5184483afe56d61 AS runtime
 
-RUN apk add --no-cache libwebp-tools
-
 RUN addgroup -S app && adduser -S -G app app
 
 WORKDIR /app

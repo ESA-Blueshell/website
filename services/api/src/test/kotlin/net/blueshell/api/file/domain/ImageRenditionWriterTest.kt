@@ -22,8 +22,8 @@ import java.util.Optional
 /**
  * What the ladder writes and records, given a converter.
  *
- * The ladder itself is proven end to end against the real converters in `ImageRenditionsIT`, and
- * what the converter does with frames that will not co-operate in `InProcessImageConverterTest`.
+ * The ladder itself is proven end to end against the imaging service in `ImageRenditionsIT`, and
+ * what the service does with frames that will not co-operate in its own suite.
  */
 class ImageRenditionWriterTest {
     @TempDir

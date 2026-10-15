@@ -98,7 +98,9 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
         assertThat(waitForEvent(eventId) { it.approved }.approved).isTrue()
     }
 
+    // Uploads a banner, which the imaging service converts.
     @Test
+    @Tag("imaging")
     fun `events page fetches banner after editing event banner`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Banner Edit Committee ${TestHelper.uniqueSuffix()}")

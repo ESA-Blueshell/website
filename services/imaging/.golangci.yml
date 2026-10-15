@@ -32,7 +32,7 @@ linters:
   exclusions:
     rules:
       # cgo rewrites the call into libwebp, and gocritic reads the rewrite.
-      - path: internal/convert/webp\.go
+      - path: internal/libwebp/libwebp\.go
         linters: [gocritic]
       # The parity test runs cwebp on files it wrote itself.
       - path: _test\.go

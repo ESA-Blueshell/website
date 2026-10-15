@@ -218,14 +218,18 @@ def parse_lcov(text: str) -> dict[str, dict[str, set[int]]]:
 GOCOVER_BLOCK = re.compile(r"^(.+):(\d+)\.\d+,(\d+)\.\d+ (\d+) (\d+)$")
 
 
-def parse_gocover(text: str) -> tuple[dict[str, float | None], dict[str, dict[str, set[int]]]]:
+def parse_gocover(text: str, counted: str | None = None) -> tuple[dict[str, float | None], dict[str, dict[str, set[int]]]]:
     """A Go coverprofile's statement total, and its lines, keyed by import path.
 
     Go counts statements in blocks and has no branch or function counter, so
-    those stay unmeasured. A line is covered only where every block on it ran:
-    a line that also holds a block that never ran is still owed a test. Blocks
-    repeat across packages under -coverpkg, so each is counted once, run if any
-    package's tests ran it.
+    those come from `counted`, the coverage-totals.json the imaging service's
+    coverage.sh writes beside the profile: branches from gobco, functions from
+    the profile. Without it they stay unmeasured.
+
+    A line is covered only where every block on it ran: a line that also
+    holds a block that never ran is still owed a test. Blocks repeat across
+    packages under -coverpkg, so each is counted once, run if any package's
+    tests ran it.
     """
     blocks: dict[tuple[str, int, int, int], bool] = {}
     for raw in text.splitlines():
@@ -251,6 +255,10 @@ def parse_gocover(text: str) -> tuple[dict[str, float | None], dict[str, dict[st
     totals["statements"] = _pct(run, total)
     line_total = sum(len(lines) for lines in seen.values())
     totals["lines"] = _pct(sum(len(lines) for lines in covered.values()), line_total)
+    if counted is not None:
+        extra = json.loads(counted)
+        for metric in ("branches", "functions"):
+            totals[metric] = _pct(extra[metric]["covered"], extra[metric]["total"])
     return totals, _measured(seen, covered)
 
 
@@ -289,7 +297,11 @@ def read_suites(coverage_dir: Path, in_progress: bool = False) -> tuple[dict[str
             if kind == "jacoco":
                 suite_totals, suite_lines = parse_jacoco(report.read_text(encoding="utf-8"))
             elif kind == "gocover":
-                suite_totals, suite_lines = parse_gocover(report.read_text(encoding="utf-8"))
+                counted = find_one(root, "coverage-totals.json")
+                suite_totals, suite_lines = parse_gocover(
+                    report.read_text(encoding="utf-8"),
+                    counted.read_text(encoding="utf-8") if counted else None,
+                )
             else:
                 suite_totals = parse_istanbul(report.read_text(encoding="utf-8"))
                 lcov = find_one(root, "lcov.info")

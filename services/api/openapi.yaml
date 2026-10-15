@@ -254,6 +254,8 @@ components:
       - JOB_DEAD
       - EXCEPTION_OPEN
       - DISCORD_BOT_PERMISSION
+      - DISCORD_ROLES_ABOVE_BOT
+      - DISCORD_CHANNELS_BEYOND_BOT
       type: string
     AnnounceChoice:
       enum:

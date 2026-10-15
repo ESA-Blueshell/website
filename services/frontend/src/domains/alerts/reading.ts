@@ -11,6 +11,10 @@ export function alertTitle(alert: Alert): string {
       return `${counted(alert.count, "exception is", "exceptions are")} open`
     case AlertKind.DISCORD_BOT_PERMISSION:
       return `The Discord bot lacks ${alert.subjectLabel}`
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+      return `${counted(alert.count, "linked role is", "linked roles are")} above the bot's role: ${alert.subjectLabel}`
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
+      return `The bot cannot change who can access ${counted(alert.count, "channel", "channels")}: ${alert.subjectLabel}`
   }
 }
 
@@ -23,6 +27,10 @@ export function alertRow(alert: Alert): {name: string; meta: string; from: strin
       return {name: alertTitle(alert), meta: "Not resolved yet", from: "Exceptions"}
     case AlertKind.DISCORD_BOT_PERMISSION:
       return {name: "The bot lacks a permission", meta: alert.subjectLabel ?? "", from: "Discord"}
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+      return {name: `${counted(alert.count, "role is", "roles are")} above the bot's role`, meta: alert.subjectLabel ?? "", from: "Discord"}
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
+      return {name: `The bot cannot change ${counted(alert.count, "channel", "channels")}`, meta: alert.subjectLabel ?? "", from: "Discord"}
   }
 }
 
@@ -34,6 +42,9 @@ export function alertLink(alert: Alert): string {
     case AlertKind.EXCEPTION_OPEN:
       return "/management/exceptions"
     case AlertKind.DISCORD_BOT_PERMISSION:
+    case AlertKind.DISCORD_CHANNELS_BEYOND_BOT:
       return "/management/platforms/discord/bot"
+    case AlertKind.DISCORD_ROLES_ABOVE_BOT:
+      return "/management/platforms/discord/roles"
   }
 }

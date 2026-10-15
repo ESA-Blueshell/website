@@ -97,6 +97,12 @@ describe("reading an alert", () => {
     [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "/management/exceptions"],
     [alert(AlertKind.DISCORD_BOT_PERMISSION, {subjectLabel: "Manage Roles"}),
       "The Discord bot lacks Manage Roles", "/management/platforms/discord/bot"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: "Sitecie"}),
+      "1 linked role is above the bot's role: Sitecie", "/management/platforms/discord/roles"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: "Sitecie, Lancie", count: 2}),
+      "2 linked roles are above the bot's role: Sitecie, Lancie", "/management/platforms/discord/roles"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {subjectLabel: "lan-room"}),
+      "The bot cannot change who can access 1 channel: lan-room", "/management/platforms/discord/bot"],
   ])("words %o and links it", (one, title, link) => {
     expect(alertTitle(one)).toBe(title)
     expect(alertLink(one)).toBe(link)
@@ -108,6 +114,8 @@ describe("an alert as a short row", () => {
     [alert(AlertKind.JOB_DEAD), "1 job is dead", "Every retry failed", "Jobs"],
     [alert(AlertKind.EXCEPTION_OPEN, {count: 4}), "4 exceptions are open", "Not resolved yet", "Exceptions"],
     [alert(AlertKind.DISCORD_BOT_PERMISSION, {subjectLabel: "Manage Roles"}), "The bot lacks a permission", "Manage Roles", "Discord"],
+    [alert(AlertKind.DISCORD_ROLES_ABOVE_BOT, {subjectLabel: "Sitecie"}), "1 role is above the bot's role", "Sitecie", "Discord"],
+    [alert(AlertKind.DISCORD_CHANNELS_BEYOND_BOT, {subjectLabel: "a, b", count: 2}), "The bot cannot change 2 channels", "a, b", "Discord"],
   ])("names %o, says what it is about and where it comes from", (one, name, meta, from) => {
     expect(alertRow(one)).toEqual({name, meta, from})
   })

@@ -9,6 +9,8 @@ enum class AlertKind {
     JOB_DEAD,
     EXCEPTION_OPEN,
     DISCORD_BOT_PERMISSION,
+    DISCORD_ROLES_ABOVE_BOT,
+    DISCORD_CHANNELS_BEYOND_BOT,
 }
 
 /** Who can act on an alert. An admin reads every alert; the board, the treasurer included, reads board alerts. */

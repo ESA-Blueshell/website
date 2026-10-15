@@ -264,11 +264,16 @@ function signedOut(id: number) {
 
   .row__state,
   .row__act {
-    grid-column: 3;
     margin-top: 0.45rem;
   }
 
+  /* The title's column is too narrow for the actions, so they take the whole row under it. */
+  .row__act {
+    grid-column: 1 / -1;
+  }
+
   .row__state {
+    grid-column: 3;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;

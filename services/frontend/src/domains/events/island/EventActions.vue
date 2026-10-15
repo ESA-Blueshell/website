@@ -135,7 +135,10 @@ async function confirmDelete() {
       {{ signUpLabel }}
     </cut-button>
 
-    <template v-if="manages">
+    <span
+      v-if="manages"
+      class="event-actions__manage"
+    >
       <button
         class="event-actions__approval"
         :class="{'event-actions__approval--on': event.approved}"
@@ -185,7 +188,7 @@ async function confirmDelete() {
           viewBox="0 0 24 24"
         ><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg>
       </icon-button>
-    </template>
+    </span>
 
     <confirm-dialog
       confirm-label="Delete"
@@ -212,6 +215,13 @@ async function confirmDelete() {
 .event-actions {
   display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* The organiser's actions wrap as one, so a narrow row never strands an icon on a line of its own. */
+.event-actions__manage {
+  display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }

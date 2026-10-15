@@ -44,7 +44,7 @@ export {
   type TidyPlan,
   type TargetOverview,
 } from "./adapters/cohorts"
-export {DRIFT_WORDS, adoptWord, driftRowsOf, inSyncOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
+export {DRIFT_WORDS, ROLE_DRIFT_WORDS, adoptWord, driftRowsOf, inSyncOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
 export {default as TargetDrift} from "./island/TargetDrift.vue"
 export {default as FolderCare} from "./island/FolderCare.vue"
 export {mergeFolders, readFolderStates, removeFolder, type FolderMerge, type FolderState} from "./adapters/cohorts"

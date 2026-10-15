@@ -16,7 +16,7 @@ import RowCheck from "@/components/management/RowCheck.vue"
 import {formatMoment} from "@/utils/timestamps"
 import {type Cohort, type CohortMember, type TargetMapping} from "../adapters/cohorts"
 import {type DriftAction, useDriftResolution} from "../composables/useDriftResolution"
-import {DRIFT_WORDS, adoptWord, driftRowsOf, whyOf} from "../listPage"
+import {DRIFT_WORDS, type DriftWords, adoptWord, driftRowsOf, whyOf} from "../listPage"
 import {memberName} from "../reading"
 
 defineOptions({name: "TargetDrift"})
@@ -27,11 +27,18 @@ const props = defineProps<{
   /** Prefixes every testid in the section, so a page's tests read as before. */
   testid: string
   reload: () => Promise<void>
+  /** The target's words for its drift; a list's by default. */
+  words?: DriftWords
+  /**
+   * Whether people link their own account there, as on Discord: nobody is then linked or taken in
+   * from drift, as the api refuses both.
+   */
+  ownAccounts?: boolean
 }>()
 
 const search = ref("")
 const system = computed(() => props.mapping.system)
-const words = DRIFT_WORDS
+const words = props.words ?? DRIFT_WORDS
 const drift = computed(() => driftRowsOf(props.cohort.members, system.value, search.value))
 const resolutions = computed(() => props.cohort.resolutions.filter((one) => one.system === system.value))
 const adopt = computed(() => adoptWord(props.cohort.type))
@@ -41,7 +48,7 @@ const mappings = computed(() => [props.mapping])
 const resolution = useDriftResolution(cohortId, mappings, () => props.reload())
 const {selection, plan, planCount, working} = resolution
 
-const ACTIONS: DriftAction[] = ["push", "adopt", "link", "remove"]
+const ACTIONS: DriftAction[] = props.ownAccounts ? ["push", "remove"] : ["push", "adopt", "link", "remove"]
 const actionWord = (action: DriftAction) => {
   if (action === "adopt") return adopt.value ?? "Add to the site"
   return words[action]
@@ -55,7 +62,7 @@ const bulkActions = computed(() =>
     .filter((one) => one.count > 0))
 const ticked = (row: CohortMember) => selection.value.has(row.targetMemberId)
 
-const markOf = (row: CohortMember) => (row.sync === "ONLY_HERE" ? "missing" : "extra")
+const markOf = (row: CohortMember) => (row.unreachable ? "unreachable" : row.sync === "ONLY_HERE" ? "missing" : "extra")
 const COLUMNS: TableColumn<CohortMember>[] = [
   {key: "who", label: "Person", wrap: true, sortBy: memberName},
   {key: "state", label: "State", sortBy: markOf},

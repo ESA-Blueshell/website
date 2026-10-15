@@ -102,6 +102,7 @@ describe("the Discord bot's page", () => {
     expect(router.resolve("/management/platforms/discord").matched.at(-1)?.redirect).toBe("/management/platforms/discord/roles")
     for (const [path, name] of [
       ["/management/platforms/discord/roles", "discordRoles"],
+      ["/management/platforms/discord/roles/900", "discordRole"],
       ["/management/platforms/discord/channels", "discordChannels"],
       ["/management/platforms/discord/bot", "discordBot"],
       ["/management/platforms/discord/settings", "discordSettings"],

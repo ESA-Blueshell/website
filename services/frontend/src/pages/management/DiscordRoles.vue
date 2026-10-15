@@ -89,7 +89,13 @@ onMounted(async () => {
       testid="discord-roles"
     >
       <template #role="{row}">
-        <role-mark :role="row.label" />
+        <router-link
+          class="roles__link"
+          :data-testid="`discord-role-open-${row.externalId}`"
+          :to="`/management/platforms/discord/roles/${row.externalId}`"
+        >
+          <role-mark :role="row.label" />
+        </router-link>
       </template>
       <template #follows="{row}">
         <span class="mg-quiet">{{ follows(row) }}</span>
@@ -116,5 +122,9 @@ onMounted(async () => {
 <style scoped>
 .roles__note {
   color: var(--color-ash);
+}
+
+.roles__link {
+  text-decoration: none;
 }
 </style>

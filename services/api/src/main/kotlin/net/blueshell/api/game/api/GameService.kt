@@ -196,14 +196,17 @@ class GameService(
         return saved
     }
 
-    // A channel another running game still lives in stays where its players find it.
+    // Casual only, so its esports channels stay; and a channel another running game, or any game's
+    // esports players, still live in stays where they find it.
     private fun ownChannelsOf(game: Game): List<String> {
-        val shared =
-            games
-                .findAll()
-                .filter { it.code != game.code && !it.archived }
-                .flatMapTo(mutableSetOf()) { other -> (other.channels + other.esportsChannels).map { it.channelId } }
-        return (game.channels + game.esportsChannels).map { it.channelId }.distinct().filter { it !in shared }
+        val all = games.findAll()
+        val running = all.filter { it.code != game.code && !it.archived }
+        val shared = all.flatMap { it.esportsChannels } + running.flatMap { it.channels }
+        val sharedIds = shared.map { it.channelId }.toSet()
+        return game.channels
+            .map { it.channelId }
+            .distinct()
+            .filter { it !in sharedIds }
     }
 
     /**

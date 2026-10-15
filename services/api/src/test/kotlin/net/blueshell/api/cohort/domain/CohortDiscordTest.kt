@@ -248,11 +248,13 @@ class CohortDiscordTest {
     fun `archiving moves only the channels under the category no other role is let into, and restoring brings them back`() {
         given(linked = true)
         val shared = KeptChannel("2", "lancie", KeptChannelKind.TEXT, "committees")
+        val open = KeptChannel("3", "committee-news", KeptChannelKind.TEXT, "Committees")
         whenever(channels.openings()).thenReturn(
             listOf(
                 ChannelOpening(sitecie, private = true, roleIds = listOf("900")),
                 ChannelOpening(shared, private = true, roleIds = listOf("900", "901")),
                 ChannelOpening(boardRoom, private = true, roleIds = listOf("900")),
+                ChannelOpening(open, private = false, roleIds = listOf("900")),
             ),
         )
 
@@ -269,7 +271,7 @@ class CohortDiscordTest {
         given(linked = false)
         discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
         given(linked = true)
-        whenever(channels.archive(listOf("1"))).thenThrow(DiscordRefused("no"))
+        whenever(channels.archive(listOf("1"))).thenThrow(DiscordUnavailable("gone"))
         whenever(channels.openings()).thenReturn(listOf(ChannelOpening(sitecie, private = true, roleIds = listOf("900"))))
         discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
         whenever(roles.available()).thenReturn(false)

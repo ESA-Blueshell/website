@@ -15,7 +15,9 @@ class GameChannelArchive(
     fun onGameArchiveChanged(event: GameArchiveChanged) {
         if (event.channelIds.isEmpty()) return
         if (!channels.available()) return log.warn("[discord] {} was archived or restored with no bot to move its channels", event.code)
-        if (event.archived) channels.archive(event.channelIds) else channels.restore(event.channelIds)
+        // After the commit, so a failure here is said in the log rather than failing the archive.
+        runCatching { if (event.archived) channels.archive(event.channelIds) else channels.restore(event.channelIds) }
+            .onFailure { log.warn("[discord] {}'s channels could not be moved: {}", event.code, it.message) }
     }
 
     private companion object {

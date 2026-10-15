@@ -167,7 +167,7 @@ class CommitteeService
             if (archived != committee.archived) {
                 committee.archived = archived
                 committee.archivedAt = if (archived) Instant.now(clock) else null
-                // A running committee's seats make somebody an activist and hold its role.
+                // A running committee's seats make somebody an activist; its channels move with it.
                 publishMembershipChanges(id, committee.members.mapNotNull { it.user.id }.toSet())
                 trackedEvents.publish { actor -> CommitteeArchiveChanged(id, archived, actor) }
             }

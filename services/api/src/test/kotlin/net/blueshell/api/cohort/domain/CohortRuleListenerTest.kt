@@ -35,8 +35,10 @@ class CohortRuleListenerTest {
     @Test
     fun `a committee archived or brought back moves its channels`() {
         listener.onCommitteeArchiveChanged(CommitteeArchiveChanged(7, archived = true))
+        listener.onCommitteeArchiveChanged(CommitteeArchiveChanged(7, archived = false))
 
         verify { discord.archive("COMMITTEE_MEMBERS:7", true, "Committees") }
+        verify { discord.archive("COMMITTEE_MEMBERS:7", false, "Committees") }
     }
 
     @Test

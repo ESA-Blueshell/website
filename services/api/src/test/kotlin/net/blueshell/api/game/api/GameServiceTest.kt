@@ -192,14 +192,18 @@ class GameServiceTest {
 
         chess.channels += GameChannel("1", "g", "chess")
         chess.channels += GameChannel("2", "g", "board-games")
+        chess.channels += GameChannel("3", "g", "tournaments")
+        chess.esportsChannels += GameChannel("4", "g", "chess-team")
         val go = game("GO", id = 2).apply { channels += GameChannel("2", "g", "board-games") }
-        whenever(games.findAll()).thenReturn(listOf(chess, go))
+        val dota = game("DOTA_2", id = 3).apply { esportsChannels += GameChannel("3", "g", "tournaments") }
+        whenever(games.findAll()).thenReturn(listOf(chess, go, dota))
 
         assertThat(service.archive("CHESS", true).archived).isTrue()
         assertThat(service.archive("CHESS", true).archived).isTrue()
         assertThat(service.archive("CHESS", false).archived).isFalse()
 
-        // A channel another game still lives in stays where it is; archiving twice moves nothing twice.
+        // Its esports channels, one another game lives in or one any game's players use stay where
+        // they are; archiving twice moves nothing twice.
         verify(afterCommit).publish(GameArchiveChanged("CHESS", true, listOf("1")))
         verify(afterCommit).publish(GameArchiveChanged("CHESS", false, listOf("1")))
         verify(afterCommit, times(2)).publish(any<GameArchiveChanged>())

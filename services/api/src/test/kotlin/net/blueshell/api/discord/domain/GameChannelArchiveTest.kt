@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.game.api.GameArchiveChanged
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -26,5 +27,10 @@ class GameChannelArchiveTest {
         verify(channels).restore(listOf("1"))
         verify(channels, never()).archive(listOf("2"))
         verify(channels, never()).archive(emptyList())
+
+        // Refused by Discord after the commit: said in the log, not thrown at the archive.
+        whenever(channels.available()).thenReturn(true)
+        whenever(channels.archive(listOf("5"))).thenThrow(DiscordRefused("no"))
+        archive.onGameArchiveChanged(GameArchiveChanged("GO", true, listOf("5")))
     }
 }

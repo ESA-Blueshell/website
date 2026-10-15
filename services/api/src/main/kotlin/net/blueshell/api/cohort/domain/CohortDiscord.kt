@@ -5,7 +5,6 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
-import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
@@ -105,8 +104,8 @@ class CohortDiscord(
     }
 
     /**
-     * Moves the channels under [category] that only the cohort's role is let into to the archive
-     * category, or back out. A shared channel stays where the others find it. Without a bot, or
+     * Moves the private channels under [category] that only the cohort's role is let into to the
+     * archive category, or back out. A shared or public channel stays where the others find it. Without a bot, or
      * where Discord refuses, nothing moves and the log says so rather than failing the archive.
      */
     fun archive(
@@ -117,17 +116,16 @@ class CohortDiscord(
         if (!roles.available() || !channels.available()) return log.warn("[cohort] {} was archived or restored with no bot", key)
         val cohort = cohorts.findByDefinitionKey(key) ?: return
         val roleId = roleOf(requireNotNull(cohort.id)) ?: return
-        val own = channels.openings().filter { it.roleIds == listOf(roleId) }.map { it.channel }
-        try {
+        // After the commit, so a failure here is said in the log rather than failing the archive.
+        runCatching {
+            val own = channels.openings().filter { it.private && it.roleIds == listOf(roleId) }.map { it.channel }
             if (archived) {
                 val inCategory = channelsUnder(category).map { it.id }.toSet()
                 channels.archive(own.filter { it.id in inCategory }.map { it.id })
             } else {
                 channels.restore(own.map { it.id })
             }
-        } catch (e: DiscordRefused) {
-            log.warn("[cohort] {}'s channels could not be moved: {}", key, e.message)
-        }
+        }.onFailure { log.warn("[cohort] {}'s channels could not be moved: {}", key, it.message) }
     }
 
     private fun refuseIfFollowed(

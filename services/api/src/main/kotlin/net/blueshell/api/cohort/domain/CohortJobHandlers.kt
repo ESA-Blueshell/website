@@ -49,13 +49,13 @@ class CohortJobHandlers(
 
     @Bean
     fun reconcileListHandler() =
-        bind(CohortJobs.ReconcileList) {
+        bindSkipping(CohortJobs.ReconcileList) {
             remediation.verifyTarget(it.targetId, it.trigger)
         }
 
     @Bean
     fun removeExternalMemberHandler() =
-        bind(CohortJobs.RemoveExternalMember) {
+        bindSkipping(CohortJobs.RemoveExternalMember) {
             remediation.removeExternalMember(it.targetId, it.externalUserId)
         }
 

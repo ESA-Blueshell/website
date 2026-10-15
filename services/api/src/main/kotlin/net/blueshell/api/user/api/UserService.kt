@@ -276,6 +276,11 @@ class UserService @Autowired constructor(
     @Transactional(readOnly = true)
     fun findIdsHolding(role: Role): Set<Long> = repository.findIdsHolding(Role.allThatInherit(role)).toSet()
 
+    /** The accounts linked to any of [discordIds]. */
+    @Transactional(readOnly = true)
+    fun findAllByDiscordIds(discordIds: Collection<String>): List<User> =
+        if (discordIds.isEmpty()) emptyList() else repository.findAllByDiscordIdIn(discordIds.toSet())
+
     /** The accounts holding any of [emails], matched without regard to case. */
     @Transactional(readOnly = true)
     fun findAllByEmails(emails: Collection<String>): List<User> =

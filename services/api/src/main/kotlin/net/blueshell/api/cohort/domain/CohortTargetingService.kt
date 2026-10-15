@@ -91,9 +91,10 @@ class CohortTargetingService(
             writeTransaction.execute {
                 requireCohort(cohortId) to unlinkedOrNone(cohortId, system)
             }
-        val folder = folderHint ?: CohortFolders.forType(cohort.type)
-
-        val external = outsideTransaction.execute { strategies.require(system).create(label, folder) }
+        val strategy = strategies.require(system)
+        val folder = if (strategy.folderKeeper == null) null else folderHint ?: CohortFolders.forType(cohort.type)
+        if (!strategy.available()) throw TargetSystemUnavailable(system)
+        val external = outsideTransaction.execute { strategy.create(label, folder) }
 
         return writeTransaction.execute {
             val target =
@@ -197,7 +198,15 @@ class CohortTargetingService(
         outsideTransaction.executeWithoutResult { strategies.require(system).delete(external) }
     }
 
+    // A system with no folders files a target nowhere, so a retry's lookup by folder still finds it.
     private fun folderOf(target: Target): String? =
+        if (strategies.require(TargetSystem.valueOf(target.system)).folderKeeper == null) {
+            null
+        } else {
+            folderIn(target)
+        }
+
+    private fun folderIn(target: Target): String? =
         target.cohortId
             ?.let { cohortRepo.findById(it).orElse(null) }
             ?.let { CohortFolders.forType(it.type) }

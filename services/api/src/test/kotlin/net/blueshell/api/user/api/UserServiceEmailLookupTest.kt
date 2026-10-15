@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 
 class UserServiceEmailLookupTest {
     private val ada = Entities.user(email = "ada@example.com")
@@ -26,5 +27,15 @@ class UserServiceEmailLookupTest {
 
         assertThat(UserService(repository, mock(), mock(), mock()).findAllByEmails(emptyList())).isEmpty()
         verifyNoInteractions(repository)
+    }
+
+    @Test
+    fun `finds the accounts linked to Discord ids, and asks nothing for none`() {
+        val repository = mock<UserRepository>()
+        whenever(repository.findAllByDiscordIdIn(setOf("d1"))).thenReturn(listOf(ada))
+        val users = UserService(repository, mock(), mock(), mock())
+
+        assertThat(users.findAllByDiscordIds(listOf("d1", "d1"))).containsExactly(ada)
+        assertThat(users.findAllByDiscordIds(emptyList())).isEmpty()
     }
 }

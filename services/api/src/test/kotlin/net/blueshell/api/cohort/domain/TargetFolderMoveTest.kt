@@ -20,7 +20,7 @@ class TargetFolderMoveTest {
         mockk<ContactListAdapter>(relaxed = true) {
             every { system } returns TargetSystem.BREVO
         }
-    private val strategy = BrevoTargetStrategy(listOf(lists))
+    private val strategy = BrevoTargetStrategy(listOf(lists), mockk(relaxed = true), mockk(relaxed = true))
 
     private val external =
         ExternalTarget(

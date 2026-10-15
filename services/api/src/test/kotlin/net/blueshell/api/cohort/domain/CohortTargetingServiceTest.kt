@@ -38,6 +38,7 @@ class CohortTargetingServiceTest {
     private val targetExternalIds = mock<CohortTargetIds>()
     private val jobs = mock<JobQueue>()
     private val strategy = mock<TargetStrategy>()
+    private val discord = mock<TargetStrategy>()
     private val strategies: TargetStrategies
 
     private val txManager =
@@ -55,7 +56,12 @@ class CohortTargetingServiceTest {
         whenever(strategy.system).thenReturn(TargetSystem.BREVO)
         whenever(strategy.descriptor).thenReturn(brevoDescriptor)
         whenever(strategy.resolve(any())).thenReturn(null)
-        strategies = TargetStrategies(listOf(strategy))
+        whenever(strategy.available()).thenReturn(true)
+        whenever(strategy.folderKeeper).thenReturn(mock())
+        whenever(discord.system).thenReturn(TargetSystem.DISCORD)
+        whenever(discord.descriptor).thenReturn(TargetDescriptor(TargetSystem.DISCORD, TargetKind.ROLE))
+        whenever(discord.available()).thenReturn(true)
+        strategies = TargetStrategies(listOf(strategy, discord))
         service = CohortTargetingService(targetRepo, cohortRepo, targetExternalIds, strategies, jobs, txManager)
     }
 
@@ -147,6 +153,39 @@ class CohortTargetingServiceTest {
         assert(ref.externalId == "55")
         verify(strategy, never()).create(any(), anyOrNull())
         verify(targetExternalIds).record(target, "55")
+    }
+
+    @Test
+    fun `create on a system without folders files the target nowhere, whatever folder was asked`() {
+        val saved = Entities.target(id = 42L, system = "DISCORD")
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+        whenever(discord.create("Activists", null)).thenReturn(role("r1", "Activists"))
+        whenever(targetRepo.save(any<Target>())).thenReturn(saved)
+
+        service.create(1L, TargetSystem.DISCORD, "Activists", "Lists")
+
+        verify(discord).create("Activists", null)
+        verify(targetRepo).save(org.mockito.kotlin.argThat<Target> { folder == null })
+    }
+
+    @Test
+    fun `on a system without folders, a target is filed nowhere and a retry finds the one its first run made`() {
+        val target = Entities.target(id = 7L, system = "DISCORD", label = "Activists", folder = null, cohortId = 1L)
+        whenever(targetRepo.findById(7L)).thenReturn(Optional.of(target))
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L, type = CohortType.COMMITTEE_MEMBERS)))
+        whenever(discord.create("Activists", null)).thenReturn(role("r1", "Activists"))
+
+        service.createFor(7L)
+
+        assert(target.folder == null)
+        verify(discord).create("Activists", null)
+
+        whenever(discord.catalog("Activists")).thenReturn(listOf(role("r1", "Activists")))
+
+        val ref = service.createFor(7L)
+
+        assert(ref.externalId == "r1")
+        verify(discord).create(any(), anyOrNull())
     }
 
     @Test
@@ -325,11 +364,29 @@ class CohortTargetingServiceTest {
         folder: String?,
     ) = ExternalTarget(TargetSystem.BREVO, id, TargetKind.LIST, label, folder)
 
+    private fun role(
+        id: String,
+        label: String,
+    ) = ExternalTarget(TargetSystem.DISCORD, id, TargetKind.ROLE, label)
+
     private companion object {
         val brevoDescriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,
                 kind = TargetKind.LIST,
             )
+    }
+
+    @Test
+    fun `create refuses a system that cannot be reached before anything is made`() {
+        whenever(strategy.available()).thenReturn(false)
+        whenever(cohortRepo.findById(1L)).thenReturn(Optional.of(Entities.cohort(id = 1L)))
+
+        org.assertj.core.api.Assertions
+            .assertThatThrownBy { service.create(1L, TargetSystem.BREVO, "Members", null) }
+            .isInstanceOf(TargetSystemUnavailable::class.java)
+        org.mockito.kotlin
+            .verify(strategy, org.mockito.kotlin.never())
+            .create(any(), anyOrNull())
     }
 }

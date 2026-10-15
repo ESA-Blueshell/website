@@ -55,7 +55,8 @@ class CommitteeMembersDefinition(
     override val label = committee.name
     override val folder = CohortFolders.COMMITTEES
 
-    override fun members(): Set<Long> = committeeMembers.findUserIdsOnCommittee(committee.id!!)
+    // An archived committee keeps its seats but holds nobody, so its role and list empty.
+    override fun members(): Set<Long> = if (committee.archived) emptySet() else committeeMembers.findUserIdsOnCommittee(committee.id!!)
 
     override fun contains(userId: Long): Boolean = userId in members()
 }

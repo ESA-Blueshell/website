@@ -5,6 +5,7 @@ import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -15,6 +16,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
@@ -41,7 +43,8 @@ class GameServiceTest {
                 refused += code
             }
         }
-    private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }))
+    private val afterCommit = mock<AfterCommitEventPublisher>()
+    private val service = GameService(games, pictures, provider(holding), provider(GamesInCompetition { setOf("CHESS") }), afterCommit)
 
     private fun game(
         code: String,
@@ -187,8 +190,19 @@ class GameServiceTest {
         val chess = game("CHESS")
         whenever(games.findByCode("CHESS")).thenReturn(chess)
 
+        chess.channels += GameChannel("1", "g", "chess")
+        chess.channels += GameChannel("2", "g", "board-games")
+        val go = game("GO", id = 2).apply { channels += GameChannel("2", "g", "board-games") }
+        whenever(games.findAll()).thenReturn(listOf(chess, go))
+
+        assertThat(service.archive("CHESS", true).archived).isTrue()
         assertThat(service.archive("CHESS", true).archived).isTrue()
         assertThat(service.archive("CHESS", false).archived).isFalse()
+
+        // A channel another game still lives in stays where it is; archiving twice moves nothing twice.
+        verify(afterCommit).publish(GameArchiveChanged("CHESS", true, listOf("1")))
+        verify(afterCommit).publish(GameArchiveChanged("CHESS", false, listOf("1")))
+        verify(afterCommit, times(2)).publish(any<GameArchiveChanged>())
     }
 
     @Test
@@ -220,7 +234,7 @@ class GameServiceTest {
             object : GameHoldings {
                 override fun refuseRemoval(code: String) = throw IllegalStateException("held")
             }
-        val strict = GameService(games, pictures, provider(refusing), provider())
+        val strict = GameService(games, pictures, provider(refusing), provider(), mock())
 
         assertThatThrownBy { strict.remove("CHESS") }.hasMessage("held")
         verify(games, never()).remove(any())
@@ -237,7 +251,7 @@ class GameServiceTest {
             object : GameHoldings {
                 override fun heldAgainst(code: String) = GameHeld(events = 4, teams = 1)
             }
-        val counting = GameService(games, pictures, provider(teams, events), provider())
+        val counting = GameService(games, pictures, provider(teams, events), provider(), mock())
 
         assertThat(counting.heldAgainst("CHESS")).isEqualTo(GameHeld(teams = 3, players = 9, events = 4))
         assertThat(service.heldAgainst("CHESS")).isEqualTo(GameHeld())

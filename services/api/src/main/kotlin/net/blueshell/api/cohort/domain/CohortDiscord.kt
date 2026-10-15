@@ -5,10 +5,12 @@ import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.shared.enums.TargetSystem
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -102,6 +104,32 @@ class CohortDiscord(
         return read(key)
     }
 
+    /**
+     * Moves the channels under [category] that only the cohort's role is let into to the archive
+     * category, or back out. A shared channel stays where the others find it. Without a bot, or
+     * where Discord refuses, nothing moves and the log says so rather than failing the archive.
+     */
+    fun archive(
+        key: String,
+        archived: Boolean,
+        category: String,
+    ) {
+        if (!roles.available() || !channels.available()) return log.warn("[cohort] {} was archived or restored with no bot", key)
+        val cohort = cohorts.findByDefinitionKey(key) ?: return
+        val roleId = roleOf(requireNotNull(cohort.id)) ?: return
+        val own = channels.openings().filter { it.roleIds == listOf(roleId) }.map { it.channel }
+        try {
+            if (archived) {
+                val inCategory = channelsUnder(category).map { it.id }.toSet()
+                channels.archive(own.filter { it.id in inCategory }.map { it.id })
+            } else {
+                channels.restore(own.map { it.id })
+            }
+        } catch (e: DiscordRefused) {
+            log.warn("[cohort] {}'s channels could not be moved: {}", key, e.message)
+        }
+    }
+
     private fun refuseIfFollowed(
         cohortId: Long,
         roleId: String,
@@ -177,6 +205,8 @@ class CohortDiscord(
     private fun roleOf(cohortId: Long): String? = targets.findByCohortIdAndSystem(cohortId, TargetSystem.DISCORD.name)?.let(targetIds::find)
 
     companion object {
+        private val log = LoggerFactory.getLogger(CohortDiscord::class.java)
+
         /**
          * The committee the board organises events through. The board in office will hold its own
          * role, so its committee holds none. TWIN: `BOARD_COMMITTEE` in `CommitteeEditor.vue`.

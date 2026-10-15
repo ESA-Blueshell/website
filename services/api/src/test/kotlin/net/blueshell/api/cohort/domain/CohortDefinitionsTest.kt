@@ -133,6 +133,20 @@ class CohortDefinitionsTest {
     }
 
     @Test
+    fun `an archived committee keeps its seats but holds nobody`() {
+        val stopped =
+            Committee(name = "Lancie", description = "LANs").apply {
+                id = 3L
+                archived = true
+            }
+
+        val definition = CommitteeMembersDefinition(stopped, mockk())
+
+        assertThat(definition.members()).isEmpty()
+        assertThat(definition.contains(5L)).isFalse()
+    }
+
+    @Test
     fun `each cohort type names its own Brevo folder`() {
         val committee = Committee(name = "Sitecie", description = "Builds the site").apply { id = 3L }
 

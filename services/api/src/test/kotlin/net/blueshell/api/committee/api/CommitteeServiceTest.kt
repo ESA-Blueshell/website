@@ -170,8 +170,9 @@ class CommitteeServiceTest {
         stored(lan)
 
         assertThat(service.archive(1, true).archivedAt).isEqualTo(NOW)
-        // Its people may stop counting as activists.
+        // Its people may stop counting as activists, and its channels go into the archive.
         verify(afterCommit).publish(CommitteeMembershipChanged(userId = 8L, committeeId = 1L))
+        verify(afterCommit).publish(CommitteeArchiveChanged(committeeId = 1L, archived = true))
         assertThat(lan.archived).isTrue()
         assertThat(service.archive(1, false).archivedAt).isNull()
         assertThat(lan.archived).isFalse()

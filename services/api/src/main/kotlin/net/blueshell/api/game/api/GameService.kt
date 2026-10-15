@@ -5,6 +5,7 @@ import net.blueshell.api.game.persistence.Game
 import net.blueshell.api.game.persistence.GameChannel
 import net.blueshell.api.game.persistence.GameRepository
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.model.addressOf
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.stereotype.Service
@@ -25,6 +26,7 @@ class GameService(
     // Looked up when asked, not injected: the modules implementing these read games through here.
     private val holdings: ObjectProvider<GameHoldings>,
     private val competition: ObjectProvider<GamesInCompetition>,
+    private val events: AfterCommitEventPublisher,
 ) {
     /**
      * Every game, with what a listing draws of each already read.
@@ -187,8 +189,24 @@ class GameService(
         archived: Boolean,
     ): Game {
         val existing = requireGame(game)
+        val changed = existing.archived != archived
         existing.archived = archived
-        return games.save(existing)
+        val saved = games.save(existing)
+        if (changed) events.publish(GameArchiveChanged(existing.code, archived, ownChannelsOf(existing)))
+        return saved
+    }
+
+    // Casual only, so its esports channels stay; and a channel another running game, or any game's
+    // esports players, still live in stays where they find it.
+    private fun ownChannelsOf(game: Game): List<String> {
+        val all = games.findAll()
+        val running = all.filter { it.code != game.code && !it.archived }
+        val shared = all.flatMap { it.esportsChannels } + running.flatMap { it.channels }
+        val sharedIds = shared.map { it.channelId }.toSet()
+        return game.channels
+            .map { it.channelId }
+            .distinct()
+            .filter { it !in sharedIds }
     }
 
     /**

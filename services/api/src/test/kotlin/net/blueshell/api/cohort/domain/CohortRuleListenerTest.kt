@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import io.mockk.mockk
 import io.mockk.verify
 import net.blueshell.api.board.api.BoardMembershipChanged
+import net.blueshell.api.committee.api.CommitteeArchiveChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.contribution.api.ContributionPeriodChanged
 import net.blueshell.api.esports.api.RosterChanged
@@ -11,7 +12,8 @@ import org.junit.jupiter.api.Test
 class CohortRuleListenerTest {
     private val updater: CohortMembershipUpdater = mockk(relaxed = true)
     private val registrar: CohortRegistrar = mockk(relaxed = true)
-    private val listener = CohortRuleListener(updater, registrar)
+    private val discord: CohortDiscord = mockk(relaxed = true)
+    private val listener = CohortRuleListener(updater, registrar, discord, "Committees")
 
     @Test
     fun `a new committee registers its cohort without touching anyone's membership`() {
@@ -28,6 +30,15 @@ class CohortRuleListenerTest {
         verify { registrar.register() }
         verify { updater.updateMember(7L) }
         verify { updater.updateMember(8L) }
+    }
+
+    @Test
+    fun `a committee archived or brought back moves its channels`() {
+        listener.onCommitteeArchiveChanged(CommitteeArchiveChanged(7, archived = true))
+        listener.onCommitteeArchiveChanged(CommitteeArchiveChanged(7, archived = false))
+
+        verify { discord.archive("COMMITTEE_MEMBERS:7", true, "Committees") }
+        verify { discord.archive("COMMITTEE_MEMBERS:7", false, "Committees") }
     }
 
     @Test

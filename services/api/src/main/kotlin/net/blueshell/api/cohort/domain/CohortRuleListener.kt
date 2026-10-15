@@ -1,6 +1,8 @@
 package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.board.api.BoardMembershipChanged
+import net.blueshell.api.cohort.persistence.CohortType
+import net.blueshell.api.committee.api.CommitteeArchiveChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
@@ -11,6 +13,7 @@ import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserCreated
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserUpdated
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 /**
@@ -26,6 +29,8 @@ import org.springframework.stereotype.Component
 class CohortRuleListener(
     private val updater: CohortMembershipUpdater,
     private val registrar: CohortRegistrar,
+    private val discord: CohortDiscord,
+    @param:Value($$"${discord.committees-category:Committees}") private val committeesCategory: String,
 ) {
     @AfterCommitListener
     fun onUserCreated(evt: UserCreated) {
@@ -55,6 +60,11 @@ class CohortRuleListener(
         registrar.register()
         updater.updateMember(evt.userId)
     }
+
+    // Its people leave through their own seat events; here only its channels move.
+    @AfterCommitListener
+    fun onCommitteeArchiveChanged(evt: CommitteeArchiveChanged) =
+        discord.archive("${CohortType.COMMITTEE_MEMBERS}:${evt.committeeId}", evt.archived, committeesCategory)
 
     @AfterCommitListener
     fun onRosterChanged(evt: RosterChanged) {

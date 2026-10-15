@@ -3,6 +3,7 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.cohort.persistence.CohortRepository
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.cohort.persistence.TargetRepository
+import net.blueshell.api.discord.api.ChannelOpening
 import net.blueshell.api.discord.api.DiscordChannelKeeper
 import net.blueshell.api.discord.api.DiscordRefused
 import net.blueshell.api.discord.api.DiscordRoleKeeper
@@ -241,5 +242,40 @@ class CohortDiscordTest {
             .isInstanceOfSatisfying(TargetSystemRefused::class.java) {
                 assertThat(it.facts["reason"].toString()).contains("lacks View Channels")
             }
+    }
+
+    @Test
+    fun `archiving moves only the channels under the category no other role is let into, and restoring brings them back`() {
+        given(linked = true)
+        val shared = KeptChannel("2", "lancie", KeptChannelKind.TEXT, "committees")
+        val open = KeptChannel("3", "committee-news", KeptChannelKind.TEXT, "Committees")
+        whenever(channels.openings()).thenReturn(
+            listOf(
+                ChannelOpening(sitecie, private = true, roleIds = listOf("900")),
+                ChannelOpening(shared, private = true, roleIds = listOf("900", "901")),
+                ChannelOpening(boardRoom, private = true, roleIds = listOf("900")),
+                ChannelOpening(open, private = false, roleIds = listOf("900")),
+            ),
+        )
+
+        discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
+        verify(channels).archive(listOf("1"))
+
+        // Restored from the archive category, whatever it now sits under.
+        val archived = sitecie.copy(category = "Archive")
+        whenever(channels.openings()).thenReturn(listOf(ChannelOpening(archived, private = true, roleIds = listOf("900"))))
+        discord.archive("COMMITTEE_MEMBERS:7", false, "Committees")
+        verify(channels).restore(listOf("1"))
+
+        // Without a bot, or a role, nothing moves; Discord refusing is said in the log.
+        given(linked = false)
+        discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
+        given(linked = true)
+        whenever(channels.archive(listOf("1"))).thenThrow(DiscordUnavailable("gone"))
+        whenever(channels.openings()).thenReturn(listOf(ChannelOpening(sitecie, private = true, roleIds = listOf("900"))))
+        discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
+        whenever(roles.available()).thenReturn(false)
+        discord.archive("COMMITTEE_MEMBERS:7", true, "Committees")
+        verify(channels, org.mockito.kotlin.times(2)).archive(listOf("1"))
     }
 }

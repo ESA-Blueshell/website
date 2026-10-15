@@ -24,12 +24,8 @@ A locked account with two-factor usually needs both, `UNLOCK` first.
 The api image runs the action and stops when it is given the `break-glass` profile. Run it
 inside a live api pod, whose ServiceAccount is what the prod profile logs in to Vault as, with
 a small heap and its servers on ports of their own, so it leaves the pod's own process alone.
-The web server cannot simply be left out: the security configuration needs it.
 
-The image has no shell (architecture ADR-015), so `java` is started through the buildpack
-launcher, which sets up the same environment the pod's own process gets, from the image's
-working directory. The profile goes on the command line, and the `-Xmx` there wins over the one
-the image's memory calculator adds:
+The image has no shell, so `java` starts through the buildpack launcher (architecture ADR-015):
 
 ```bash
 POD=$(kubectl -n default get pods -l app.kubernetes.io/name=api -o jsonpath='{.items[0].metadata.name}')

@@ -686,9 +686,8 @@ jobs:
           if-no-files-found: error
 
   build-images:
-    # Builds the production images so a broken Dockerfile, or a buildpack build of
-    # the api that no longer trains its AOT cache, is caught on the pull request
-    # rather than on main. Nothing downstream waits for it: the tests
+    # Builds the production images so a broken image build is caught on the pull
+    # request rather than on main. Nothing downstream waits for it: the tests
     # run against the jar and the bundle, so this job's wall clock no longer
     # sits in front of them.
     #
@@ -705,7 +704,6 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          # Built by buildpacks from the jar api-static built (architecture ADR-015).
           - name: api
           - name: frontend
             context: services/frontend

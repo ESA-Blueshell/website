@@ -116,7 +116,7 @@
     },
     {
       "customType": "regex",
-      "description": "The buildpack builder the api image is built with (architecture ADR-015). Pinned by tag and digest in the Gradle build, which no Docker manager reads; its run image is the one the builder names, so this one bump moves both.",
+      "description": "The api's buildpack builder, which no Docker manager reads in the Gradle build.",
       "managerFilePatterns": [
         "/^services/api/build\\.gradle\\.kts$/"
       ],
@@ -276,7 +276,6 @@
       "enabled": false
     },
     {
-      "description": "The api's buildpack builder, published most days: one reviewed pull request a week carries the JRE and run image patches into the next release.",
       "matchPackageNames": [
         "paketobuildpacks/builder-noble-java-tiny"
       ],

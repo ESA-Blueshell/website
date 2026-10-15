@@ -377,8 +377,7 @@ rehearse_database() {
 # "size path" for every file under a directory, sorted; run where the files are.
 LIST_FILES='cd "$1" && find . -type f -exec stat -c "%s %n" {} + | sort -k2'
 
-# The live uploads, listed by a pod that mounts the api's claim read-only: the api image has no
-# shell to list them with (architecture ADR-015), and a rehearsal writes nothing.
+# The api image has no shell, so a read-only pod lists the live uploads.
 list_live_uploads() {
   k -n default run uploads-lister --image=busybox:1.38-musl --restart=Never --overrides='{
     "spec": {"containers": [{"name": "uploads-lister", "image": "busybox:1.38-musl", "command": ["sleep", "600"],
@@ -615,7 +614,6 @@ restore_database() {
 
 restore_uploads() {
   step "uploads: the files come back beside the live ones."
-  # The buildpack image's cnb user (architecture ADR-015).
   helper default api-storage 1002 1001
   push default "$work/restore/uploads" || die "The uploads did not reach the cluster."
   helper_done default

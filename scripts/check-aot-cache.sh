@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Boots an api image as far as a refreshed context under -XX:AOTMode=on, with the limits and
-# JAVA_TOOL_OPTIONS each pod gets, read from the manifests, so a cache a pod's JVM would ignore,
-# or a memory line the image's calculator refuses, fails the build rather than a release
-# (architecture ADR-013 and ADR-015). The keys are drawn here for the same reason the training
-# run draws its own.
+# Boots an api image under -XX:AOTMode=on with each pod's limits and JAVA_TOOL_OPTIONS, read from
+# the manifests (architecture ADR-013 and ADR-015).
 set -euo pipefail
 
 image=${1:?usage: check-aot-cache.sh IMAGE}
@@ -13,8 +10,7 @@ trap 'rm -f "$log"' EXIT
 
 key() { head -c "$1" /dev/urandom | base64 | tr -d '\n'; }
 
-# "docker-flags|JAVA_TOOL_OPTIONS" for the api container of each manifest: the Deployment, then
-# the migrate Job.
+# "docker-flags|JAVA_TOOL_OPTIONS" per manifest.
 shapes=$(python3 - "$manifests/deployment.yaml" "$manifests/migrate-job.yaml" <<'PY'
 import sys, yaml
 

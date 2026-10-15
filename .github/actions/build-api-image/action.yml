@@ -1,11 +1,6 @@
 name: Build the api image
 description: Build the api image with Cloud Native Buildpacks and boot it from its AOT cache.
 
-# The api has no Dockerfile: Gradle's bootBuildImage runs the pinned buildpack builder, whose
-# training run writes the AOT cache (architecture ADR-013 and ADR-015). The caller sets up Java and
-# Gradle. The buildpacks' build cache, the JRE among it, lives in a directory the Actions cache
-# keeps, keyed on the builder's digest, so a run does not download it again.
-
 inputs:
   image:
     description: The name the image is built under, in the local Docker daemon.
@@ -29,7 +24,7 @@ runs:
         path: ${{ runner.temp }}/buildpack-cache
         key: buildpacks-api-${{ steps.builder.outputs.digest }}
 
-    # The buildpacks write as the builder's own user, which is not the runner's.
+    # The builder writes as its own user.
     - name: Open the cache to the builder
       shell: bash
       run: |
@@ -46,13 +41,10 @@ runs:
         ./gradlew --no-daemon :services:api:bootBuildImage \
           -PapiImage="$IMAGE" -PbuildpackCache="$RUNNER_TEMP/buildpack-cache" ${JAR:+-PapiJar="$JAR"}
 
-    # So the Actions cache can read back what the builder wrote when it saves at the end of the job.
     - name: Hand the cache back to the runner
       shell: bash
       run: sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/buildpack-cache"
 
-    # A JVM whose flags differ from the training run's ignores the AOT cache and boots cold
-    # without a word; the check makes that, and a memory line the image refuses, a failure.
     - name: Boot the image from its AOT cache
       shell: bash
       run: scripts/check-aot-cache.sh "${{ inputs.image }}"

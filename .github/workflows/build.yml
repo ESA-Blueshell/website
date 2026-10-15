@@ -91,7 +91,6 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # No Dockerfile: buildpacks build it from the jar, on the runner (architecture ADR-015).
           - {name: api, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           - {name: frontend, context: services/frontend, file: services/frontend/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
           # The apply sidecar for the Stalwart Deployment. Its Dockerfile
@@ -121,8 +120,6 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
 
-      # Built into the runner's Docker daemon and booted from its AOT cache before anything is
-      # pushed, so an image whose cache would be ignored never reaches the registry.
       - name: Build the api image and boot it from its AOT cache
         if: matrix.target.name == 'api'
         uses: ./.github/actions/build-api-image
@@ -139,8 +136,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # The merge job assembles the manifest list from this digest, as from the others', and
-      # attests it, since a buildpack build records no provenance or SBOM of its own.
       - name: Push the api image
         if: matrix.target.name == 'api'
         id: push
@@ -197,7 +192,6 @@ jobs:
       # Keyless signing: cosign exchanges this run's OIDC token for a
       # short-lived certificate, so there is no key to hold or rotate.
       id-token: write
-      # The api's provenance and SBOM, written as GitHub artifact attestations.
       attestations: write
     strategy:
       fail-fast: false
@@ -299,9 +293,7 @@ jobs:
           echo "::notice::signing ${IMAGE}@${DIGEST}"
           cosign sign --yes "${IMAGE}@${DIGEST}"
 
-      # A buildpack build records neither provenance nor an SBOM the way BuildKit does for the
-      # other images, so the api's manifest list is attested here, and the attestations pushed
-      # beside it in the registry (architecture ADR-015).
+      # Buildpacks record no provenance or SBOM of their own (architecture ADR-015).
       - name: Describe the api image's contents
         if: matrix.service == 'api'
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2

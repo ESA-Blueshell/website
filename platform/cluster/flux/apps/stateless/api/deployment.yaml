@@ -52,10 +52,7 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: prod
-            # The image's memory calculator sizes metaspace, code cache and stacks from the 2Gi
-            # limit and refuses to start if the total does not fit. The heap and direct memory are
-            # named here: it would otherwise give Lettuce, JDA and Tomcat 10 MB of direct buffers,
-            # and a heap percentage is overridden by the -Xmx it adds (architecture ADR-015).
+            # Must fit the limit with what the image's memory calculator adds (architecture ADR-015).
             - name: JAVA_TOOL_OPTIONS
               value: -Xmx1200M -XX:MaxDirectMemorySize=64M
             # Secrets are not set here: the prod profile reads them from Vault as

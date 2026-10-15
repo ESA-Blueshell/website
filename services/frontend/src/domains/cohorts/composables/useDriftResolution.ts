@@ -20,14 +20,15 @@ export type DriftGroup = {targetId: number; people: CohortMember[]}
 export type DriftPlan = {action: DriftAction; groups: DriftGroup[]; proposals: LinkProposal[]}
 
 const fits: Record<DriftAction, (row: CohortMember) => boolean> = {
-  push: (row) => row.sync === "ONLY_HERE" && row.userId != null,
+  // Somebody with no account there cannot be pushed; the api skips them too.
+  push: (row) => row.sync === "ONLY_HERE" && row.userId != null && !row.unreachable,
   remove: (row) => row.sync === "ONLY_EXTERNAL" && row.externalUserId != null,
   link: (row) => row.sync === "ONLY_EXTERNAL" && row.userId == null && row.externalUserId != null,
   adopt: (row) => row.sync === "ONLY_EXTERNAL" && row.userId != null && row.externalUserId != null,
 }
 
 const DONE: Record<DriftAction, (count: number) => string> = {
-  push: (count) => `${count} pushed.`,
+  push: (count) => `${count} added.`,
   remove: (count) => `${count} removed.`,
   link: (count) => `${count} linked.`,
   adopt: (count) => `${count} queued to be taken in.`,

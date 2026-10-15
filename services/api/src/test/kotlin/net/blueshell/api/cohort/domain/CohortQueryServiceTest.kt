@@ -38,6 +38,7 @@ class CohortQueryServiceTest {
     private val brevo: TargetStrategy =
         mockk<TargetStrategy>().also {
             every { it.system } returns TargetSystem.BREVO
+            every { it.makesMemberIds } returns true
             every { it.descriptor } returns
                 TargetDescriptor(
                     system = TargetSystem.BREVO,
@@ -429,6 +430,43 @@ class CohortQueryServiceTest {
         every { users.findAllByIds(any()) } returns emptyList()
         every { users.isSoftDeleted(any()) } returns false
         every { brevo.ownersOf(any()) } returns emptyMap()
+    }
+
+    @Test
+    fun `detail says who has no account on a system that makes none, such as Discord`() {
+        val discord =
+            mockk<TargetStrategy>().also {
+                every { it.system } returns TargetSystem.DISCORD
+                every { it.descriptor } returns TargetDescriptor(TargetSystem.DISCORD, TargetKind.ROLE)
+                every { it.makesMemberIds } returns false
+                every { it.memberIds(setOf(5L, 6L)) } returns mapOf(5L to "d5")
+                every { it.ownersOf(any()) } returns emptyMap()
+            }
+        val withDiscord =
+            CohortQueryService(
+                cohorts,
+                targets,
+                targetMembers,
+                users,
+                targetExternalIds,
+                definitions,
+                TargetStrategies(listOf(brevo, discord)),
+                runs,
+                resolutions,
+            )
+        val cohort = cohort(21L)
+        val role = Target(system = "DISCORD", kind = TargetKind.ROLE, label = "Sitecie").apply { id = 210L }
+        val rows = listOf(5L, 6L, 7L).map { member(role, cohort, userId = it) }
+        stubDetail(cohort, role, rows)
+        every { discord.memberIds(setOf(5L, 6L, 7L)) } returns mapOf(5L to "d5")
+        every { users.findAllByIds(any()) } returns emptyList()
+        every { users.isSoftDeleted(any()) } answers { firstArg<Long>() == 7L }
+
+        val detail = withDiscord.detail(21L)
+
+        // A deleted account is gone, not somebody still to link Discord.
+        assertThat(detail.members.associate { it.member.userId to it.unreachable })
+            .isEqualTo(mapOf(5L to false, 6L to true, 7L to false))
     }
 
     private fun stubDetail(

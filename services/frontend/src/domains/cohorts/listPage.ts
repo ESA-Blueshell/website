@@ -30,6 +30,8 @@ export type DriftWords = {
   nameless: string
   /** What a link plan says of a stranger no account claims. */
   unclaimed: string
+  /** Why somebody with no account on the system stays missing from it. */
+  unreachable: string
   resolved: Record<DriftResolutionAction, string>
 }
 
@@ -42,6 +44,7 @@ export const DRIFT_WORDS: DriftWords = {
   stranger: "On the list; no account here has this address",
   nameless: "Unknown contact",
   unclaimed: "no account has this address, so it stays as it is",
+  unreachable: "Has no contact on the list, so the site cannot add them",
   resolved: {
     [DriftResolutionAction.PUSH]: "Pushed to the list",
     [DriftResolutionAction.REMOVE]: "Removed from the list",
@@ -52,8 +55,29 @@ export const DRIFT_WORDS: DriftWords = {
 }
 
 
+/** How a Discord role's page words its drift: people hold a role, and link their own account. */
+export const ROLE_DRIFT_WORDS: DriftWords = {
+  push: "Add to the role",
+  remove: "Remove from the role",
+  link: "Link to an account",
+  missing: (cohortLabel, since) => `In ${cohortLabel} since ${since}, and not holding the role`,
+  extra: (cohortLabel) => `Holds the role, and not in ${cohortLabel}`,
+  stranger: "Holds the role; no account here has linked this Discord account",
+  nameless: "Unknown Discord user",
+  unclaimed: "no account has linked this Discord account, so it stays as it is",
+  unreachable: "Has not linked a Discord account, so the site cannot add the role",
+  resolved: {
+    [DriftResolutionAction.PUSH]: "Added to the role",
+    [DriftResolutionAction.REMOVE]: "Removed from the role",
+    [DriftResolutionAction.LINK]: "Linked to an account",
+    [DriftResolutionAction.ADOPT]: "Added to the cohort from the role",
+    [DriftResolutionAction.ENFORCED_REMOVE]: "Removed by enforcing",
+  },
+}
+
 /** Why a person drifts, in the cohort's own name and the target's words. */
 export function whyOf(member: CohortMember, cohortLabel: string, words: DriftWords = DRIFT_WORDS): string {
+  if (member.unreachable) return words.unreachable
   if (member.sync === "ONLY_HERE") return words.missing(cohortLabel, formatDate(member.joinedAt))
   if (member.userId != null) return words.extra(cohortLabel)
   return words.stranger

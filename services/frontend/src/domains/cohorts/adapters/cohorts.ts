@@ -374,6 +374,8 @@ export type CohortMember = {
   /** Which system's ledger the row belongs to, or nothing for a row no target claims. */
   system: TargetSystem | null
   sync: CohortSyncState
+  /** No account on a system that cannot make one, such as Discord, so no push reaches them. */
+  unreachable: boolean
 }
 
 /** A cohort as its page shows it: what it is, where it syncs, and who is in it. */
@@ -460,6 +462,7 @@ function toCohortMember(raw: ApiCohortMember): CohortMember {
     externalUserId: raw.externalUserId ?? null,
     system: raw.system ?? null,
     sync: toSyncState(raw.state),
+    unreachable: raw.unreachable,
   }
 }
 

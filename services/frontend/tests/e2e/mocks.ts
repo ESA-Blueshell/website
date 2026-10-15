@@ -2360,6 +2360,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         members: fixtures.cohortMembers ?? [
           {
             targetMemberId: 200 + id,
+            unreachable: false,
             system: "BREVO",
             state: "VERIFIED",
             userId: 1,
@@ -2372,6 +2373,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           },
           {
             targetMemberId: 300 + id,
+            unreachable: false,
             system: "BREVO",
             state: "DESIRED",
             userId: 2,
@@ -2384,6 +2386,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           },
           {
             targetMemberId: 400 + id,
+            unreachable: false,
             system: "BREVO",
             state: "STRANGER",
             userId: 3,
@@ -2396,6 +2399,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           },
           {
             targetMemberId: 500 + id,
+            unreachable: false,
             system: "BREVO",
             state: "STRANGER",
             userId: null,

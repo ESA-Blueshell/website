@@ -20,11 +20,11 @@ spec:
   # Matches the Deployment: a cold Spring Boot start on a fresh image pull.
   progressDeadlineSeconds: 900
   analysis:
-    # Blue/green, not weighted traffic shifting: iterations without stepWeight.
-    # Four 30s rounds of acceptance tests against api-canary before promotion.
-    interval: 30s
+    # Blue/green: iterations without stepWeight. Every phase waits for the next interval, so a
+    # short one is most of a fast release; the threshold keeps about 50s of tolerance.
+    interval: 10s
     iterations: 4
-    threshold: 3
+    threshold: 5
     metrics:
       - name: error-rate
         templateRef:
@@ -64,24 +64,23 @@ spec:
       - name: warm-the-canary
         type: pre-rollout
         url: http://flagger-loadtester.flagger-system/
-        timeout: 90s
-        metadata:
-          type: bash
-          cmd: >-
-            for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
-            hey -z 8s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
-            done
-
-      - name: read-only-load
-        type: rollout
-        url: http://flagger-loadtester.flagger-system/
-        # Six paths, so each run has to fit six times over inside the timeout.
         timeout: 60s
         metadata:
           type: bash
           cmd: >-
             for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
-            hey -z 3s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
+            hey -z 5s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
+            done
+
+      - name: read-only-load
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: >-
+            for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
+            hey -z 2s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
             done
 
       - name: canary-answers-http

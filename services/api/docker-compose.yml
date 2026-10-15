@@ -83,6 +83,8 @@ services:
       - SPRING_MAIL_PROPERTIES_MAIL_SMTP_LOCALHOST=api.dev.local
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
+      # Uploaded stills are converted by the imaging service, as in production.
+      - IMAGING_URL=http://imaging:8080
     depends_on:
       db:
         condition: service_healthy

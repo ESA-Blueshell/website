@@ -47,6 +47,32 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "The golangci-lint version the CI action installs for the imaging service. The action itself is pinned by digest and bumped by the github-actions manager.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yml$/"
+      ],
+      "matchStrings": [
+        "uses: golangci/golangci-lint-action@[^\\n]+\\n\\s+with:\\n\\s+version: (?<currentValue>v[^\\s]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "golangci/golangci-lint",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "The govulncheck version the imaging job runs.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yml$/"
+      ],
+      "matchStrings": [
+        "golang\\.org/x/vuln/cmd/govulncheck@(?<currentValue>v[^\\s]+)"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/vuln",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
       "description": "The Brevo and Discord clients publish only to GitHub Packages, which needs a registry token Renovate does not have, so a maven lookup returns no-result. Follow the source repositories' release tags instead.",
       "managerFilePatterns": [
         "/^services/api/build\\.gradle\\.kts$/"
@@ -118,6 +144,28 @@
         "github_actions",
         "ci"
       ]
+    },
+    {
+      "description": "The imaging service's module. A bump is tidied so go.sum moves with it, and the golang base image follows its own Dockerfile rule.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ],
+      "addLabels": [
+        "go"
+      ]
+    },
+    {
+      "description": "The go directive is the oldest Go the module builds with, and raising it is a decision, not an upgrade. The toolchain directive is the Go that CI lints, scans and builds with and stays on, so a patch release that fixes the standard library reaches govulncheck.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
+      "enabled": false
     },
     {
       "matchManagers": [

@@ -1,0 +1,88 @@
+# Converts the stills uploaded to the api into WebP, so the decoder an uploaded picture reaches
+# runs here and not in the api (architecture ADR-014). It is handed bytes and answers bytes:
+# nothing to read, nothing to call and nothing to write, which is what every setting below holds
+# it to.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: imaging
+  namespace: default
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: imaging
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: imaging
+    spec:
+      serviceAccountName: imaging
+      automountServiceAccountToken: false
+      # No service variables: it calls nothing, so it has no need to know where anything is.
+      enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: imaging
+          # Tag comes from the images block in ../kustomization.yaml.
+          image: ghcr.io/esa-blueshell/imaging
+          imagePullPolicy: IfNotPresent
+          env:
+            # Below the limit, so the collector works harder before the kernel kills the pod.
+            - name: GOMEMLIMIT
+              value: 768MiB
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+          # One conversion at a time, of at most 50 megapixels: the decoded picture and libwebp's
+          # copy of it fit in the limit with room for the response.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: imaging
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

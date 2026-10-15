@@ -76,6 +76,10 @@ spec:
               value: esa-blueshell.nl
             - name: STORAGE_LOCATION
               value: /srv/storage
+            # Where uploaded stills are converted (architecture ADR-014). Its NetworkPolicy
+            # admits this pod and no other.
+            - name: IMAGING_URL
+              value: http://imaging.default.svc.cluster.local:8080
             # SMTP transport — relay through Stalwart via its public
             # mail hostname. The traffic still terminates on the same
             # Frankfurt VPS (hairpin through the public IP) but the

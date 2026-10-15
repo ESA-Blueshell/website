@@ -58,12 +58,12 @@ JACOCO_COUNTERS = {
     "LINE": "lines",
 }
 
-BUCKET_ORDER = ["api", "frontend", "tests", "platform", "build", "docs", "other"]
+BUCKET_ORDER = ["api", "frontend", "imaging", "tests", "platform", "build", "docs", "other"]
 BUCKET_LABELS = {
     "build": "build & config",
     "other": "unclassified",
 }
-PROD_BUCKETS = {"api", "frontend"}
+PROD_BUCKETS = {"api", "frontend", "imaging"}
 TEST_BUCKETS = {"tests"}
 
 # The unit suites only: a number read off the slower layers rewards a test for
@@ -71,6 +71,7 @@ TEST_BUCKETS = {"tests"}
 SUITES = (
     ("api", "api-unit-test-reports", "jacoco", "jacocoTestReport.xml"),
     ("frontend", "frontend-unit-coverage", "istanbul", "coverage-summary.json"),
+    ("imaging", "imaging-unit-coverage", "gocover", "coverage.out"),
 )
 
 
@@ -133,7 +134,7 @@ def classify(path: str, rules) -> str:
 
 
 # --------------------------------------------------------------------------
-# coverage — two report formats, one shape
+# coverage: three report formats, one shape
 # --------------------------------------------------------------------------
 
 def _pct(covered: int, total: int) -> float | None:
@@ -214,6 +215,45 @@ def parse_lcov(text: str) -> dict[str, dict[str, set[int]]]:
     return _measured(seen, covered)
 
 
+GOCOVER_BLOCK = re.compile(r"^(.+):(\d+)\.\d+,(\d+)\.\d+ (\d+) (\d+)$")
+
+
+def parse_gocover(text: str) -> tuple[dict[str, float | None], dict[str, dict[str, set[int]]]]:
+    """A Go coverprofile's statement total, and its lines, keyed by import path.
+
+    Go counts statements in blocks and has no branch or function counter, so
+    those stay unmeasured. A line is covered only where every block on it ran:
+    a line that also holds a block that never ran is still owed a test. Blocks
+    repeat across packages under -coverpkg, so each is counted once, run if any
+    package's tests ran it.
+    """
+    blocks: dict[tuple[str, int, int, int], bool] = {}
+    for raw in text.splitlines():
+        match = GOCOVER_BLOCK.match(raw.strip())
+        if match is None:
+            continue
+        path, start, end, statements, count = match.groups()
+        key = (path, int(start), int(end), int(statements))
+        blocks[key] = blocks.get(key, False) or int(count) > 0
+
+    seen: dict[str, set[int]] = defaultdict(set)
+    missed: dict[str, set[int]] = defaultdict(set)
+    for (path, start, end, _), ran in blocks.items():
+        lines = set(range(start, end + 1))
+        seen[path] |= lines
+        if not ran:
+            missed[path] |= lines
+    covered = {path: lines - missed[path] for path, lines in seen.items()}
+
+    total = sum(statements for (_, _, _, statements) in blocks)
+    run = sum(statements for (_, _, _, statements), ran in blocks.items() if ran)
+    totals: dict[str, float | None] = {metric: None for metric in METRICS}
+    totals["statements"] = _pct(run, total)
+    line_total = sum(len(lines) for lines in seen.values())
+    totals["lines"] = _pct(sum(len(lines) for lines in covered.values()), line_total)
+    return totals, _measured(seen, covered)
+
+
 def _measured(seen, covered) -> dict[str, dict[str, set[int]]]:
     return {path: {"seen": lines, "covered": covered.get(path, set())} for path, lines in seen.items()}
 
@@ -248,6 +288,8 @@ def read_suites(coverage_dir: Path, in_progress: bool = False) -> tuple[dict[str
         try:
             if kind == "jacoco":
                 suite_totals, suite_lines = parse_jacoco(report.read_text(encoding="utf-8"))
+            elif kind == "gocover":
+                suite_totals, suite_lines = parse_gocover(report.read_text(encoding="utf-8"))
             else:
                 suite_totals = parse_istanbul(report.read_text(encoding="utf-8"))
                 lcov = find_one(root, "lcov.info")

@@ -106,7 +106,7 @@ def unmatched(paths, buckets):
 
 
 # Buckets whose suites need neither the jar nor the bundle, so they do not turn `app` on.
-STANDALONE = {"platform"}
+STANDALONE = {"platform", "imaging"}
 
 
 # A path for every pattern in the filter, including the negations. A bucket
@@ -153,6 +153,9 @@ FIXTURES = [
     ("services/frontend/Dockerfile", {"frontend"}),
     ("services/frontend/docker-compose.yml", {"ignore"}),
     ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
+    ("services/imaging/internal/convert/convert.go", {"imaging"}),
+    ("services/imaging/Dockerfile", {"imaging"}),
+    ("services/imaging/docker-compose.yml", {"ignore"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),
     ("services/stalwart/entrypoint.sh", {"ignore"}),
@@ -231,7 +234,7 @@ def decide(base, head):
     """
     The `run` output the `changes` job publishes: each bucket, and `app`, as JSON.
 
-    `app` is any bucket but `platform`: what needs the jar and the bundle built.
+    `app` is any bucket but `platform` and `imaging`: what needs the jar and the bundle built.
     A path in no bucket turns every bucket on, and a run with no diff to read
     passes no base and runs everything.
     """

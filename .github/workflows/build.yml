@@ -97,6 +97,8 @@ jobs:
           # The apply sidecar for the Stalwart Deployment. Its Dockerfile
           # copies infra/stalwart/*, so the context is the repo root.
           - {name: stalwart-tools, context: ., file: infra/stalwart/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
+          # The image's last stage is the runtime; its test stage is Validate's.
+          - {name: imaging, context: services/imaging, file: services/imaging/Dockerfile, platform: linux/amd64, arch: amd64, runner: ubuntu-latest}
 
     steps:
       - name: Checkout repository
@@ -188,7 +190,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [api, frontend, stalwart-tools]
+        service: [api, frontend, stalwart-tools, imaging]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -29,11 +29,19 @@ belongs to. There are five, and each one skips work the others run:
 | `api` | `services/api/**`, detekt config, the changeset scripts | api lint, unit, integration and coverage, `Build has no warnings`, schema compatibility, changeset SQL, and everything `app` runs |
 | `frontend` | `services/frontend/**` | frontend unit and e2e, and everything `app` runs |
 | `system` | `tests/**` | api lint, `Build has no warnings`, and everything `app` runs |
+| `imaging` | `services/imaging/**` but its compose file | `Imaging lint, tests and image`, and `Changed lines are covered` |
 
-`app` is any bucket but `platform`. It runs both compile jobs, the image builds, the
+`app` is any bucket but `platform` and `imaging`. It runs both compile jobs, the image builds, the
 system tests and the acceptance features, because the system tests drive the api through the
-pages and a change on either side can break them. `Validate OpenAPI client generation` and `Changed lines are
-covered` run on `api` or `frontend`. `Workflow checks` runs on every pull request.
+pages and a change on either side can break them. `Validate OpenAPI client generation` runs on
+`api` or `frontend`, and `Changed lines are covered` on `api`, `frontend` or `imaging`.
+
+`Imaging lint, tests and image` lints the Go source and the Dockerfile, checks the module for
+known vulnerabilities, runs the unit suite in the image's `test` stage, where it has to reach every
+statement, and then drives the built image with the container tests under `integration/`, run
+read-only, as the image's non-root user and with no capabilities. Only the unit suite counts
+towards coverage. The api's side of the conversation is `ImagingServiceIT`, which builds the same
+image with Testcontainers. `Workflow checks` runs on every pull request.
 
 `Frontend typecheck, lint and build` also runs the job-catalogue test, which holds
 `src/utils/jobCatalog.ts` to the job types the api's sources register. The frontend unit job runs

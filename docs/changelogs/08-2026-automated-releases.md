@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.24.1](https://github.com/ESA-Blueshell/website/compare/v1.24.0...v1.24.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **platform:** the api has no CPU limit, which stretched every start ([#2509](https://github.com/ESA-Blueshell/website/issues/2509)) ([bc0b533](https://github.com/ESA-Blueshell/website/commit/bc0b533950cbf07012a34010081446ccf00f951d))
+
+
+### Performance
+
+* **platform:** Flagger checks every 10s and the api drains in 10s, so a release promotes faster ([#2511](https://github.com/ESA-Blueshell/website/issues/2511)) ([0ce68f8](https://github.com/ESA-Blueshell/website/commit/0ce68f80171b7f884d7659966b944b791977d865))
+
 ## [1.24.0](https://github.com/ESA-Blueshell/website/compare/v1.23.2...v1.24.0) (2026-10-15)
 
 

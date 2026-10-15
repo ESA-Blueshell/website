@@ -17,19 +17,19 @@ import (
 type Limits struct {
 	// MaxBytes is the largest body read; the api refuses larger uploads before they get here.
 	MaxBytes int64
-	// MaxPixels is the largest picture decoded, measured from its header first.
-	MaxPixels int64
+	// Picture bounds what one picture may cost to decode and encode, measured before it is decoded.
+	Picture convert.Limits
 	// Wait is how long a request waits for a free conversion before it is turned away.
 	Wait time.Duration
 }
 
-// server converts one picture per request, at most cap(slots) at a time. A conversion holds the
+// server converts one picture per request, at most cap(slots) at a time. A conversion holds a
 // whole decoded bitmap, so the slots are what keep the pod inside its memory limit.
 type server struct {
 	limits Limits
 	slots  chan struct{}
 	log    *slog.Logger
-	encode func([]byte, convert.Target, int64) (convert.Result, error)
+	encode func([]byte, convert.Target, convert.Limits) (convert.Result, error)
 }
 
 // New is the service's handler: GET /healthz, and POST /convert.
@@ -37,7 +37,7 @@ func New(limits Limits, concurrency int, log *slog.Logger) http.Handler {
 	return newServer(limits, concurrency, log, convert.Convert)
 }
 
-func newServer(limits Limits, concurrency int, log *slog.Logger, encode func([]byte, convert.Target, int64) (convert.Result, error)) http.Handler {
+func newServer(limits Limits, concurrency int, log *slog.Logger, encode func([]byte, convert.Target, convert.Limits) (convert.Result, error)) http.Handler {
 	s := &server{limits: limits, slots: make(chan struct{}, concurrency), log: log, encode: encode}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -83,19 +83,23 @@ func (s *server) convert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	started := time.Now()
-	result, err := s.encode(body, target, s.limits.MaxPixels)
+	result, err := s.encode(body, target, s.limits.Picture)
 	if err != nil {
 		status := http.StatusUnprocessableEntity
-		if !errors.Is(err, convert.ErrUndecodable) && !errors.Is(err, convert.ErrTooManyPixels) {
+		if !errors.Is(err, convert.ErrUndecodable) && !errors.Is(err, convert.ErrTooManyPixels) &&
+			!errors.Is(err, convert.ErrTooManyFrames) {
 			status = http.StatusInternalServerError
 		}
 		s.log.Warn("refused a picture", "bytes", len(body), "status", status, "error", err)
 		http.Error(w, err.Error(), status)
 		return
 	}
+	if result.Unanimated != nil {
+		s.log.Warn("drew an animation as its first frame", "bytes", len(body), "error", result.Unanimated)
+	}
 	s.log.Info("converted a picture",
 		"bytes", len(body), "webp_bytes", len(result.WebP),
-		"width", result.Width, "height", result.Height,
+		"width", result.Width, "height", result.Height, "frames", result.Frames,
 		"millis", time.Since(started).Milliseconds())
 
 	w.Header().Set("Content-Type", "image/webp")

@@ -15,6 +15,8 @@ import (
 	"golang.org/x/image/webp"
 )
 
+var roomy = Limits{MaxPixels: 50_000_000, MaxFrames: 100, MaxAnimationPixels: 1_000_000_000}
+
 func picture(width, height int, transparent bool) *image.NRGBA {
 	m := image.NewNRGBA(image.Rect(0, 0, width, height))
 	for y := range height {
@@ -57,7 +59,7 @@ func sizeOf(t *testing.T, data []byte) (int, int) {
 }
 
 func TestMasterIsBroughtUnderItsCeilingKeepingItsShape(t *testing.T) {
-	got, err := Convert(jpegOf(t, picture(3000, 100, false)), Target{MaxEdge: 2560, Quality: 82}, 50_000_000)
+	got, err := Convert(jpegOf(t, picture(3000, 100, false)), Target{MaxEdge: 2560, Quality: 82}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +72,7 @@ func TestMasterIsBroughtUnderItsCeilingKeepingItsShape(t *testing.T) {
 }
 
 func TestMasterWithinItsCeilingKeepsItsSize(t *testing.T) {
-	got, err := Convert(pngOf(t, picture(300, 200, true)), Target{MaxEdge: 512, Lossless: true, Quality: 75}, 50_000_000)
+	got, err := Convert(pngOf(t, picture(300, 200, true)), Target{MaxEdge: 512, Lossless: true, Quality: 75}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func TestMasterWithinItsCeilingKeepsItsSize(t *testing.T) {
 
 func TestLosslessKeepsEveryPixelAndItsAlpha(t *testing.T) {
 	source := picture(64, 48, true)
-	got, err := Convert(pngOf(t, source), Target{MaxEdge: 512, Lossless: true, Quality: 75}, 50_000_000)
+	got, err := Convert(pngOf(t, source), Target{MaxEdge: 512, Lossless: true, Quality: 75}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,11 +105,11 @@ func TestLosslessKeepsEveryPixelAndItsAlpha(t *testing.T) {
 }
 
 func TestRenditionIsDrawnAtTheSizeAskedFor(t *testing.T) {
-	master, err := Convert(pngOf(t, picture(640, 256, false)), Target{MaxEdge: 2560, Quality: 82}, 50_000_000)
+	master, err := Convert(pngOf(t, picture(640, 256, false)), Target{MaxEdge: 2560, Quality: 82}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := Convert(master.WebP, Target{Width: 320, Height: 128, Quality: 82}, 50_000_000)
+	got, err := Convert(master.WebP, Target{Width: 320, Height: 128, Quality: 82}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +119,7 @@ func TestRenditionIsDrawnAtTheSizeAskedFor(t *testing.T) {
 }
 
 func TestPictureOverThePixelLimitIsRefusedBeforeItIsDecoded(t *testing.T) {
-	_, err := Convert(pngOf(t, picture(100, 100, false)), Target{MaxEdge: 2560, Quality: 82}, 9_999)
+	_, err := Convert(pngOf(t, picture(100, 100, false)), Target{MaxEdge: 2560, Quality: 82}, Limits{MaxPixels: 9_999})
 	if !errors.Is(err, ErrTooManyPixels) {
 		t.Fatalf("got %v, want ErrTooManyPixels", err)
 	}
@@ -129,7 +131,7 @@ func TestBytesNoDecoderReadsAreRefused(t *testing.T) {
 		"truncated": pngOf(t, picture(50, 50, false))[:60],
 		"gif":       []byte("GIF89a\x01\x00\x01\x00\x00\x00\x00;"),
 	} {
-		if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, 50_000_000); !errors.Is(err, ErrUndecodable) {
+		if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, roomy); !errors.Is(err, ErrUndecodable) {
 			t.Errorf("%s: got %v, want ErrUndecodable", name, err)
 		}
 	}
@@ -167,7 +169,7 @@ func TestOutputMatchesCwebp(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := Convert(pngOf(t, c.source), c.target, 50_000_000)
+			got, err := Convert(pngOf(t, c.source), c.target, roomy)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -199,7 +201,7 @@ func TestPictureWithNoPixelsIsRefused(t *testing.T) {
 			break
 		}
 	}
-	if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, 50_000_000); !errors.Is(err, ErrUndecodable) {
+	if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, roomy); !errors.Is(err, ErrUndecodable) {
 		t.Fatalf("got %v, want ErrUndecodable", err)
 	}
 }
@@ -208,7 +210,7 @@ func TestPaletteWithTransparencyKeepsItsAlpha(t *testing.T) {
 	palette := color.Palette{color.NRGBA{A: 0}, color.NRGBA{R: 200, G: 10, B: 10, A: 255}}
 	source := image.NewPaletted(image.Rect(0, 0, 4, 4), palette)
 	source.SetColorIndex(1, 1, 1)
-	got, err := Convert(pngOf(t, source), Target{MaxEdge: 512, Lossless: true, Quality: 75}, 50_000_000)
+	got, err := Convert(pngOf(t, source), Target{MaxEdge: 512, Lossless: true, Quality: 75}, roomy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +227,7 @@ func TestPaletteWithTransparencyKeepsItsAlpha(t *testing.T) {
 }
 
 func TestSizeLibwebpWillNotDrawIsAnError(t *testing.T) {
-	_, err := Convert(pngOf(t, picture(10, 10, false)), Target{Quality: 82}, 50_000_000)
+	_, err := Convert(pngOf(t, picture(10, 10, false)), Target{Quality: 82}, roomy)
 	if err == nil || errors.Is(err, ErrUndecodable) {
 		t.Fatalf("got %v, want libwebp's refusal", err)
 	}

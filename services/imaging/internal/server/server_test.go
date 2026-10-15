@@ -19,7 +19,11 @@ import (
 
 var quiet = slog.New(slog.NewTextHandler(io.Discard, nil))
 
-var roomy = Limits{MaxBytes: 1 << 20, MaxPixels: 1_000_000, Wait: time.Second}
+var roomy = Limits{
+	MaxBytes: 1 << 20,
+	Picture:  convert.Limits{MaxPixels: 1_000_000, MaxFrames: 10, MaxAnimationPixels: 10_000_000},
+	Wait:     time.Second,
+}
 
 func pngBytes(t *testing.T, width, height int) []byte {
 	t.Helper()
@@ -101,7 +105,7 @@ func TestBodyThatBreaksOffIsABadRequest(t *testing.T) {
 
 func TestPictureItRefusesIsUnprocessable(t *testing.T) {
 	limits := roomy
-	limits.MaxPixels = 100
+	limits.Picture.MaxPixels = 100
 	handler := New(limits, 1, quiet)
 	for name, body := range map[string][]byte{"garbage": []byte("not a picture"), "too many pixels": pngBytes(t, 20, 20)} {
 		if recorder := post(handler, "max-edge=40&quality=82", bytes.NewReader(body)); recorder.Code != http.StatusUnprocessableEntity {
@@ -110,8 +114,29 @@ func TestPictureItRefusesIsUnprocessable(t *testing.T) {
 	}
 }
 
+func TestAnimationOverTheFrameLimitIsUnprocessable(t *testing.T) {
+	tooMany := func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
+		return convert.Result{}, convert.ErrTooManyFrames
+	}
+	recorder := post(newServer(roomy, 1, quiet, tooMany), "max-edge=40&quality=82", strings.NewReader("x"))
+	if recorder.Code != http.StatusUnprocessableEntity || !strings.Contains(recorder.Body.String(), "too many frames") {
+		t.Fatalf("answered %d: %s", recorder.Code, recorder.Body)
+	}
+}
+
+func TestAnimationDrawnStillIsServedAndLogged(t *testing.T) {
+	var logged bytes.Buffer
+	stilled := func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
+		return convert.Result{WebP: []byte("RIFF"), Width: 1, Height: 1, Frames: 1, Unanimated: errors.New("frame 2 is broken")}, nil
+	}
+	recorder := post(newServer(roomy, 1, slog.New(slog.NewTextHandler(&logged, nil)), stilled), "max-edge=40&quality=82", strings.NewReader("x"))
+	if recorder.Code != http.StatusOK || !strings.Contains(logged.String(), "frame 2 is broken") {
+		t.Fatalf("answered %d, logged %s", recorder.Code, logged.String())
+	}
+}
+
 func TestEncoderFailureIsTheServicesOwn(t *testing.T) {
-	failing := func([]byte, convert.Target, int64) (convert.Result, error) {
+	failing := func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
 		return convert.Result{}, errors.New("libwebp refused the picture")
 	}
 	if recorder := post(newServer(roomy, 1, quiet, failing), "max-edge=40&quality=82", strings.NewReader("x")); recorder.Code != http.StatusInternalServerError {
@@ -120,8 +145,8 @@ func TestEncoderFailureIsTheServicesOwn(t *testing.T) {
 }
 
 // blocking holds the one conversion until released, so a second request finds none free.
-func blocking(started, release chan struct{}) func([]byte, convert.Target, int64) (convert.Result, error) {
-	return func([]byte, convert.Target, int64) (convert.Result, error) {
+func blocking(started, release chan struct{}) func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
+	return func([]byte, convert.Target, convert.Limits) (convert.Result, error) {
 		close(started)
 		<-release
 		return convert.Result{WebP: []byte("RIFF"), Width: 1, Height: 1}, nil

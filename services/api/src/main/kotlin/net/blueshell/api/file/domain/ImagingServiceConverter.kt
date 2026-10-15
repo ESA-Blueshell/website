@@ -18,12 +18,13 @@ import java.nio.file.StandardCopyOption
 import java.time.Duration
 
 /**
- * The converter in the imaging service, which decodes uploaded stills away from the api
+ * The converter in the imaging service, which decodes uploaded pictures away from the api
  * (architecture ADR-014). Chosen wherever `app.imaging.url` names one.
  *
- * A picture with more than one frame is still taken apart here, by [InProcessImageConverter],
- * until the service converts animations too (#2447). A service that cannot be reached is an
- * [ImagingUnavailableException], which a master meets before anything is stored.
+ * Stills and animations alike: the service keeps an animation's frames at every width and draws
+ * one whose frames will not decode as its first frame (api ADR-029). A service that cannot be
+ * reached is an [ImagingUnavailableException], which a master meets before anything is stored
+ * and the rendition job meets as a failure it retries.
  */
 @Component
 @Primary
@@ -31,8 +32,6 @@ import java.time.Duration
 class ImagingServiceConverter(
     @Value($$"${app.imaging.url}") url: String,
     private val scratch: ScratchSpace,
-    private val animated: AnimatedImages,
-    private val inProcess: InProcessImageConverter,
 ) : ImageConverter {
     private val endpoint = url.trimEnd('/') + "/convert"
     private val client =
@@ -47,8 +46,6 @@ class ImagingServiceConverter(
         declaredMediaType: String,
         type: FileType,
     ): ImageConverter.Converted {
-        if (moves(source, declaredMediaType)) return inProcess.master(source, declaredMediaType, type)
-
         val maxEdge = requireNotNull(type.maxImageEdge) { "$type is stored as it was sent" }
         val webp = scratch.cut(".webp")
         var converted = false
@@ -67,10 +64,8 @@ class ImagingServiceConverter(
         type: FileType,
         recorded: ImageDimensions.Size,
         name: String,
-    ): ImageConverter.Renditions {
-        if (moves(master, mediaType)) return inProcess.renditionsOf(master, mediaType, type, recorded, name)
-
-        return object : ImageConverter.Renditions {
+    ): ImageConverter.Renditions =
+        object : ImageConverter.Renditions {
             override val size = recorded
 
             override fun write(
@@ -85,13 +80,6 @@ class ImagingServiceConverter(
 
             override fun close() = Unit
         }
-    }
-
-    /** Whether the picture has frames to replay, asked of its header as the renditions are. */
-    private fun moves(
-        picture: ScratchFile,
-        mediaType: String,
-    ): Boolean = animated.animates(mediaType) { picture.open() }
 
     /** What cwebp was told when the api ran it: lossless, or the kind's quality. */
     private fun encodingOf(type: FileType): String =
@@ -167,7 +155,8 @@ class ImagingServiceConverter(
         val log = LoggerFactory.getLogger(ImagingServiceConverter::class.java)
         val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(2)
 
-        // The service waits up to 30 seconds for a free conversion and then converts.
+        // The service waits up to 30 seconds for a free conversion, and its frame limits keep the
+        // longest animation it takes inside the rest.
         val REQUEST_TIMEOUT: Duration = Duration.ofSeconds(90)
         const val DEFAULT_QUALITY = 82
         const val MAX_REASON_BYTES = 200

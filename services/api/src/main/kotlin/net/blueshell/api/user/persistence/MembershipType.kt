@@ -22,7 +22,7 @@ import java.time.LocalDate
 class MembershipType(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "membership_id", nullable = false)
-    var membership: Membership,
+    val membership: Membership,
     @Column(name = "type", nullable = false, length = 16)
     @Enumerated(EnumType.STRING)
     var type: MemberType,

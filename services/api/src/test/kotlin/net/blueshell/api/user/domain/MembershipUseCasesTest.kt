@@ -330,7 +330,13 @@ class MembershipUseCasesTest {
             useCases.recordType(9L, MemberType.HONORARY, LocalDate.of(2026, 1, 1))
 
             assertThat(membership.types.map { it.type }).containsExactly(MemberType.REGULAR, MemberType.ALUMNI, MemberType.HONORARY)
+            assertThat(membership.types.last().membership).isSameAs(membership)
             assertThat(membership.memberType).isEqualTo(MemberType.HONORARY)
+        }
+
+        @Test
+        fun `a type loads as the database holds it`() {
+            assertThat(MembershipType::class.java.getDeclaredConstructor().newInstance()).isNotNull
         }
 
         @Test

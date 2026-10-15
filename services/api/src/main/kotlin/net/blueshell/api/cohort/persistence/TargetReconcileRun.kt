@@ -28,4 +28,7 @@ class TargetReconcileRun(
     val oursOnly: Int,
     @Column(name = "theirs_only", nullable = false)
     val theirsOnly: Int,
+    /** Ours only with no account on the system, so no push reaches them; apart from [oursOnly]. */
+    @Column(name = "unreachable", nullable = false)
+    val unreachable: Int = 0,
 ) : AutoIdEntity()

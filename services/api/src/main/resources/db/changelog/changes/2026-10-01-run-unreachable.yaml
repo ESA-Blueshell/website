@@ -1,0 +1,14 @@
+# A reconcile counts the people ours only who have no account on the system apart from the rest:
+# no push reaches them, so they are not drift the board can resolve there.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-01-run-unreachable.yaml
+      id: run-unreachable
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: target_reconcile_run
+            columns:
+              - column: {name: unreachable, type: INT, defaultValueNumeric: 0, constraints: {nullable: false}}
+      rollback:
+        - dropColumn: {tableName: target_reconcile_run, columnName: unreachable}

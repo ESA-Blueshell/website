@@ -10,14 +10,12 @@ import net.blueshell.api.cohort.persistence.TargetReconcileRun
 import net.blueshell.api.cohort.persistence.TargetReconcileRunRepository
 import net.blueshell.api.cohort.persistence.TargetRepository
 import net.blueshell.api.cohort.persistence.state
-import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetMemberState
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -78,7 +76,7 @@ class CohortRemediationService(
     override fun removeExternalMember(
         targetId: Long,
         externalUserId: String,
-    ) {
+    ): String? {
         val target =
             targetRepo.findById(targetId).orElseThrow {
                 NonRetryableJobException("Target $targetId not found")
@@ -87,8 +85,10 @@ class CohortRemediationService(
         val externalTargetId = targetExternalIds.require(target)
 
         val strategy = strategies.requireForJob(system)
+        if (!strategy.available()) return "${system.shownName} cannot be reached now."
         outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalTargetId), externalUserId) }
         ledger.removeStranger(targetId, externalUserId)
+        return null
     }
 
     /**
@@ -99,16 +99,18 @@ class CohortRemediationService(
     override fun verifyTarget(
         targetId: Long,
         trigger: JobTrigger?,
-    ) {
+    ): String? {
         val startedAt = Instant.now()
         val plan = readOnlyTransaction.execute { loadPlan(targetId) }
         val strategy = strategies.requireForJob(plan.system)
+        if (!strategy.available()) return "${plan.system.shownName} cannot be reached now, so nothing was compared."
         val remote = outsideTransaction.execute { strategy.members(strategy.handle(plan.externalTargetId)) }
         writeTransaction.executeWithoutResult {
-            val claimed = applySnapshot(plan, remote)
-            recordRun(targetId, startedAt, trigger)
-            enforce(targetId, claimed)
+            val snapshot = applySnapshot(plan, remote, strategy)
+            recordRun(targetId, startedAt, trigger, snapshot.unreachable)
+            enforce(targetId, snapshot.claimed)
         }
+        return null
     }
 
     // An enforced target loses its theirs-only people on every reconcile; ours-only drift is
@@ -144,11 +146,13 @@ class CohortRemediationService(
         )
     }
 
-    // The ledger after the snapshot is the drift: confirmed present, ours only, theirs only.
+    // The ledger after the snapshot is the drift: confirmed present, ours only, theirs only. The
+    // unreachable are ours only with no account there, counted apart because no push reaches them.
     private fun recordRun(
         targetId: Long,
         startedAt: Instant,
         trigger: JobTrigger?,
+        unreachable: Int,
     ) {
         val states = memberRepo.findAllByTargetId(targetId).groupingBy { it.state }.eachCount()
         runs.save(
@@ -157,8 +161,9 @@ class CohortRemediationService(
                 startedAt = startedAt,
                 trigger = trigger,
                 inSync = states[TargetMemberState.VERIFIED] ?: 0,
-                oursOnly = (states[TargetMemberState.DESIRED] ?: 0) + (states[TargetMemberState.SYNCED] ?: 0),
+                oursOnly = (states[TargetMemberState.DESIRED] ?: 0) + (states[TargetMemberState.SYNCED] ?: 0) - unreachable,
                 theirsOnly = states[TargetMemberState.STRANGER] ?: 0,
+                unreachable = unreachable,
             ),
         )
     }
@@ -180,11 +185,15 @@ class CohortRemediationService(
         return ReconcilePlan(targetId, cohortId, system, externalTargetId)
     }
 
-    /** Answers every external id a desired member's account holds, ambiguous ones included. */
+    /**
+     * Answers every external id a desired member's account holds, ambiguous ones included, and how
+     * many desired people are unreachable: no account there, and none the site can make.
+     */
     private fun applySnapshot(
         plan: ReconcilePlan,
         remote: List<ExternalMember>,
-    ): Set<String> {
+        strategy: TargetStrategy,
+    ): Snapshot {
         val target =
             targetRepo.findById(plan.targetId).orElseThrow {
                 NonRetryableJobException("Target ${plan.targetId} not found")
@@ -196,38 +205,36 @@ class CohortRemediationService(
         val remoteByExtId = remote.associateBy { it.externalUserId }
         val now = LocalDateTime.now()
         val desiredRows = memberRepo.findAllByTargetIdAndUserIdIsNotNull(plan.targetId)
-        val mappings =
-            externalIds
-                .findBatch(USER_AGGREGATE, desiredRows.mapNotNull { it.userId }.toSet(), plan.system.name)
-                .filter { !it.externalId.isNullOrBlank() }
-        val externalIdByUserId = uniqueExternalIds(plan.targetId, mappings)
+        val ids = strategy.memberIds(desiredRows.mapNotNull { it.userId }.toSet())
+        val externalIdByUserId = uniqueExternalIds(plan.targetId, ids)
 
         val confirmed = confirmPresentDesiredRows(desiredRows, externalIdByUserId, remoteByExtId, now)
         demoteVanishedDesiredRows(desiredRows, externalIdByUserId, remoteByExtId.keys)
-        enqueueFollowUpsForMissing(plan, desiredRows, externalIdByUserId, remoteByExtId.keys)
+        enqueueFollowUpsForMissing(plan, desiredRows, externalIdByUserId, remoteByExtId.keys, strategy)
         reconcileStrangers(target, cohort, remoteByExtId, confirmed, now)
-        return mappings.mapNotNull { it.externalId }.toSet()
+        val unreachable = if (strategy.makesMemberIds) 0 else desiredRows.count { externalIdByUserId[it.userId] == null }
+        return Snapshot(ids.values.toSet(), unreachable)
     }
 
     private fun uniqueExternalIds(
         targetId: Long,
-        mappings: List<ExternalIdMapping>,
+        ids: Map<Long, String>,
     ): Map<Long, String> =
-        mappings
-            .groupBy { it.externalId }
+        ids.entries
+            .groupBy { it.value }
             .also { grouped ->
                 grouped.filterValues { it.size > 1 }.forEach { (externalId, owners) ->
                     log.warn(
                         "Ignoring duplicate external id mapping for target {} and external id {} across user ids {}",
                         targetId,
                         externalId,
-                        owners.map { it.aggregateId },
+                        owners.map { it.key },
                     )
                 }
             }.filterValues { it.size == 1 }
             .values
             .flatten()
-            .associate { it.aggregateId to it.externalId!! }
+            .associate { it.key to it.value }
 
     /** Desired rows present in the snapshot: confirm and collapse any matching stranger. */
     private fun confirmPresentDesiredRows(
@@ -260,17 +267,18 @@ class CohortRemediationService(
         }
     }
 
-    /** Desired rows absent remotely: materialise the contact, or re-push. */
+    /** Desired rows absent remotely: make their id where the site can, or re-push. */
     private fun enqueueFollowUpsForMissing(
         plan: ReconcilePlan,
         desiredRows: List<net.blueshell.api.cohort.persistence.TargetMember>,
         externalIdByUserId: Map<Long, String>,
         remoteExtIds: Set<String>,
+        strategy: TargetStrategy,
     ) {
         desiredRows.forEach { row ->
             val extId = externalIdByUserId[row.userId]
             if (extId == null) {
-                jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!), JobTrigger.ANOTHER_JOB)
+                if (strategy.makesMemberIds) strategy.makeMemberId(row.userId!!)
             } else if (extId !in remoteExtIds) {
                 jobs.runAsync(
                     CohortJobs.SyncCohortMembership,
@@ -316,6 +324,11 @@ class CohortRemediationService(
         val cohortId: Long,
         val system: TargetSystem,
         val externalTargetId: String,
+    )
+
+    private data class Snapshot(
+        val claimed: Set<String>,
+        val unreachable: Int,
     )
 
     companion object {

@@ -28,12 +28,13 @@ interface CohortRemediation {
      * Removes one member from the external target backing [targetId]
      * and soft-deletes the corresponding stranger row from the
      * [net.blueshell.api.cohort.persistence.TargetMember]
-     * ledger. Run by the `cohort.remove-external-member` job.
+     * ledger. Run by the `cohort.remove-external-member` job. Answers why nothing was removed,
+     * or null where it was.
      */
     fun removeExternalMember(
         targetId: Long,
         externalUserId: String,
-    )
+    ): String?
 
     /**
      * Verifies [targetId] against its live external member list: confirms
@@ -41,9 +42,10 @@ interface CohortRemediation {
      * enqueues follow-up ADD/contact jobs for discrepancies. Records the
      * run's drift with [trigger], and on an enforced target queues the
      * removal of its strangers. Run by the `cohort.reconcile-list` job.
+     * Answers why nothing was compared, or null where it was.
      */
     fun verifyTarget(
         targetId: Long,
         trigger: JobTrigger?,
-    )
+    ): String?
 }

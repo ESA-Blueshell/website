@@ -2,13 +2,8 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.cohort.persistence.Target
 import net.blueshell.api.cohort.persistence.TargetRepository
-import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.shared.enums.TargetSystem
-import net.blueshell.api.shared.job.JobQueue
-import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.sync.api.ExternalIdMappingService
-import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.USER_AGGREGATE
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
@@ -21,18 +16,18 @@ import java.time.LocalDateTime
  * Drives one `(user, cohort)` sync end to end: resolves both external ids, picks the
  * [TargetStrategy] for the cohort's system and asks it to apply the change.
  *
- * An ADD with no user external id enqueues `SyncContact` and throws retryably, so the retry
- * lands once the contact exists. An ADD with no cohort target id fails terminally — linking a
- * target is an operator's act. A REMOVE with no external state either side is a no-op.
+ * An ADD for a user with no id on the system has the strategy make one where it can, as Brevo makes
+ * a contact, and throws retryably so the retry lands once it exists; where it cannot, the user is
+ * unreachable and nothing is pushed. An ADD with no cohort target id fails terminally — linking a
+ * target is an operator's act. A REMOVE with no external state either side is a no-op, and a system
+ * that cannot be reached skips both.
  */
 @Service
 class CohortMembershipSyncService(
     private val targets: TargetRepository,
     private val ledger: CohortLedger,
     private val strategies: TargetStrategies,
-    private val externalIds: ExternalIdMappingService,
     private val targetExternalIds: CohortTargetIds,
-    private val jobs: JobQueue,
     transactionManager: PlatformTransactionManager,
 ) {
     // Suspends the surrounding transaction (this service's own and the
@@ -56,6 +51,7 @@ class CohortMembershipSyncService(
         userId: Long,
         targetId: Long,
         intent: SyncCohortMembershipIntent,
+        pushedTo: String? = null,
     ): String? {
         val target =
             targets.findById(targetId).orElseThrow {
@@ -66,13 +62,17 @@ class CohortMembershipSyncService(
                 throw NonRetryableJobException("Target $targetId has unknown system '${target.system}'")
             }
         val strategy = strategies.requireForJob(system)
+        if (!strategy.available()) {
+            // A reconcile pushes a missing add again, but no longer counts a removed person as ours.
+            if (intent == SyncCohortMembershipIntent.REMOVE) {
+                throw CohortMembershipNotReadyException("$system cannot be reached; will retry")
+            }
+            return "${system.shownName} cannot be reached now; the next reconcile catches up."
+        }
 
         return when (intent) {
-            SyncCohortMembershipIntent.ADD -> {
-                add(userId, target, strategy)
-                null
-            }
-            SyncCohortMembershipIntent.REMOVE -> remove(userId, target, strategy)
+            SyncCohortMembershipIntent.ADD -> add(userId, target, strategy)
+            SyncCohortMembershipIntent.REMOVE -> remove(userId, target, strategy, pushedTo)
         }
     }
 
@@ -80,15 +80,14 @@ class CohortMembershipSyncService(
         userId: Long,
         target: Target,
         strategy: TargetStrategy,
-    ) {
+    ): String? {
         val targetId = target.id!!
         val system = target.system
-        val externalUserId = externalIds.find(USER_AGGREGATE, userId, system)?.externalId
+        val externalUserId = strategy.memberIds(setOf(userId))[userId]
         if (externalUserId == null) {
-            jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(userId), JobTrigger.ANOTHER_JOB)
-            throw CohortMembershipNotReadyException(
-                "user $userId has no $system external id — enqueued SyncContact, will retry",
-            )
+            if (!strategy.makesMemberIds) return "The user has no ${strategy.system.shownName} account linked, so cannot be reached."
+            strategy.makeMemberId(userId)
+            throw CohortMembershipNotReadyException("user $userId has no $system external id — making it, will retry")
         }
         val externalTargetId = targetExternalIds.find(target)
         if (externalTargetId == null) {
@@ -102,18 +101,20 @@ class CohortMembershipSyncService(
             log.warn("Pushed user {} to {} target {} but its desired row is gone; not stamping", userId, system, targetId)
         }
         log.debug("Added user {} to {} target {} (ext={})", userId, system, targetId, externalTargetId)
+        return null
     }
 
     private fun remove(
         userId: Long,
         target: Target,
         strategy: TargetStrategy,
+        pushedTo: String?,
     ): String? {
         val targetId = target.id!!
         val system = target.system
         val externalUserId =
-            externalIds.find(USER_AGGREGATE, userId, system)?.externalId
-                ?: return "The user has no $system contact, so is on no $system list."
+            pushedTo ?: strategy.memberIds(setOf(userId))[userId]
+                ?: return "The user has no $system account, so holds no $system target."
         val externalTargetId = targetExternalIds.find(target) ?: return "The cohort has no $system list linked."
         outsideTransaction.executeWithoutResult { strategy.remove(strategy.handle(externalTargetId), externalUserId) }
         log.debug("Removed user {} from {} target {} (ext={})", userId, system, targetId, externalTargetId)

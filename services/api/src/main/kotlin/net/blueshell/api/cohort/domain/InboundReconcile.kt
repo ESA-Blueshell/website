@@ -107,6 +107,8 @@ class InboundReconcile(
         val definition = cohort.definitionKey?.let { definitions.byKey(it) }
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cohort $cohortId has no definition in code any more")
         val system = TargetSystem.valueOf(target.system)
+        // Matching holders to accounts trusts the ids people typed for themselves there.
+        if (!strategies.require(system).makesMemberIds) throw TargetLinksOwnAccounts(system)
         val externalId = target.externalId.required("Target $targetId has no external target")
         return InboundTarget(
             cohortId, targetId, system,

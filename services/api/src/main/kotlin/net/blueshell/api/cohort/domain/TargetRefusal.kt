@@ -22,6 +22,24 @@ class TargetSystemRefused(
         mapOf("system" to system.shownName, "reason" to reason),
     )
 
+class TargetSystemUnavailable(
+    system: TargetSystem,
+) : TargetRefusal(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "TargetSystemUnavailable",
+        "The system cannot be reached now.",
+        mapOf("system" to system.shownName),
+    )
+
+class TargetLinksOwnAccounts(
+    system: TargetSystem,
+) : TargetRefusal(
+        HttpStatus.CONFLICT,
+        "TargetLinksOwnAccounts",
+        "People link their own account on this system.",
+        mapOf("system" to system.shownName),
+    )
+
 class TargetNotFound(
     system: TargetSystem,
     externalId: String,

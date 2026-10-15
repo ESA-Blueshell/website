@@ -281,6 +281,15 @@ class InboundReconcileTest {
         assertThat(orphaned.reason).isEqualTo("Cohort 12 has no definition in code any more")
     }
 
+    @Test
+    fun `on a system where people link their own account, nobody is taken in`() {
+        givenContributionTarget()
+        strategy.makesMemberIds = false
+
+        assertThrows<TargetLinksOwnAccounts> { service.preview(10L, 20L) }
+        assertThat(strategy.listCalls).isZero()
+    }
+
     private fun givenContributionTarget() = givenTarget(CohortType.PERIOD_PAYERS, "PERIOD_PAYERS:12", scope = 12L)
 
     private fun givenNewsletterTarget() = givenTarget(CohortType.NEWSLETTER_SUBSCRIBERS, "NEWSLETTER_SUBSCRIBERS", scope = null)
@@ -323,6 +332,14 @@ class InboundReconcileTest {
     ): User = Entities.user(id = id, firstName = "User", lastName = "$id", email = email)
 
     private class RecordingTargetStrategy : TargetStrategy {
+        override fun memberIds(userIds: Set<Long>): Map<Long, String> = emptyMap()
+
+        override fun ownersOf(externalUserIds: Set<String>): Map<String, Long> = emptyMap()
+
+        override var makesMemberIds = true
+
+        override fun makeMemberId(userId: Long) = Unit
+
         override val descriptor =
             TargetDescriptor(
                 system = TargetSystem.BREVO,

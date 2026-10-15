@@ -128,6 +128,12 @@ describe("resolving drift", () => {
     vi.mocked(proposeLinks).mockResolvedValue(refusal(proposeLinks, {code: "TargetNotCreated", targetId: 4}, 409))
 
     await expect(proposeDriftLinks(1, 4, ["a"])).resolves.toMatchObject({ok: false})
+
+    vi.mocked(linkDrift).mockResolvedValue(refusal(linkDrift, {code: "TargetLinksOwnAccounts", system: "Discord"}, 409))
+    await expect(linkDriftPeople(1, 4, [{externalUserId: "a", userId: 5}])).resolves.toEqual({
+      ok: false,
+      reason: "People link their own Discord account. The site cannot link one for them.",
+    })
   })
 })
 
@@ -241,6 +247,14 @@ describe("making and renaming lists on the system", () => {
     await expect(createListInSystem(TargetSystem.BREVO, "Pub quiz", "Projects")).resolves.toEqual({
       ok: false,
       reason: "Brevo refused it: Failed to create list",
+    })
+
+    vi.mocked(createExternalTarget).mockResolvedValue(
+      refusal(createExternalTarget, {code: "TargetSystemUnavailable", system: "Discord"}, 503),
+    )
+    await expect(createListInSystem(TargetSystem.DISCORD, "Sitecie", "Lists")).resolves.toEqual({
+      ok: false,
+      reason: "Discord cannot be reached now; try again later.",
     })
   })
 

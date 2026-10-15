@@ -82,6 +82,8 @@ interface UserRepository : BaseRepository<User, Long> {
     @Query("select u.discordId from User u where u.discordId is not null")
     fun findLinkedDiscordIds(): List<String>
 
+    fun findAllByDiscordIdIn(discordIds: Collection<String>): List<User>
+
     fun existsByDiscordId(discordId: String): Boolean
 
     fun existsByDiscordIdAndIdNot(

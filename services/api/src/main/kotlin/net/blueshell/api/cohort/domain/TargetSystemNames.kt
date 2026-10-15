@@ -8,4 +8,5 @@ internal val TargetSystem.shownName: String
         when (this) {
             TargetSystem.BREVO -> "Brevo"
             TargetSystem.GOOGLE_CALENDAR -> "Google Calendar"
+            TargetSystem.DISCORD -> "Discord"
         }

@@ -14,14 +14,15 @@ class DiscordBotControllerTest {
         val read = BotStandingResult(true, true, true, null, emptyList(), emptyList())
         whenever(standing.read()).thenReturn(read)
 
-        assertThat(DiscordBotController(standing, mock(), mock()).findBotStanding()).isSameAs(read)
+        assertThat(DiscordBotController(standing, mock(), mock(), mock()).findBotStanding()).isSameAs(read)
     }
 
     @Test
     fun `offers the roles and channels a picker needs, and none without a bot`() {
         val roles: net.blueshell.api.discord.api.DiscordRoleKeeper = mock()
         val channels: net.blueshell.api.discord.api.DiscordChannelKeeper = mock()
-        val controller = DiscordBotController(mock(), roles, channels)
+        val catalogue: net.blueshell.api.discord.domain.DiscordCatalogue = mock()
+        val controller = DiscordBotController(mock(), roles, channels, catalogue)
         val role =
             net.blueshell.api.discord.api
                 .KeptRole("1", "Sitecie", true)
@@ -37,5 +38,7 @@ class DiscordBotControllerTest {
         whenever(channels.available()).thenReturn(true)
         assertThat(controller.listKeptRoles()).containsExactly(role)
         assertThat(controller.listKeptChannels()).containsExactly(channel)
+        whenever(catalogue.channels()).thenReturn(emptyList())
+        assertThat(controller.listCataloguedChannels()).isEmpty()
     }
 }

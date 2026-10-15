@@ -99,8 +99,13 @@ describe("the Discord bot's page", () => {
 
   it("is reached from Platforms, beside the bot settings", async () => {
     const router = (await import("@/plugins/router")).default
-    expect(router.resolve("/management/platforms/discord").matched.at(-1)?.redirect).toBe("/management/platforms/discord/bot")
-    for (const [path, name] of [["/management/platforms/discord/bot", "discordBot"], ["/management/platforms/discord/settings", "discordSettings"]] as const) {
+    expect(router.resolve("/management/platforms/discord").matched.at(-1)?.redirect).toBe("/management/platforms/discord/roles")
+    for (const [path, name] of [
+      ["/management/platforms/discord/roles", "discordRoles"],
+      ["/management/platforms/discord/channels", "discordChannels"],
+      ["/management/platforms/discord/bot", "discordBot"],
+      ["/management/platforms/discord/settings", "discordSettings"],
+    ] as const) {
       const route = router.resolve(path)
       expect(route.name).toBe(name)
       const load = route.matched.at(-1)!.components!.default as () => Promise<{default: unknown}>

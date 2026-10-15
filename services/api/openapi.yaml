@@ -1198,6 +1198,60 @@ components:
       - slug
       - sortIndex
       type: object
+    CataloguedChannel:
+      properties:
+        category:
+          type:
+          - string
+          - 'null'
+        game:
+          oneOf:
+          - $ref: '#/components/schemas/ChannelGame'
+          - type: 'null'
+        id:
+          type: string
+        kind:
+          enum:
+          - TEXT
+          - VOICE
+          - CATEGORY
+          type: string
+        name:
+          type: string
+        private:
+          type: boolean
+        roleIds:
+          items:
+            type: string
+          type: array
+        roleNames:
+          additionalProperties:
+            type: string
+          type: object
+      required:
+      - id
+      - kind
+      - name
+      - private
+      - roleIds
+      - roleNames
+      type: object
+    ChannelGame:
+      properties:
+        code:
+          type: string
+        kind:
+          enum:
+          - CASUAL
+          - COMPETITION
+          type: string
+        name:
+          type: string
+      required:
+      - code
+      - kind
+      - name
+      type: object
     CodeRequest:
       properties:
         code:
@@ -26980,6 +27034,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BotStandingResult'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Discord management
+  /management/discord/catalogue:
+    get:
+      operationId: listCataloguedChannels
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CataloguedChannel'
+                type: array
           description: OK
         '400':
           content:

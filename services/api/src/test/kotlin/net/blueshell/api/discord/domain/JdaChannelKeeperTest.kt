@@ -86,6 +86,8 @@ class JdaChannelKeeperTest {
     fun `says of each channel whether everybody is kept out and which roles are let in`() {
         whenever(everyone.id).thenReturn("99")
         whenever(opened.id).thenReturn("900")
+        whenever(sitecieRole.name).thenReturn("Sitecie")
+        whenever(opened.role).thenReturn(sitecieRole)
         val everyoneSees: PermissionOverride =
             mock {
                 on { id } doReturn "99"
@@ -101,7 +103,12 @@ class JdaChannelKeeperTest {
 
         assertThat(keeper().openings()).containsExactly(
             ChannelOpening(KeptChannel("10", "Committees", KeptChannelKind.CATEGORY, null), private = true, roleIds = emptyList()),
-            ChannelOpening(KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"), private = true, roleIds = listOf("900")),
+            ChannelOpening(
+                KeptChannel("1", "sitecie", KeptChannelKind.TEXT, "Committees"),
+                private = true,
+                roleIds = listOf("900"),
+                roleNames = mapOf("900" to "Sitecie"),
+            ),
             ChannelOpening(KeptChannel("2", "sitecie-voice", KeptChannelKind.VOICE, null), private = false, roleIds = emptyList()),
         )
     }

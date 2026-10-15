@@ -1617,6 +1617,11 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/management/cohort-targets/BREVO/folders/states") {
       return answer(route, "listTargetFolderStates", [])
     }
+    // No bot in the mocked api: Discord has no roles and no channels to list.
+    if (method === "GET" && path === "/management/cohort-targets/DISCORD/overview") {
+      return answer(route, "findTargetOverview", {lists: [], missing: [], lastReconciledAt: null})
+    }
+    if (method === "GET" && path === "/management/discord/catalogue") return answer(route, "listCataloguedChannels", [])
     if (method === "GET" && path === "/management/cohort-targets/BREVO/overview") {
       return answer(route, "findTargetOverview", {
         lists: [

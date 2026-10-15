@@ -44,10 +44,11 @@ that plan as its `system-tests` output, and the system-test job passes its tags 
 `app` on, every system test runs on six shards as before.
 
 `Imaging lint, tests and image` lints the Go source and the Dockerfile, checks the module for
-known vulnerabilities, runs the unit suite in the image's `test` stage, where it has to reach every
-statement, and then drives the built image with the container tests under `integration/`, run
+known vulnerabilities, runs the unit suite in the image's `test` stage, where `coverage.sh` holds it
+to every statement, branch (gobco) and function, and then drives the built image with the container tests under `integration/`, run
 read-only, as the image's non-root user and with no capabilities. Only the unit suite counts
-towards coverage. The api's integration tests convert through the same image: the shards start it
+towards coverage, and the report reads its branch and function totals from the
+`coverage-totals.json` beside the profile. The api's integration tests convert through the same image: the shards start it
 with the `start-imaging` action and find it through `IMAGING_URL`, and a local run builds it with
 Testcontainers. `Workflow checks` runs on every pull request.
 

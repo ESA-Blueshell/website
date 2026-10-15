@@ -131,6 +131,52 @@ func TestGifDisposalIsReplayed(t *testing.T) {
 	}
 }
 
+// Two frames that each put back what was under them: the second reuses the first's saved rows.
+func TestRestoreToPreviousTwiceKeepsTheCanvasUnderneath(t *testing.T) {
+	data := gifOf(t, &gif.GIF{
+		Image: []*image.Paletted{
+			gifFrameOf(image.Rect(0, 0, 40, 20), red),
+			gifFrameOf(image.Rect(0, 0, 20, 20), green),
+			gifFrameOf(image.Rect(0, 0, 10, 10), blue),
+			gifFrameOf(image.Rect(30, 0, 40, 20), green),
+		},
+		Delay:    []int{10, 10, 10, 10},
+		Disposal: []byte{gif.DisposalNone, gif.DisposalPrevious, gif.DisposalPrevious, gif.DisposalNone},
+	})
+	got, err := Convert(data, Target{MaxEdge: 2560, Lossless: true, Quality: 75}, roomy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shown, _ := played(t, got.WebP)
+	assertColour(t, shown[2], 5, 5, blue)
+	assertColour(t, shown[3], 5, 5, red)
+	assertColour(t, shown[3], 15, 15, red)
+	assertColour(t, shown[3], 35, 10, green)
+}
+
+// A GIF whose frames carry no graphic control extension: every frame is shown for the tenth of a
+// second a browser gives it, and nothing is disposed.
+func TestGifWithoutControlExtensionsIsShownAtATenthOfASecond(t *testing.T) {
+	data := threeFrames(t, gif.DisposalBackground)
+	bare := make([]byte, 0, len(data))
+	for i := 0; i < len(data); i++ {
+		if i+8 <= len(data) && data[i] == 0x21 && data[i+1] == 0xF9 && data[i+2] == 4 && data[i+7] == 0 {
+			i += 7
+			continue
+		}
+		bare = append(bare, data[i])
+	}
+	got, err := Convert(bare, Target{MaxEdge: 2560, Lossless: true, Quality: 75}, roomy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	shown, durations := played(t, got.WebP)
+	if len(shown) != 3 || durations[0] != 100 || durations[2] != 100 {
+		t.Fatalf("got %d frames shown for %v", len(shown), durations)
+	}
+	assertColour(t, shown[2], 5, 10, green)
+}
+
 func TestAnimatedMasterIsBroughtUnderItsCeiling(t *testing.T) {
 	got, err := Convert(threeFrames(t, gif.DisposalNone), Target{MaxEdge: 20, Quality: 82}, roomy)
 	if err != nil {

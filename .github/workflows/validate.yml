@@ -227,7 +227,7 @@ jobs:
     # The imaging service shares nothing with the jar or the bundle, so it has a job of its own.
     # Lint and the vulnerability check read the source on the runner. The unit suite runs in the
     # image's test stage, against the libwebp the image links and the cwebp the api used to run,
-    # and has to reach every statement. The container tests then drive the image the cluster runs,
+    # and has to reach every statement, branch and function. The container tests then drive the image the cluster runs,
     # read-only, as nobody and with no capabilities, and count towards no coverage.
     name: Imaging lint, tests and image
     needs: changes
@@ -270,7 +270,7 @@ jobs:
 
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
-      - name: Unit tests, held to every statement
+      - name: Unit tests, held to every statement, branch and function
         run: |
           docker buildx build --progress=plain --target coverage --output type=local,dest=coverage \
             --cache-from type=gha,scope=imaging-test --cache-to type=gha,mode=max,scope=imaging-test .
@@ -279,7 +279,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: imaging-unit-coverage
-          path: services/imaging/coverage/coverage.out
+          path: |
+            services/imaging/coverage/coverage.out
+            services/imaging/coverage/coverage-totals.json
           if-no-files-found: error
 
       - name: Build the image

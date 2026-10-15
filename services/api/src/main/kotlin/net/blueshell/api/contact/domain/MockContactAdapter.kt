@@ -152,6 +152,15 @@ class MockContactAdapter :
         return folderIds.entries.associate { (name, id) -> id to name }
     }
 
+    override fun deleteFolder(folderId: Long) {
+        recordTransactionState()
+        val name =
+            folderIds.entries.firstOrNull { it.value == folderId }?.key
+                ?: throw ContactServiceException("Mock: Folder not found: $folderId")
+        lists.values.removeIf { it.folderName == name }
+        folderIds.remove(name)
+    }
+
     override fun listAll(): List<ContactListRef> {
         recordTransactionState()
         return lists.values.map { list ->

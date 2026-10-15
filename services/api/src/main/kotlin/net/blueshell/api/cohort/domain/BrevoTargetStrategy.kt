@@ -76,6 +76,8 @@ class BrevoTargetStrategy(
     override fun resolve(externalId: String): ExternalTarget? =
         externalId.trim().toLongOrNull()?.let { id -> catalog(null).firstOrNull { it.externalId == id.toString() } }
 
+    override val folderKeeper: FolderKeeper = BrevoFolders(lists)
+
     /** Brevo's own folders, including the ones holding nothing. */
     override fun folders(): List<String> = lists.listFolders().values.sorted()
 

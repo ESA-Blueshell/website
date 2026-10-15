@@ -29,13 +29,13 @@ describe("Management's navigation", () => {
     const pages = (reader: {board: boolean, admin: boolean}) =>
       managementFor(reader).map((group) => [group.label, ...group.entries.map((entry) => entry.label)])
 
-    expect(pages({board: true, admin: false})).toEqual([[null, "Alerts"], ["Members", "Users", "Contributions", "Account recovery"], ["Content", "Events to approve", "Committees", "Board", "Games", "Esports"], ["Mail", "Sent", "Inbox", "Addresses"], ["Platforms", "Discord", "Cohorts"]])
+    expect(pages({board: true, admin: false})).toEqual([[null, "Alerts"], ["Members", "Users", "Contributions", "Account recovery"], ["Content", "Events to approve", "Committees", "Board", "Games", "Esports"], ["Mail", "Sent", "Inbox", "Addresses"], ["Platforms", "Brevo", "Discord"]])
     expect(pages({board: true, admin: true})).toEqual([
       [null, "Alerts"],
       ["Members", "Users", "Contributions", "Account recovery"],
       ["Content", "Events to approve", "Committees", "Board", "Games", "Esports"],
       ["Mail", "Sent", "Inbox", "Addresses"],
-      ["Platforms", "Discord", "Cohorts"],
+      ["Platforms", "Brevo", "Discord"],
       ["System", "Jobs", "Exceptions"],
     ])
     expect(pages({board: false, admin: false})).toEqual([])
@@ -60,13 +60,13 @@ describe("the Management portal", {timeout: 20_000}, () => {
   it("groups its pages in a sidebar and marks the admin's own", async () => {
     const admin = await mountPage(ManagementShell, {path: "/management/more", login: adminLogin})
 
-    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/management/contributions", "/management/recovery", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/platforms/discord", "/management/cohorts", "/management/jobs", "/management/exceptions"])
+    expect(targets(admin, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/management/contributions", "/management/recovery", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/platforms/brevo", "/management/platforms/discord", "/management/jobs", "/management/exceptions"])
     expect(admin.get("[data-testid=management-sidebar]").text()).toContain("@Admin")
 
     // The store is the app's one, so the board's sign-in replaces the admin's.
     const board = await mountPage(ManagementShell, {path: "/management/more", login: boardLogin})
 
-    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/management/contributions", "/management/recovery", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/platforms/discord", "/management/cohorts"])
+    expect(targets(board, "management-sidebar")).toEqual(["/management/alerts", "/management/users", "/management/contributions", "/management/recovery", "/management/events", "/management/committees", "/management/board", "/management/games", "/management/esports", "/management/mail/sent", "/management/mail/inbox", "/management/mail/addresses", "/management/platforms/brevo", "/management/platforms/discord"])
     expect(board.get("[data-testid=management-sidebar]").text()).not.toContain("@Admin")
   })
 

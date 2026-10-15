@@ -61,6 +61,16 @@ class BrevoListAdapter(
                 .let { Page(it.count, it.folders.orEmpty().map { folder -> folder.id to folder.name }) }
         }.toMap()
 
+    override fun deleteFolder(folderId: Long) {
+        log.info("Deleting Brevo folder id={}", folderId)
+        try {
+            contactsApi.deleteFolder(folderId)
+        } catch (e: RestClientException) {
+            log.error("Failed to delete Brevo folder id={}", folderId, e)
+            throw ContactServiceException("Failed to delete folder: ${reasonOf(e)}", e)
+        }
+    }
+
     override fun listAll(): List<ContactListRef> =
         page("lists") { limit, offset ->
             contactsApi.getLists(limit, offset, GetContactsSortParameter.ASC).let { page ->
@@ -146,7 +156,8 @@ class BrevoListAdapter(
 
     // Brevo files lists by folder id, and its folders do not nest: find the one by name or make it.
     private fun folderNamed(name: String): Long =
-        listFolders().entries.firstOrNull { it.value.equals(name, ignoreCase = true) }?.key
+        // Of two folders with one name the oldest is the folder, as a merge keeps it.
+        listFolders().entries.filter { it.value.equals(name, ignoreCase = true) }.minOfOrNull { it.key }
             ?: contactsApi.createFolder(CreateUpdateFolder(name = name)).id.also {
                 log.info("Created Brevo folder '{}' id={}", sanitizeForLog(name), it)
             }

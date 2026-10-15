@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -223,5 +225,32 @@ class CohortTargetWritesIT : UserTestSupport() {
             ).andExpect(status().isForbidden)
 
         assertThat(contactLists.listAll().single { it.externalListId == listId }.name).isEqualTo("Board test list")
+    }
+
+    @Test
+    fun `the board reads the folders, and only an admin merges them or removes an empty one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val admin = createUserWithRole(Role.ADMIN)
+        contactLists.createFolder("Leftover")
+        val leftover =
+            contactLists
+                .listFolders()
+                .entries
+                .single { it.value == "Leftover" }
+                .key
+
+        mvc
+            .perform(get("/management/cohort-targets/{system}/folders/states", "BREVO").with(signedIn(board)))
+            .andExpect(status().isOk)
+        mvc
+            .perform(post("/management/cohort-targets/{system}/folders/merge", "BREVO").with(signedIn(board)))
+            .andExpect(status().isForbidden)
+        mvc
+            .perform(delete("/management/cohort-targets/{system}/folders/{id}", "BREVO", leftover).with(signedIn(board)))
+            .andExpect(status().isForbidden)
+        mvc
+            .perform(delete("/management/cohort-targets/{system}/folders/{id}", "BREVO", leftover).with(signedIn(admin)))
+            .andExpect(status().isNoContent)
+        assertThat(contactLists.listFolders().values).doesNotContain("Leftover")
     }
 }

@@ -297,4 +297,27 @@ class BrevoListAdapterTest {
             .isInstanceOf(ContactServiceException::class.java)
             .hasMessage("Failed to delete list: Brevo did not answer")
     }
+
+    @Test
+    fun `a folder is removed by its id, and Brevo's refusal is said`() {
+        adapter.deleteFolder(9L)
+        verify(contactsApi).deleteFolder(9L)
+
+        whenever(contactsApi.deleteFolder(10L))
+            .thenThrow(RestClientResponseException("400 error", 400, "Bad Request", null, null, null))
+        assertThatThrownBy { adapter.deleteFolder(10L) }
+            .isInstanceOf(ContactServiceException::class.java)
+            .hasMessageStartingWith("Failed to delete folder")
+    }
+
+    @Test
+    fun `where two folders share a name the oldest is the folder`() {
+        whenever(contactsApi.getFolders(eq(50L), eq(0L), eq(GetContactsSortParameter.ASC)))
+            .thenReturn(GetFolders200Response(count = 2L, folders = listOf(folder(9L, "Committees"), folder(3L, "committees"))))
+        whenever(contactsApi.createList(any())).thenReturn(CreateFolder201Response(43L))
+
+        adapter.createList("Sitecie", "Committees")
+
+        verify(contactsApi).createList(CreateListRequest(folderId = 3L, name = "Sitecie"))
+    }
 }

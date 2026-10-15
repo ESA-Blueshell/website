@@ -6,19 +6,8 @@
  * place a call to the api may be written. Re-exported by name rather than with `export *`,
  * because the list of names is the promise.
  */
-export {
-  categoryLabel,
-  driftLabel,
-  earlierDrift,
-  isMember,
-  memberName,
-  memberSystemLabel,
-  syncChipColour,
-  syncLabel,
-  systemLabel,
-} from "./reading"
-export {COHORT_TYPE_LABELS, COHORT_TYPE_ORDER, cohortTypeLabel} from "./cohortTypeLabels"
-export {countLabel, nounFor} from "./cohortSummaries"
+export {memberName, systemLabel} from "./reading"
+export {COHORT_TYPE_LABELS, cohortTypeLabel} from "./cohortTypeLabels"
 export type {
   CohortMember,
   TargetOption,
@@ -34,10 +23,35 @@ export type {
 } from "./adapters/cohorts"
 export {TargetKind, CohortCategory, CohortType, DriftResolutionAction, TargetSystem} from "./adapters/cohorts"
 export {fetchCohortTargets} from "./adapters/cohorts"
+export {
+  applyTidy,
+  archiveTarget,
+  createFolderInSystem,
+  createListInSystem,
+  createMissingLists,
+  fetchTargetFolders,
+  fetchTidyPlan,
+  readListedTarget,
+  readTargetOverview,
+  renameTarget,
+  moveTargetToFolder,
+  deleteTarget,
+  linkExistingTargetForCohort,
+  type LastTidy,
+  type ListedTarget,
+  type MissingTarget,
+  type TidyMove,
+  type TidyPlan,
+  type TargetOverview,
+} from "./adapters/cohorts"
+export {DRIFT_WORDS, adoptWord, driftRowsOf, inSyncOn, isDrift, runBars, whyOf, type DriftWords} from "./listPage"
+export {default as TargetDrift} from "./island/TargetDrift.vue"
+export {default as FolderCare} from "./island/FolderCare.vue"
+export {mergeFolders, readFolderStates, removeFolder, type FolderMerge, type FolderState} from "./adapters/cohorts"
+export {ARCHIVE_FOLDER, driftMarksOf, driftOf, followsOf, groupsOf, lastTidyLine, missingNotice, overviewFacts, type OverviewGroup, type OverviewRow} from "./listOverview"
 export {fetchCohort} from "./adapters/cohorts"
 export {fetchCohorts, readCohorts, type SummaryTarget} from "./adapters/cohorts"
 export {linkDriftPeople, proposeDriftLinks, pushDriftPeople, removeDriftPeople, setTargetEnforced} from "./adapters/cohorts"
-export {queueCohortJob} from "./adapters/cohorts"
-export {evaluateMember, triggerReconcile} from "./adapters/cohorts"
-export {useDriftResolution} from "./composables/useDriftResolution"
-export {useTargetOverview} from "./composables/useTargetOverview"
+export {triggerReconcile} from "./adapters/cohorts"
+export {useDriftResolution, type DriftAction} from "./composables/useDriftResolution"
+export {useTargetSync, type SyncTask} from "./composables/useTargetSync"

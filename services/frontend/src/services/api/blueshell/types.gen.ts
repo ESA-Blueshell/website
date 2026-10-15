@@ -1083,6 +1083,20 @@ export type CreateMemberProfileRequest = {
     userId: number;
 };
 
+/**
+ * The missing lists to create, by target; none creates every one.
+ */
+export type CreateMissingTargetsRequest = {
+    targetIds: Array<number>;
+};
+
+export type CreateMissingTargetsResponse = {
+    /**
+     * How many lists are queued to be created
+     */
+    queued: number;
+};
+
 export type CreateSponsorRequest = {
     description: string;
     name: string;
@@ -1472,6 +1486,10 @@ export type DriftResolutionEntry = {
     personName?: string | null;
     resolvedAt: string;
     /**
+     * The account that resolved it; null when the api did so on its own behalf
+     */
+    resolvedById?: number | null;
+    /**
      * Who resolved it; null when the api did so on its own behalf
      */
     resolvedByName?: string | null;
@@ -1847,6 +1865,29 @@ export type FirstContribution = {
     periodEndDate?: string | null;
     periodId?: number | null;
     periodStartDate?: string | null;
+};
+
+/**
+ * What merging the folders that share a name did.
+ */
+export type FolderMerge = {
+    /**
+     * How many targets moved into the folder that stayed.
+     */
+    moved: number;
+    /**
+     * How many folders were removed.
+     */
+    removed: number;
+};
+
+/**
+ * A folder on the system and how many targets it holds.
+ */
+export type FolderState = {
+    id: string;
+    name: string;
+    targets: number;
 };
 
 /**
@@ -2409,6 +2450,21 @@ export type LinkRosterEntryRequest = {
     userId?: number | null;
 };
 
+export type ListedTarget = {
+    cohortId?: number | null;
+    cohortLabel?: string | null;
+    cohortType?: CohortType | null;
+    enforced: boolean;
+    externalId: string;
+    extra?: number | null;
+    folderLabel?: string | null;
+    label: string;
+    lastReconciledAt?: string | null;
+    memberCount?: number | null;
+    missing?: number | null;
+    targetId?: number | null;
+};
+
 export type LockResponse = {
     contactEmail: string;
 };
@@ -2543,6 +2599,16 @@ export type MembershipResponse = {
     updatedAt: string;
     userId: number;
     version: number;
+};
+
+export type MissingTarget = {
+    cohortId: number;
+    cohortLabel: string;
+    cohortType: CohortType;
+    creating: boolean;
+    folder?: string | null;
+    memberCount: number;
+    targetId: number;
 };
 
 /**
@@ -3461,6 +3527,7 @@ export type StepUpRequest = {
 };
 
 export type SummaryTarget = {
+    externalId?: string | null;
     label: string;
     made: boolean;
     system: TargetSystem;
@@ -3508,6 +3575,12 @@ export type TargetOption = {
      */
     memberCount: number;
     system: string;
+};
+
+export type TargetOverviewResult = {
+    lastReconciledAt?: string | null;
+    lists: Array<ListedTarget>;
+    missing: Array<MissingTarget>;
 };
 
 export enum TargetSystem {
@@ -3571,9 +3644,13 @@ export type TelemetryResponse = {
 };
 
 /**
- * One linked list the tidy would move into its cohort type's folder.
+ * One list the tidy would move into its cohort type's folder.
  */
 export type TidyMove = {
+    /**
+     * Whether the list follows no cohort and is proposed only because its name is a cohort's
+     */
+    byName: boolean;
     externalId: string;
     /**
      * The folder it is in now; null at the top level.
@@ -10021,6 +10098,266 @@ export type CreateTargetFolderResponses = {
 };
 
 export type CreateTargetFolderResponse = CreateTargetFolderResponses[keyof CreateTargetFolderResponses];
+
+export type MergeTargetFoldersData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/merge';
+};
+
+export type MergeTargetFoldersErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MergeTargetFoldersError = MergeTargetFoldersErrors[keyof MergeTargetFoldersErrors];
+
+export type MergeTargetFoldersResponses = {
+    /**
+     * OK
+     */
+    200: FolderMerge;
+};
+
+export type MergeTargetFoldersResponse = MergeTargetFoldersResponses[keyof MergeTargetFoldersResponses];
+
+export type ListTargetFolderStatesData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/states';
+};
+
+export type ListTargetFolderStatesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListTargetFolderStatesError = ListTargetFolderStatesErrors[keyof ListTargetFolderStatesErrors];
+
+export type ListTargetFolderStatesResponses = {
+    /**
+     * OK
+     */
+    200: Array<FolderState>;
+};
+
+export type ListTargetFolderStatesResponse = ListTargetFolderStatesResponses[keyof ListTargetFolderStatesResponses];
+
+export type RemoveTargetFolderData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        folderId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/folders/{folderId}';
+};
+
+export type RemoveTargetFolderErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RemoveTargetFolderError = RemoveTargetFolderErrors[keyof RemoveTargetFolderErrors];
+
+export type RemoveTargetFolderResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type RemoveTargetFolderResponse = RemoveTargetFolderResponses[keyof RemoveTargetFolderResponses];
+
+export type FindListedTargetData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+        externalId: string;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/lists/{externalId}';
+};
+
+export type FindListedTargetErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindListedTargetError = FindListedTargetErrors[keyof FindListedTargetErrors];
+
+export type FindListedTargetResponses = {
+    /**
+     * OK
+     */
+    200: ListedTarget;
+};
+
+export type FindListedTargetResponse = FindListedTargetResponses[keyof FindListedTargetResponses];
+
+export type CreateMissingTargetsData = {
+    body: CreateMissingTargetsRequest;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/missing';
+};
+
+export type CreateMissingTargetsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type CreateMissingTargetsError = CreateMissingTargetsErrors[keyof CreateMissingTargetsErrors];
+
+export type CreateMissingTargetsResponses = {
+    /**
+     * OK
+     */
+    200: CreateMissingTargetsResponse;
+};
+
+export type CreateMissingTargetsResponse2 = CreateMissingTargetsResponses[keyof CreateMissingTargetsResponses];
+
+export type FindTargetOverviewData = {
+    body?: never;
+    path: {
+        system: TargetSystem;
+    };
+    query?: never;
+    url: '/management/cohort-targets/{system}/overview';
+};
+
+export type FindTargetOverviewErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindTargetOverviewError = FindTargetOverviewErrors[keyof FindTargetOverviewErrors];
+
+export type FindTargetOverviewResponses = {
+    /**
+     * OK
+     */
+    200: TargetOverviewResult;
+};
+
+export type FindTargetOverviewResponse = FindTargetOverviewResponses[keyof FindTargetOverviewResponses];
 
 export type PreviewFolderTidyData = {
     body?: never;

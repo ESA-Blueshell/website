@@ -18,6 +18,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -49,6 +50,20 @@ class TargetCatalogTest {
 
         assertThat(strategy.queries).containsExactly("members")
         assertThat(results).extracting<Long?> { it.linkedTargetId }.containsExactly(null, 42L)
+    }
+
+    @Test
+    fun `finds one target with the cohort it is linked to, refuses one the system lacks, and keeps no folders by default`() {
+        val linked =
+            Target("BREVO", TargetKind.LIST, "Members").apply {
+                id = 42L
+                externalId = "2"
+            }
+        whenever(targets.findAllBySystem("BREVO")).thenReturn(listOf(linked))
+
+        assertThat(catalog.find(TargetSystem.BREVO, "2").linkedTargetId).isEqualTo(42L)
+        assertThatThrownBy { catalog.find(TargetSystem.BREVO, "99") }.isInstanceOf(TargetNotFound::class.java)
+        assertThat(strategy.folderKeeper).isNull()
     }
 
     private class RecordingStrategy : TargetStrategy {
@@ -338,5 +353,20 @@ class TargetCatalogTest {
         val recorded = argumentCaptor<TargetDeletion>()
         verify(deletions).save(recorded.capture())
         assertThat(recorded.firstValue.externalId).isEqualTo("7")
+    }
+
+    @Test
+    fun `a system that will not answer is a refusal with its reason, not a fault`() {
+        val failing: TargetStrategy =
+            mock {
+                on { system } doReturn TargetSystem.BREVO
+                on { descriptor } doReturn TargetDescriptor(TargetSystem.BREVO, TargetKind.LIST)
+                on { catalog(null) } doThrow ContactServiceException("Brevo is down")
+                on { resolve("7") } doThrow ContactServiceException("Brevo is down")
+            }
+        val down = TargetCatalog(TargetStrategies(listOf(failing)), targets, deletions, actors)
+
+        assertThatThrownBy { down.search(TargetSystem.BREVO, null) }.isInstanceOf(TargetSystemRefused::class.java)
+        assertThatThrownBy { down.find(TargetSystem.BREVO, "7") }.isInstanceOf(TargetSystemRefused::class.java)
     }
 }

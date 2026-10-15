@@ -300,6 +300,8 @@ data class DriftResolutionResponse(
     val personName: String?,
     @param:Schema(description = "Who resolved it; null when the api did so on its own behalf")
     val resolvedByName: String?,
+    @param:Schema(description = "The account that resolved it; null when the api did so on its own behalf")
+    val resolvedById: Long?,
     val resolvedAt: Instant,
 )
 
@@ -359,6 +361,7 @@ private fun CohortDetail.toResponse(): CohortDetailResponse =
                     externalUserId = it.resolution.externalUserId,
                     personName = it.personName,
                     resolvedByName = it.resolvedByName,
+                    resolvedById = it.resolution.resolvedBy,
                     resolvedAt = it.resolution.resolvedAt,
                 )
             },

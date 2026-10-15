@@ -5,6 +5,7 @@ import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.committee.api.CommitteeMembershipChanged
 import net.blueshell.api.contribution.api.ContributionChanged
 import net.blueshell.api.contribution.api.ContributionPeriodChanged
+import net.blueshell.api.esports.api.RosterChanged
 import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.MembershipChanged
 import net.blueshell.api.user.api.UserCreated
@@ -53,6 +54,13 @@ class CohortRuleListener(
         // A committee seated for the first time has a definition but no record yet.
         registrar.register()
         updater.updateMember(evt.userId)
+    }
+
+    @AfterCommitListener
+    fun onRosterChanged(evt: RosterChanged) {
+        // A team on its first line-up has a definition but no record yet.
+        registrar.register()
+        evt.userIds.forEach(updater::updateMember)
     }
 
     @AfterCommitListener

@@ -1,4 +1,5 @@
-// TWIN: `esports/domain/EsportsRefusal.kt` declares the codes and their facts. See ADR-026.
+// TWIN: `esports/domain/EsportsRefusal.kt` declares the codes and their facts, and
+// `cohort/domain/TargetRefusal.kt` the Discord ones. See ADR-026.
 
 import {countOf} from "@/utils/countOf"
 import {refusalReader, type RefusalCode} from "@/utils/refusals"
@@ -17,6 +18,10 @@ interface RefusalBody extends RefusalCode {
   seasonName?: string
   teams?: number
   players?: number
+  reason?: string
+  cohort?: string
+  channel?: string
+  category?: string
 }
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
@@ -34,6 +39,10 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   SeasonDatesOverlap: r => `Those dates overlap ${r.seasonName}.`,
   SeasonEndsBeforeStart: () => "A season cannot end before it starts.",
   PictureNotStored: () => "That picture is not in storage.",
+  TargetSystemUnavailable: () => "Discord cannot be reached now. Open the team again to see what was set on Discord.",
+  TargetSystemRefused: r => `Discord refused it: ${r.reason}`,
+  TargetLinkedElsewhere: r => `${r.cohort} already follows that role. Pick another role.`,
+  ChannelOutsideCategory: r => `#${r.channel} is not under ${r.category}, so it cannot be opened to the team's role.`,
 }
 
 export const {sentenceFor, reasonFor, refusable, accepted} = refusalReader(sentences)

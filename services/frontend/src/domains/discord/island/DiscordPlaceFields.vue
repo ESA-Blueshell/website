@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-/* A committee's Discord on its form: the role its people hold and the channels that role opens. A
+/* A committee's or a team's Discord on its form: the role its people hold and the channels that role opens. A
    new one gets a new role and a private channel by default; an existing role and channels can be
    linked instead, on adding and on editing. Hidden where the api has no bot in the server. */
 import RoleMark from "@/components/island/RoleMark.vue"
@@ -30,6 +30,7 @@ const {read, name, slug, holders = "Everyone with a seat holds it.", category = 
 
 /** What the form will ask of Discord once the record is saved, or nothing where Discord is away. */
 const choice = defineModel<DiscordPlaceRequest | null>({default: null})
+const emit = defineEmits<{(event: "loaded", place: DiscordPlace | null): void}>()
 
 const adding = read == null
 const state = ref<DiscordPlace | null>(null)
@@ -67,6 +68,7 @@ watch([available, roleKey, channelIds, makeChannel, () => slug], () => {
 onMounted(async () => {
   const [found, held, open] = await Promise.all([read ? read() : Promise.resolve(null), listKeepableRoles(), listKeepableChannels()])
   state.value = found
+  emit("loaded", found)
   roles.value = held ?? []
   channels.value = open ?? []
   channelIds.value = (found?.channels ?? []).filter((one) => one.kind !== "CATEGORY").map((one) => one.id)

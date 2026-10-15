@@ -20,6 +20,8 @@ import FormSection from "@/components/island/FormSection.vue"
 import LineupSource from "../island/LineupSource.vue"
 import TeamRoster from "../island/TeamRoster.vue"
 import {refreshSharedLists} from "@/utils/sharedLists"
+import {DiscordPlaceFields, type DiscordPlaceRequest} from "@/domains/discord"
+import store from "@/plugins/store"
 import {
   dropTeam,
   loadRoster,
@@ -38,6 +40,8 @@ import {
   fieldExistingTeam,
   isBlank,
   publishLineup,
+  readTeamDiscord,
+  saveTeamDiscord,
   type DraftEntry,
 } from "../adapters/lineup"
 import {loadMemberAccounts, type MemberAccount} from "@/domains/user"
@@ -489,6 +493,11 @@ const previewSlices = computed(() => {
   }]
 })
 
+/** The team's role and private channel on Discord, set once the line-up is saved. */
+const discord = ref<DiscordPlaceRequest | null>(null)
+const readDiscord = computed(() => (props.teamId == null ? null : () => readTeamDiscord(props.teamId!)))
+const discordSlug = computed(() => draftName.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))
+
 const submit = async () => {
   const seasonId = props.season?.id
   // Two guards rather than one: `complete` is what the button reads, and this is what makes an
@@ -512,6 +521,11 @@ const submit = async () => {
     if (!done.ok) {
       failure.value = done.reason
       return
+    }
+    // The line-up is saved either way; Discord refusing only means the role and channel wait.
+    if (discord.value && done.teamId != null) {
+      const set = await saveTeamDiscord(done.teamId, discord.value)
+      if (!set.ok) store.commit("setStatusSnackbarMessage", set.reason)
     }
     await refreshSharedLists()
     emit("saved")
@@ -665,6 +679,16 @@ const numbered = (index: number) => String(index + 1).padStart(2, "0")
             {{ teamFailure }}
           </notice-box>
         </form-section>
+
+        <discord-place-fields
+          v-model="discord"
+          category="Esports"
+          holders="Everyone on the line-up this season holds it; a season ending takes nobody off."
+          :name="draftName"
+          :read="readDiscord"
+          :slug="discordSlug"
+          testid="lineup-discord"
+        />
 
         <!-- Only while a team is being made: correcting a line-up is about the people already
              on it, and dropping another squad into it would be a different act in the same

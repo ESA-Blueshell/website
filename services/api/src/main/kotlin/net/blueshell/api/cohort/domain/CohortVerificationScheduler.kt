@@ -33,13 +33,16 @@ class CohortVerificationScheduler(
         mapped.forEach { jobs.reconcileTarget(it.id!!, JobTrigger.SCHEDULED_RUN) }
     }
 
-    // The activists follow the board in office, which changes by date and with no event.
+    // The activists follow the board in office and a team its line-up in the season fielded now,
+    // which change by date and with no event.
     @Scheduled(cron = "\${cohort.recompute-cron:0 30 2 * * *}")
     fun recomputeDatedCohorts() {
-        definitions.all().filter { it.type == CohortType.ACTIVISTS }.forEach(updater::updateCohort)
+        definitions.all().filter { it.type in DATED }.forEach(updater::updateCohort)
     }
 
     companion object {
+        private val DATED = setOf(CohortType.ACTIVISTS, CohortType.TEAM_PLAYERS)
+
         private val log = LoggerFactory.getLogger(CohortVerificationScheduler::class.java)
     }
 }

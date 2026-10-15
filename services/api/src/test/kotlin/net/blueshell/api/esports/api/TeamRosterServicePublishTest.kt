@@ -7,6 +7,7 @@ import net.blueshell.api.esports.domain.TeamSeasonService
 import net.blueshell.api.esports.domain.TeamService
 import net.blueshell.api.esports.persistence.Season
 import net.blueshell.api.esports.persistence.Team
+import net.blueshell.api.esports.persistence.TeamPlayer
 import net.blueshell.api.esports.persistence.TeamRosterEntry
 import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
@@ -48,7 +49,8 @@ class TeamRosterServicePublishTest {
         }
     private val seasons = mock<SeasonService>().also { whenever(it.findById(5)).thenReturn(season) }
     private val fielded = mock<TeamSeasonService>().also { whenever(it.field(any(), any(), any())).thenReturn(fielding) }
-    private val service = TeamRosterService(entries, teams, seasons, fielded, mock<SeasonGameService>(), mock<StoredPictures>())
+    private val events = mock<net.blueshell.api.shared.event.AfterCommitEventPublisher>()
+    private val service = TeamRosterService(entries, teams, seasons, fielded, mock<SeasonGameService>(), mock<StoredPictures>(), events)
 
     private fun draft(
         teamId: Long?,
@@ -78,5 +80,46 @@ class TeamRosterServicePublishTest {
         service.publish(draft(null))
 
         verify(teams).create(TeamInput("BS Draft"))
+    }
+
+    @Test
+    fun `tells the cohorts who came onto or off a line-up, linked and unlinked`() {
+        val linked = TeamRosterEntry(teamSeason = fielding, handle = "linked", userId = 40).also { it.id = 13 }
+        whenever(entries.findById(13)).thenReturn(Optional.of(linked))
+
+        service.remove(13)
+        service.remove(12)
+        service.link(11, 41)
+        service.add(3, "CS2", 5, RosterEntryInput(handle = "new", role = TeamRole.PLAYER), userId = 42)
+        service.add(3, "CS2", 5, RosterEntryInput(handle = "nobody", role = TeamRole.PLAYER), userId = null)
+
+        verify(events).publish(RosterChanged(3, setOf(40)))
+        verify(events).publish(RosterChanged(3, setOf(41)))
+        verify(events).publish(RosterChanged(3, setOf(42)))
+        verify(events, org.mockito.kotlin.times(3)).publish(any<RosterChanged>())
+    }
+
+    @Test
+    fun `names every team, and reads every team's players in the season fielded now`() {
+        whenever(teams.pool()).thenReturn(listOf(team))
+        whenever(fielded.fieldedSeasonNow()).thenReturn(5L)
+        whenever(entries.findTeamPlayersInSeason(5)).thenReturn(listOf(TeamPlayer(3, 7), TeamPlayer(3, 8), TeamPlayer(4, 7)))
+
+        assertThat(service.teamNames()).isEqualTo(mapOf(3L to "BS Draft"))
+        assertThat(service.currentLineups()).isEqualTo(mapOf(3L to setOf(7L, 8L), 4L to setOf(7L)))
+        whenever(fielded.fieldedSeasonNow()).thenReturn(null)
+        assertThat(service.currentLineups()).isEmpty()
+    }
+
+    @Test
+    fun `a line-up carried into a season tells the cohorts who came with it`() {
+        val previous = TeamRosterEntry(teamSeason = fielding, handle = "old", userId = 50, sortIndex = 0)
+        whenever(entries.findSeasonIdsWithLineup(3, "CS2", 5)).thenReturn(listOf(4L))
+        whenever(entries.findAllByTeamAndSeason(3, "CS2", 4)).thenReturn(listOf(previous))
+
+        val fieldedTeam = service.fieldWithLineup(3, "CS2", 5, carryLineup = true)
+
+        assertThat(fieldedTeam.carried.map { it.userId }).containsExactly(50L)
+        verify(events).publish(RosterChanged(3, setOf(50)))
     }
 }

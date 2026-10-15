@@ -5,7 +5,7 @@ import TeamEditor from "@/domains/esports/components/TeamEditor.vue"
 import {dropTeam, loadRoster, loadTeamSeasons, loadTeams, unfieldTeamFromSeason} from "@/domains/esports/adapters/esports"
 import {loadCasualGames} from "@/domains/games/adapters/games"
 import {forgetGames, useGames} from "@/domains/esports/island/useGames"
-import {fieldExistingTeam, publishLineup} from "@/domains/esports/adapters/lineup"
+import {fieldExistingTeam, publishLineup, readTeamDiscord, saveTeamDiscord} from "@/domains/esports/adapters/lineup"
 import {loadMemberAccounts} from "@/domains/user"
 import {settle} from "../../../helpers/testUtils"
 import {TeamRole} from "@/services/api"
@@ -36,7 +36,11 @@ vi.mock("@/domains/esports/adapters/lineup", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/domains/esports/adapters/lineup")>()),
   fieldExistingTeam: vi.fn(),
   publishLineup: vi.fn(),
+  readTeamDiscord: vi.fn(),
+  saveTeamDiscord: vi.fn(),
 }))
+const {mockStore} = vi.hoisted(() => ({mockStore: {commit: vi.fn()}}))
+vi.mock("@/plugins/store", () => ({default: mockStore}))
 
 vi.mock("@/domains/user", () => ({loadMemberAccounts: vi.fn()}))
 
@@ -60,6 +64,7 @@ const stubs = {
   SegmentedChoice: true,
   SearchPicker: true,
   LineupSource: true,
+  DiscordPlaceFields: {name: "DiscordPlaceFields", props: ["modelValue", "read", "name", "slug", "category", "holders", "testid"], emits: ["update:modelValue", "loaded"], template: "<div />"},
 }
 
 const openEditor = async () => {
@@ -87,7 +92,7 @@ const entry = (id: number, handle: string) => aRosterEntry({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(publishLineup).mockResolvedValue({ok: true})
+  vi.mocked(publishLineup).mockResolvedValue({ok: true, teamId: 9})
   vi.mocked(fieldExistingTeam).mockResolvedValue({ok: true})
   vi.mocked(loadMemberAccounts).mockResolvedValue([])
 })
@@ -386,5 +391,29 @@ describe("TeamEditor, one line-up card at a time", () => {
     choice.vm.$emit("update:modelValue", "new-team")
     await settle()
     expect(wrapper.getComponent({name: "SegmentedChoice"}).props("modelValue")).toBe("new-team")
+  })
+})
+
+describe("the team's Discord", () => {
+  it("sets the team's role and channel once the line-up is saved, and says where Discord refused", async () => {
+    vi.mocked(loadRoster).mockResolvedValue([entry(1, "ace")])
+    vi.mocked(loadTeamSeasons).mockResolvedValue([])
+    vi.mocked(saveTeamDiscord).mockResolvedValueOnce({ok: true, saved: {available: true, channels: []}})
+    const wrapper = await openEditor()
+    const fields = wrapper.findComponent({name: "DiscordPlaceFields"})
+    expect(fields.props("slug")).toBe("blueshell")
+    await (fields.props("read") as () => Promise<unknown>)()
+    expect(readTeamDiscord).toHaveBeenCalledWith(7)
+    const choice = {createRole: true, channelIds: [], createChannel: "blueshell"}
+    fields.vm.$emit("update:modelValue", choice)
+    await settle()
+    await wrapper.get("[data-testid=lineup-save]").trigger("click")
+    await settle()
+    expect(saveTeamDiscord).toHaveBeenCalledWith(9, choice)
+
+    vi.mocked(saveTeamDiscord).mockResolvedValueOnce({ok: false, reason: "Discord cannot be reached now."})
+    await wrapper.get("[data-testid=lineup-save]").trigger("click")
+    await settle()
+    expect(mockStore.commit).toHaveBeenCalledWith("setStatusSnackbarMessage", "Discord cannot be reached now.")
   })
 })

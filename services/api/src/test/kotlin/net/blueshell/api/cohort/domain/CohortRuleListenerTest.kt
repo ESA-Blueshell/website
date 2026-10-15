@@ -5,6 +5,7 @@ import io.mockk.verify
 import net.blueshell.api.board.api.BoardMembershipChanged
 import net.blueshell.api.committee.api.CommitteeCreated
 import net.blueshell.api.contribution.api.ContributionPeriodChanged
+import net.blueshell.api.esports.api.RosterChanged
 import org.junit.jupiter.api.Test
 
 class CohortRuleListenerTest {
@@ -18,6 +19,15 @@ class CohortRuleListenerTest {
 
         verify(exactly = 1) { registrar.register() }
         verify(exactly = 0) { updater.updateMember(any()) }
+    }
+
+    @Test
+    fun `a line-up change registers a new team's cohort and looks at who came on or off`() {
+        listener.onRosterChanged(RosterChanged(3, setOf(7L, 8L)))
+
+        verify { registrar.register() }
+        verify { updater.updateMember(7L) }
+        verify { updater.updateMember(8L) }
     }
 
     @Test

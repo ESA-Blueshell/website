@@ -54,6 +54,19 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("seasonId") seasonId: Long,
     ): List<TeamRosterEntry>
 
+    /** Who is on which team's line-up in [seasonId], for the linked spots only. */
+    @Query(
+        """
+        SELECT new net.blueshell.api.esports.persistence.TeamPlayer(t.id, e.userId) FROM TeamRosterEntry e
+        JOIN e.teamSeason ts
+        JOIN ts.team t
+        WHERE ts.season.id = :seasonId AND e.userId IS NOT NULL
+        """,
+    )
+    fun findTeamPlayersInSeason(
+        @Param("seasonId") seasonId: Long,
+    ): List<TeamPlayer>
+
     /** One team's line-up, the icons fetched with it for the same reason as the whole game's. */
     @Query(
         """
@@ -188,3 +201,9 @@ interface TeamRosterEntryRepository : JpaRepository<TeamRosterEntry, Long> {
         @Param("game") game: String,
     ): Long
 }
+
+/** One linked spot on a team's line-up. */
+data class TeamPlayer(
+    val teamId: Long,
+    val userId: Long,
+)

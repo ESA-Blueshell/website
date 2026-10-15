@@ -13,6 +13,7 @@ import net.blueshell.api.esports.persistence.TeamRosterEntryRepository
 import net.blueshell.api.esports.persistence.TeamSeason
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -63,7 +64,23 @@ class TeamRosterService(
     private val fielded: TeamSeasonService,
     private val entered: SeasonGameService,
     private val pictures: StoredPictures,
+    // After the commit, so the cohorts read the line-up as it was written.
+    private val events: AfterCommitEventPublisher,
 ) {
+    /** A team's name by its id, for every team the association has. */
+    @Transactional(readOnly = true)
+    fun teamNames(): Map<Long, String> = teams.pool().associate { requireNotNull(it.id) to it.name }
+
+    /** The people on each team's line-up in the season fielded now, by team, read in one go. */
+    @Transactional(readOnly = true)
+    fun currentLineups(): Map<Long, Set<Long>> {
+        val seasonId = fielded.fieldedSeasonNow() ?: return emptyMap()
+        return entries
+            .findTeamPlayersInSeason(seasonId)
+            .groupBy({ it.teamId }, { it.userId })
+            .mapValues { it.value.toSet() }
+    }
+
     @Transactional(readOnly = true)
     fun findByTeamAndSeason(
         teamId: Long,
@@ -121,6 +138,7 @@ class TeamRosterService(
         val fielding = fielded.field(teamId, game, seasonId)
         // Appended rather than inserted: a roster is read in the order it was written.
         val next = entries.findAllByTeamAndSeason(teamId, game, seasonId).size
+        userId?.let { events.publish(RosterChanged(teamId, setOf(it))) }
         return entries.save(
             TeamRosterEntry(
                 teamSeason = fielding,
@@ -190,6 +208,7 @@ class TeamRosterService(
                     ),
                 )
             }
+        events.publish(RosterChanged(teamId, carried.mapNotNullTo(mutableSetOf()) { it.userId }))
         return FieldedTeam(fielding, team, season, carried)
     }
 
@@ -209,7 +228,12 @@ class TeamRosterService(
                 if (drafted.id == null) {
                     add(teamId, draft.game, draft.seasonId, drafted.entry, drafted.userId).also { it.sortIndex = sortIndex }
                 } else {
-                    update(drafted.id, drafted.entry, sortIndex).also { it.userId = drafted.userId }
+                    update(drafted.id, drafted.entry, sortIndex).also { entry ->
+                        if (entry.userId != drafted.userId) {
+                            events.publish(RosterChanged(teamId, setOfNotNull(entry.userId, drafted.userId)))
+                        }
+                        entry.userId = drafted.userId
+                    }
                 }
             }
         return PublishedLineup(team, roster)
@@ -243,12 +267,17 @@ class TeamRosterService(
         userId: Long?,
     ): TeamRosterEntry {
         val entry = findById(id)
+        events.publish(RosterChanged(requireNotNull(entry.teamSeason.team.id), setOfNotNull(entry.userId, userId)))
         entry.userId = userId
         return entries.save(entry)
     }
 
     @Transactional
-    fun remove(id: Long) = entries.delete(findById(id))
+    fun remove(id: Long) {
+        val entry = findById(id)
+        entries.delete(entry)
+        entry.userId?.let { events.publish(RosterChanged(requireNotNull(entry.teamSeason.team.id), setOf(it))) }
+    }
 
     private fun findById(id: Long): TeamRosterEntry = entries.findById(id).orElseThrow { RosterEntryNotFoundException(id) }
 }

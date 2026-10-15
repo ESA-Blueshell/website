@@ -3,10 +3,11 @@ import {
   fieldExistingTeam,
   isBlank,
   publishLineup,
+  saveTeamDiscord,
   type DraftEntry,
   type LineupDraft,
 } from "@/domains/esports/adapters/lineup"
-import {addRosterEntry, fieldTeam, publishLineup as sendLineup} from "@/services/api"
+import {addRosterEntry, fieldTeam, publishLineup as sendLineup, setTeamDiscord} from "@/services/api"
 import {TeamRole} from "@/services/api"
 import {aRosterEntry, aSeason, aTeam} from "../../../helpers/apiFixtures"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
@@ -16,6 +17,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
   addRosterEntry: vi.fn(),
   fieldTeam: vi.fn(),
   publishLineup: vi.fn(),
+  setTeamDiscord: vi.fn(),
 }))
 
 const entry = (over: Partial<DraftEntry> = {}): DraftEntry => ({
@@ -85,7 +87,7 @@ describe("publishLineup", () => {
   })
 
   it("answers a save the api took", async () => {
-    expect(await publishLineup(draft())).toEqual({ok: true})
+    expect(await publishLineup(draft())).toEqual({ok: true, teamId: 7})
   })
 })
 
@@ -151,5 +153,28 @@ describe("isBlank", () => {
     expect(isBlank(entry({handle: "", description: "A word about them"}))).toBe(false)
     expect(isBlank(entry({handle: "", userId: 4}))).toBe(false)
     expect(isBlank(entry({handle: "", icon: "roster-icons/one.webp"}))).toBe(false)
+  })
+})
+
+describe("a team's Discord", () => {
+  it("is set through the api, and a Discord that cannot be reached says so", async () => {
+    const place = {available: true, roleId: "900", channels: []}
+    vi.mocked(setTeamDiscord).mockResolvedValueOnce(answer(setTeamDiscord, place))
+    await expect(saveTeamDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({ok: true, saved: place})
+    vi.mocked(setTeamDiscord).mockResolvedValueOnce(refusal(setTeamDiscord, {code: "TargetSystemUnavailable", system: "Discord"}, 503))
+    await expect(saveTeamDiscord(7, {createRole: true, channelIds: []})).resolves.toEqual({
+      ok: false,
+      reason: "Discord cannot be reached now. Open the team again to see what was set on Discord.",
+    })
+
+    const refused = async (facts: Record<string, unknown>) => {
+      vi.mocked(setTeamDiscord).mockResolvedValueOnce(refusal(setTeamDiscord, facts, 409))
+      return ((await saveTeamDiscord(7, {createRole: true, channelIds: []})) as {reason: string}).reason
+    }
+    expect(await refused({code: "TargetSystemRefused", reason: "No."})).toBe("Discord refused it: No.")
+    expect(await refused({code: "TargetLinkedElsewhere", cohort: "Sitecie"})).toBe("Sitecie already follows that role. Pick another role.")
+    expect(await refused({code: "ChannelOutsideCategory", channel: "board", category: "Esports"}))
+      .toBe("#board is not under Esports, so it cannot be opened to the team's role.")
+
   })
 })

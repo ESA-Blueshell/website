@@ -36,7 +36,7 @@ data class DiscordChoice(
 )
 
 /**
- * A cohort's role and private channels, as a committee's form sets them. The role is the cohort's
+ * A cohort's role and private channels, as a committee's or a team's form sets them. The role is the cohort's
  * Discord target, so it follows the cohort's people; a channel is opened to that role by an overwrite
  * and kept from everybody else, under the category the caller names when the site makes it.
  */
@@ -49,6 +49,8 @@ class CohortDiscord(
     private val registrar: CohortRegistrar,
     private val roles: DiscordRoleKeeper,
     private val channels: DiscordChannelKeeper,
+    private val definitions: CohortDefinitionRegistry,
+    private val updater: CohortMembershipUpdater,
 ) {
     fun read(key: String): DiscordPlace {
         if (!roles.available() || !channels.available()) return DiscordPlace(false, null, null, emptyList())
@@ -73,6 +75,8 @@ class CohortDiscord(
             refuseUnless(handable = choice.roleId)
         }
         val roleId = linked ?: refusedBy(TargetSystem.DISCORD) { roleFor(cohortId, choice) } ?: return read(key)
+        // A role the cohort did not have yet is given to its people now, not as each of them changes.
+        if (linked == null) definitions.byKey(key)?.let(updater::updateCohort)
         refusedBy(TargetSystem.DISCORD) {
             val opened = channels.openedTo(roleId)
             val toOpen = choice.channelIds - opened.map { it.id }.toSet()

@@ -35,11 +35,15 @@ class CohortMembershipUpdater(
         val belongsTo = definitions.definitionsFor(userId).mapNotNullTo(mutableSetOf()) { cohortIdFor(it) }
         val current = memberships.findAllByUserIdAndUserIdIsNotNull(userId)
         val currentByCohort = current.groupBy { it.cohort.id }
+        val held = current.mapNotNullTo(mutableSetOf()) { it.target.id }
 
-        val toAdd = belongsTo - currentByCohort.keys.filterNotNull().toSet()
+        // Per target, so a target added to a cohort later is filled for the people already in it.
+        val toAdd =
+            belongsTo.filterTo(mutableSetOf()) { cohortId ->
+                targetsOf(cohortId).filter { it.id !in held }.onEach { add(it, userId) }.isNotEmpty()
+            }
         val toRemove = currentByCohort.keys.filterNotNull().toSet() - belongsTo
 
-        toAdd.forEach { cohortId -> targetsOf(cohortId).forEach { add(it, userId) } }
         toRemove.forEach { cohortId ->
             currentByCohort[cohortId].orEmpty().forEach { remove(it) }
         }
@@ -59,12 +63,16 @@ class CohortMembershipUpdater(
         val cohortId = cohortIdFor(definition) ?: return MembershipChange(null, emptySet(), emptySet())
         val desired = definitions.membersOf(definition)
         val present = memberships.findAllByCohortIdAndUserIdIsNotNull(cohortId)
-        val presentIds = present.mapNotNullTo(mutableSetOf()) { it.userId }
+        val leaving = present.mapNotNullTo(mutableSetOf()) { it.userId } - desired
 
-        val joining = desired - presentIds
-        val leaving = presentIds - desired
-
-        targetsOf(cohortId).forEach { target -> joining.forEach { add(target, it) } }
+        val joining = mutableSetOf<Long>()
+        targetsOf(cohortId).forEach { target ->
+            val onTarget = present.filter { it.target.id == target.id }.mapNotNullTo(mutableSetOf()) { it.userId }
+            (desired - onTarget).forEach { userId ->
+                add(target, userId)
+                joining += userId
+            }
+        }
         present.filter { it.userId in leaving }.forEach { remove(it) }
 
         if (joining.isNotEmpty() || leaving.isNotEmpty()) {

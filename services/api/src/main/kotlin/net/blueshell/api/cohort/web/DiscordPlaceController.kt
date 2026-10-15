@@ -31,13 +31,14 @@ data class DiscordPlaceRequest(
     fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel)
 }
 
-/** A committee's role and private channels on Discord. */
+/** A committee's and a team's role and private channels on Discord. */
 @RestController
-@Tag(name = "Discord places", description = "A committee's role and private channels")
+@Tag(name = "Discord places", description = "A committee's or a team's role and private channels")
 @BoardOnly
 class DiscordPlaceController(
     private val discord: CohortDiscord,
     @param:Value($$"${discord.committees-category:Committees}") private val committees: String,
+    @param:Value($$"${discord.esports-category:Esports}") private val esports: String,
 ) {
     @GetMapping("/management/committees/{id}/discord")
     fun findCommitteeDiscord(
@@ -50,5 +51,18 @@ class DiscordPlaceController(
         @Valid @RequestBody request: DiscordPlaceRequest,
     ): DiscordPlace = discord.apply(committee(id), request.choice(), committees)
 
+    @GetMapping("/management/teams/{id}/discord")
+    fun findTeamDiscord(
+        @PathVariable id: Long,
+    ): DiscordPlace = discord.read(team(id))
+
+    @PutMapping("/management/teams/{id}/discord")
+    fun setTeamDiscord(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: DiscordPlaceRequest,
+    ): DiscordPlace = discord.apply(team(id), request.choice(), esports)
+
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
+
+    private fun team(id: Long) = "${CohortType.TEAM_PLAYERS}:$id"
 }

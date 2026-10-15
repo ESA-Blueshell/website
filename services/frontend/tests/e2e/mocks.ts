@@ -1309,8 +1309,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     // No bot in the mocked api, so a committee's form has no Discord section.
     if (method === "GET" && path === "/management/discord/roles") return answer(route, "listKeptRoles", [])
     if (method === "GET" && path === "/management/discord/channels") return answer(route, "listKeptChannels", [])
-    if (method === "GET" && /^\/management\/committees\/\d+\/discord$/.test(path)) {
-      return answer(route, "findCommitteeDiscord", {available: false, roleId: null, roleName: null, channels: []})
+    if (method === "GET" && /^\/management\/(committees|teams)\/\d+\/discord$/.test(path)) {
+      const place = {available: false, roleId: null, roleName: null, channels: []}
+      return answer(route, path.includes("/teams/") ? "findTeamDiscord" : "findCommitteeDiscord", place)
     }
     // No bot in the mocked api: the Discord field stays the text field it always was.
     if (method === "GET" && path === "/discord/members") {

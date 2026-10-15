@@ -32,15 +32,17 @@ class CohortVerificationSchedulerTest {
     }
 
     @Test
-    fun `recomputes each night only the cohorts that follow the date`() {
+    fun `recomputes each night only the cohorts that follow the date, the activists and the teams`() {
         val activists = ActivistsDefinition(mockk(), mockk(), mockk())
         val newsletter = NewsletterSubscribersDefinition(mockk())
-        val definitions: CohortDefinitionRegistry = mockk { every { all() } returns listOf(activists, newsletter) }
+        val team = TeamPlayersDefinition(3, "BS Draft", emptySet())
+        val definitions: CohortDefinitionRegistry = mockk { every { all() } returns listOf(activists, newsletter, team) }
         val updater: CohortMembershipUpdater = mockk(relaxed = true)
 
         CohortVerificationScheduler(mockk(), mockk(), mockk(), definitions, updater).recomputeDatedCohorts()
 
-        verify(exactly = 1) { updater.updateCohort(any()) }
+        verify(exactly = 2) { updater.updateCohort(any()) }
         verify { updater.updateCohort(activists) }
+        verify { updater.updateCohort(team) }
     }
 }

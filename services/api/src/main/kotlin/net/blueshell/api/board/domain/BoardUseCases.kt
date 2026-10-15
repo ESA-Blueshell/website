@@ -1,11 +1,13 @@
 package net.blueshell.api.board.domain
 
 import net.blueshell.api.board.api.BoardMemberService
+import net.blueshell.api.board.api.BoardMembershipChanged
 import net.blueshell.api.board.persistence.Board
 import net.blueshell.api.board.persistence.BoardMember
 import net.blueshell.api.board.persistence.BoardRepository
 import net.blueshell.api.file.api.StoredPictures
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,6 +19,7 @@ class BoardUseCases(
     private val boardMemberService: BoardMemberService,
     private val pictures: StoredPictures,
     private val userService: UserService,
+    private val events: TrackedEventPublisher,
 ) {
     /** Every board, newest first. */
     @Transactional(readOnly = true)
@@ -90,16 +93,16 @@ class BoardUseCases(
         val board = byId(boardId)
         val user = userId?.let { userService.findById(it) }
         val existing = userId?.let { boardMemberService.findByBoardAndUser(boardId, it) }
-        if (existing != null) return boardMemberService.update(written(existing, input))
+        if (existing != null) return boardMemberService.update(written(existing, input)).also { changed(it.userId) }
         val member = BoardMember(board = board, user = user, role = input.role, startDate = input.startDate)
-        return boardMemberService.create(written(member, input))
+        return boardMemberService.create(written(member, input)).also { changed(it.userId) }
     }
 
     @Transactional
     fun updateMember(
         id: Long,
         input: BoardMemberInput,
-    ): BoardMember = boardMemberService.update(written(boardMemberService.findMember(id), input))
+    ): BoardMember = boardMemberService.update(written(boardMemberService.findMember(id), input)).also { changed(it.userId) }
 
     private fun written(
         member: BoardMember,
@@ -122,8 +125,9 @@ class BoardUseCases(
         userId: Long?,
     ): BoardMember {
         val member = boardMemberService.findMember(id)
+        val before = member.userId
         member.user = userId?.let { userService.findById(it) }
-        return boardMemberService.update(member)
+        return boardMemberService.update(member).also { changed(before, it.userId) }
     }
 
     /**
@@ -144,7 +148,13 @@ class BoardUseCases(
     @Transactional
     fun removeMember(id: Long) {
         // Looked up first so a member that is not there answers 404 rather than silently nothing.
-        boardMemberService.findMember(id)
+        val member = boardMemberService.findMember(id)
         boardMemberService.deleteById(id)
+        changed(member.userId)
+    }
+
+    // A place held by somebody with no account here changes nobody's cohorts.
+    private fun changed(vararg userIds: Long?) {
+        userIds.filterNotNull().toSet().forEach { userId -> events.publish { actor -> BoardMembershipChanged(userId, actor) } }
     }
 }

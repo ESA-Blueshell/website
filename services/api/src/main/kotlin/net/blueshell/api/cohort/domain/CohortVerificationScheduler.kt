@@ -30,6 +30,16 @@ class CohortVerificationScheduler(
         mapped.forEach { jobs.reconcileTarget(it.id!!, JobTrigger.SCHEDULED_RUN) }
     }
 
+    // The board in office and the activists follow the date, which no event announces.
+    @Scheduled(cron = "\${cohort.recompute-cron:0 30 2 * * *}")
+    fun recomputeAllCohorts() {
+        jobs.runAsync(
+            CohortJobs.ReconcileAllContributionPeriodCohorts,
+            CohortJobs.ReconcileAllContributionPeriodCohortsPayload(),
+            JobTrigger.SCHEDULED_RUN,
+        )
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(CohortVerificationScheduler::class.java)
     }

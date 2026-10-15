@@ -1,5 +1,6 @@
 package net.blueshell.api.user.api
 
+import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.persistence.UserRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -37,5 +38,13 @@ class UserServiceEmailLookupTest {
 
         assertThat(users.findAllByDiscordIds(listOf("d1", "d1"))).containsExactly(ada)
         assertThat(users.findAllByDiscordIds(emptyList())).isEmpty()
+    }
+
+    @Test
+    fun `names everybody holding a role itself, once`() {
+        val repository = mock<UserRepository>()
+        whenever(repository.findIdsHolding(listOf(Role.MEMBER))).thenReturn(listOf(3, 3, 4))
+
+        assertThat(UserService(repository, mock(), mock(), mock()).findIdsHoldingItself(Role.MEMBER)).containsExactlyInAnyOrder(3, 4)
     }
 }

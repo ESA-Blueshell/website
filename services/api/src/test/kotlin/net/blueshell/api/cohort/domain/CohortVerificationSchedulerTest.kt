@@ -30,4 +30,19 @@ class CohortVerificationSchedulerTest {
         val payload = CohortJobs.ReconcileListPayload(5L, JobTrigger.SCHEDULED_RUN)
         verify { jobs.runAsync(CohortJobs.ReconcileList, payload, JobTrigger.SCHEDULED_RUN) }
     }
+
+    @Test
+    fun `recomputes every cohort each night, for those that follow the date`() {
+        val jobs: JobQueue = mockk(relaxed = true)
+
+        CohortVerificationScheduler(mockk(), mockk(), jobs).recomputeAllCohorts()
+
+        verify {
+            jobs.runAsync(
+                CohortJobs.ReconcileAllContributionPeriodCohorts,
+                CohortJobs.ReconcileAllContributionPeriodCohortsPayload(),
+                JobTrigger.SCHEDULED_RUN,
+            )
+        }
+    }
 }

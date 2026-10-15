@@ -71,6 +71,7 @@ class CohortRegistrar(
             )
         // One target per system the association syncs to, created by its own job (api ADR-035),
         // which the queue runs once this transaction commits.
+        if (!definition.type.listedOnBrevo) return
         val system = TargetSystem.BREVO
         if (targets.findByCohortIdAndSystem(cohort.id!!, system.name) == null) {
             val target =

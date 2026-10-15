@@ -166,6 +166,8 @@ class CommitteeService
             if (archived != committee.archived) {
                 committee.archived = archived
                 committee.archivedAt = if (archived) Instant.now(clock) else null
+                // A running committee's seats make somebody an activist.
+                publishMembershipChanges(id, committee.members.mapNotNull { it.user.id }.toSet())
             }
             return repository.saveAndFlush(committee)
         }

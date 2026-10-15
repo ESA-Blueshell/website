@@ -10,10 +10,13 @@ import net.blueshell.api.cohort.domain.DiscordPlace
 import net.blueshell.api.cohort.persistence.CohortType
 import net.blueshell.api.security.BoardOnly
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @Schema(name = "DiscordPlaceRequest", description = "The role a cohort's people hold, and the channels it opens.")
@@ -31,13 +34,14 @@ data class DiscordPlaceRequest(
     fun choice() = DiscordChoice(roleId, createRole, channelIds, createChannel)
 }
 
-/** A committee's role and private channels on Discord. */
+/** A committee's and a team's role and private channels on Discord. */
 @RestController
-@Tag(name = "Discord places", description = "A committee's role and private channels")
+@Tag(name = "Discord places", description = "A committee's or a team's role and private channels")
 @BoardOnly
 class DiscordPlaceController(
     private val discord: CohortDiscord,
     @param:Value($$"${discord.committees-category:Committees}") private val committees: String,
+    @param:Value($$"${discord.esports-category:Esports}") private val esports: String,
 ) {
     @GetMapping("/management/committees/{id}/discord")
     fun findCommitteeDiscord(
@@ -50,5 +54,25 @@ class DiscordPlaceController(
         @Valid @RequestBody request: DiscordPlaceRequest,
     ): DiscordPlace = discord.apply(committee(id), request.choice(), committees)
 
+    @GetMapping("/management/teams/{id}/discord")
+    fun findTeamDiscord(
+        @PathVariable id: Long,
+    ): DiscordPlace = discord.read(team(id))
+
+    @PutMapping("/management/teams/{id}/discord")
+    fun setTeamDiscord(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: DiscordPlaceRequest,
+    ): DiscordPlace = discord.apply(team(id), request.choice(), esports)
+
+    /** Takes the team's role and its private channels off Discord: the board's explicit removal. */
+    @DeleteMapping("/management/teams/{id}/discord")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun removeTeamDiscord(
+        @PathVariable id: Long,
+    ) = discord.remove(team(id), esports)
+
     private fun committee(id: Long) = "${CohortType.COMMITTEE_MEMBERS}:$id"
+
+    private fun team(id: Long) = "${CohortType.TEAM_PLAYERS}:$id"
 }

@@ -36,7 +36,7 @@ data class DiscordChoice(
 )
 
 /**
- * A cohort's role and private channels, as a committee's form sets them. The role is the cohort's
+ * A cohort's role and private channels, as a committee's or a team's form sets them. The role is the cohort's
  * Discord target, so it follows the cohort's people; a channel is opened to that role by an overwrite
  * and kept from everybody else, under the category the caller names when the site makes it.
  */
@@ -96,6 +96,27 @@ class CohortDiscord(
                 ?.let { createOrOpen(it, category, inCategory, roleId, held = choice.channelIds) }
         }
         return read(key)
+    }
+
+    /**
+     * Takes the cohort's role, and the channels under [category] it opens, off Discord, and the role
+     * off the cohort: the board's deliberate removal of a team that stopped.
+     */
+    fun remove(
+        key: String,
+        category: String,
+    ) {
+        if (!roles.available() || !channels.available()) throw TargetSystemUnavailable(TargetSystem.DISCORD)
+        val target = targets.findByCohortIdAndSystem(cohortIdOf(key), TargetSystem.DISCORD.name) ?: return
+        val roleId = targetIds.find(target)
+        refusedBy(TargetSystem.DISCORD) {
+            roleId?.let { role ->
+                val inCategory = channelsUnder(category).map { it.id }.toSet()
+                channels.openedTo(role).filter { it.id in inCategory }.forEach { channels.delete(it.id) }
+                roles.delete(role)
+            }
+        }
+        targets.delete(target)
     }
 
     private fun refuseIfFollowed(

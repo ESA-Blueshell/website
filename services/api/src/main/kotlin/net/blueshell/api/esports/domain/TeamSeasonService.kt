@@ -105,6 +105,10 @@ class TeamSeasonService(
         return fielded.countBySeasonId(seasonId)
     }
 
+    /** The season fielded now, as [currentlyPlayed] reads it. */
+    @Transactional(readOnly = true)
+    fun fieldedSeasonNow(on: LocalDate = LocalDate.now()): Long? = fieldedSeasonId(on)
+
     /**
      * The season a reader means by "now": the one we are in, or the one before it while this
      * one has nothing fielded yet — a season is built a game at a time.

@@ -235,4 +235,23 @@ class CohortDiscordTest {
                 assertThat(it.facts["reason"].toString()).contains("lacks View Channels")
             }
     }
+
+    @Test
+    fun `removes the role and the channels under the category it opens, and unlinks it, only where asked`() {
+        given(linked = true)
+        val elsewhere = KeptChannel("8", "board", KeptChannelKind.TEXT, "Board")
+        whenever(channels.openedTo("900")).thenReturn(listOf(sitecie, elsewhere))
+
+        discord.remove("COMMITTEE_MEMBERS:7", "Committees")
+
+        verify(channels).delete("1")
+        verify(channels, never()).delete("8")
+        verify(roles).delete("900")
+        verify(targets).delete(role)
+
+        given(linked = false)
+        discord.remove("COMMITTEE_MEMBERS:7", "Committees")
+        whenever(roles.available()).thenReturn(false)
+        assertThatThrownBy { discord.remove("COMMITTEE_MEMBERS:7", "Committees") }.isInstanceOf(TargetSystemUnavailable::class.java)
+    }
 }

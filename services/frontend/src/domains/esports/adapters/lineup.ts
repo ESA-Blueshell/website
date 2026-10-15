@@ -6,15 +6,17 @@
  * it with the count of entries that landed. No sentence a reader sees is written here and
  * nothing about a `Row` or a `Picture` crosses this seam.
  */
-import {publishLineup as sendLineup} from "@/services/api"
+import {type DiscordPlace, type DiscordPlaceRequest, findTeamDiscord, publishLineup as sendLineup, removeTeamDiscord as dropTeamDiscord, setTeamDiscord} from "@/services/api"
 import type {Refused} from "@/types/api"
+import type {Saved} from "@/utils/refusals"
+import {readOr} from "@/utils/answers"
 import {
   addToRoster,
   fieldTeamInSeason,
   type GameCode,
   type TeamRole,
 } from "./esports"
-import {accepted, reasonFor} from "../refusals"
+import {accepted, reasonFor, refusable} from "../refusals"
 
 /**
  * One person on a line-up being written, held as what a write names rather than as what a form
@@ -101,9 +103,9 @@ const bodyOf = (entry: DraftEntry) => ({
  * else in order. The api applies it in one transaction, so a refusal leaves the line-up as it was
  * and there is no half to report. Blank rows are dropped here, before positions are handed out.
  */
-export async function publishLineup(draft: LineupDraft): Promise<{ok: true} | Refused> {
+export async function publishLineup(draft: LineupDraft): Promise<{ok: true, teamId: number | null} | Refused> {
   try {
-    return await accepted(sendLineup({
+    const answer = await refusable(sendLineup({
       path: {seasonId: draft.seasonId},
       body: {
         teamId: draft.teamId,
@@ -117,6 +119,7 @@ export async function publishLineup(draft: LineupDraft): Promise<{ok: true} | Re
           .map(entry => ({id: entry.id, ...bodyOf(entry), userId: entry.userId})),
       },
     }), "The line-up could not be saved.")
+    return answer.ok ? {ok: true, teamId: answer.saved.team?.id ?? null} : answer
   } catch (error) {
     return {ok: false, reason: reasonFor(error, "The line-up could not be saved.")}
   }
@@ -174,3 +177,14 @@ export async function fieldExistingTeam(input: TeamFielding): Promise<Published<
     return refused(reasonFor(error, "That team could not be fielded this season."), stage, written)
   }
 }
+
+/** The role a team's line-up holds and the channel it opens; nothing where it could not be read. */
+export const readTeamDiscord = (teamId: number): Promise<DiscordPlace | null> => readOr(findTeamDiscord({path: {id: teamId}}), null)
+
+/** Links or makes the team's role, and opens, closes or makes its private channel. */
+export const saveTeamDiscord = (teamId: number, body: DiscordPlaceRequest): Promise<Saved<DiscordPlace> | Refused> =>
+  refusable(setTeamDiscord({path: {id: teamId}, body}), "Discord could not be set for the team.")
+
+/** Takes the team's role and private channel off Discord, which only the board asks for. */
+export const removeTeamDiscord = (teamId: number): Promise<{ok: true} | Refused> =>
+  accepted(dropTeamDiscord({path: {id: teamId}}), "The team's role and channel could not be removed.")

@@ -29,7 +29,7 @@ class MembershipService @Autowired constructor(
 ) {
     @Transactional
     fun create(entity: Membership): Membership {
-        if (entity.types.isEmpty()) entity.types += MembershipType(entity, entity.memberType, entity.startDate)
+        if (entity.types.isEmpty()) entity.addType(MembershipType(entity, entity.memberType, entity.startDate))
         // Only an honorary membership owes nothing, so only it starts active (api ADR-036).
         if (entity.memberType == MemberType.HONORARY && entity.activatedOn == null) entity.activatedOn = entity.startDate
         val saved = written(entity)

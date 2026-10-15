@@ -106,7 +106,7 @@ class UserFactory(
             endDate = endDate,
             memberType = memberType,
             activatedOn = activatedOn,
-        ).apply { types += MembershipType(this, memberType, startDate) }
+        ).apply { addType(MembershipType(this, memberType, startDate)) }
 
     fun createMembership(
         user: User,

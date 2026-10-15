@@ -27,8 +27,8 @@ class MembershipControllerTest {
         Entities.membership(id = 9, startDate = LocalDate.of(2022, 9, 1)).apply {
             memberType = MemberType.ALUMNI
             // Out of order, as a type added after the load is.
-            types += MembershipType(this, MemberType.ALUMNI, alumniSince).apply { id = 2 }
-            types += MembershipType(this, MemberType.REGULAR, startDate).apply { id = 1 }
+            addType(MembershipType(this, MemberType.ALUMNI, alumniSince).apply { id = 2 })
+            addType(MembershipType(this, MemberType.REGULAR, startDate).apply { id = 1 })
             createdAt = Instant.EPOCH
             updatedAt = Instant.EPOCH
         }

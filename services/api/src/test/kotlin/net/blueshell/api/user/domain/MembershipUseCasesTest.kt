@@ -316,8 +316,8 @@ class MembershipUseCasesTest {
 
         private fun held(endDate: LocalDate? = null): Membership =
             Membership(user = testUser("john"), startDate = start, endDate = endDate).apply {
-                types += MembershipType(this, MemberType.REGULAR, start)
-                types += MembershipType(this, MemberType.ALUMNI, alumniSince)
+                addType(MembershipType(this, MemberType.REGULAR, start))
+                addType(MembershipType(this, MemberType.ALUMNI, alumniSince))
                 types.forEachIndexed { at, type -> type.id = at + 1L }
                 whenever(membershipService.findById(9L)).thenReturn(this)
                 whenever(membershipService.update(this)).thenReturn(this)

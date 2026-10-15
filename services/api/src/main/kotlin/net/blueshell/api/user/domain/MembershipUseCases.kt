@@ -69,8 +69,9 @@ class MembershipUseCases(
         membership.requireVersion(version)
         validate(MembershipInterval(userId = userId, id = id, startDate = startDate, endDate = endDate))
         val start = startDate!!
-        membership.requireTypesFit(listOf(start) + membership.types.map { it.since }.sorted().drop(1), start, endDate)
-        membership.types.minByOrNull { it.since }?.since = start
+        val first = membership.types.minByOrNull { it.since }
+        membership.requireTypesFit(membership.types.map { if (it === first) start else it.since }, start, endDate)
+        first?.since = start
         membership.startDate = start
         membership.endDate = endDate
         return service.update(membership)
@@ -84,7 +85,7 @@ class MembershipUseCases(
     ): Membership {
         val membership = service.findById(id)
         membership.requireTypesFit(membership.types.map { it.since } + since)
-        membership.types += MembershipType(membership, type, since)
+        membership.addType(MembershipType(membership, type, since))
         return retyped(membership, since.takeIf { type == MemberType.HONORARY })
     }
 
@@ -111,7 +112,7 @@ class MembershipUseCases(
         val membership = service.findById(id)
         val entry = membership.typeById(typeId)
         if (entry.since == membership.startDate) throw FirstMembershipTypeStartsTheMembership()
-        membership.types -= entry
+        membership.removeType(entry)
         return retyped(membership)
     }
 

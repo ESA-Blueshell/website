@@ -50,7 +50,17 @@ class Membership(
     /** Every membership type it has had (api ADR-040); ordered on load only. */
     @OneToMany(mappedBy = "membership", cascade = [CascadeType.ALL], orphanRemoval = true)
     @OrderBy("since")
-    val types: MutableList<MembershipType> = mutableListOf()
+    private val _types: MutableList<MembershipType> = mutableListOf()
+    val types: List<MembershipType>
+        get() = _types
+
+    fun addType(type: MembershipType) {
+        _types.add(type)
+    }
+
+    fun removeType(type: MembershipType) {
+        _types.remove(type)
+    }
 
     /** Running and not yet paid for, so it carries no member role. */
     val isPending: Boolean

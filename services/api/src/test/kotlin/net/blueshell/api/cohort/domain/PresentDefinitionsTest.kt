@@ -13,6 +13,9 @@ import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
 
 class PresentDefinitionsTest {
     private val committees: CommitteeService = mockk()
@@ -58,12 +61,15 @@ class PresentDefinitionsTest {
         every { users.findIdsHoldingItself(Role.MEMBER) } returns setOf(1L)
         every { users.findById(1L) } returns Entities.user(id = 1L).apply { roles = mutableSetOf(Role.MEMBER, Role.BOARD) }
         every { users.findById(2L) } returns Entities.user(id = 2L).apply { roles = mutableSetOf(Role.BOARD) }
-        every { users.findById(3L) } throws IllegalStateException("gone")
+        every { users.findById(3L) } throws ResponseStatusException(HttpStatus.NOT_FOUND, "gone")
+        every { users.findById(4L) } throws IllegalStateException("the database did not answer")
 
         val members = CurrentMembersDefinition(users)
 
         assertThat(members.members()).containsExactly(1L)
         assertThat(listOf(1L, 2L, 3L).filter(members::contains)).containsExactly(1L)
+        // Only a user who is gone is no member; a failed read must not take somebody's role away.
+        assertThrows<IllegalStateException> { members.contains(4L) }
         assertThat(members.type).isEqualTo(CohortType.CURRENT_MEMBERS)
         assertThat(members.type.listedOnBrevo).isFalse()
     }

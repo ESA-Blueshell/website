@@ -7,7 +7,9 @@ import net.blueshell.api.committee.api.CommitteeService
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.user.api.UserService
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
 
 /**
@@ -70,7 +72,14 @@ class CurrentMembersDefinition(
 
     override fun members(): Set<Long> = users.findIdsHoldingItself(Role.MEMBER)
 
-    override fun contains(userId: Long): Boolean = runCatching { Role.MEMBER in users.findById(userId).roles }.getOrDefault(false)
+    // Only a user who is gone is no member: a failed read must not take somebody's role away.
+    override fun contains(userId: Long): Boolean =
+        try {
+            Role.MEMBER in users.findById(userId).roles
+        } catch (e: ResponseStatusException) {
+            if (e.statusCode != HttpStatus.NOT_FOUND) throw e
+            false
+        }
 }
 
 @Component

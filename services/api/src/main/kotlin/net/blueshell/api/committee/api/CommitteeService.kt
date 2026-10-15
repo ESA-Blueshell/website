@@ -78,6 +78,7 @@ class CommitteeService
                 events.forEach { it.handOver(id, takenOverBy) }
             }
             repository.delete(committee)
+            publishMembershipChanges(id, committee.members.mapNotNull { it.user.id }.toSet())
         }
 
         private fun checkTaker(

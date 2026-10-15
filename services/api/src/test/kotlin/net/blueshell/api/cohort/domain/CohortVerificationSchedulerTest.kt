@@ -24,7 +24,7 @@ class CohortVerificationSchedulerTest {
             }
         val jobs: JobQueue = mockk(relaxed = true)
 
-        CohortVerificationScheduler(targets, targetExternalIds, jobs).verifyAllTargets()
+        CohortVerificationScheduler(targets, targetExternalIds, jobs, mockk(), mockk()).verifyAllTargets()
 
         verify(exactly = 1) { jobs.runAsync(any<JobDefinition<CohortJobs.ReconcileListPayload>>(), any(), any(), any()) }
         val payload = CohortJobs.ReconcileListPayload(5L, JobTrigger.SCHEDULED_RUN)
@@ -32,17 +32,15 @@ class CohortVerificationSchedulerTest {
     }
 
     @Test
-    fun `recomputes every cohort each night, for those that follow the date`() {
-        val jobs: JobQueue = mockk(relaxed = true)
+    fun `recomputes each night only the cohorts that follow the date`() {
+        val activists = ActivistsDefinition(mockk(), mockk(), mockk())
+        val newsletter = NewsletterSubscribersDefinition(mockk())
+        val definitions: CohortDefinitionRegistry = mockk { every { all() } returns listOf(activists, newsletter) }
+        val updater: CohortMembershipUpdater = mockk(relaxed = true)
 
-        CohortVerificationScheduler(mockk(), mockk(), jobs).recomputeAllCohorts()
+        CohortVerificationScheduler(mockk(), mockk(), mockk(), definitions, updater).recomputeDatedCohorts()
 
-        verify {
-            jobs.runAsync(
-                CohortJobs.ReconcileAllContributionPeriodCohorts,
-                CohortJobs.ReconcileAllContributionPeriodCohortsPayload(),
-                JobTrigger.SCHEDULED_RUN,
-            )
-        }
+        verify(exactly = 1) { updater.updateCohort(any()) }
+        verify { updater.updateCohort(activists) }
     }
 }

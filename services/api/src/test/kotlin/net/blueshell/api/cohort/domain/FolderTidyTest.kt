@@ -192,4 +192,12 @@ class FolderTidyTest {
 
         assertThat(tidy.preview(TargetSystem.BREVO).moves.filter { it.byName }).isEmpty()
     }
+
+    @Test
+    fun `a cohort with no Brevo list proposes no hand-made list by its name`() {
+        given(list("400", "Activists", "Old stuff"))
+        whenever(cohorts.findAll()).thenReturn(listOf(Entities.cohort(id = 1L, type = CohortType.ACTIVISTS, label = "Activists")))
+
+        assertThat(tidy.preview(TargetSystem.BREVO).moves).isEmpty()
+    }
 }

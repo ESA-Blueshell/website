@@ -230,6 +230,7 @@ class CommitteeServiceTest {
     @Test
     fun `saves a committee as given, and deletes one without events naming no taker`() {
         val lan = committee(1, "LanCie")
+        lan.replaceMembers(listOf(CommitteeMember(committee = lan, user = Entities.user(id = 8L))))
         stored(lan)
 
         assertThat(service.create(lan)).isSameAs(lan)
@@ -237,6 +238,7 @@ class CommitteeServiceTest {
         service.delete(1, null)
 
         verify(repository).delete(lan)
+        verify(afterCommit).publish(CommitteeMembershipChanged(userId = 8L, committeeId = 1L))
     }
 
     @Test

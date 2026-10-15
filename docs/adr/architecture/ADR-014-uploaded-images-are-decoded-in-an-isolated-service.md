@@ -88,7 +88,7 @@ answers bytes and can reach nothing.**
   bytes stay in the content-addressed store, where the next upload of the same picture reuses
   them.
 - The service is a Go module with its own lint, vulnerability check, unit suite held to every
-  statement, branch and function, container tests and Renovate rules; see `services/imaging/README.md` and
+  statement, branch, condition and function, container tests and Renovate rules; see `services/imaging/README.md` and
   `docs/agents/ci.md`.
 - Every job that boots the api and uploads a picture needs the service running: CI's
   integration shards and system tests start it from the layers main's image build caches, and

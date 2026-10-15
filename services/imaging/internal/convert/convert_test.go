@@ -194,15 +194,38 @@ func TestFittedWithinRoundsAsTheApiDoes(t *testing.T) {
 }
 
 func TestPictureWithNoPixelsIsRefused(t *testing.T) {
-	data := jpegOf(t, picture(8, 8, false))
-	for i := 0; i+1 < len(data); i++ {
-		if data[i] == 0xFF && data[i+1] == 0xC0 {
-			data[i+5], data[i+6] = 0, 0 // the frame's height
-			break
+	// The offsets of the height and the width in a JPEG's start-of-frame segment.
+	for name, at := range map[string]int{"no height": 5, "no width": 7} {
+		data := jpegOf(t, picture(8, 8, false))
+		for i := 0; i+1 < len(data); i++ {
+			if data[i] == 0xFF && data[i+1] == 0xC0 {
+				data[i+at], data[i+at+1] = 0, 0
+				break
+			}
+		}
+		if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, roomy); !errors.Is(err, ErrUndecodable) {
+			t.Errorf("%s: got %v, want ErrUndecodable", name, err)
 		}
 	}
-	if _, err := Convert(data, Target{MaxEdge: 2560, Quality: 82}, roomy); !errors.Is(err, ErrUndecodable) {
-		t.Fatalf("got %v, want ErrUndecodable", err)
+}
+
+// plain is a picture that says nothing about its own opacity, as an image.Image need not.
+type plain struct{ image.Image }
+
+func TestPictureThatCannotSayItIsOpaqueIsTakenAsTransparent(t *testing.T) {
+	source := picture(4, 4, true)
+	pix, stride := straightRGBA(plain{source})
+	if stride != 16 || !bytes.Equal(pix, source.Pix) {
+		t.Fatalf("got stride %d and %v, want %v", stride, pix, source.Pix)
+	}
+}
+
+func TestSubImageKeepsItsOwnPixels(t *testing.T) {
+	source := picture(8, 8, true)
+	sub := source.SubImage(image.Rect(4, 4, 8, 8)).(*image.NRGBA) //nolint:errcheck,forcetypeassert // an NRGBA's sub-image is one
+	pix, stride := straightRGBA(sub)
+	if pix[0] != source.Pix[source.PixOffset(4, 4)] || stride != source.Stride {
+		t.Fatalf("the sub-image starts at %v", pix[:4])
 	}
 }
 

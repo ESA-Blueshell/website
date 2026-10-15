@@ -130,10 +130,11 @@ func fittedWithin(width, height, maxEdge int) (int, int) {
 // Go's RGBA is premultiplied, so a picture with transparency is drawn into NRGBA instead. An
 // opaque one is the same either way and takes the RGBA path, which draws a JPEG far faster.
 func straightRGBA(picture image.Image) ([]byte, int) {
-	bounds := picture.Bounds()
-	if nrgba, ok := picture.(*image.NRGBA); ok && bounds.Min == (image.Point{}) {
+	// An NRGBA's Pix starts at its own Min, so even a sub-image is handed over as it is.
+	if nrgba, ok := picture.(*image.NRGBA); ok {
 		return nrgba.Pix, nrgba.Stride
 	}
+	bounds := picture.Bounds()
 	frame := image.Rect(0, 0, bounds.Dx(), bounds.Dy())
 	if opaque, ok := picture.(interface{ Opaque() bool }); ok && opaque.Opaque() {
 		rgba := image.NewRGBA(frame)

@@ -72,12 +72,13 @@ Building on the host needs libwebp: `brew install webp` on macOS, `libwebp-dev` 
 ## Tests
 
 - **Unit**: `./coverage.sh`, which runs `go test ./internal/...` and holds it to every statement,
-  every branch and every function. Go measures only statements, so branches come from
-  [gobco](https://github.com/rillig/gobco), pinned as a tool in `go.mod`, and functions from the
-  profile. gobco cannot read a cgo file, so `internal/libwebp` only calls libwebp and answers its
+  branch, condition and function. Go measures only statements, so branches and conditions come
+  from [gobco](https://github.com/rillig/gobco), pinned as a tool in `go.mod`, and functions from
+  the profile. Condition coverage asks every operand of `&&` and `||` to go both ways, which is
+  where a malformed header's edge cases sit and which branch coverage passes over. gobco cannot read a cgo file, so `internal/libwebp` only calls libwebp and answers its
   result code, and the script refuses a decision written there. The image's `test` stage runs the
   script against the libwebp the image links and with `cwebp` and `webpmux` installed, which the
-  parity tests need, and fails short of 100% on any of the three. `FuzzConvert` runs its seeds with
+  parity tests need, and fails short of 100% on any of the four. `FuzzConvert` runs its seeds with
   the suite; fuzz it with `go test -fuzz FuzzConvert ./internal/convert`.
 - **Container**: `integration/` drives a running container over HTTP, as the api does. Start the
   image as above, then `IMAGING_URL=http://localhost:8090 go test -tags integration ./integration`.

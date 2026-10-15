@@ -45,7 +45,7 @@ that plan as its `system-tests` output, and the system-test job passes its tags 
 
 `Imaging lint, tests and image` lints the Go source and the Dockerfile, checks the module for
 known vulnerabilities, runs the unit suite in the image's `test` stage, where `coverage.sh` holds it
-to every statement, branch (gobco) and function, and then drives the built image with the container tests under `integration/`, run
+to every statement, branch and condition (both from gobco) and function, and then drives the built image with the container tests under `integration/`, run
 read-only, as the image's non-root user and with no capabilities. Only the unit suite counts
 towards coverage, and the report reads its branch and function totals from the
 `coverage-totals.json` beside the profile. The api's integration tests convert through the same image: the shards start it

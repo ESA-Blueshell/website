@@ -12,7 +12,7 @@ COPY . .
 RUN CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -linkmode external -extldflags "-static"' -o /out/imaging .
 
 # The unit suite, against the libwebp the image links and the cwebp the api used to run, held to
-# every statement, branch and function by coverage.sh. CI builds this stage alone and reads the
+# every statement, branch, condition and function by coverage.sh. CI builds this stage alone and reads the
 # profile and its totals out of the next one.
 FROM build AS test
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]

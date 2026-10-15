@@ -13,6 +13,9 @@ spring:
       max-request-size: 50MB
   main:
     web-application-type: servlet
+  # A rollout waits on the old pod; its graceful drain need not take Spring's default 30s.
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
 
   cloud:
     vault:

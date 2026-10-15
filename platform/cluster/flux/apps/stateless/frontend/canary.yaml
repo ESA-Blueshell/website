@@ -19,9 +19,10 @@ spec:
     targetPort: http
   progressDeadlineSeconds: 900
   analysis:
-    interval: 30s
+    # As the api's, which it waits for at the rendezvous.
+    interval: 10s
     iterations: 4
-    threshold: 3
+    threshold: 5
     # Promotion, rollback and a held gate all reach Discord at info.
     alerts:
       - name: discord
@@ -33,10 +34,10 @@ spec:
       - name: read-only-load
         type: rollout
         url: http://flagger-loadtester.flagger-system/
-        timeout: 30s
+        timeout: 15s
         metadata:
           type: bash
-          cmd: hey -z 20s -q 3 -c 2 http://frontend-canary.default:3000/
+          cmd: hey -z 5s -q 3 -c 2 http://frontend-canary.default:3000/
 
       - name: canary-answers-http
         type: rollout

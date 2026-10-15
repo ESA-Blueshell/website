@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.game.api.GameChannelKind
 import net.blueshell.api.game.api.GameService
@@ -23,6 +24,8 @@ data class CataloguedChannel(
     val private: Boolean,
     /** The roles let in by an overwrite of their own. */
     val roleIds: List<String>,
+    /** The name of each of [roleIds], any role the server has and not only those the site keeps. */
+    val roleNames: Map<String, String>,
     val game: ChannelGame?,
 )
 
@@ -34,6 +37,13 @@ class DiscordCatalogue(
 ) {
     fun channels(): List<CataloguedChannel> {
         if (!channels.available()) return emptyList()
+        // The bot can leave between the check and the read; that reads as no channels too.
+        val openings =
+            try {
+                channels.openings()
+            } catch (_: DiscordUnavailable) {
+                return emptyList()
+            }
         val gameOf =
             games
                 .findAll()
@@ -41,7 +51,7 @@ class DiscordCatalogue(
                     game.channels.map { it.channelId to ChannelGame(game.code, game.name, GameChannelKind.CASUAL) } +
                         game.esportsChannels.map { it.channelId to ChannelGame(game.code, game.name, GameChannelKind.COMPETITION) }
                 }.toMap()
-        return channels.openings().map { opening ->
+        return openings.map { opening ->
             val channel = opening.channel
             CataloguedChannel(
                 id = channel.id,
@@ -50,6 +60,7 @@ class DiscordCatalogue(
                 category = channel.category,
                 private = opening.private,
                 roleIds = opening.roleIds,
+                roleNames = opening.roleNames,
                 game = gameOf[channel.id],
             )
         }

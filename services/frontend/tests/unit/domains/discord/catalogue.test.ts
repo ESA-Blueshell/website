@@ -2,7 +2,7 @@ import {describe, expect, it} from "vitest"
 import {accessOf, belongsTo, type CataloguedChannel, channelGroups, type NamedRole, opensOf} from "@/domains/discord"
 
 const channel = (fields: Partial<CataloguedChannel> & {id: string}): CataloguedChannel =>
-  ({name: fields.id, kind: "TEXT", category: null, private: false, roleIds: [], game: null, ...fields}) as CataloguedChannel
+  ({name: fields.id, kind: "TEXT", category: null, private: false, roleIds: [], roleNames: {}, game: null, ...fields}) as CataloguedChannel
 
 const roles = new Map<string, NamedRole>([
   ["900", {id: "900", name: "Sitecie", follows: "Committee members · Sitecie"}],
@@ -29,9 +29,12 @@ describe("the Discord pages' words for channels", () => {
     expect(belongsTo(channel({id: "2", game: team}), roles)).toBe("Chess, esports channel")
     expect(belongsTo(channel({id: "3", roleIds: ["900", "901"]}), roles)).toBe("Committee members · Sitecie")
     expect(belongsTo(channel({id: "4"}), roles)).toBe("Nothing")
-    expect(accessOf(channel({id: "5"}), roles)).toBe("Everyone")
-    expect(accessOf(channel({id: "6", private: true}), roles)).toBe("Nobody")
-    expect(accessOf(channel({id: "7", private: true, roleIds: ["900", "999"]}), roles)).toBe("Only @Sitecie, @999")
+    expect(accessOf(channel({id: "5"}))).toBe("Everyone")
+    expect(accessOf(channel({id: "6", private: true}))).toBe("Private, open to no role")
+    // Any role the server has is named, not only those the site keeps.
+    expect(accessOf(channel({id: "7", private: true, roleIds: ["900", "999"], roleNames: {"900": "Sitecie", "999": "Moderators"}})))
+      .toBe("Only @Sitecie, @Moderators")
+    expect(accessOf(channel({id: "8", private: true, roleIds: ["998"]}))).toBe("Only @998")
   })
 
   it("says what a role opens: nothing, its one channel or category, or how many", () => {

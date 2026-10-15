@@ -42,8 +42,12 @@ class JdaChannelKeeper(
                     ?.rolePermissionOverrides
                     .orEmpty()
                     .filter { Permission.VIEW_CHANNEL in it.allowed && it.id != everyone.id }
-                    .map { it.id }
-            ChannelOpening(kept, private = !everyone.hasPermission(channel, Permission.VIEW_CHANNEL), roleIds = opened)
+            ChannelOpening(
+                kept,
+                private = !everyone.hasPermission(channel, Permission.VIEW_CHANNEL),
+                roleIds = opened.map { it.id },
+                roleNames = opened.mapNotNull { override -> override.role?.let { override.id to it.name } }.toMap(),
+            )
         }
     }
 

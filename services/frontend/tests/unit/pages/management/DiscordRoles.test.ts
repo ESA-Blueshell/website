@@ -49,6 +49,14 @@ describe("the Discord roles page", () => {
     expect(await sortByEveryHead(wrapper)).toBe(5)
   })
 
+  it("says when the channels could not be read rather than that a role can access nothing", async () => {
+    api.listCataloguedChannels.mockResolvedValueOnce({status: 500, error: {}})
+    const wrapper = await mount()
+
+    expect(wrapper.find('[data-testid="discord-roles-channels-unread"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="discord-role-900"]').text()).toContain("Not read")
+  })
+
   it("says when the roles could not be read, and when there are none", async () => {
     api.findTargetOverview.mockResolvedValueOnce({status: 500, error: {}})
     expect((await mount()).find('[data-testid="discord-roles-unread"]').exists()).toBe(true)

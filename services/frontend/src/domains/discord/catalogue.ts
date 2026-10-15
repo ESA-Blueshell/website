@@ -28,11 +28,11 @@ export function belongsTo(channel: CataloguedChannel, roles: Map<string, NamedRo
   return follows.length > 0 ? follows.join(", ") : "Nothing"
 }
 
-/** Who gets into a channel: everyone, or only the roles a private channel opens to. */
-export function accessOf(channel: CataloguedChannel, roles: Map<string, NamedRole>): string {
+/** Who can access a channel: everyone, or only the roles a private channel opens to. */
+export function accessOf(channel: CataloguedChannel): string {
   if (!channel.private) return "Everyone"
-  if (channel.roleIds.length === 0) return "Nobody"
-  return `Only ${channel.roleIds.map((id) => `@${roles.get(id)?.name ?? id}`).join(", ")}`
+  if (channel.roleIds.length === 0) return "Private, open to no role"
+  return `Only ${channel.roleIds.map((id) => `@${channel.roleNames[id] ?? id}`).join(", ")}`
 }
 
 /** What a role opens: its one channel by name, or how many categories and channels. */

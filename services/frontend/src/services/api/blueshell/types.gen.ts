@@ -664,6 +664,9 @@ export type CataloguedChannel = {
     name: string;
     private: boolean;
     roleIds: Array<string>;
+    roleNames: {
+        [key: string]: string;
+    };
 };
 
 export type ChannelGame = {

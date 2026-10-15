@@ -2,6 +2,7 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.api.ChannelOpening
 import net.blueshell.api.discord.api.DiscordChannelKeeper
+import net.blueshell.api.discord.api.DiscordUnavailable
 import net.blueshell.api.discord.api.KeptChannel
 import net.blueshell.api.discord.api.KeptChannelKind
 import net.blueshell.api.game.api.GameChannelKind
@@ -37,17 +38,22 @@ class DiscordCatalogueTest {
         whenever(channels.openings()).thenReturn(
             listOf(
                 ChannelOpening(casual, private = false, roleIds = emptyList()),
-                ChannelOpening(team, private = true, roleIds = listOf("901")),
+                ChannelOpening(team, private = true, roleIds = listOf("901"), roleNames = mapOf("901" to "Chess team")),
                 ChannelOpening(sitecie, private = true, roleIds = listOf("900")),
             ),
         )
 
         val casualGame = ChannelGame("CHESS", "Chess", GameChannelKind.CASUAL)
         val teamGame = ChannelGame("CHESS", "Chess", GameChannelKind.COMPETITION)
+        val named = mapOf("901" to "Chess team")
         assertThat(catalogue.channels()).containsExactly(
-            CataloguedChannel("1", "chess", KeptChannelKind.TEXT, "Games", false, emptyList(), casualGame),
-            CataloguedChannel("2", "chess-team", KeptChannelKind.TEXT, "Esports", true, listOf("901"), teamGame),
-            CataloguedChannel("3", "sitecie", KeptChannelKind.TEXT, "Committees", true, listOf("900"), null),
+            CataloguedChannel("1", "chess", KeptChannelKind.TEXT, "Games", false, emptyList(), emptyMap(), casualGame),
+            CataloguedChannel("2", "chess-team", KeptChannelKind.TEXT, "Esports", true, listOf("901"), named, teamGame),
+            CataloguedChannel("3", "sitecie", KeptChannelKind.TEXT, "Committees", true, listOf("900"), emptyMap(), null),
         )
+
+        // The bot leaving between the check and the read lists nothing rather than failing.
+        whenever(channels.openings()).thenThrow(DiscordUnavailable("gone"))
+        assertThat(catalogue.channels()).isEmpty()
     }
 }

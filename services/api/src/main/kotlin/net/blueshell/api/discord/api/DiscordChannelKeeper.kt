@@ -20,6 +20,8 @@ data class ChannelOpening(
     val channel: KeptChannel,
     val private: Boolean,
     val roleIds: List<String>,
+    /** The name of each role in [roleIds], as the server shows it. */
+    val roleNames: Map<String, String> = emptyMap(),
 )
 
 /**

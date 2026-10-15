@@ -1224,12 +1224,17 @@ components:
           items:
             type: string
           type: array
+        roleNames:
+          additionalProperties:
+            type: string
+          type: object
       required:
       - id
       - kind
       - name
       - private
       - roleIds
+      - roleNames
       type: object
     ChannelGame:
       properties:

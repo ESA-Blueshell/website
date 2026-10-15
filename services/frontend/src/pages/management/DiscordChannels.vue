@@ -1,9 +1,8 @@
 <script lang="ts" setup>
-/* The server's channels by the category they sit in: who gets into each and what it belongs to, a
-   game or the cohorts whose roles it opens to. */
+/* The server's channels in one table, by the category they sit in: who can access each and what it
+   belongs to, a game or the cohorts whose roles it opens to. */
 import {computed, onMounted, ref} from "vue"
 import PageTabs from "@/components/island/PageTabs.vue"
-import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {followsOf, readTargetOverview, TargetSystem} from "@/domains/cohorts"
@@ -21,25 +20,30 @@ import {
 defineOptions({name: "DiscordChannelsPage"})
 
 const channels = ref<CataloguedChannel[] | null>(null)
-const roles = ref(new Map<string, NamedRole>())
+const roles = ref<Map<string, NamedRole> | null>(null)
 const loaded = ref(false)
 
+const categoryOf = (one: CataloguedChannel) => one.category ?? "No category"
+const belongs = (one: CataloguedChannel) => (roles.value ? belongsTo(one, roles.value) : "Not read")
 const COLUMNS: TableColumn<CataloguedChannel>[] = [
   {key: "channel", label: "Channel", sortBy: (one) => one.name},
-  {key: "access", label: "Who gets in", wrap: true, sortBy: (one) => accessOf(one, roles.value)},
-  {key: "belongs", label: "Belongs to", wrap: true, sortBy: (one) => belongsTo(one, roles.value)},
+  {key: "category", label: "Category", sortBy: categoryOf},
+  {key: "access", label: "Who can access", wrap: true, sortBy: accessOf},
+  {key: "belongs", label: "Belongs to", wrap: true, sortBy: belongs},
 ]
 
-const groups = computed(() => channelGroups(channels.value ?? []))
+// The uncategorised first and the archive last, as Discord's own channel list reads.
+const rows = computed(() => channelGroups(channels.value ?? []).flatMap((group) => group.channels))
 
 onMounted(async () => {
   const [catalogue, overview] = await Promise.all([listCatalogue(), readTargetOverview(TargetSystem.DISCORD)])
   channels.value = catalogue
-  const follows = (overview?.lists ?? []).map((one) => {
-    const said = followsOf({list: one})
-    return [one.externalId, {id: one.externalId, name: one.label, follows: said === "Nothing" ? null : said}] as const
-  })
-  roles.value = new Map(follows)
+  roles.value = overview
+    ? new Map(overview.lists.map((one) => {
+      const said = followsOf({list: one})
+      return [one.externalId, {id: one.externalId, name: one.label, follows: said === "Nothing" ? null : said}]
+    }))
+    : null
   loaded.value = true
 })
 </script>
@@ -59,7 +63,7 @@ onMounted(async () => {
     </template>
 
     <template #lede>
-      The server's channels by category, who gets into each and what it belongs to.
+      The server's channels, who can access each and what it belongs to.
     </template>
 
     <p
@@ -70,56 +74,53 @@ onMounted(async () => {
       The channels could not be read. Reload the page to try again.
     </p>
     <p
-      v-else-if="loaded && groups.length === 0"
+      v-else-if="loaded && rows.length === 0"
       class="channels__note"
       data-testid="discord-channels-none"
     >
       The bot is not in the server now, so its channels cannot be read.
     </p>
-
-    <section
-      v-for="group in groups"
-      :key="group.name"
-      class="channels__group"
-      :data-testid="`discord-channel-group-${group.name}`"
+    <p
+      v-if="loaded && rows.length > 0 && roles == null"
+      class="channels__note"
+      data-testid="discord-channels-roles-unread"
     >
-      <list-head :title="`${group.name} · ${group.channels.length}`" />
-      <management-table
-        :columns="COLUMNS"
-        :row-key="(one) => one.id"
-        :row-testid="(one) => `discord-channel-${one.id}`"
-        :rows="group.channels"
-        :search-label="`Search ${group.name}`"
-        :search-text="(one) => `${one.name} ${belongsTo(one, roles)}`"
-      >
-        <template #channel="{row}">
-          <channel-mark
-            :id="row.id"
-            :locked="row.private"
-            :name="row.name"
-            :voice="row.kind === 'VOICE'"
-          />
-        </template>
-        <template #access="{row}">
-          <span class="mg-quiet">{{ accessOf(row, roles) }}</span>
-        </template>
-        <template #belongs="{row}">
-          <span class="mg-quiet">{{ belongsTo(row, roles) }}</span>
-        </template>
-      </management-table>
-    </section>
+      The roles could not be read, so what each channel belongs to is not shown.
+    </p>
+
+    <management-table
+      v-if="rows.length > 0"
+      :columns="COLUMNS"
+      :row-key="(one) => one.id"
+      :row-testid="(one) => `discord-channel-${one.id}`"
+      :rows="rows"
+      search-label="Search channels"
+      :search-text="(one) => `${one.name} ${categoryOf(one)} ${belongs(one)}`"
+      testid="discord-channels"
+    >
+      <template #channel="{row}">
+        <channel-mark
+          :id="row.id"
+          :locked="row.private"
+          :name="row.name"
+          :voice="row.kind === 'VOICE'"
+        />
+      </template>
+      <template #category="{row}">
+        <span class="mg-quiet">{{ categoryOf(row) }}</span>
+      </template>
+      <template #access="{row}">
+        <span class="mg-quiet">{{ accessOf(row) }}</span>
+      </template>
+      <template #belongs="{row}">
+        <span class="mg-quiet">{{ belongs(row) }}</span>
+      </template>
+    </management-table>
   </management-page>
 </template>
 
 <style scoped>
 .channels__note {
   color: var(--color-ash);
-}
-
-.channels__group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  margin-bottom: 1.6rem;
 }
 </style>

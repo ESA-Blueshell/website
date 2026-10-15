@@ -31,26 +31,35 @@ describe("the Discord channels page", () => {
       lastReconciledAt: null,
     }})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: [
-      {id: "1", name: "sitecie", kind: "TEXT", category: "Committees", private: true, roleIds: ["900"]},
-      {id: "2", name: "general", kind: "TEXT", category: null, private: false, roleIds: []},
-      {id: "3", name: "chess", kind: "VOICE", category: "Games", private: false, roleIds: ["901"], game: {code: "CHESS", name: "Chess", kind: "CASUAL"}},
+      {id: "1", name: "sitecie", kind: "TEXT", category: "Committees", private: true, roleIds: ["900"], roleNames: {"900": "Sitecie"}},
+      {id: "2", name: "general", kind: "TEXT", category: null, private: false, roleIds: [], roleNames: {}},
+      {id: "3", name: "chess", kind: "VOICE", category: "Games", private: false, roleIds: ["901"], roleNames: {"901": "Artists"},
+        game: {code: "CHESS", name: "Chess", kind: "CASUAL"}},
     ]})
   })
 
   afterEach(() => unmountAll(wrappers, "DiscordChannelsPage"))
 
-  it("lists the channels by category with who gets in and what each belongs to", async () => {
+  it("lists the channels in one table, the uncategorised first, with who can access each and what it belongs to", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.findAll("[data-testid^='discord-channel-group-']").map((one) => one.attributes("data-testid")))
-      .toEqual(["discord-channel-group-No category", "discord-channel-group-Committees", "discord-channel-group-Games"])
+    expect(wrapper.findAll("[data-testid^='discord-channel-']").map((one) => one.attributes("data-testid")))
+      .toEqual(["discord-channel-2", "discord-channel-1", "discord-channel-3"])
     const sitecie = wrapper.get('[data-testid="discord-channel-1"]').text()
     expect(sitecie).toContain("Only @Sitecie")
     expect(sitecie).toContain("Committee members · Sitecie")
     expect(wrapper.get('[data-testid="discord-channel-2"]').text()).toContain("Everyone")
     expect(wrapper.get('[data-testid="discord-channel-3"]').text()).toContain("Chess, casual channel")
-    // Three heads on each of the three tables.
-    expect(await sortByEveryHead(wrapper)).toBe(9)
+    expect(await sortByEveryHead(wrapper)).toBe(4)
+  })
+
+  it("says when the roles could not be read rather than that a channel belongs to nothing", async () => {
+    api.findTargetOverview.mockResolvedValueOnce({status: 500, error: {}})
+    const wrapper = await mount()
+
+    expect(wrapper.find('[data-testid="discord-channels-roles-unread"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="discord-channel-1"]').text()).toContain("Not read")
+    expect(wrapper.get('[data-testid="discord-channel-1"]').text()).toContain("Only @Sitecie")
   })
 
   it("says when the channels could not be read, and when the bot is away", async () => {

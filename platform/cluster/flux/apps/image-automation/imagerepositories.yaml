@@ -7,9 +7,8 @@
 # imagePullSecrets, mirrored into flux-system by apps-vso-secrets from Vault at
 # secret/platform/ghcr. The PAT's read:packages scope covers a tag listing.
 #
-# The interval is the floor on how soon a release is noticed. A release is a
-# handful of pushes a month, so five minutes costs nothing and leaves the
-# registry's rate limit alone.
+# The interval is how soon a release is noticed. Only `v` tags are listed, so a scan stays small
+# however many `sha-` tags main has pushed.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
@@ -17,7 +16,9 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/esa-blueshell/api
-  interval: 5m0s
+  interval: 20s
+  exclusionList:
+    - '^[^v]'
   secretRef:
     name: ghcr-pull-secret
 ---
@@ -28,7 +29,9 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/esa-blueshell/frontend
-  interval: 5m0s
+  interval: 20s
+  exclusionList:
+    - '^[^v]'
   secretRef:
     name: ghcr-pull-secret
 ---
@@ -39,7 +42,9 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/esa-blueshell/stalwart-tools
-  interval: 5m0s
+  interval: 20s
+  exclusionList:
+    - '^[^v]'
   secretRef:
     name: ghcr-pull-secret
 ---
@@ -50,6 +55,8 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/esa-blueshell/imaging
-  interval: 5m0s
+  interval: 20s
+  exclusionList:
+    - '^[^v]'
   secretRef:
     name: ghcr-pull-secret

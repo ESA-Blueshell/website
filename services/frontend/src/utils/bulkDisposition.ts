@@ -46,7 +46,7 @@ export function dispositionColor(disposition: BulkDisposition): string {
 }
 
 const REASON_LABELS: Record<BulkRowReason, string> = {
-  INCASSO_MISMATCH: "No direct-debit mandate",
+  PAYS_BY_DIRECT_DEBIT: "Pays by incasso",
   ALREADY_PAID: "Already paid this contribution",
   HONORARY: "Owes no contribution",
   NOT_PAID: "Not paid",

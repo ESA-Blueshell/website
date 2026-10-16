@@ -10,9 +10,7 @@ import net.blueshell.api.user.persistence.Membership
 import net.blueshell.api.user.persistence.User
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -38,7 +36,6 @@ class DevFixtureSeederTest {
         seeder.seed()
 
         val onIncasso = DevFixtures.ACCOUNTS.count { it.membership?.incasso == true }
-        verify(payments, times(onIncasso)).payBy(any(), eq(true))
-        verify(payments, never()).payBy(any(), eq(false))
+        verify(payments, times(onIncasso)).payByDirectDebit(any())
     }
 }

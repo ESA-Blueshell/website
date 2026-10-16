@@ -6,6 +6,7 @@ import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
+import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.domain.sealing.LocalSealer
 import net.blueshell.api.user.domain.sealing.Sealed
@@ -17,7 +18,6 @@ import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.PaymentDetailsRepository
 import net.blueshell.api.user.web.MandateAddressRequest
 import net.blueshell.api.user.web.MandateController
-import net.blueshell.api.user.web.PaysByRequest
 import net.blueshell.api.user.web.RecordMandateRequest
 import net.blueshell.api.user.web.SetUpMandateRequest
 import org.assertj.core.api.Assertions.assertThat
@@ -49,7 +49,9 @@ class MandatesTest {
     private val sealing = SealedBankDetails(sealer, JsonMapper.builder().build(), "api-bank-details")
     private val published: org.springframework.context.ApplicationEventPublisher = mock()
     private val stepUp: net.blueshell.api.security.StepUp = mock()
-    private val mandates = Mandates(payments, sealing, Clock.fixed(now, ZoneOffset.UTC), AfterCommitEventPublisher(published))
+    private val clock = Clock.fixed(now, ZoneOffset.UTC)
+    private val today = LocalDate.of(2026, 9, 30)
+    private val mandates = Mandates(payments, sealing, clock, AfterCommitEventPublisher(published))
     private val currentUser: CurrentUserProvider = mock()
     private val home = MandateAddressRequest("NL", "Enschede", "Hallenweg", "5", "7522NH")
     private val online = OnlineAuthorisation("2026-10", home.asFields())
@@ -67,8 +69,8 @@ class MandatesTest {
     }
 
     @Test
-    fun `records a paper mandate masked, puts the person on incasso, and keeps who recorded it`() {
-        assertThat(details.incassoStanding()).isEqualTo(IncassoStanding.NONE)
+    fun `records a paper mandate masked, which puts the person on incasso, and keeps who recorded it`() {
+        assertThat(details.incassoStanding(today)).isEqualTo(IncassoStanding.NONE)
 
         val answer = controller.recordMandate(12, RecordMandateRequest("NL91 ABNA 0417 1643 00", " Ann Vos ", LocalDate.of(2026, 9, 1)))
 
@@ -78,7 +80,7 @@ class MandatesTest {
         assertThat(answer.reference).isEqualTo("BLUESHELL-12-20260901")
         assertThat(answer.recordedBy).isEqualTo(12)
         assertThat(answer.recordedAt).isEqualTo(now)
-        assertThat(details.incasso).isTrue()
+        assertThat(details.mandate!!.standsOn(today)).isTrue()
         assertThat(details.mandate!!.sealedIban).doesNotContain("0417164300")
         assertThat(mandates.bankDetailsOf(details.userId, details.mandate!!).iban.value).isEqualTo("NL91ABNA0417164300")
 
@@ -86,7 +88,7 @@ class MandatesTest {
         for (response in listOf(answer, controller.findMandate(12))) {
             assertThat(json.writeValueAsString(response)).doesNotContain("0417").doesNotContain("NL91ABNA")
         }
-        assertThat(json.writeValueAsString(answer)).contains("\"signedOn\":\"2026-09-01\"", "\"userId\":12", "\"incasso\":true")
+        assertThat(json.writeValueAsString(answer)).contains("\"signedOn\":\"2026-09-01\"", "\"userId\":12", "\"endedOn\":null")
     }
 
     @Test
@@ -113,7 +115,7 @@ class MandatesTest {
 
     @Test
     fun `a person on incasso without bank details says so, and nothing of the account reaches a log line`() {
-        details.incasso = true
+        mandates.recordWithoutBankDetails(12, recordedBy = 3)
         assertThat(controller.findMandate(12).standing).isEqualTo(IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS)
         assertThat(controller.findMandate(12).accountHolder).isNull()
 
@@ -162,7 +164,7 @@ class MandatesTest {
         assertThat(again.iban.toString()).isEqualTo("GB•• … ••32")
         assertThat(again.reference).isEqualTo("BLUESHELL-12-20260930")
         val kept = held.getValue(12)
-        assertThat(kept.incasso).isTrue()
+        assertThat(kept.mandate!!.standsOn(today)).isTrue()
         assertThat(kept.mandate!!.let { listOf(it.kind, it.authorisedAt, it.wordingVersion, it.authorisedBy) })
             .containsExactly(MandateKind.ONLINE, now, "2026-10", 12L)
         assertThat(mandates.bankDetailsOf(12, kept.mandate!!).iban.value).isEqualTo("GB82WEST12345698765432")
@@ -184,7 +186,7 @@ class MandatesTest {
 
     @Test
     fun `a person on incasso without details says so, and the signup's step records one`() {
-        details.incasso = true
+        mandates.recordWithoutBankDetails(12, recordedBy = null)
         assertThat(mandates.own(12).standing).isEqualTo(IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS)
         assertThat(SignupMandates(mandates).setUp(12, "NL91ABNA0417164300", "Ann", "2026-10", online.address).standing)
             .isEqualTo(IncassoStanding.MANDATE_RECORDED)
@@ -193,19 +195,35 @@ class MandatesTest {
     }
 
     @Test
-    fun `the board sets how somebody pays, and a mandate on file stays either way`() {
-        assertThat(controller.setPaysBy(12, PaysByRequest(incasso = true)).standing)
-            .isEqualTo(IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS)
+    fun `ending a mandate puts the person on transfer, keeps it as the record and tells them once`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
 
-        val transfer = controller.setPaysBy(12, PaysByRequest(incasso = false))
+        val ended = controller.endMandate(12)
 
-        // The mandate stays on file, but nothing is collected from somebody who pays by transfer.
-        assertThat(transfer.standing).isEqualTo(IncassoStanding.NONE)
-        assertThat(transfer.incasso).isFalse()
-        assertThat(transfer.reference).isEqualTo("BLUESHELL-12-20260901")
-        assertThat(controller.setPaysBy(77, PaysByRequest(incasso = true)).userId).isEqualTo(77)
-        assertThat(held.getValue(77).incasso).isTrue()
+        assertThat(ended.standing).isEqualTo(IncassoStanding.NONE)
+        assertThat(ended.endedOn).isEqualTo(LocalDate.now(clock))
+        assertThat(ended.reference).isEqualTo("BLUESHELL-12-20260901")
+        assertThat(mandates.end(12)).isFalse()
+        assertThat(mandates.end(77)).isFalse()
+        verify(published).publishEvent(MandateEnded(12, "BLUESHELL-12-20260901"))
+
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 25), 3)
+        assertThat(details.mandate!!.reference).isEqualTo("BLUESHELL-12-20260925")
+        assertThat(controller.endOwnMandate().standing).isEqualTo(IncassoStanding.NONE)
+        verify(stepUp).require()
+    }
+
+    @Test
+    fun `a mandate ending with a membership that ends ahead stands until that day`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+
+        mandates.end(12, today.plusMonths(3))
+
+        assertThat(mandates.stands(details.mandate)).isTrue()
+        assertThat(mandates.collectable(12)).isNotNull()
+        assertThat(mandates.standing(details)).isEqualTo(IncassoStanding.MANDATE_RECORDED)
+        assertThat(details.mandate!!.standsOn(today.plusMonths(3))).isFalse()
+        assertThat(mandates.stands(null)).isFalse()
     }
 
     @Test
@@ -406,11 +424,11 @@ class MandatesTest {
         val held = details.mandate!!
         held.sealedIban = null
         held.sealedAccountHolder = null
-        details.incasso = false
+        held.endedOn = LocalDate.of(2026, 9, 2)
 
         assertThat(held.wiped).isTrue()
-        assertThat(details.collectableMandate).isNull()
-        assertThat(details.incassoStanding()).isEqualTo(IncassoStanding.NONE)
+        assertThat(details.collectableMandate(today)).isNull()
+        assertThat(details.incassoStanding(today)).isEqualTo(IncassoStanding.NONE)
         assertThat(mandates.own(details.userId).standing).isEqualTo(IncassoStanding.NONE)
         assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(NoMandateRecorded::class.java)
         assertThatThrownBy { mandates.bankDetailsOf(details.userId, held) }.isInstanceOf(NoMandateRecorded::class.java)

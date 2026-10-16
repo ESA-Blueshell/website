@@ -7,6 +7,7 @@ import {settle} from "../../helpers/testUtils"
 
 const api = vi.hoisted(() => ({
   findOwnMandate: vi.fn(), setUpOwnMandate: vi.fn(), setUpMandate: vi.fn(), twoFactorStanding: vi.fn(), findAddressById: vi.fn(),
+  endOwnMandate: vi.fn(),
 }))
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -53,6 +54,57 @@ describe("setting up incasso", () => {
     await settle()
     expect(api.setUpOwnMandate).toHaveBeenCalledTimes(2)
     expect(wrapper.get('[data-testid="incasso-saved"]').text()).toBe("Your bank details are saved.")
+  })
+
+  it("lets the member stop incasso once they confirm, and says why when it could not", async () => {
+    api.findOwnMandate.mockResolvedValue({status: 200, data: own})
+    api.endOwnMandate.mockResolvedValueOnce({status: 500, error: {}})
+    api.endOwnMandate.mockResolvedValueOnce({status: 200, data: {standing: IncassoStanding.NONE}})
+    const wrapper = mount(IncassoSetUp)
+    await settle()
+
+    const dialog = () => wrapper.getComponent({name: "ConfirmDialog"})
+    await wrapper.get('[data-testid="incasso-stop"]').trigger("click")
+    dialog().vm.$emit("update:open", false)
+    await settle()
+    expect(dialog().props("open")).toBe(false)
+    await wrapper.get('[data-testid="incasso-stop"]').trigger("click")
+    expect(dialog().props("open")).toBe(true)
+    dialog().vm.$emit("confirm")
+    await settle()
+    expect(wrapper.get('[data-testid="incasso-stop-failure"]').text()).toBe("We could not stop your incasso. Try again.")
+
+    dialog().vm.$emit("confirm")
+    await settle()
+    expect(wrapper.find('[data-testid="incasso-stop"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="incasso-none"]').exists()).toBe(true)
+  })
+
+  it("asks for a step-up before stopping incasso, and stops once the member proved it", async () => {
+    api.findOwnMandate.mockResolvedValue({status: 200, data: own})
+    api.endOwnMandate.mockResolvedValueOnce({status: 403, error: {code: "StepUpRequired"}, response: {status: 403}})
+    api.endOwnMandate.mockResolvedValueOnce({status: 200, data: {standing: IncassoStanding.NONE}})
+    const wrapper = mount(IncassoSetUp, {global: {stubs: {StepUpDialog: {name: "StepUpDialog", props: ["modelValue", "twoFactorOn"], emits: ["proved", "update:modelValue"], template: "<div />"}}}})
+    await settle()
+
+    await wrapper.get('[data-testid="incasso-stop"]').trigger("click")
+    wrapper.getComponent({name: "ConfirmDialog"}).vm.$emit("confirm")
+    await settle()
+    expect(wrapper.getComponent({name: "StepUpDialog"}).props("modelValue")).toBe(true)
+
+    wrapper.getComponent({name: "StepUpDialog"}).vm.$emit("proved")
+    await settle()
+    expect(api.endOwnMandate).toHaveBeenCalledTimes(2)
+    expect(api.setUpOwnMandate).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="incasso-none"]').exists()).toBe(true)
+  })
+
+  it("tells a member on incasso without bank details to add them", async () => {
+    api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
+    const wrapper = mount(IncassoSetUp)
+    await settle()
+
+    expect(wrapper.get('[data-testid="incasso-without-details"]').text()).toContain("do not have your bank details yet")
   })
 
   it("says the member's incasso details could not be read, and offers no way to set them up over them", async () => {

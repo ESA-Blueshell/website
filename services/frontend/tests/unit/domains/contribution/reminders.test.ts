@@ -1,23 +1,23 @@
 import {describe, expect, it} from "vitest"
-import {BulkFeeType, BulkRowDisposition, BulkRowReason, ContributionEmailKind, MemberType} from "@/services/api"
+import {BulkFeeType, BulkRowDisposition, BulkRowReason, MemberType} from "@/services/api"
 import {dueDateProblem, localDay, reminderName, reminderRows} from "@/domains/contribution"
 
 const row = (userId: number, fields: Record<string, unknown> = {}) => ({
   userId, name: `Member ${userId}`, memberType: MemberType.REGULAR, memberSince: "2020-01-01",
-  disposition: BulkRowDisposition.INCLUDED, reason: null, defaultKind: ContributionEmailKind.REMINDER,
+  disposition: BulkRowDisposition.INCLUDED, reason: null,
   feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30, lastRemindedOn: null, lastNotifiedOn: null, ...fields,
 })
 
 describe("the reminder rows", () => {
-  it("leaves out members on incasso and those the api will not write to, each with the reason", () => {
+  it("keeps a member on incasso as a warning, and leaves out those the api will not write to, each with the reason", () => {
     const [incasso, honorary, noEmail, odd] = reminderRows([
-      row(1, {defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION}),
+      row(1, {disposition: BulkRowDisposition.WARNING, reason: BulkRowReason.PAYS_BY_DIRECT_DEBIT}),
       row(2, {disposition: BulkRowDisposition.EXCLUDED, reason: BulkRowReason.HONORARY}),
       row(3, {disposition: BulkRowDisposition.EXCLUDED, reason: BulkRowReason.NO_EMAIL}),
       row(4, {disposition: BulkRowDisposition.EXCLUDED, reason: null}),
     ], "2025-09-01")
 
-    expect(incasso!.leftOut).toBe("Pays by incasso")
+    expect(incasso!.leftOut).toBeNull()
     expect(honorary!.leftOut).toBeTruthy()
     expect(noEmail!.leftOut).toBeTruthy()
     expect(odd!.leftOut).toBe("Not written to")

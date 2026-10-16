@@ -28,8 +28,8 @@ private const val ADDRESS_PART_MAX = 20
 data class MandateResponse(
     val userId: Long,
     val standing: IncassoStanding,
-    @field:Schema(description = "Pays by incasso rather than by transfer, whether or not a mandate is recorded.")
-    val incasso: Boolean,
+    @field:Schema(description = "The day the mandate ended; null while it stands. A person pays by direct debit only while it stands.")
+    val endedOn: LocalDate?,
     @field:Schema(description = "Null where no mandate is recorded, or where it cannot be opened now.")
     val accountHolder: String?,
     @field:Schema(description = "The IBAN's country code; with the last two, all a response carries of it.")
@@ -72,12 +72,6 @@ data class RecordMandateRequest(
         const val SHOWN = 4
     }
 }
-
-/** Whether a person pays by incasso or by transfer. */
-@Schema(name = "PaysByRequest")
-data class PaysByRequest(
-    val incasso: Boolean,
-)
 
 /** A mandate's full IBAN, answered to a board member's reveal and to nothing else. */
 @Schema(name = "RevealedIbanResponse")

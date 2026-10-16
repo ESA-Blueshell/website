@@ -80,7 +80,8 @@ class BankDetailsWipeIT : UserTestSupport() {
             userId,
         )
 
-    private fun stopCollecting(userId: Long) = jdbc.update("UPDATE payment_details SET incasso = FALSE WHERE user_id = ?", userId)
+    private fun stopCollecting(userId: Long) =
+        mvc.perform(post("/users/$userId/mandate/end").with(signedIn(createUserWithRole(Role.BOARD)))).andExpect(status().isOk)
 
     private fun sealedOf(userId: Long) =
         mandateOf(userId)
@@ -126,7 +127,8 @@ class BankDetailsWipeIT : UserTestSupport() {
         val (_, ended) = onIncasso()
         val (_, running) = onIncasso()
         stopCollecting(stopped)
-        jdbc.update("UPDATE memberships SET end_date = ? WHERE user_id = ?", LocalDate.now(), ended)
+        val membershipId = jdbc.queryForObject("SELECT id FROM memberships WHERE user_id = ?", Long::class.java, ended)
+        mvc.perform(post("/memberships/$membershipId/end").with(signedIn(createUserWithRole(Role.BOARD)))).andExpect(status().isOk)
 
         assertThat(runOn(LocalDate.now())).isInstanceOf(JobOutcome.Done::class.java)
 
@@ -186,7 +188,8 @@ class BankDetailsWipeIT : UserTestSupport() {
         erasure.deleteUser(member.id!!)
 
         for (erased in listOf(applicant.id!!, memberId)) {
-            assertThat(jdbc.queryForObject("SELECT incasso FROM payment_details WHERE user_id = ?", Boolean::class.java, erased)).isFalse()
+            assertThat(jdbc.queryForObject("SELECT mandate_ended_on FROM payment_details WHERE user_id = ?", LocalDate::class.java, erased))
+                .isNotNull()
         }
         runOn(collection.plusMonths(13).minusDays(1))
         assertThat(sealedOf(applicant.id!!)).containsOnlyNulls()

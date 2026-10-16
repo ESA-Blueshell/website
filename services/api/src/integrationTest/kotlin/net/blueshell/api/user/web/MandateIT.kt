@@ -10,9 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @SpringBootTest
 class MandateIT : UserTestSupport() {
@@ -85,24 +88,41 @@ class MandateIT : UserTestSupport() {
     }
 
     @Test
-    fun `the board sets how somebody pays, without a membership, and a member cannot`() {
+    fun `the board ends somebody's mandate, a member cannot, and the member stops their own`() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
-        val paysBy = { by: User, incasso: Boolean ->
-            mvc.perform(
-                put("/users/${member.id}/pays-by")
-                    .with(signedIn(by))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"incasso":$incasso}"""),
-            )
-        }
+        record(member.id, board).andExpect(status().isOk)
+        val end = { by: User -> mvc.perform(post("/users/${member.id}/mandate/end").with(signedIn(by))) }
 
-        paysBy(board, true)
+        end(member).andExpect(status().isForbidden)
+        end(board)
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.incasso").value(true))
-            .andExpect(jsonPath("$.standing").value("ON_INCASSO_WITHOUT_BANK_DETAILS"))
-        paysBy(member, false).andExpect(status().isForbidden)
-        assertThat(jdbcTemplate.queryForObject("select incasso from payment_details where user_id = ?", Boolean::class.java, member.id))
-            .isTrue()
+            .andExpect(jsonPath("$.standing").value("NONE"))
+            .andExpect(jsonPath("$.endedOn").value(LocalDate.now(ZoneOffset.UTC).toString()))
+
+        record(member.id, board).andExpect(status().isOk)
+        mvc
+            .perform(post("/users/me/mandate/end").with(signedIn(member)))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.code").value("StepUpRequired"))
+        mvc
+            .perform(post("/users/me/mandate/end").with(signedIn(member, steppedUp = true)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.standing").value("NONE"))
+    }
+
+    @Test
+    fun `a mandate ends on the day the membership ends, and rejoining starts without one`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val membership = createMembershipFixture(user = member, startDate = LocalDate.now().minusYears(1))
+        record(member.id, board).andExpect(status().isOk)
+
+        mvc.perform(post("/memberships/${membership.id}/end").with(signedIn(board))).andExpect(status().isOk)
+
+        mvc
+            .perform(get("/users/${member.id}/mandate").with(signedIn(board)))
+            .andExpect(jsonPath("$.standing").value("NONE"))
+            .andExpect(jsonPath("$.endedOn").value(LocalDate.now().toString()))
     }
 }

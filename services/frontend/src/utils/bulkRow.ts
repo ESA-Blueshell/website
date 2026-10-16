@@ -43,8 +43,6 @@ export interface BulkRow {
   memberSince?: string | null
   amount?: number | null
   recommendedFeeType?: BulkFeeType
-  /** Payment emails only: which of the two this member's direct-debit flag chose. */
-  defaultKind?: ContributionEmailKind
   // Per kind, so a member sent a payment request does not read as having been pre-notified.
   lastRemindedOn?: string
   lastNotifiedOn?: string

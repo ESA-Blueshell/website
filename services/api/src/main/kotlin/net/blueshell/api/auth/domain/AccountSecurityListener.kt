@@ -11,6 +11,7 @@ import net.blueshell.api.security.SignIns
 import net.blueshell.api.shared.event.AfterCommitListener
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
+import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.UserDeleted
 import net.blueshell.api.user.api.UserEmailChangedByBoard
 import net.blueshell.api.user.api.UserRolesChanged
@@ -68,6 +69,11 @@ class AccountSecurityListener(
     @AfterCommitListener
     fun onBankDetailsChanged(evt: BankDetailsChanged) {
         events.record(evt.userId, SecurityEventKind.BANK_DETAILS_CHANGED, note = evt.iban.toString())
+    }
+
+    @AfterCommitListener
+    fun onMandateEnded(evt: MandateEnded) {
+        events.record(evt.userId, SecurityEventKind.MANDATE_ENDED, note = "mandate ${evt.reference}")
     }
 
     /** Who revealed whose IBAN, never the IBAN itself. */

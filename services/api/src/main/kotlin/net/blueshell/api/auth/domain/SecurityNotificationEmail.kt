@@ -105,10 +105,18 @@ private fun sentence(event: SecurityEvent): String {
         SecurityEventKind.TRUSTED_BROWSER_ADDED -> "A browser was trusted to skip the code at sign-in"
         SecurityEventKind.TWO_FACTOR_RESET -> "An admin reset your two-factor authentication and signed you out everywhere"
         SecurityEventKind.ACCOUNT_UNLOCKED -> "An admin unlocked your account"
-        SecurityEventKind.BANK_DETAILS_CHANGED -> "Your bank details for incasso were changed, to the account ${event.note}"
+        SecurityEventKind.BANK_DETAILS_CHANGED, SecurityEventKind.MANDATE_ENDED -> paymentSentence(event)
         else -> if (byOther) "Something changed about how your account is signed in to" else "You changed how your account is signed in to"
     }
 }
 
 private val WHEN: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d MMMM yyyy 'at' HH:mm").withZone(ZoneId.of("Europe/Amsterdam"))
+
+// Apart from the others, which keeps the sentence for every other kind under detekt's complexity limit.
+private fun paymentSentence(event: SecurityEvent): String =
+    when (event.kind) {
+        SecurityEventKind.MANDATE_ENDED ->
+            "Your incasso has stopped. From now on you pay each contribution yourself, by bank transfer or in cash"
+        else -> "Your bank details for incasso were changed, to the account ${event.note}"
+    }

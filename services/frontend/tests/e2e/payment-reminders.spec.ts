@@ -29,7 +29,7 @@ test.describe("payment reminders", () => {
     await page.getByTestId("bulk-action-send-payment-reminders").click()
 
     await expect(page).toHaveURL(/\/management\/contributions\/201\/reminders\?ids=1,2$/)
-    await expect(page.getByTestId("payment-reminders-left-out-2")).toContainText("Pays by incasso")
+    await expect(page.getByTestId("payment-reminders-warning-2")).toContainText("Pays by incasso")
     await page.getByTestId("payment-reminders-next").click()
     await page.getByTestId("payment-reminders-next").click()
 

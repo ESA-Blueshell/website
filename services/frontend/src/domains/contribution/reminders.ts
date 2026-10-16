@@ -1,4 +1,4 @@
-import {type BulkContributionEmailRowResponse, BulkRowDisposition, ContributionEmailKind} from "@/services/api"
+import {type BulkContributionEmailRowResponse, BulkRowDisposition} from "@/services/api"
 import {reasonLabel} from "@/utils/bulkDisposition"
 
 /**
@@ -39,19 +39,14 @@ export interface ReminderRow {
   first: boolean
 }
 
-/**
- * The preview's rows as the reminder task reads them. Members on incasso get the incasso
- * notification instead, so they are left out here with that reason; the rest keep the api's own.
- */
+/** The preview's rows as the reminder task reads them; a member on incasso is a warning, ticked on purpose. */
 export function reminderRows(rows: BulkContributionEmailRowResponse[], periodStart: string | null): ReminderRow[] {
   return rows.map((row) => ({
     userId: row.userId,
     name: row.name,
     row,
-    leftOut: row.defaultKind === ContributionEmailKind.INCASSO_NOTIFICATION
-      ? "Pays by incasso"
-      : row.disposition === BulkRowDisposition.EXCLUDED ? reasonLabel(row.reason) || "Not written to"
-        : row.feeType == null ? "Owes nothing" : null,
+    leftOut: row.disposition === BulkRowDisposition.EXCLUDED ? reasonLabel(row.reason) || "Not written to"
+      : row.feeType == null ? "Owes nothing" : null,
     remindedBefore: row.lastRemindedOn ?? null,
     first: periodStart != null && row.lastRemindedOn == null && row.memberSince != null && row.memberSince >= periodStart,
   }))

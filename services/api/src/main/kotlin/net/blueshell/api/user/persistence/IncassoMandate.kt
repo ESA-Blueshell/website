@@ -26,9 +26,9 @@ class IncassoMandate(
     var sealedIban: String?,
     @Column(name = "mandate_account_holder", length = 512)
     var sealedAccountHolder: String?,
-    /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. */
+    /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. Null on a paper mandate kept without bank details. */
     @Column(name = "mandate_iban_masked", length = 4)
-    var ibanMasked: String,
+    var ibanMasked: String?,
     @Column(name = "mandate_reference", length = 35)
     var reference: String,
     @Column(name = "mandate_signed_on")
@@ -52,6 +52,9 @@ class IncassoMandate(
     /** The address the member confirmed when authorising online, sealed: the mandate's own record, not their account's address. */
     @Column(name = "mandate_address", columnDefinition = "TEXT")
     var sealedAddress: String? = null,
+    /** The day it stopped: stopped by the member, its bank account replaced or deleted, or their membership ended (api ADR-040). */
+    @Column(name = "mandate_ended_on")
+    var endedOn: LocalDate? = null,
 ) {
     /** Whether its sealed bank details are gone, which leaves nothing to collect from or to reveal. */
     val wiped: Boolean

@@ -4,6 +4,7 @@ import net.blueshell.api.user.persistence.MandateRetentionRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
 import java.time.LocalDate
 
 /** A mandate no longer collected from, with its sealed bank details still kept. */
@@ -20,17 +21,18 @@ data class StoppedMandate(
 @Service
 class MandateRetention(
     private val mandates: MandateRetentionRepository,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     /**
-     * Every mandate still holding sealed values that is no longer collected from on [today]: its
-     * person is off incasso, or every membership of theirs ended or was removed. An erased account is off incasso.
+     * Every mandate still holding sealed values that ended by [today]: stopped, replaced, ended with
+     * its membership or with an erased account.
      */
     @Transactional(readOnly = true)
     fun stopped(today: LocalDate): List<StoppedMandate> = mandates.findStopped(today).map { StoppedMandate(it.userId, it.reference) }
 
     /**
      * Empties the sealed IBAN, account holder and address of [stopped], and keeps the rest of it.
-     * False where the mandate was recorded anew or is collected from again since it was judged.
+     * False where the mandate was recorded anew since it was judged.
      */
     @Transactional
     fun wipe(
@@ -43,12 +45,12 @@ class MandateRetention(
     }
 
     /**
-     * An account was erased. It comes off incasso, which starts the 13 months for a mandate collected
+     * An account was erased. Its mandate ends today, which starts the 13 months for one collected
      * under; one never collected from goes at the next wipe.
      */
     @Transactional
     fun accountErased(userId: Long) {
-        mandates.stopCollecting(userId)
+        mandates.stopCollecting(userId, LocalDate.now(clock))
     }
 
     private companion object {

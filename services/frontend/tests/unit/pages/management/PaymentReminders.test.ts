@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import type {VueWrapper} from "@vue/test-utils"
 import PaymentReminders from "@/pages/management/PaymentReminders.vue"
-import {BulkFeeType, BulkRowDisposition, ContributionEmailKind, MemberType} from "@/services/api"
+import {BulkFeeType, BulkRowDisposition, BulkRowReason, ContributionEmailKind, MemberType} from "@/services/api"
 import {aContributionPeriod} from "../../helpers/apiFixtures"
 import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
@@ -30,7 +30,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const row = (userId: number, fields: Record<string, unknown> = {}) => ({
   userId, name: `Member ${userId}`, memberType: MemberType.REGULAR, memberSince: "2020-01-01",
-  disposition: BulkRowDisposition.INCLUDED, reason: null, defaultKind: ContributionEmailKind.REMINDER,
+  disposition: BulkRowDisposition.INCLUDED, reason: null,
   feeType: BulkFeeType.FULL_YEAR_FEE, amount: 30, lastRemindedOn: null, lastNotifiedOn: null, ...fields,
 })
 
@@ -51,11 +51,11 @@ describe("the payment reminders task", () => {
     api.findContributionPeriods.mockResolvedValue({status: 200, data: [aContributionPeriod({id: 2, startDate: "2025-09-01", fullYearFee: 30, halfYearFee: 15, alumniFee: 5})]})
     api.previewBulkContributionEmail.mockResolvedValue({status: 200, data: {contributionPeriodId: 2, unknownUserIds: [], rows: [
       row(1, {lastRemindedOn: "2025-10-01", disposition: BulkRowDisposition.WARNING}),
-      row(2, {defaultKind: ContributionEmailKind.INCASSO_NOTIFICATION}),
+      row(2, {disposition: BulkRowDisposition.WARNING, reason: BulkRowReason.PAYS_BY_DIRECT_DEBIT}),
       row(3, {memberSince: "2025-10-01"}),
     ]}})
     api.readContributionEmail.mockResolvedValue({status: 200, data: {subject: "Please pay", html: "<p>pay</p>", recipientEmail: "a@x", recipientName: "A", kind: "REMINDER", feeType: "FULL_YEAR_FEE"}})
-    api.sendPaymentEmails.mockResolvedValue({status: 200, data: {remindersSent: 2, incassoNotificationsSent: 0, notWrittenTo: 1}})
+    api.sendPaymentEmails.mockResolvedValue({status: 200, data: {remindersSent: 2, notWrittenTo: 1}})
   })
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe("the payment reminders task", () => {
   it("walks who, fees and the check to a send, and nothing goes before it", async () => {
     const wrapper = await mount()
 
-    expect(wrapper.get('[data-testid="payment-reminders-left-out-2"]').text()).toContain("Pays by incasso")
+    expect(wrapper.get('[data-testid="payment-reminders-warning-2"]').text()).toContain("Pays by incasso")
     expect(wrapper.get('[data-testid="payment-reminders-before-1"]').text()).toContain("Reminded before on 01/10/2025")
     expect(wrapper.get('[data-testid="payment-reminders-row-3"]').text()).toContain("First payment email")
     expect(wrapper.get('[data-testid="payment-reminders-warning-1"]').text()).toBeTruthy()
@@ -73,6 +73,7 @@ describe("the payment reminders task", () => {
     // A member the api warns about waits for a tick by hand.
     const tick = (userId: number) => wrapper.findAllComponents({name: "RowCheck"}).find((one) => one.props("testid") === `payment-reminders-tick-${userId}`)!
     expect(tick(1).props("checked")).toBe(false)
+    expect(tick(2).props("checked")).toBe(false)
     expect(tick(3).props("checked")).toBe(true)
     await wrapper.get('[data-testid="payment-reminders-tick-1"]').trigger("change")
     await settle()
@@ -102,7 +103,7 @@ describe("the payment reminders task", () => {
     await wrapper.get('[data-testid="payment-reminders-send"]').trigger("click")
     await settle()
     expect(api.sendPaymentEmails).toHaveBeenCalledWith({body: {
-      contributionPeriodId: 2, userIds: [1, 3], forciblyIncludedUserIds: [1], kindOverrides: {},
+      contributionPeriodId: 2, userIds: [1, 3], forciblyIncludedUserIds: [1],
       paymentDueDate: later, feeTypeOverrides: {1: BulkFeeType.ALUMNI_FEE},
     }})
     expect(wrapper.get('[data-testid="payment-reminders-sent"]').text()).toContain("2 reminders sent")

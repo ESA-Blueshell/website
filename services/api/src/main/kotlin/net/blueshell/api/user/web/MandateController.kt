@@ -10,7 +10,6 @@ import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.OnlineAuthorisation
-import net.blueshell.api.user.domain.incassoStanding
 import net.blueshell.api.user.persistence.PaymentDetails
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -56,13 +55,15 @@ class MandateController(
                 request.replacesOnline,
             ).asMandateResponse()
 
-    /** Whether the person pays by incasso or by transfer. */
+    /** Ends the person's mandate today, as when they stop it on paper; they pay by transfer from then. */
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")
-    @PutMapping("/users/{userId}/pays-by")
-    fun setPaysBy(
+    @PostMapping("/users/{userId}/mandate/end")
+    fun endMandate(
         @PathVariable userId: Long,
-        @Valid @RequestBody request: PaysByRequest,
-    ): MandateResponse = mandates.payBy(userId, request.incasso).asMandateResponse()
+    ): MandateResponse {
+        mandates.end(userId)
+        return mandates.of(userId).asMandateResponse()
+    }
 
     /**
      * The person's full IBAN, for a board member who needs it. Every reveal is written to the
@@ -96,14 +97,23 @@ class MandateController(
         return mandates.changeOwn(reader(), request.iban, request.accountHolder, authorisation).asResponse()
     }
 
+    /** The member stops their own direct debit today, behind a step-up as a change of bank details is. */
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/users/me/mandate/end")
+    fun endOwnMandate(): OwnMandateResponse {
+        stepUp.require()
+        mandates.end(reader())
+        return mandates.own(reader()).asResponse()
+    }
+
     private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 
     private fun PaymentDetails.asMandateResponse(): MandateResponse {
         val held = mandate
         return MandateResponse(
             userId = userId,
-            standing = incassoStanding(),
-            incasso = incasso,
+            standing = mandates.standing(this),
+            endedOn = held?.endedOn,
             accountHolder = held?.takeUnless { it.wiped }?.let { mandates.accountHolderOf(userId, it) },
             ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
             ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,

@@ -59,9 +59,7 @@ class BulkContributionEmailController(
                 contributionPeriodId = requireNotNull(request.contributionPeriodId),
                 userIds = request.userIds,
                 forciblyIncluded = request.forciblyIncludedUserIds.toSet(),
-                kindOverrides = request.kindOverrides,
                 paymentDueDate = request.paymentDueDate,
-                debitDate = request.debitDate,
                 feeTypeOverrides = request.feeTypeOverrides,
             ).asResponse()
 }
@@ -78,7 +76,6 @@ private fun ContributionEmailPlan.asResponse() =
                     memberSince = row.memberSince,
                     disposition = row.disposition,
                     reason = row.reason,
-                    defaultKind = row.defaultKind,
                     feeType = row.feeType,
                     amount = row.amount,
                     lastRemindedOn = row.lastRemindedOn,
@@ -101,6 +98,5 @@ private fun ContributionEmailMessage.asResponse() =
 private fun ContributionEmailResult.asResponse() =
     PaymentEmailsResultResponse(
         remindersSent = remindersSent,
-        incassoNotificationsSent = incassoNotificationsSent,
         notWrittenTo = notWrittenTo,
     )

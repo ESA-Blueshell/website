@@ -2,10 +2,10 @@
 Feature: Payment emails
 
   Twice a year the treasurer asks the members who owe a contribution for it. A member who
-  pays by direct debit is told what will be taken and when; everybody else is asked to
-  transfer. Neither email quotes an amount without the reason that amount applies, and the
-  association keeps a record of every asking, because the question a treasurer answers later
-  is who was asked and when.
+  pays by direct debit is collected from by an incasso run instead, so they are sent a
+  reminder only when the treasurer ticks them on purpose. No email quotes an amount without
+  the reason that amount applies, and the association keeps a record of every asking,
+  because the question a treasurer answers later is who was asked and when.
 
   Background:
     Given a board member signed in to the user manager
@@ -18,22 +18,15 @@ Feature: Payment emails
     And it states the full-year fee and what it comes to
     And it says where to transfer the money
 
-  Scenario: A member who pays by direct debit is told what will be taken
-    Given a member who pays by direct debit
-    When they send the payment emails
-    Then that member receives an incasso notification
-    And it states the full-year fee and what it comes to
-    And it asks them to transfer nothing
-
-  Scenario: One send reaches both kinds of member
+  Scenario: A member who pays by direct debit is left out unless ticked
     Given a member who pays by transfer
     And a member who pays by direct debit
     When they send the payment emails
-    Then each member receives the email their payment method calls for
+    Then the member who pays by direct debit receives no payment email
 
-  Scenario: A member the treasurer moves receives the other email
+  Scenario: A member who pays by direct debit and is ticked on purpose is asked to transfer
     Given a member who pays by direct debit
-    When they move that member onto the contribution reminder and send
+    When they tick that member in and send the payment emails
     Then that member receives a contribution reminder
     And they are not told that anything will be taken from their account
 

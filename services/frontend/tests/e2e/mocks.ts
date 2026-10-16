@@ -637,11 +637,12 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
   const payingByIncasso = new Set(fixtures.onIncasso ?? [])
   const recordedMandates = new Map<number, Wire<MandateResponse>>()
+  // A standing mandate is the only "pays by direct debit"; ending one keeps it as the record.
   const mandateOf = (userId: number): Wire<MandateResponse> => {
-    const incasso = payingByIncasso.has(userId)
+    const standing = payingByIncasso.has(userId)
     const recorded = recordedMandates.get(userId)
-    if (recorded) return {...recorded, incasso}
-    return {userId, incasso, standing: incasso ? "ON_INCASSO_WITHOUT_BANK_DETAILS" : "NONE", bankDetailsWiped: false}
+    if (recorded) return {...recorded, standing: standing ? "MANDATE_RECORDED" : "NONE"}
+    return {userId, standing: standing ? "ON_INCASSO_WITHOUT_BANK_DETAILS" : "NONE", bankDetailsWiped: false}
   }
 
   const basePeriods: Wire<ContributionPeriodResponse>[] = fixtures.contributionPeriods ?? [
@@ -945,12 +946,10 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "POST" && /^\/users\/\d+\/mandate\/reveal$/.test(path)) {
       return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})
     }
-    if (method === "PUT" && /^\/users\/\d+\/pays-by$/.test(path)) {
+    if (method === "POST" && /^\/users\/\d+\/mandate\/end$/.test(path)) {
       const userId = Number(path.split("/")[2])
-      const {incasso} = request.postDataJSON() as {incasso: boolean}
-      if (incasso) payingByIncasso.add(userId)
-      else payingByIncasso.delete(userId)
-      return answer(route, "setPaysBy", mandateOf(userId))
+      payingByIncasso.delete(userId)
+      return answer(route, "endMandate", {...mandateOf(userId), endedOn: new Date().toISOString().slice(0, 10)})
     }
     if (/^\/users\/\d+\/mandate$/.test(path)) {
       const userId = Number(path.split("/")[2])
@@ -959,7 +958,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
         const compact = iban.replace(/\s/g, "")
         payingByIncasso.add(userId)
         recordedMandates.set(userId, {
-          userId, incasso: true, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
+          userId, standing: "MANDATE_RECORDED", accountHolder, ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
           reference: `BLUESHELL-${userId}`, signedOn, recordedBy: 1, recordedAt: "2026-09-30T10:00:00.000Z",
           kind: "PAPER", bankDetailsWiped: false,
         })
@@ -1142,7 +1141,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           ? ["EXCLUDED", "HONORARY"] as const
           : paid.has(userId)
             ? ["WARNING", "ALREADY_PAID"] as const
-            : ["INCLUDED", null] as const
+            : payingByIncasso.has(userId) ? ["WARNING", "PAYS_BY_DIRECT_DEBIT"] as const : ["INCLUDED", null] as const
         return {
           userId,
           name: baseUsers.find((u) => Number(u.id) === userId)?.fullName ?? `#${userId}`,
@@ -1150,7 +1149,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
           memberSince: membership?.startDate ?? null,
           disposition,
           reason,
-          defaultKind: payingByIncasso.has(userId) ? "INCASSO_NOTIFICATION" : "REMINDER",
           feeType: honorary ? null : "FULL_YEAR_FEE",
           amount: honorary ? null : 20,
           lastRemindedOn: userId === 2 ? "2025-09-01" : null,
@@ -1186,7 +1184,6 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       const body = route.request().postDataJSON() as {userIds: number[]}
       return answer(route, "sendPaymentEmails", {
         remindersSent: body.userIds.length,
-        incassoNotificationsSent: 0,
         notWrittenTo: 0,
       })
     }

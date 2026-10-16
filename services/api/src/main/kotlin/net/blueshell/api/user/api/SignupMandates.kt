@@ -3,7 +3,6 @@ package net.blueshell.api.user.api
 import net.blueshell.api.user.domain.IncassoStanding
 import net.blueshell.api.user.domain.Mandates
 import net.blueshell.api.user.domain.OnlineAuthorisation
-import net.blueshell.api.user.domain.collectableMandate
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 
@@ -33,7 +32,7 @@ class SignupMandates(
         address: AddressFields,
     ): OwnMandate {
         val authorisation = OnlineAuthorisation(wordingVersion, address)
-        return if (mandates.of(userId).collectableMandate != null) {
+        return if (mandates.collectable(userId) != null) {
             mandates.changeOwn(userId, iban, accountHolder, authorisation)
         } else {
             mandates.setUpOwn(userId, iban, accountHolder, authorisation)

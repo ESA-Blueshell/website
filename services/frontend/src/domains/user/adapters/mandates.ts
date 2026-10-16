@@ -2,8 +2,11 @@
  * How a person pays and their mandate. Every answer masks the account; the full number comes back
  * to the browser only for a board member's reveal.
  */
+import {needsStepUp} from "@/domains/auth"
 import {
   downloadMandatePdf,
+  endMandate,
+  endOwnMandate,
   findMandate,
   findOwnMandate,
   IncassoStanding,
@@ -14,7 +17,6 @@ import {
   recordMandate,
   type RecordMandateRequest,
   revealIban,
-  setPaysBy,
   setUpMandate,
   setUpOwnMandate,
 } from "@/services/api"
@@ -35,9 +37,20 @@ export const readMandate = (userId: number): Promise<MandateResponse | null> => 
 export const saveMandate = (userId: number, body: RecordMandateRequest): Promise<Saved<MandateResponse> | Refused> =>
   refusable(recordMandate({path: {userId}, body}), "That mandate could not be recorded.")
 
-/** Sets whether the person pays by incasso or by transfer; a mandate on file stays either way. */
-export const savePaysBy = (userId: number, incasso: boolean): Promise<Saved<MandateResponse> | Refused> =>
-  refusable(setPaysBy({path: {userId}, body: {incasso}}), "How they pay could not be saved.")
+/** Ends the person's mandate today, as when they stop it on paper; they pay by transfer from then. */
+export const stopMandate = (userId: number): Promise<Saved<MandateResponse> | Refused> =>
+  refusable(endMandate({path: {userId}}), "We could not stop incasso. Try again.")
+
+/** The reader stops their own direct debit today, which waits on a step-up the page asks for. */
+export async function stopOwnIncasso(): Promise<Saved<OwnMandateResponse> | (Refused & {needsStepUp?: boolean})> {
+  const res = await endOwnMandate()
+  if (res.data) return {ok: true, saved: res.data}
+  return {
+    ok: false,
+    reason: reasonFor(res.error, "We could not stop your incasso. Try again."),
+    needsStepUp: needsStepUp(res.error),
+  }
+}
 
 /**
  * The person's full IBAN, for a board member. The api writes each reveal to their security log;
@@ -81,6 +94,6 @@ export async function setUpIncasso(
   return {
     ok: false,
     reason: reasonFor(res.error, "Your bank details could not be saved."),
-    needsStepUp: (res.error as {code?: string} | undefined)?.code === "StepUpRequired",
+    needsStepUp: needsStepUp(res.error),
   }
 }

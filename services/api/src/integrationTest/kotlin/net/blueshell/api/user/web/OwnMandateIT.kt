@@ -89,7 +89,7 @@ class OwnMandateIT : UserTestSupport() {
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
         val kept =
             jdbc.queryForMap(
-                "SELECT incasso, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by " +
+                "SELECT mandate_ended_on, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by " +
                     "FROM payment_details WHERE user_id = ?",
                 applicant.id,
             )
@@ -97,7 +97,7 @@ class OwnMandateIT : UserTestSupport() {
         assertThat(kept["mandate_kind"]).isEqualTo("ONLINE")
         assertThat(kept["mandate_wording_version"]).isEqualTo("2026-10")
         assertThat((kept["mandate_authorised_by"] as Number).toLong()).isEqualTo(applicant.id)
-        assertThat(kept["incasso"]).isEqualTo(true)
+        assertThat(kept["mandate_ended_on"]).isNull()
 
         mvc
             .perform(

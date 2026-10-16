@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.2](https://github.com/ESA-Blueshell/website/compare/v1.24.1...v1.24.2) (2026-10-16)
+
+
+### Performance
+
+* **platform:** a published release reaches Flagger within a minute ([#2514](https://github.com/ESA-Blueshell/website/issues/2514)) ([1bdee88](https://github.com/ESA-Blueshell/website/commit/1bdee882ed3dae5565f135468e1823e44e735795))
+
 ## [1.24.1](https://github.com/ESA-Blueshell/website/compare/v1.24.0...v1.24.1) (2026-10-15)
 
 

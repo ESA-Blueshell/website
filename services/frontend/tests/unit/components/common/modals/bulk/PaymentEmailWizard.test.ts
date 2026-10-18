@@ -95,9 +95,18 @@ const period: ContributionPeriodResponse = {
   updatedAt: "2025-09-01T00:00:00Z",
 }
 
-/** Every date the wizard accepts must be after today, so the fixtures move with the clock. */
-const soon = new Date(Date.now() + 30 * 24 * 3_600_000).toISOString().slice(0, 10)
-const alsoSoon = new Date(Date.now() + 45 * 24 * 3_600_000).toISOString().slice(0, 10)
+// The wizard accepts a date only after today and before the period window closes on 30/11/2026,
+// so the clock is pinned. A clock-relative date runs out of the window as the real date moves on.
+const today = new Date("2026-08-01T12:00:00Z")
+const soon = "2026-08-31"
+const alsoSoon = "2026-09-15"
+
+beforeEach(() => {
+  vi.useFakeTimers({toFake: ["Date"], now: today})
+})
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 function apiRow(
   overrides: Partial<BulkContributionEmailRowResponse> = {},

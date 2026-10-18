@@ -7,7 +7,7 @@ secrets remain unsynced until you complete the sequence.
 ## 1. Initialize and unseal Vault
 
 ```bash
-kubectl exec -n data-system vault-0 -- vault operator init \
+kubectl --context blueshell exec -n data-system vault-v2-0 -- vault operator init \
   -key-shares=5 -key-threshold=3 \
   -format=json > /tmp/vault-init.json
 
@@ -16,16 +16,17 @@ kubectl exec -n data-system vault-0 -- vault operator init \
 ROOT_TOKEN=$(jq -r '.root_token' /tmp/vault-init.json)
 
 for i in 0 1 2; do
-  kubectl exec -n data-system vault-0 -- vault operator unseal \
+  kubectl --context blueshell exec -n data-system vault-v2-0 -- vault operator unseal \
     "$(jq -r ".unseal_keys_b64[$i]" /tmp/vault-init.json)"
 done
 ```
 
 Single-replica Raft, so the three unseal operations complete on the one
-pod. You must unseal again after every Vault pod restart (e.g. node
-reboot) — three of the five shares are required each time. Automate with
-[vault-unseal](https://github.com/lrstanley/vault-unseal) or store the
-unseal keys in a cloud KMS later.
+pod. Vault seals again whenever its pod restarts, for example on a node
+reboot, and needs three of the five shares each time. Run
+`scripts/unseal-vault.sh` from a terminal: it confirms the kubectl context,
+port-forwards to `vault-v2-0` and asks for shares on a hidden prompt until
+Vault opens.
 
 ## 2. Bootstrap once with the root token
 

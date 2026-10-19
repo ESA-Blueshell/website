@@ -30,6 +30,12 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.context.SecurityContextRepository
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.security.web.header.writers.DelegatingRequestMatcherHeaderWriter
+import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter
+import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter.XFrameOptionsMode.DENY
+import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter.XFrameOptionsMode.SAMEORIGIN
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -156,6 +162,14 @@ class SecurityConfig(
             .csrf { it.csrfTokenRepository(csrfTokenRepository).ignoringRequestMatchers("/auth/logout", "/test-support/**") }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) }
             .securityContext { it.securityContextRepository(securityContextRepository) }
+            .headers { headers ->
+                // A receipt's PDF is drawn in an object on the site's own pages; nothing else is framed.
+                val receipts = PathPatternRequestMatcher.withDefaults().matcher("/declarations/receipts/*")
+                headers.frameOptions { it.disable() }
+                val elsewhere = NegatedRequestMatcher(receipts)
+                headers.addHeaderWriter(DelegatingRequestMatcherHeaderWriter(receipts, XFrameOptionsHeaderWriter(SAMEORIGIN)))
+                headers.addHeaderWriter(DelegatingRequestMatcherHeaderWriter(elsewhere, XFrameOptionsHeaderWriter(DENY)))
+            }
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter::class.java)
         publicAuthRateLimitFilterProvider.ifAvailable { rateLimitFilter ->
             http.addFilterBefore(rateLimitFilter, JwtAuthFilter::class.java)

@@ -1,0 +1,118 @@
+# A declaration asks the association to pay back what a person spent for it (api ADR-041): its
+# expenses, the receipts for one expense or for the whole declaration, and every change of state
+# with who made it. A receipt is a row in files; deleting a declaration takes its rows here with it.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-15-declarations.yaml
+      id: declarations
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: declarations
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_declarations, nullable: false}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: state, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: confirmed, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+              - column: {name: created_at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+        - addForeignKeyConstraint:
+            constraintName: fk_declarations_user_id
+            baseTableName: declarations
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - createTable:
+            tableName: declaration_expenses
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_declaration_expenses, nullable: false}
+              - column: {name: declaration_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: position, type: INT, constraints: {nullable: false}}
+              - column: {name: paid_on, type: DATE}
+              - column: {name: description, type: VARCHAR(1000), constraints: {nullable: false}}
+              - column: {name: amount_cents, type: INT}
+              # A committee or an event, named as it was when the expense was saved.
+              - column: {name: booked_to_kind, type: VARCHAR(16)}
+              - column: {name: booked_to_id, type: BIGINT}
+              - column: {name: booked_to_name, type: VARCHAR(255)}
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_expenses_declaration_id
+            baseTableName: declaration_expenses
+            baseColumnNames: declaration_id
+            referencedTableName: declarations
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createTable:
+            tableName: declaration_expense_receipts
+            columns:
+              - column: {name: expense_id, type: BIGINT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_expense_receipts, nullable: false}}
+              - column: {name: position, type: INT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_expense_receipts, nullable: false}}
+              - column: {name: file_id, type: BIGINT, constraints: {nullable: false}}
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_expense_receipts_expense_id
+            baseTableName: declaration_expense_receipts
+            baseColumnNames: expense_id
+            referencedTableName: declaration_expenses
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_expense_receipts_file_id
+            baseTableName: declaration_expense_receipts
+            baseColumnNames: file_id
+            referencedTableName: files
+            referencedColumnNames: id
+        - createTable:
+            tableName: declaration_receipts
+            columns:
+              - column: {name: declaration_id, type: BIGINT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_receipts, nullable: false}}
+              - column: {name: position, type: INT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_receipts, nullable: false}}
+              - column: {name: file_id, type: BIGINT, constraints: {nullable: false}}
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_receipts_declaration_id
+            baseTableName: declaration_receipts
+            baseColumnNames: declaration_id
+            referencedTableName: declarations
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_receipts_file_id
+            baseTableName: declaration_receipts
+            baseColumnNames: file_id
+            referencedTableName: files
+            referencedColumnNames: id
+        - createTable:
+            tableName: declaration_steps
+            columns:
+              - column: {name: declaration_id, type: BIGINT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_steps, nullable: false}}
+              - column: {name: position, type: INT, constraints: {primaryKey: true, primaryKeyName: pk_declaration_steps, nullable: false}}
+              - column: {name: state, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: at, type: DATETIME(6), constraints: {nullable: false}}
+              - column: {name: by_user_id, type: BIGINT}
+              - column: {name: reason, type: VARCHAR(1000)}
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_steps_declaration_id
+            baseTableName: declaration_steps
+            baseColumnNames: declaration_id
+            referencedTableName: declarations
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_declaration_steps_by_user_id
+            baseTableName: declaration_steps
+            baseColumnNames: by_user_id
+            referencedTableName: users
+            referencedColumnNames: id
+      rollback:
+        - dropTable: {tableName: declaration_steps}
+        - dropTable: {tableName: declaration_receipts}
+        - dropTable: {tableName: declaration_expense_receipts}
+        - dropTable: {tableName: declaration_expenses}
+        - dropTable: {tableName: declarations}

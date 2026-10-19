@@ -11,6 +11,7 @@ import net.blueshell.api.file.domain.FileTooLargeException
 import net.blueshell.api.file.domain.ImageDimensions
 import net.blueshell.api.file.domain.ImageRenditions
 import net.blueshell.api.file.domain.MediaTypes
+import net.blueshell.api.file.domain.PdfUploads
 import net.blueshell.api.file.domain.PublicImageUploadPreparer
 import net.blueshell.api.file.domain.ScratchFile
 import net.blueshell.api.file.domain.ScratchSpace
@@ -134,6 +135,9 @@ class FileService
                             // rather than converted away.
                             SvgUploads.enforce(staged.open())
                             null
+                        } else if (type.admitsPdf && PdfUploads.isDeclared(declaredMediaType)) {
+                            PdfUploads.enforce(staged.open())
+                            null
                         } else {
                             publicImageUploads.prepare(staged, type, declaredMediaType)
                         }
@@ -164,7 +168,8 @@ class FileService
                 } else {
                     "$sha256.webp"
                 }
-            val key = StoredFileNames.keyOf(type.directory, filename)
+            val directory = if (type.keptPerUploader) "${type.directory}/${uploader.id}" else type.directory
+            val key = StoredFileNames.keyOf(directory, filename)
             val mediaType =
                 prepared?.mediaType
                     ?: declaredMediaType.ifBlank { MediaTypes.ofName(filename) }
@@ -272,6 +277,16 @@ class FileService
             path: String,
             type: FileType,
         ): File? = repository.findByPath(path).orElse(null)?.takeIf { it.type == type && it.type.publiclyReadable }
+
+        /** A stored file of exactly this kind, or nothing; who may read it is the caller's to decide. */
+        @Transactional(readOnly = true)
+        fun findStored(
+            id: Long,
+            type: FileType,
+        ): File? = repository.findById(id).orElse(null)?.takeIf { it.type == type }
+
+        /** The bytes of [file], for an endpoint that checked who reads them. The caller closes the stream. */
+        fun openContent(file: File): InputStream = blobs.open(file.path)
 
         private fun populateAfterStore(
             file: File,

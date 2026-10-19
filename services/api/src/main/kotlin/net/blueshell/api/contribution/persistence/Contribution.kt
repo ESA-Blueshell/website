@@ -1,5 +1,6 @@
 package net.blueshell.api.contribution.persistence
 
+import jakarta.persistence.Column
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
 import jakarta.persistence.Entity
@@ -20,6 +21,7 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.io.Serial
 import java.io.Serializable
+import java.time.LocalDate
 
 @Entity
 @Table(
@@ -58,6 +60,10 @@ class Contribution(
     var contributionPeriod: ContributionPeriod,
 ) : AuditedSoftDeleteEntity(),
     Identifiable<Contribution.Id> {
+    /** The day it counts as paid: the day it was recorded, or an incasso's collection date (api ADR-040). */
+    @Column(name = "paid_on", nullable = false)
+    var paidOn: LocalDate = LocalDate.now()
+
     val userId: Long
         get() = id.userId ?: user.id ?: 0
 

@@ -930,7 +930,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && path === "/users/me/contributions") {
       return answer(route, "findOwnContributions", [
-        {periodId: 201, startDate: "2025-07-01", endDate: "2025-12-31", feeType: "FULL_YEAR_FEE", fee: 20, paid: true, paidAt: "2025-07-15T10:00:00Z"},
+        {periodId: 201, startDate: "2025-07-01", endDate: "2025-12-31", feeType: "FULL_YEAR_FEE", fee: 20, paid: true, paidOn: "2025-07-15"},
       ])
     }
     if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
@@ -1083,7 +1083,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && /^\/users\/\d+\/contributions$/.test(path)) {
       return answer(route, "findMemberContributions", [{
         periodId: 1, startDate: "2025-09-01", endDate: "2026-08-31", feeType: "FULL_YEAR_FEE", fee: 30,
-        paid: paidPeriods.has(1), paidAt: paidPeriods.has(1) ? "2025-10-01T10:00:00.000Z" : null,
+        paid: paidPeriods.has(1), paidOn: paidPeriods.has(1) ? "2025-10-01" : null,
         lastEmailAt: "2025-09-20T10:00:00.000Z", lastEmailKind: "REMINDER",
       }])
     }
@@ -1292,7 +1292,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
             fee: honorary ? null : period?.fullYearFee ?? 0,
             incasso: payingByIncasso.has(held.userId),
             paid: baseContributions.some((one) => one.userId === held.userId && one.contributionPeriodId === periodId),
-            paidAt: null,
+            paidOn: null,
             lastEmailAt: null,
             lastEmailKind: null,
           }

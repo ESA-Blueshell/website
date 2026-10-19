@@ -37,6 +37,7 @@ export {
   fetchIncassoFile,
   readIncassoPlan,
   readIncassoRun,
+  saveStorno,
   saveSubmitted,
   startIncasso,
   type IncassoCandidate,

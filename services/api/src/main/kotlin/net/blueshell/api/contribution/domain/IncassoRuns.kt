@@ -66,6 +66,8 @@ data class IncassoCollection(
     val mandateSignedOn: LocalDate?,
     val feeType: BulkFeeType,
     val amount: Double,
+    /** The day a storno was recorded for it; null while it stands. */
+    val stornoOn: LocalDate?,
 )
 
 data class IncassoRunView(
@@ -126,7 +128,8 @@ class IncassoRuns(
         val candidates = candidates(period).associateBy { it.second.userId }
         val refused = chosen.filter { candidates[it]?.second?.leftOut != null || it !in candidates }
         if (refused.isNotEmpty()) throw NotCollectable(refused.sorted())
-        if (!collectionDate.isAfter(LocalDate.now(clock))) throw CollectionDateNotAhead()
+        val earliest = LocalDate.now(clock).plusDays(NOTICE_DAYS)
+        if (collectionDate < earliest) throw CollectionDateTooSoon(earliest)
         if (collectionDate < period.startDate || collectionDate > period.endDate.plusMonths(MONTHS_PAST_PERIOD_END)) {
             throw CollectionDateOutsidePeriod()
         }
@@ -159,7 +162,11 @@ class IncassoRuns(
     @Transactional(readOnly = true)
     fun find(runId: Long): IncassoRunView = view(runs.findById(runId).orElseThrow { IncassoRunNotFound() })
 
-    /** The board uploaded the run's file in ING and confirmed it there. Saying so twice changes nothing. */
+    /**
+     * The board uploaded the run's file in ING and confirmed it there, so each collection counts as
+     * paid on the collection date (api ADR-040), which activates a pending membership. Saying so
+     * twice changes nothing.
+     */
     @Transactional
     fun markSubmitted(
         runId: Long,
@@ -170,6 +177,31 @@ class IncassoRuns(
             run.submittedAt = clock.instant()
             run.submittedBy = by
             runs.save(run)
+            notificationRows
+                .findByIncassoRunIdIn(listOf(requireNotNull(run.id)))
+                .filter { it.stornoOn == null }
+                .forEach { contributions.ensurePaid(it.userId, run.contributionPeriodId, run.collectionDate) }
+        }
+        return view(run)
+    }
+
+    /**
+     * The bank took one collection back, refused or refunded: it is unpaid again, and the member can
+     * be sent a reminder. The mandate stays; ending it is a separate act. Recording it twice changes nothing.
+     */
+    @Transactional
+    fun storno(
+        runId: Long,
+        userId: Long,
+    ): IncassoRunView {
+        val run = runs.findById(runId).orElseThrow { IncassoRunNotFound() }
+        if (run.submittedAt == null) throw StornoBeforeSubmitted()
+        val collection =
+            notificationRows.findByIncassoRunIdIn(listOf(runId)).firstOrNull { it.userId == userId } ?: throw NotInRun()
+        if (collection.stornoOn == null) {
+            collection.stornoOn = LocalDate.now(clock)
+            notificationRows.save(collection)
+            contributions.withdraw(userId, run.contributionPeriodId, run.collectionDate)
         }
         return view(run)
     }
@@ -205,6 +237,7 @@ class IncassoRuns(
                         mandateSignedOn = it.mandateSignedOn,
                         feeType = it.feeType,
                         amount = it.amount,
+                        stornoOn = it.stornoOn,
                     )
                 }.sortedBy { it.name }
         return IncassoRunView(
@@ -213,7 +246,7 @@ class IncassoRuns(
             collectionDate = run.collectionDate,
             statementText = run.statementText,
             collections = collections,
-            total = collections.sumOf { it.amount },
+            total = collections.filter { it.stornoOn == null }.sumOf { it.amount },
             createdAt = run.createdAt,
             submittedAt = run.submittedAt,
             fileParts = (collections.size + IngIncassoFile.MAX_COLLECTIONS - 1) / IngIncassoFile.MAX_COLLECTIONS,
@@ -226,7 +259,7 @@ class IncassoRuns(
         val inRun =
             notifications
                 .findByContributionPeriodId(requireNotNull(period.id))
-                .filter { it.incassoRunId != null }
+                .filter { it.incassoRunId != null && it.stornoOn == null }
                 .map { it.userId }
                 .toSet()
         val lastNotified =
@@ -278,6 +311,9 @@ class IncassoRuns(
     }
 
     companion object {
+        /** How long before the collection date the notifications go out at least (api ADR-040). */
+        const val NOTICE_DAYS = 14L
+
         /** ING's limit on the text on a bank statement. */
         const val STATEMENT_TEXT_MAX = 140
 

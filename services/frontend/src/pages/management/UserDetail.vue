@@ -138,7 +138,7 @@ const facts = computed(() => [
     testid: "user-standing",
   },
   latest.value
-    ? {label: `Contribution ${periodName(latest.value)}`, value: latest.value.paid ? "Paid" : "Not paid", sub: latest.value.paidAt ? `Recorded ${formatDay(latest.value.paidAt)}` : ""}
+    ? {label: `Contribution ${periodName(latest.value)}`, value: latest.value.paid ? "Paid" : "Not paid", sub: latest.value.paidOn ? `Paid ${formatDay(latest.value.paidOn)}` : ""}
     : {label: "Contribution", value: periodsFailed.value ? "Not read" : "None yet", sub: periodsFailed.value ? "Could not be read" : "No period as a member"},
   {label: "Account", value: person.value?.twoFactorOn ? "Two-factor on" : "No two-factor", sub: person.value?.locked ? "Locked" : "Open"},
 ])
@@ -526,7 +526,7 @@ watch(id, load, {immediate: true})
         </template>
         <template #paid="{row}">
           <state-mark :kind="row.paid ? 'in-sync' : 'extra'">
-            {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+            {{ row.paid ? `Paid${row.paidOn ? ` ${formatDay(row.paidOn)}` : ""}` : "Not paid" }}
           </state-mark>
           <span
             v-if="said?.periodId === row.periodId"

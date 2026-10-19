@@ -13,13 +13,13 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const period = (periodId: number, fields: Record<string, unknown> = {}) => ({
   periodId, startDate: `202${periodId}-09-01`, endDate: `202${periodId + 1}-08-31`,
-  feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, paid: false, paidAt: null, lastEmailAt: null, lastEmailKind: null, ...fields,
+  feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, paid: false, paidOn: null, lastEmailAt: null, lastEmailKind: null, ...fields,
 })
 
 describe("the reader's own contributions", () => {
   it("lists each period with its fee and whether it is paid, and owes nothing for an honorary one", async () => {
     api.findOwnContributions.mockResolvedValue({status: 200, data: [
-      period(5, {paid: true, paidAt: "2025-10-01T10:00:00Z"}),
+      period(5, {paid: true, paidOn: "2025-10-01"}),
       period(4),
       period(3, {feeType: null, fee: null}),
     ]})

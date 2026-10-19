@@ -24,9 +24,12 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.time.Clock
 import java.time.Instant
@@ -195,7 +198,7 @@ class IncassoRunsTest {
     }
 
     @Test
-    fun `refuses anybody who cannot be collected from, a date not ahead or outside the period, and a missing or long text`() {
+    fun `refuses anybody who cannot be collected from, a date under 14 days ahead or outside the period, and a missing or long text`() {
         val date = LocalDate.of(2026, 11, 1)
         assertThatThrownBy { incasso.start(4, emptyList(), emptyMap(), date, "x", 9) }
             .isInstanceOf(NothingToCollect::class.java)
@@ -203,8 +206,10 @@ class IncassoRunsTest {
             .isInstanceOf(NotCollectable::class.java)
             .extracting("facts")
             .isEqualTo(mapOf("userIds" to listOf(3L, 4L, 77L)))
-        assertThatThrownBy { incasso.start(4, listOf(1), emptyMap(), LocalDate.of(2026, 10, 1), "x", 9) }
-            .isInstanceOf(CollectionDateNotAhead::class.java)
+        assertThatThrownBy { incasso.start(4, listOf(1), emptyMap(), LocalDate.of(2026, 10, 14), "x", 9) }
+            .isInstanceOf(CollectionDateTooSoon::class.java)
+            .extracting("facts")
+            .isEqualTo(mapOf("earliest" to "2026-10-15"))
         assertThatThrownBy { incasso.start(4, listOf(1), emptyMap(), LocalDate.of(2028, 1, 1), "x", 9) }
             .isInstanceOf(CollectionDateOutsidePeriod::class.java)
         assertThatThrownBy { incasso.start(4, listOf(1), emptyMap(), date, " €! ", 9) }
@@ -249,5 +254,48 @@ class IncassoRunsTest {
 
         whenever(runs.findById(12)).thenReturn(Optional.empty())
         assertThatThrownBy { incasso.markSubmitted(12, 3) }.isInstanceOf(IncassoRunNotFound::class.java)
+    }
+
+    @Test
+    fun `marking a run sent to the bank records each collection as paid on the collection date, a storno aside`() {
+        val run = IncassoRun(4, LocalDate.of(2026, 11, 1), "Contributie", 9, Instant.EPOCH).also { it.id = 11 }
+        whenever(runs.findById(11)).thenReturn(Optional.of(run))
+        whenever(notificationRows.findByIncassoRunIdIn(listOf(11L))).thenReturn(
+            listOf(
+                IncassoNotification(mila, period, BulkFeeType.FULL_YEAR_FEE, 25.0, run.collectionDate, incassoRunId = 11),
+                IncassoNotification(zoe, period, BulkFeeType.FULL_YEAR_FEE, 25.0, run.collectionDate, incassoRunId = 11).apply {
+                    stornoOn = LocalDate.of(2026, 10, 1)
+                },
+            ),
+        )
+
+        incasso.markSubmitted(11, 3)
+        incasso.markSubmitted(11, 3)
+
+        verify(contributions, times(1)).ensurePaid(1, 4, LocalDate.of(2026, 11, 1))
+        verify(contributions, never()).ensurePaid(eq(2L), any(), any())
+    }
+
+    @Test
+    fun `a storno makes the collection unpaid again and leaves the mandate alone`() {
+        val run = IncassoRun(4, LocalDate.of(2026, 9, 20), "Contributie", 9, Instant.EPOCH).also { it.id = 11 }
+        val milas = IncassoNotification(mila, period, BulkFeeType.FULL_YEAR_FEE, 25.0, run.collectionDate, incassoRunId = 11)
+        whenever(runs.findById(11)).thenReturn(Optional.of(run))
+        whenever(notificationRows.findByIncassoRunIdIn(listOf(11L))).thenReturn(listOf(milas))
+
+        assertThatThrownBy { incasso.storno(11, 1) }.isInstanceOf(StornoBeforeSubmitted::class.java)
+        run.submittedAt = Instant.parse("2026-09-15T10:00:00Z")
+        assertThatThrownBy { incasso.storno(11, 2) }.isInstanceOf(NotInRun::class.java)
+
+        val view = incasso.storno(11, 1)
+
+        assertThat(milas.stornoOn).isEqualTo(LocalDate.of(2026, 10, 1))
+        verify(contributions).withdraw(eq(1), eq(4), any())
+        verify(notificationRows).save(milas)
+        assertThat(view.collections.single().stornoOn).isEqualTo(LocalDate.of(2026, 10, 1))
+        assertThat(view.total).isEqualTo(0.0)
+        verifyNoInteractions(payments)
+        incasso.storno(11, 1)
+        verify(contributions, times(1)).withdraw(eq(1), eq(4), any())
     }
 }

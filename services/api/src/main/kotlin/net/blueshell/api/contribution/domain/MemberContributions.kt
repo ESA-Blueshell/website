@@ -20,7 +20,8 @@ data class MemberPeriodContribution(
     val feeType: BulkFeeType?,
     val fee: Double?,
     val paid: Boolean,
-    val paidAt: Instant?,
+    /** The day it counts as paid; an incasso counts on its collection date. */
+    val paidOn: LocalDate?,
     val lastEmailAt: Instant?,
     val lastEmailKind: ContributionEmailKind?,
 )
@@ -65,7 +66,7 @@ class MemberContributions(
                     feeType = owes?.feeType,
                     fee = owes?.amount,
                     paid = payment != null,
-                    paidAt = payment?.createdAt,
+                    paidOn = payment?.paidOn,
                     lastEmailAt = lastEmail?.second,
                     lastEmailKind = lastEmail?.third,
                 )

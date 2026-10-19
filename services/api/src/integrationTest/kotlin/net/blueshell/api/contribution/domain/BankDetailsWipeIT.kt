@@ -99,7 +99,7 @@ class BankDetailsWipeIT : UserTestSupport() {
     fun `a mandate no longer collected from is wiped 13 months after its last collection, and keeps what it was collected under`() {
         val board = createUserWithRole(Role.BOARD)
         val (member, memberId) = onIncasso()
-        val collection = LocalDate.now().plusDays(7)
+        val collection = LocalDate.now().plusDays(14)
         collected(board, member, collection)
         stopCollecting(memberId)
 
@@ -154,7 +154,7 @@ class BankDetailsWipeIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val (member, memberId) = onIncasso()
         val period = createContributionPeriodFixture()
-        val collection = LocalDate.now().plusDays(7)
+        val collection = LocalDate.now().plusDays(14)
         mvc
             .perform(
                 post("/contributionPeriods/${period.id}/incassoRuns")
@@ -181,7 +181,7 @@ class BankDetailsWipeIT : UserTestSupport() {
         val applicant = createUserWithRole(Role.GUEST)
         authorise(applicant)
         val (member, memberId) = onIncasso()
-        val collection = LocalDate.now().plusDays(7)
+        val collection = LocalDate.now().plusDays(14)
         collected(board, member, collection)
 
         erasure.deleteUser(applicant.id!!)

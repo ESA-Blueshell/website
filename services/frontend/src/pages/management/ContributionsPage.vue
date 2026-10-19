@@ -397,7 +397,7 @@ void loadPeriods()
             :kind="row.paid ? 'in-sync' : 'extra'"
             :testid="`contribution-paid-${row.userId}`"
           >
-            {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+            {{ row.paid ? `Paid${row.paidOn ? ` ${formatDay(row.paidOn)}` : ""}` : "Not paid" }}
           </state-mark>
         </template>
         <template #lastEmail="{row}">
@@ -437,7 +437,7 @@ void loadPeriods()
               :kind="row.paid ? 'in-sync' : 'extra'"
               :testid="`contribution-paid-${row.userId}`"
             >
-              {{ row.paid ? `Paid${row.paidAt ? ` ${formatDay(row.paidAt)}` : ""}` : "Not paid" }}
+              {{ row.paid ? `Paid${row.paidOn ? ` ${formatDay(row.paidOn)}` : ""}` : "Not paid" }}
             </state-mark>
           </management-row>
         </template>

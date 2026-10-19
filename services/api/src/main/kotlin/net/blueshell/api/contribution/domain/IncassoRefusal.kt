@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.shared.refusal.Refusal
 import org.springframework.http.HttpStatus
+import java.time.LocalDate
 
 // A code and the facts, never the sentence: `domains/contribution/refusals.ts` writes that. See ADR-026.
 sealed class IncassoRefusal(
@@ -22,7 +23,15 @@ class NotCollectable(
         mapOf("userIds" to userIds),
     )
 
-class CollectionDateNotAhead : IncassoRefusal(HttpStatus.BAD_REQUEST, "CollectionDateNotAhead", "A collection date is after today.")
+/** The notifications go out as the run starts, at least 14 days before the collection (api ADR-040). */
+class CollectionDateTooSoon(
+    earliest: LocalDate,
+) : IncassoRefusal(
+        HttpStatus.BAD_REQUEST,
+        "CollectionDateTooSoon",
+        "A collection date is at least 14 days after the notifications go out.",
+        mapOf("earliest" to earliest.toString()),
+    )
 
 class CollectionDateOutsidePeriod :
     IncassoRefusal(
@@ -58,5 +67,9 @@ class MandateChanged(
         "A member's mandate changed after they were told.",
         mapOf("userIds" to userIds),
     )
+
+class StornoBeforeSubmitted : IncassoRefusal(HttpStatus.CONFLICT, "StornoBeforeSubmitted", "A storno follows a run sent to the bank.")
+
+class NotInRun : IncassoRefusal(HttpStatus.NOT_FOUND, "NotInRun", "That member is not collected from in this run.")
 
 class IncassoFilePartNotFound : IncassoRefusal(HttpStatus.NOT_FOUND, "IncassoFilePartNotFound", "The incasso has no such file.")

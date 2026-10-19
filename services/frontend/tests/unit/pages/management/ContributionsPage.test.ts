@@ -35,7 +35,7 @@ vi.mock("@/services/api", async (importOriginal) => ({
 
 const member = (userId: number, name: string, fields: Record<string, unknown> = {}) => ({
   userId, name, username: name.toLowerCase(), feeType: BulkFeeType.FULL_YEAR_FEE, fee: 30, incasso: false,
-  paid: false, paidAt: null, lastEmailAt: null, lastEmailKind: null, ...fields,
+  paid: false, paidOn: null, lastEmailAt: null, lastEmailKind: null, ...fields,
 })
 
 describe("the Contributions page", () => {
@@ -61,7 +61,7 @@ describe("the Contributions page", () => {
     api.findPeriodContributions.mockResolvedValue({status: 200, data: {
       periodId: 2,
       members: [
-        member(1, "Bea", {paid: true, paidAt: "2025-10-01T10:00:00Z", incasso: true}),
+        member(1, "Bea", {paid: true, paidOn: "2025-10-01", incasso: true}),
         member(2, "Ann", {lastEmailAt: "2025-09-20T10:00:00Z", lastEmailKind: ContributionEmailKind.REMINDER}),
         member(3, "Hon", {feeType: null, fee: null}),
       ],

@@ -10,6 +10,7 @@ import net.blueshell.api.user.api.PaymentDirectory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 /** One member of a period, with what they owe and whether and how they were asked. */
@@ -22,7 +23,8 @@ data class PeriodMember(
     val fee: Double?,
     val incasso: Boolean,
     val paid: Boolean,
-    val paidAt: Instant?,
+    /** The day it counts as paid; an incasso counts on its collection date. */
+    val paidOn: LocalDate?,
     val lastEmailAt: Instant?,
     val lastEmailKind: ContributionEmailKind?,
 )
@@ -56,7 +58,7 @@ class PeriodContributions(
     @Transactional(readOnly = true)
     fun of(periodId: Long): PeriodContributionsView {
         val period = periods.findById(periodId)
-        val paid = contributions.findByIdContributionPeriodId(periodId).associate { it.userId to it.createdAt }
+        val paid = contributions.findByIdContributionPeriodId(periodId).associate { it.userId to it.paidOn }
         val reminded = reminders.findByContributionPeriod_Id(periodId)
         val notified = notifications.findByContributionPeriod_Id(periodId)
         val emails =
@@ -79,7 +81,7 @@ class PeriodContributions(
                         fee = owes?.amount,
                         incasso = paying.getValue(userId).incasso,
                         paid = userId in paid,
-                        paidAt = paid[userId],
+                        paidOn = paid[userId],
                         lastEmailAt = lastEmail[userId]?.second,
                         lastEmailKind = lastEmail[userId]?.third,
                     )

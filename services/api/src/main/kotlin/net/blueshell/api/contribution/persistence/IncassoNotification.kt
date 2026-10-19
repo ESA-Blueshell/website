@@ -79,6 +79,9 @@ class IncassoNotification(
     /** The IBAN's country code and last two characters, as `NL34`, as collected from. */
     @Column(name = "iban_masked", length = 4, updatable = false)
     var ibanMasked: String? = null,
+    /** The day the treasurer recorded that the bank took the collection back, which makes it unpaid again. */
+    @Column(name = "storno_on")
+    var stornoOn: LocalDate? = null,
 ) : AuditedAutoIdEntity() {
     val userId: Long
         get() = user.id ?: 0

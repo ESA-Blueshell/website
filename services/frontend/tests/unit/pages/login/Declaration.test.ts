@@ -45,6 +45,7 @@ const receipt = {id: 501, path: "501.webp", name: "bill.webp", type: "image/webp
 const at = "2026-10-02T10:00:00Z"
 const held = (over: Partial<Held> = {}): Held => ({
   id: 40,
+  submitterId: 12,
   submitter: "Ann Vos",
   state: "DRAFT",
   confirmed: true,

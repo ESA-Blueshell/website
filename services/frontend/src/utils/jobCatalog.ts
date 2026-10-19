@@ -50,6 +50,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "and where to ask about it. Sent only when the board asks for it while removing the " +
       "sign-up; safe to re-run.",
   },
+  "email.declaration-returned": {
+    title: "Send declaration sent back or rejected email",
+    description:
+      "Tells the submitter the board sent their declaration back or rejected it, quoting the " +
+      "board's reason. Sends nothing once the declaration is deleted; safe to re-run.",
+  },
   "email.contribution-reminder": {
     title: "Send contribution reminder",
     description:

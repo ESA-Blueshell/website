@@ -11,6 +11,8 @@ interface DeclarationRepository : JpaRepository<Declaration, Long> {
         userId: Long,
     ): Declaration?
 
+    fun findAllByStateNotOrderByCreatedAtDescIdDesc(state: DeclarationState): List<Declaration>
+
     /** The declarations a receipt is on, as one of their own or one of an expense's. */
     @Query(
         """

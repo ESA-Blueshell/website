@@ -15,6 +15,7 @@ import java.time.LocalDate
 data class DeclarationResponse(
     val id: Long,
     val state: DeclarationState,
+    val submitterId: Long,
     @field:Schema(description = "The submitter's name as it is now.")
     val submitter: String,
     val confirmed: Boolean,
@@ -82,6 +83,7 @@ class DeclarationResponses(
             DeclarationResponse(
                 id = declaration.id!!,
                 state = declaration.state,
+                submitterId = declaration.userId,
                 submitter = names[declaration.userId].orEmpty(),
                 confirmed = declaration.confirmed,
                 createdAt = declaration.createdAt,

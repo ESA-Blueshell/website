@@ -17,6 +17,8 @@ import org.springframework.modulith.PackageInfo
         "committee :: api",
         // CommitteeService answers the Committee row it was asked for.
         "committee :: entities",
+        // The submitter hears of a declaration sent back or rejected through an EmailJob.
+        "email :: api",
         // An expense names an event, checked and named through EventService.
         "event :: api",
         // EventService answers the Event row it was asked for.

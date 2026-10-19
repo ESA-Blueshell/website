@@ -41,6 +41,7 @@ const photo = {id: 501, name: "bill.webp", mediaType: "image/webp", url: "/decla
 const held: DeclarationResponse = {
   id: 40,
   state: DeclarationState.DRAFT,
+  submitterId: 12,
   submitter: "Ann Vos",
   confirmed: false,
   createdAt: "2026-10-01T10:00:00Z",

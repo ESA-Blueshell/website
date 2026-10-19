@@ -4,12 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 import net.blueshell.api.declaration.domain.BookingChoice
 import net.blueshell.api.declaration.domain.DraftContent
 import net.blueshell.api.declaration.domain.ExpenseContent
 import net.blueshell.api.declaration.persistence.BookingKind
 import net.blueshell.api.declaration.persistence.DeclarationExpense
+import net.blueshell.api.declaration.persistence.DeclarationStep
 import java.time.LocalDate
 
 private const val EXPENSES_MAX = 50
@@ -52,4 +54,12 @@ data class ExpenseRequest(
 data class BookingRequest(
     val kind: BookingKind,
     val id: Long,
+)
+
+/** Why the board sends a declaration back or rejects it; the submitter is emailed it as written. */
+@Schema(name = "DeclarationReasonRequest")
+data class DeclarationReasonRequest(
+    @field:NotBlank
+    @field:Size(max = DeclarationStep.REASON_MAX)
+    val reason: String = "",
 )

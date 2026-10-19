@@ -515,6 +515,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import("@/pages/management/IncassoRun.vue"),
         meta: {title: "Incassos"},
       },
+      {path: "declarations", name: "declarationManager", component: () => import("@/pages/management/DeclarationManager.vue"), meta: {title: "Declarations"}},
+      {
+        path: "declarations/:id(\\d+)",
+        name: "declarationReview",
+        component: () => import("@/pages/management/DeclarationReview.vue"),
+        meta: {title: "Declaration"},
+      },
       {
         path: "contributions/:periodId(\\d+)?",
         name: "contributions",

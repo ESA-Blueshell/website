@@ -4,6 +4,11 @@
  */
 import {apiUrl} from "@/services/api/apiUrl"
 import {
+  approveDeclaration as approve,
+  findDeclaration,
+  listDeclarations as listAll,
+  rejectDeclaration as reject,
+  sendBackDeclaration as sendBack,
   type DeclarationDraftRequest,
   type DeclarationResponse,
   deleteDeclarationDraft,
@@ -32,6 +37,7 @@ const asReceipt = (receipt: ReceiptResponse): Receipt => ({
 
 const shown = (declaration: DeclarationResponse): Declaration => ({
   id: declaration.id,
+  submitterId: declaration.submitterId,
   submitter: declaration.submitter,
   state: declaration.state,
   confirmed: declaration.confirmed,
@@ -89,6 +95,29 @@ export const submitDeclaration = (id: number) =>
 
 export const withdrawDeclaration = (id: number) =>
   declarationRefusable(withdraw({path: {id}}), "We could not withdraw the declaration. Try again.")
+
+/** Every declaration that reached the board, newest first, or nothing where they could not be read. */
+export async function listDeclarations(): Promise<Declaration[] | null> {
+  const held = await readOr(listAll(), null)
+  return held ? held.map(shown) : null
+}
+
+/** One declaration as the board reads it, or nothing where there is none or it could not be read. */
+export async function readDeclaration(id: number): Promise<Declaration | null> {
+  const held = await readOr(findDeclaration({path: {id}}), null)
+  return held ? shown(held) : null
+}
+
+export const approveDeclaration = (id: number) =>
+  declarationRefusable(approve({path: {id}}), "We could not approve the declaration. Try again.")
+
+/** Back to a draft for its submitter to change; they are emailed [reason]. */
+export const sendBackDeclaration = (id: number, reason: string) =>
+  declarationRefusable(sendBack({path: {id}, body: {reason}}), "We could not send the declaration back. Try again.")
+
+/** Final; the submitter is emailed [reason]. */
+export const rejectDeclaration = (id: number, reason: string) =>
+  declarationRefusable(reject({path: {id}, body: {reason}}), "We could not reject the declaration. Try again.")
 
 export const deleteDraft = (id: number) =>
   accepted(deleteDeclarationDraft({path: {id}}), "We could not delete the draft. Try again.")

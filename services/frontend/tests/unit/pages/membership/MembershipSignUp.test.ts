@@ -405,7 +405,7 @@ describe("an applicant carrying on from where they were", () => {
     }
 
     it("asks for the address confirmation when the application goes in first", async () => {
-      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: false, membershipStarted: false}))
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: false, membershipStarted: false, collectedByIncasso: false}))
       const wrapper = await mount()
 
       await agreeAndSubmit(wrapper)
@@ -416,18 +416,28 @@ describe("an applicant carrying on from where they were", () => {
     })
 
     it("says the membership started when the address was confirmed already", async () => {
-      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: true}))
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: true, collectedByIncasso: false}))
       const wrapper = await mount()
 
       await agreeAndSubmit(wrapper)
 
       expect(wrapper.find('[data-testid="membership-complete-panel"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="membership-complete-incasso"]').exists()).toBe(false)
       expect(sessionStorage.getItem(SIGNUP_TOKEN_KEY)).toBeNull()
+    })
+
+    it("says the first contribution is collected by incasso when it was set up while signing up", async () => {
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: true, collectedByIncasso: true}))
+      const wrapper = await mount()
+
+      await agreeAndSubmit(wrapper)
+
+      expect(wrapper.get('[data-testid="membership-complete-incasso"]').text()).toContain("collect it by incasso")
     })
 
     it("hands over to sign in when the application goes in on an account that is a member already", async () => {
       vi.mocked(resumeSignup).mockResolvedValue(answer(resumeSignup, {...resumed, emailConfirmed: true, address: onFile}))
-      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: false}))
+      vi.mocked(apply).mockResolvedValue(answer(apply, {emailConfirmed: true, membershipStarted: false, collectedByIncasso: false}))
       const wrapper = await mount()
 
       await agreeAndSubmit(wrapper)

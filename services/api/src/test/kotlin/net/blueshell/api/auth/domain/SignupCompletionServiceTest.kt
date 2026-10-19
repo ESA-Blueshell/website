@@ -142,6 +142,15 @@ class SignupCompletionServiceTest {
     }
 
     @Test
+    fun `says when the first contribution is collected by incasso rather than asked by transfer`() {
+        applicant()
+        whenever(memberships.create(any())).thenAnswer { it.arguments[0] }
+        whenever(joiningAsk.askOnJoining(USER_ID, LocalDate.now())).thenReturn(true)
+
+        assertThat(service.completeIfReady(USER_ID).collectedByIncasso).isTrue()
+    }
+
+    @Test
     fun `a second call does not ask twice`() {
         applicant()
         whenever(memberships.create(any())).thenAnswer { it.arguments[0] }

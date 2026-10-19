@@ -51,7 +51,7 @@ class MembershipController(
         @AuthenticationPrincipal principal: UserPrincipal?,
     ): SignupOutcomeResponse {
         val outcome = useCases.apply(principal!!.id, request.conditionsAccepted)
-        return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted)
+        return SignupOutcomeResponse(outcome.emailConfirmed, outcome.membershipStarted, outcome.collectedByIncasso)
     }
 
     @PreAuthorize("hasPermission('__NO_TARGET__', 'Membership', 'write')")

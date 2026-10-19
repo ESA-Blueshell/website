@@ -66,6 +66,15 @@ describe("ActivateUser page", () => {
     expect(mockRouterPush).toHaveBeenCalledWith({name: "login"})
   })
 
+  it("says the first contribution is collected by incasso when it was set up while signing up", async () => {
+    mockActivateUser.mockResolvedValue({membershipStarted: true, collectedByIncasso: true})
+
+    const wrapper = mountInApp(ActivateUser)
+    await settle()
+
+    expect(wrapper.text()).toContain("We collect your first contribution by incasso")
+  })
+
   it("says the membership has started when confirmation completed it", async () => {
     mockActivateUser.mockResolvedValue({membershipStarted: true})
 

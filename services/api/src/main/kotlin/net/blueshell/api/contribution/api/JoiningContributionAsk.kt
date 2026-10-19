@@ -16,9 +16,11 @@ interface JoiningContributionAsk {
      * [membershipStartDate] both prices the ask and starts the clock: what is owed follows from
      * where it falls against the period's cutoff, and the payment window is counted from it
      * rather than from whenever this runs. Does nothing when there is no period to price against.
+     * True where a mandate with bank details stands: nothing is asked and the next incasso run
+     * collects it, telling them 14 days ahead (api ADR-040).
      */
     fun askOnJoining(
         userId: Long,
         membershipStartDate: LocalDate,
-    )
+    ): Boolean
 }

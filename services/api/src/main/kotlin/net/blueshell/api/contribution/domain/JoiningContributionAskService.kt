@@ -6,6 +6,7 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.shared.enums.MemberType
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.user.api.PaymentDirectory
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -26,16 +27,19 @@ class JoiningContributionAskService(
     private val users: UserService,
     private val reminders: ContributionReminderService,
     private val jobs: JobQueue,
+    private val payments: PaymentDirectory,
 ) : JoiningContributionAsk {
     @Transactional
     override fun askOnJoining(
         userId: Long,
         membershipStartDate: LocalDate,
-    ) {
+    ): Boolean {
+        // A paper mandate without bank details collects nothing, so it is asked by transfer.
+        if (payments.of(listOf(userId)).getValue(userId).collectable != null) return true
         val period = periods.findCurrentOrLatestContributionPeriod()
         if (period == null) {
             log.info("No contribution period, so user {} joins without being asked for a fee", userId)
-            return
+            return false
         }
 
         // A new member is always regular, so a fee type always resolves: only honorary has
@@ -64,6 +68,7 @@ class JoiningContributionAskService(
             ContributionJobs.JoiningContributionPayload(requireNotNull(ask.id)),
             JobTrigger.SITE_ACTION,
         )
+        return false
     }
 
     companion object {

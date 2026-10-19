@@ -21,6 +21,10 @@ class NoMandateRecorded : MandateRefusal(HttpStatus.NOT_FOUND, "NoMandateRecorde
 /** Only a mandate the member authorised on the site has a PDF: a paper one is its own record, and a wiped one has nothing to print. */
 class NoOnlineMandate : MandateRefusal(HttpStatus.NOT_FOUND, "NoOnlineMandate", "This person has no online mandate to print.")
 
+class BicMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "BicMissing", "A bank outside the Netherlands is named by its BIC.")
+
+class InvalidBic : MandateRefusal(HttpStatus.BAD_REQUEST, "InvalidBic", "That is not a valid BIC.")
+
 class AccountHolderMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "AccountHolderMissing", "A mandate names the account holder.")
 
 /** A mandate's sealed bank details do not open for their member: they were changed outside the site. */

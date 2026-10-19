@@ -114,7 +114,7 @@ class MandateController(
             userId = userId,
             standing = mandates.standing(this),
             endedOn = held?.endedOn,
-            accountHolder = held?.takeUnless { it.wiped }?.let { mandates.accountHolderOf(userId, it) },
+            accountHolder = held?.takeIf { mandateAccountKept }?.let { mandates.accountHolderOf(userId) },
             ibanCountry = MaskedIban.of(held?.ibanMasked)?.country,
             ibanLastTwo = MaskedIban.of(held?.ibanMasked)?.lastTwo,
             reference = held?.reference,
@@ -124,7 +124,7 @@ class MandateController(
             recordedAt = held?.recordedAt,
             kind = held?.kind,
             authorisedAt = held?.authorisedAt,
-            bankDetailsWiped = held?.wiped == true,
+            bankDetailsWiped = mandateAccountGone,
         )
     }
 }

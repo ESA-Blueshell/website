@@ -4,25 +4,29 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.Repository
 import org.springframework.data.repository.query.Param
+import java.time.Instant
 import java.time.LocalDate
 
-/** A person whose mandate still holds sealed values. */
-interface StoppedMandateRow {
+/** A person whose bank account no standing mandate is given for, with when it was put on file. */
+interface StoppedAccountRow {
     val userId: Long
+
+    /** The reference of the mandate given for this account, or empty where none was. */
     val reference: String
+    val recordedAt: Instant
 }
 
 /** The mandates the retention rule judges, and the wipe it ends with. */
 interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
     @Query(
         value =
-            "SELECT p.user_id AS userId, p.mandate_reference AS reference FROM payment_details p " +
-                "WHERE p.mandate_iban IS NOT NULL AND " + STOPPED,
+            "SELECT p.user_id AS userId, " + GIVEN_FOR + " AS reference, p.account_recorded_at AS recordedAt " +
+                "FROM payment_details p WHERE p.account_iban IS NOT NULL AND " + STOPPED,
         nativeQuery = true,
     )
     fun findStopped(
         @Param("today") today: LocalDate,
-    ): List<StoppedMandateRow>
+    ): List<StoppedAccountRow>
 
     /**
      * Wipes the mandate only if it is still the one that was judged and still stopped: the row is
@@ -32,8 +36,10 @@ interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
     @Modifying
     @Query(
         value =
-            "UPDATE payment_details p SET p.mandate_iban = NULL, p.mandate_account_holder = NULL, p.mandate_address = NULL " +
-                "WHERE p.user_id = :userId AND p.mandate_iban IS NOT NULL AND p.mandate_reference = :reference AND " + STOPPED,
+            "UPDATE payment_details p SET p.account_iban = NULL, p.account_holder = NULL, p.account_bic = NULL, " +
+                "p.account_iban_masked = NULL, p.account_recorded_at = NULL, p.account_version = NULL, p.mandate_address = NULL, " +
+                "p.mandate_iban = NULL, p.mandate_account_holder = NULL " +
+                "WHERE p.user_id = :userId AND p.account_iban IS NOT NULL AND " + GIVEN_FOR + " = :reference AND " + STOPPED,
         nativeQuery = true,
     )
     fun wipe(
@@ -55,8 +61,23 @@ interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
         @Param("today") today: LocalDate,
     ): Int
 
+    /** The copy the release before ADR-041 still reads; the account replacing or leaving clears it too. */
+    @Modifying
+    @Query(
+        value = "UPDATE payment_details SET mandate_iban = NULL, mandate_account_holder = NULL WHERE user_id = :userId",
+        nativeQuery = true,
+    )
+    fun clearMandateCopy(
+        @Param("userId") userId: Long,
+    ): Int
+
     private companion object {
-        // Ended by today: the member stopped it, its account was replaced, or their membership ended.
-        const val STOPPED = "(p.mandate_ended_on IS NOT NULL AND p.mandate_ended_on <= :today)"
+        // Only a mandate given for the account on file says when that account was last collected from.
+        const val GIVEN_FOR = "(CASE WHEN p.mandate_account_version = p.account_version THEN p.mandate_reference ELSE '' END)"
+
+        // No standing mandate is given for the account on file: stopped, replaced, or never signed (api ADR-041).
+        const val STOPPED =
+            "NOT (p.mandate_reference IS NOT NULL AND (p.mandate_ended_on IS NULL OR p.mandate_ended_on > :today) " +
+                "AND p.mandate_account_version = p.account_version)"
     }
 }

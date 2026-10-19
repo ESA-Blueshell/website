@@ -33,7 +33,10 @@ class BankDetailsRetention(
     fun wipeExpired(): Int {
         val today = LocalDate.now(clock)
         return mandates.stopped(today).count { stopped ->
-            val last = notifications.lastCollectionDate(stopped.userId, stopped.reference, today)
+            // An account no mandate was ever given for counts from the day it was put on file instead.
+            val last =
+                notifications.lastCollectionDate(stopped.userId, stopped.reference, today)
+                    ?: stopped.recordedOn.takeIf { stopped.reference.isEmpty() }
             val disputable = last != null && last.plusMonths(DISPUTE_MONTHS).isAfter(today)
             val onItsWay = notifications.countPendingCollections(stopped.userId, stopped.reference, today) > 0
             !disputable && !onItsWay && mandates.wipe(stopped, today)

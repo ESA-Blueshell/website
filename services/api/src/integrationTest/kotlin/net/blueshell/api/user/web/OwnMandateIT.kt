@@ -167,13 +167,13 @@ class OwnMandateIT : UserTestSupport() {
             .perform(get("/users/me/mandate").with(signedIn(applicant)))
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
 
-        // A second step on the token changes details already on file, which the account's log keeps.
+        // A second step on the token with another IBAN changes the account on file, which the account's log keeps.
         mvc
             .perform(
                 put("/signup/mandate")
                     .header(SignupHeaders.SIGNUP_TOKEN, token)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(body),
+                    .content(body.replace("NL91ABNA0417164300", "NL20INGB0001234567")),
             ).andExpect(status().isNoContent)
         mvc
             .perform(get("/users/${applicant.id}/security-events").with(signedIn(createUserWithRole(Role.ADMIN))))

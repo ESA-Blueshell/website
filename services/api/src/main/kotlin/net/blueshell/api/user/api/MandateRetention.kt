@@ -7,16 +7,18 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.LocalDate
 
-/** A mandate no longer collected from, with its sealed bank details still kept. */
-data class StoppedMandate(
+/** A bank account no standing mandate is given for, still kept sealed. */
+data class StoppedAccount(
     val userId: Long,
+    /** The mandate given for this account, whose collections it may be disputed under; empty where none was. */
     val reference: String,
+    val recordedOn: LocalDate,
 )
 
 /**
- * How long a mandate's sealed bank details are kept once collecting stops. Under SEPA a member can
- * dispute a debit for 13 months, so the details outlive the last collection by that long and are
- * wiped then; what was collected under, the reference, the signed-on date and the masked IBAN, stays.
+ * How long a bank account is kept once no mandate stands for it. Under SEPA a member can dispute a
+ * debit for 13 months, so the account outlives its last use by that long and is wiped then; what
+ * was collected under, the reference, the signed-on date and the masked IBAN, stays (api ADR-041).
  */
 @Service
 class MandateRetention(
@@ -28,7 +30,8 @@ class MandateRetention(
      * its membership or with an erased account.
      */
     @Transactional(readOnly = true)
-    fun stopped(today: LocalDate): List<StoppedMandate> = mandates.findStopped(today).map { StoppedMandate(it.userId, it.reference) }
+    fun stopped(today: LocalDate): List<StoppedAccount> =
+        mandates.findStopped(today).map { StoppedAccount(it.userId, it.reference, it.recordedAt.atZone(clock.zone).toLocalDate()) }
 
     /**
      * Empties the sealed IBAN, account holder and address of [stopped], and keeps the rest of it.
@@ -36,7 +39,7 @@ class MandateRetention(
      */
     @Transactional
     fun wipe(
-        stopped: StoppedMandate,
+        stopped: StoppedAccount,
         today: LocalDate,
     ): Boolean {
         val wiped = mandates.wipe(stopped.userId, stopped.reference, today) == 1

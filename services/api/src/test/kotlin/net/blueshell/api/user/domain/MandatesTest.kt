@@ -7,6 +7,7 @@ import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.MandateEnded
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.domain.sealing.LocalSealer
 import net.blueshell.api.user.domain.sealing.Sealed
@@ -51,7 +52,7 @@ class MandatesTest {
     private val stepUp: net.blueshell.api.security.StepUp = mock()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
     private val today = LocalDate.of(2026, 9, 30)
-    private val mandates = Mandates(payments, sealing, clock, AfterCommitEventPublisher(published))
+    private val mandates = Mandates(payments, sealing, clock, AfterCommitEventPublisher(published), mock())
     private val currentUser: CurrentUserProvider = mock()
     private val home = MandateAddressRequest("NL", "Enschede", "Hallenweg", "5", "7522NH")
     private val online = OnlineAuthorisation("2026-10", home.asFields())
@@ -62,6 +63,9 @@ class MandatesTest {
     init {
         held[12] = details
         whenever(payments.findByUserId(any())).thenAnswer { held[it.arguments[0] as Long] }
+        whenever(payments.findByUserIdIn(any())).thenAnswer { asked ->
+            (asked.arguments[0] as Collection<*>).mapNotNull { held[it as Long] }
+        }
         whenever(payments.save(any<PaymentDetails>())).thenAnswer { saving ->
             (saving.arguments[0] as PaymentDetails).also { held[it.userId] = it }
         }
@@ -81,8 +85,8 @@ class MandatesTest {
         assertThat(answer.recordedBy).isEqualTo(12)
         assertThat(answer.recordedAt).isEqualTo(now)
         assertThat(details.mandate!!.standsOn(today)).isTrue()
-        assertThat(details.mandate!!.sealedIban).doesNotContain("0417164300")
-        assertThat(mandates.bankDetailsOf(details.userId, details.mandate!!).iban.value).isEqualTo("NL91ABNA0417164300")
+        assertThat(details.bankAccount!!.sealedIban).doesNotContain("0417164300")
+        assertThat(mandates.bankDetailsOf(details.userId).iban.value).isEqualTo("NL91ABNA0417164300")
 
         val json = JsonMapper.builder().findAndAddModules().build()
         for (response in listOf(answer, controller.findMandate(12))) {
@@ -123,7 +127,7 @@ class MandatesTest {
         assertThat(request.toString()).doesNotContain("0417").contains("****4300")
         mandates.record(12, request.iban, request.accountHolder, request.signedOn, null)
         assertThat(details.mandate.toString()).doesNotContain("0417")
-        assertThat(mandates.bankDetailsOf(details.userId, details.mandate!!).toString()).doesNotContain("0417")
+        assertThat(mandates.bankDetailsOf(details.userId).toString()).doesNotContain("0417")
         val empty = net.blueshell.api.user.persistence.IncassoMandate::class.java.getDeclaredConstructor().newInstance()
         assertThat(empty).isNotNull
         assertThat(PaymentDetails::class.java.getDeclaredConstructor().newInstance()).isNotNull
@@ -167,7 +171,7 @@ class MandatesTest {
         assertThat(kept.mandate!!.standsOn(today)).isTrue()
         assertThat(kept.mandate!!.let { listOf(it.kind, it.authorisedAt, it.wordingVersion, it.authorisedBy) })
             .containsExactly(MandateKind.ONLINE, now, "2026-10", 12L)
-        assertThat(mandates.bankDetailsOf(12, kept.mandate!!).iban.value).isEqualTo("GB82WEST12345698765432")
+        assertThat(mandates.bankDetailsOf(12).iban.value).isEqualTo("GB82WEST12345698765432")
         assertThatThrownBy { mandates.setUpOwn(12, "nope", "Ann", online) }.isInstanceOf(InvalidIban::class.java)
         assertThatThrownBy { mandates.setUpOwn(12, "NL91ABNA0417164300", " ", online) }
             .isInstanceOf(AccountHolderMissing::class.java)
@@ -182,6 +186,17 @@ class MandatesTest {
         signup.setUp(12, "GB82WEST12345698765432", "Ann", "2026-10", online.address)
 
         verify(published).publishEvent(isA<BankDetailsChanged>())
+    }
+
+    @Test
+    fun `whoever records a mandate over an account on file, the person is told when it names another account`() {
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
+        mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 2), 3)
+        verify(published, never()).publishEvent(isA<BankDetailsChanged>())
+
+        mandates.record(12, "GB82WEST12345698765432", "Ann Vos", LocalDate.of(2026, 9, 3), 3)
+
+        verify(published).publishEvent(BankDetailsChanged(12, MaskedIban("GB", "32")))
     }
 
     @Test
@@ -220,7 +235,7 @@ class MandatesTest {
         mandates.end(12, today.plusMonths(3))
 
         assertThat(mandates.stands(details.mandate)).isTrue()
-        assertThat(mandates.collectable(12)).isNotNull()
+        assertThat(details.collectableMandate(today)).isNotNull()
         assertThat(mandates.standing(details)).isEqualTo(IncassoStanding.MANDATE_RECORDED)
         assertThat(details.mandate!!.standsOn(today.plusMonths(3))).isFalse()
         assertThat(mandates.stands(null)).isFalse()
@@ -259,7 +274,7 @@ class MandatesTest {
     @Test
     fun `seals the IBAN and the account holder in one call, each to its field and the member, on one key version`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
-        val held = details.mandate!!
+        val held = details.bankAccount!!
 
         verify(sealer).seal(
             "api-bank-details",
@@ -269,18 +284,18 @@ class MandatesTest {
             ),
         )
         assertThat(held.sealedAccountHolder).doesNotContain("Ann")
-        assertThat(keyVersionOf(held.sealedIban!!)).isEqualTo(keyVersionOf(held.sealedAccountHolder!!))
+        assertThat(keyVersionOf(held.sealedIban)).isEqualTo(keyVersionOf(held.sealedAccountHolder))
     }
 
     @Test
     fun `a sealed account does not open for another member, and many open in one call`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
-        val held = details.mandate!!
+        this.held[13] = PaymentDetails(13).apply { bankAccount = details.bankAccount }
 
-        assertThatThrownBy { mandates.bankDetailsOf(details.userId + 1, held) }.isInstanceOf(BankDetailsUnopenable::class.java)
+        assertThatThrownBy { mandates.bankDetailsOf(13) }.isInstanceOf(BankDetailsUnopenable::class.java)
         assertThat(controller.findMandate(12).accountHolder).isEqualTo("Ann Vos")
 
-        val opened = mandates.bankDetailsOf(listOf(details.userId to held, details.userId to held))
+        val opened = mandates.bankDetailsOf(listOf(details.userId, details.userId))
         assertThat(opened.map { it.accountHolder }).containsExactly("Ann Vos", "Ann Vos")
         verify(sealer).open(eq("api-bank-details"), argThat { size == 4 })
     }
@@ -288,7 +303,7 @@ class MandatesTest {
     @Test
     fun `with the key out of reach a mandate is refused, and the panel shows no account holder`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
-        val recorded = details.mandate!!.sealedIban
+        val recorded = details.bankAccount!!.sealedIban
         doThrow(SealingUnavailable()).whenever(sealer).seal(any(), any())
         doThrow(SealingUnavailable()).whenever(sealer).open(any(), any())
 
@@ -304,7 +319,7 @@ class MandatesTest {
         }.isInstanceOf(SealingUnavailable::class.java)
         assertThat(held).doesNotContainKey(99)
 
-        assertThat(details.mandate!!.sealedIban).isEqualTo(recorded)
+        assertThat(details.bankAccount!!.sealedIban).isEqualTo(recorded)
         val panel = controller.findMandate(12)
         assertThat(panel.accountHolder).isNull()
         assertThat(listOf(panel.ibanCountry, panel.ibanLastTwo)).containsExactly("NL", "00")
@@ -314,13 +329,13 @@ class MandatesTest {
     fun `a mandate that no longer opens for its member can be recorded again, under a new reference`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
         val elsewhere = sealing.seal(details.userId + 1, requireNotNull(Iban.parse("NL91ABNA0417164300")), "Somebody Else")
-        details.mandate!!.sealedIban = elsewhere.iban
-        details.mandate!!.sealedAccountHolder = elsewhere.accountHolder
+        details.bankAccount!!.sealedIban = elsewhere.iban
+        details.bankAccount!!.sealedAccountHolder = elsewhere.accountHolder
 
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 20), 3)
 
         assertThat(details.mandate!!.reference).isEqualTo("BLUESHELL-12-20260920")
-        assertThat(mandates.bankDetailsOf(details.userId, details.mandate!!).accountHolder).isEqualTo("Ann Vos")
+        assertThat(mandates.bankDetailsOf(details.userId).accountHolder).isEqualTo("Ann Vos")
     }
 
     @Test
@@ -360,7 +375,8 @@ class MandatesTest {
         assertThat(held.authorisedBy).isEqualTo(details.userId)
         assertThat(held.sealedAddress).isNotNull().doesNotContain("Hallenweg").doesNotContain("Enschede")
         verify(sealer).seal(eq("api-bank-details"), argThat { size == 3 && this[2].context == "mandate-address:${details.userId}" })
-        assertThat(listOf(held.sealedIban!!, held.sealedAccountHolder!!, held.sealedAddress!!).map(::keyVersionOf).distinct()).hasSize(1)
+        val account = details.bankAccount!!
+        assertThat(listOf(account.sealedIban, account.sealedAccountHolder, held.sealedAddress!!).map(::keyVersionOf).distinct()).hasSize(1)
         assertThat(controller.findMandate(12).let { it.kind to it.authorisedAt }).isEqualTo(MandateKind.ONLINE to now)
         assertThat(MandateWording.textOf(held.wordingVersion!!)).startsWith("I authorise ESA Blueshell")
         assertThat(MandateWording.textOf("1999-01")).isNull()
@@ -422,19 +438,15 @@ class MandatesTest {
     fun `a wiped mandate is a record only, with nothing to collect from or reveal, and recording anew starts a new one`() {
         mandates.record(12, "NL91ABNA0417164300", "Ann Vos", LocalDate.of(2026, 9, 1), 3)
         val held = details.mandate!!
-        held.sealedIban = null
-        held.sealedAccountHolder = null
+        details.bankAccount = null
         held.endedOn = LocalDate.of(2026, 9, 2)
 
-        assertThat(held.wiped).isTrue()
+        assertThat(details.mandateAccountKept).isFalse()
         assertThat(details.collectableMandate(today)).isNull()
         assertThat(details.incassoStanding(today)).isEqualTo(IncassoStanding.NONE)
         assertThat(mandates.own(details.userId).standing).isEqualTo(IncassoStanding.NONE)
         assertThatThrownBy { controller.revealIban(12) }.isInstanceOf(NoMandateRecorded::class.java)
-        assertThatThrownBy { mandates.bankDetailsOf(details.userId, held) }.isInstanceOf(NoMandateRecorded::class.java)
-        held.sealedIban = "local:v1:x"
-        assertThatThrownBy { mandates.bankDetailsOf(details.userId, held) }.isInstanceOf(NoMandateRecorded::class.java)
-        held.sealedIban = null
+        assertThatThrownBy { mandates.bankDetailsOf(details.userId) }.isInstanceOf(NoMandateRecorded::class.java)
 
         val panel = controller.findMandate(12)
         assertThat(panel.bankDetailsWiped).isTrue()
@@ -481,7 +493,7 @@ class MandatesTest {
         assertThatThrownBy { sealing.openOnline(details.userId, swapped.copy(iban = swapped.accountHolder)) }
             .isInstanceOf(BankDetailsUnopenable::class.java)
 
-        details.mandate!!.sealedIban = null
+        details.bankAccount = null
         assertThatThrownBy { mandates.openOnline(12, "annvos") }.isInstanceOf(NoOnlineMandate::class.java)
     }
 

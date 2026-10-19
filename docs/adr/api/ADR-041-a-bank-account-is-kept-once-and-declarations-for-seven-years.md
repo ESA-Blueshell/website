@@ -21,9 +21,10 @@ keeps an IBAN.
 given for that account, and a declaration is paid to it. Declarations and their receipts are kept
 for 7 years; only the bank account follows the 13-month wipe.**
 
-- The bank account holds the account holder, the IBAN and, outside the Netherlands, the BIC,
-  sealed by Vault Transit to the person, with a readable preview of the country and the last four
-  digits. It is replaced whole, never edited.
+- The bank account holds the account holder and the IBAN, sealed by Vault Transit to the person,
+  and outside the Netherlands the bank's BIC, which names a bank rather than a person and is kept
+  open. A readable preview shows the country and the last two digits. It is replaced whole, never
+  edited.
 - A mandate records the bank account it was given for. Replacing or deleting the account ends the
   mandate (ADR-040). A paper mandate may stand before any account is on file.
 - Existing mandates hand their sealed details to the person's new bank account in a migration;

@@ -134,7 +134,7 @@ class JoiningContributionAskServiceTest {
 
     @Test
     fun `asks a member who set up incasso while signing up for nothing, since the next run collects it`() {
-        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(sealedIban = "sealed"))))
+        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(accountKept = true))))
 
         assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isTrue()
 
@@ -147,13 +147,14 @@ class JoiningContributionAskServiceTest {
         givenAPeriod()
 
         assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isFalse()
-        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(sealedIban = null))))
+        whenever(payments.of(listOf(USER_ID))).thenReturn(mapOf(USER_ID to PersonPayment(true, mandate(accountKept = false))))
         assertThat(service.askOnJoining(USER_ID, LocalDate.of(2025, 10, 1))).isFalse()
         verify(reminders, org.mockito.kotlin.times(2)).create(any())
     }
 
-    private fun mandate(sealedIban: String?) =
-        IncassoMandate(sealedIban, sealedIban, null, "BLUESHELL-$USER_ID-20251001", LocalDate.of(2025, 10, 1), null, Instant.EPOCH)
+    private fun mandate(accountKept: Boolean) =
+        IncassoMandate(null, "BLUESHELL-$USER_ID-20251001", LocalDate.of(2025, 10, 1), null, Instant.EPOCH)
+            .apply { if (accountKept) accountVersion = 1 }
 
     // Nothing to quote and nothing to record it against, so the member simply joins.
     @Test

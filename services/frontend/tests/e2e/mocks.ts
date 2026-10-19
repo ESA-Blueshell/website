@@ -12,6 +12,7 @@ import type {
   AddRosterEntryRequest,
   AddressResponse,
   AssociationStatisticsResponse,
+  BankAccountPreviewResponse,
   BlogResponse,
   BoardMemberResponse,
   BoardRequest,
@@ -635,6 +636,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const paidPeriods = new Set<number>()
   const incassoRuns: Wire<IncassoRunView>[] = []
   let ownMandate: Wire<OwnMandateResponse> = {standing: "NONE"}
+  let ownBankAccount: Wire<BankAccountPreviewResponse> | null = null
   const payingByIncasso = new Set(fixtures.onIncasso ?? [])
   const recordedMandates = new Map<number, Wire<MandateResponse>>()
   // A standing mandate is the only "pays by direct debit"; ending one keeps it as the record.
@@ -932,6 +934,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "findOwnContributions", [
         {periodId: 201, startDate: "2025-07-01", endDate: "2025-12-31", feeType: "FULL_YEAR_FEE", fee: 20, paid: true, paidOn: "2025-07-15"},
       ])
+    }
+    if (path === "/users/me/bank-account") {
+      if (method === "GET") return ownBankAccount ? answer(route, "findOwnBankAccount", ownBankAccount) : route.fulfill({status: 204, body: ""})
+      if (method === "DELETE") {
+        ownBankAccount = null
+        return route.fulfill({status: 204, body: ""})
+      }
+      const {iban} = request.postDataJSON() as {iban: string}
+      const compact = iban.replace(/\s/g, "")
+      const saved = {ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2), recordedAt: "2026-10-15T10:00:00.000Z"}
+      ownBankAccount = saved
+      return answer(route, "replaceOwnBankAccount", saved)
     }
     if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
       if (method === "GET") return answer(route, "findOwnMandate", ownMandate)

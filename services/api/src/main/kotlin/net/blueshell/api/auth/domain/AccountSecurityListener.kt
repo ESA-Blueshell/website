@@ -83,7 +83,7 @@ class AccountSecurityListener(
             evt.userId,
             SecurityEventKind.IBAN_REVEALED,
             SecurityActor.Person(evt.revealedBy),
-            note = "mandate ${evt.reference}",
+            note = evt.reference?.let { "mandate $it" } ?: "bank account",
         )
     }
 

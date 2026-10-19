@@ -54,13 +54,12 @@ class ContributionEmailPlannerTest {
     private val withoutBankDetails = mutableSetOf<Long>()
     private val recorded =
         IncassoMandate(
-            sealedIban = "vault:v1:iban",
-            sealedAccountHolder = "vault:v1:holder",
             ibanMasked = "NL34",
             reference = "BLUESHELL-1-20250901",
             signedOn = LocalDate.of(2025, 9, 1),
             recordedBy = null,
             recordedAt = Instant.parse("2025-09-01T10:00:00Z"),
+            accountVersion = 1,
         )
 
     private val planner =

@@ -16,17 +16,12 @@ enum class MandateKind {
 }
 
 /**
- * The bank details and mandate a person is collected under. The IBAN and account holder are
- * sealed by Vault Transit to the person (api ADR-038); only the masked IBAN is kept readable.
+ * The mandate a person is collected under, given for one version of their bank account (api
+ * ADR-041). The masked IBAN is the record of the account it was given for.
  */
 @Embeddable
 class IncassoMandate(
-    /** Null once wiped, 13 months after the last collection: the rest of the mandate stays as the record. */
-    @Column(name = "mandate_iban", length = 255)
-    var sealedIban: String?,
-    @Column(name = "mandate_account_holder", length = 512)
-    var sealedAccountHolder: String?,
-    /** The IBAN's country code and last two characters, as `NL34`; see `MaskedIban`. Null on a paper mandate kept without bank details. */
+    /** The IBAN's country code and last two characters, as `NL34`, of the account it was given for; null without one. */
     @Column(name = "mandate_iban_masked", length = 4)
     var ibanMasked: String?,
     @Column(name = "mandate_reference", length = 35)
@@ -55,11 +50,10 @@ class IncassoMandate(
     /** The day it stopped: stopped by the member, its bank account replaced or deleted, or their membership ended (api ADR-040). */
     @Column(name = "mandate_ended_on")
     var endedOn: LocalDate? = null,
+    /** The version of the person's bank account it was given for; null for a paper mandate without bank details. */
+    @Column(name = "mandate_account_version")
+    var accountVersion: Int? = null,
 ) {
-    /** Whether its sealed bank details are gone, which leaves nothing to collect from or to reveal. */
-    val wiped: Boolean
-        get() = sealedIban == null
-
     // Nothing of the account reaches a log line.
     override fun toString(): String = "IncassoMandate($ibanMasked, $reference)"
 }

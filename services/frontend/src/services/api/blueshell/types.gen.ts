@@ -250,6 +250,15 @@ export type BackupCodesResponse = {
     codes: Array<string>;
 };
 
+export type BankAccountPreviewResponse = {
+    /**
+     * The IBAN's country code; with the last two, all a response carries of it.
+     */
+    ibanCountry: string;
+    ibanLastTwo: string;
+    recordedAt: string;
+};
+
 /**
  * The association's own bank account, as a member needs it to make a transfer
  */
@@ -3060,6 +3069,12 @@ export type RenderEmailRequest = {
 export type RenderedEmail = {
     html: string;
     subject: string;
+};
+
+export type ReplaceBankAccountRequest = {
+    accountHolder: string;
+    bic?: string | null;
+    iban: string;
 };
 
 export type ReplyRequest = {
@@ -14777,6 +14792,129 @@ export type FindDeletedUsersResponses = {
 };
 
 export type FindDeletedUsersResponse = FindDeletedUsersResponses[keyof FindDeletedUsersResponses];
+
+export type DeleteOwnBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/bank-account';
+};
+
+export type DeleteOwnBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DeleteOwnBankAccountError = DeleteOwnBankAccountErrors[keyof DeleteOwnBankAccountErrors];
+
+export type DeleteOwnBankAccountResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteOwnBankAccountResponse = DeleteOwnBankAccountResponses[keyof DeleteOwnBankAccountResponses];
+
+export type FindOwnBankAccountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/users/me/bank-account';
+};
+
+export type FindOwnBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindOwnBankAccountError = FindOwnBankAccountErrors[keyof FindOwnBankAccountErrors];
+
+export type FindOwnBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountPreviewResponse;
+};
+
+export type FindOwnBankAccountResponse = FindOwnBankAccountResponses[keyof FindOwnBankAccountResponses];
+
+export type ReplaceOwnBankAccountData = {
+    body: ReplaceBankAccountRequest;
+    path?: never;
+    query?: never;
+    url: '/users/me/bank-account';
+};
+
+export type ReplaceOwnBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ReplaceOwnBankAccountError = ReplaceOwnBankAccountErrors[keyof ReplaceOwnBankAccountErrors];
+
+export type ReplaceOwnBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: BankAccountPreviewResponse;
+};
+
+export type ReplaceOwnBankAccountResponse = ReplaceOwnBankAccountResponses[keyof ReplaceOwnBankAccountResponses];
 
 export type FindOwnContributionsData = {
     body?: never;

@@ -1,7 +1,7 @@
 package net.blueshell.api.user.api
 
 import net.blueshell.api.user.persistence.MandateRetentionRepository
-import net.blueshell.api.user.persistence.StoppedMandateRow
+import net.blueshell.api.user.persistence.StoppedAccountRow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -21,16 +21,17 @@ class MandateRetentionTest {
     fun `names the mandates no longer collected from, and wipes one only while it still is the one judged`() {
         val today = LocalDate.of(2026, 10, 3)
         val row =
-            object : StoppedMandateRow {
+            object : StoppedAccountRow {
                 override val userId = 7L
                 override val reference = "BLUESHELL-7-20250901"
+                override val recordedAt: Instant = Instant.parse("2025-09-01T10:00:00Z")
             }
         whenever(mandates.findStopped(today)).thenReturn(listOf(row))
         // The write checks the row again: the second time the mandate was recorded anew, so it is left.
         whenever(mandates.wipe(7, "BLUESHELL-7-20250901", today)).thenReturn(1, 0)
 
         val stopped = retention.stopped(today).single()
-        assertThat(stopped).isEqualTo(StoppedMandate(7, "BLUESHELL-7-20250901"))
+        assertThat(stopped).isEqualTo(StoppedAccount(7, "BLUESHELL-7-20250901", LocalDate.of(2025, 9, 1)))
         assertThat(retention.wipe(stopped, today)).isTrue()
         assertThat(retention.wipe(stopped, today)).isFalse()
     }

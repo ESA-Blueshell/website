@@ -346,8 +346,10 @@ rehearse_database() {
   check ok "the Vault snapshot unseals with these shares"
   [[ $mode == rehearse ]] || return 0
 
-  restored_token=$(root_from_shares "$scratch_addr") || true
-  [[ $restored_token == hvs.* ]] || { check FAILED "no root token could be made for the restored Vault"; return; }
+  # Vault 2.0 refuses an unauthenticated generate-root; the restored admin policy reads both checks.
+  echo "- The browser opens again; sign in to the restored Vault with the same account."
+  restored_token=$(VAULT_ADDR=$scratch_addr vault login -method=oidc -no-store -token-only) || true
+  [[ $restored_token == hvs.* ]] || { check FAILED "the restored Vault did not sign you in"; return; }
   scratch() { VAULT_ADDR=$scratch_addr VAULT_TOKEN=$restored_token vault "$@"; }
   local shape='{version: .data.current_version, written: .data.updated_time}' a b
   a=$(scratch kv metadata get -format=json "$VAULT_PATH" | jq -c "$shape")
@@ -369,6 +371,8 @@ rehearse_database() {
     "SELECT u.id, a.sealed_address FROM addresses a JOIN users u ON u.address_id = a.id WHERE a.sealed_address IS NOT NULL")
   if ((opened > 0 && refused == 0)); then
     check ok "every sealed address opens: $opened"
+  elif ((opened + refused == 0)); then
+    check FAILED "the backup holds no sealed address to open; run the Seal addresses job"
   else
     check FAILED "sealed addresses: $opened open, $refused refused"
   fi

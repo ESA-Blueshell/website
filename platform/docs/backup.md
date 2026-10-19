@@ -144,7 +144,8 @@ One script rehearses and restores every store, or the ones you name, while the c
 Vault are up. It signs in to Vault through the site for the Kopia credentials, takes the newest
 snapshots (or the newest at or before `--at 2026-10-12`), and deletes everything it downloaded
 when it ends. You need `kubectl`, `vault`, `jq`, `curl`, Docker and bash 4 or newer. The
-`database` store, MariaDB and Vault together, asks three share holders for their shares once.
+`database` store, MariaDB and Vault together, asks three share holders for their shares once,
+and its rehearsal signs in a second time, to the restored Vault.
 
 ```bash
 scripts/restore.sh rehearse                    # every store, into containers on this machine

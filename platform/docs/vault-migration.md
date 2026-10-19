@@ -100,9 +100,9 @@ git checkout main && git pull
 scripts/migrate-vault.sh --finish
 ```
 
-From then on no root token exists. When one is needed, three share holders make a short-lived one
-with `vault operator generate-root`, as step 7c of `platform/recovery/README.md` shows, and revoke it
-afterwards.
+From then on no root token exists, and Vault 2.0 makes none from the shares alone. Admin work
+signs in through the `admin` OIDC role and a restore through the `restore` role, as
+`platform/docs/vault-bootstrap.md` §6 says.
 
 **Rollback**, while the old release still exists: revert the switch PR. The old Vault still holds
 everything as it was at the last sync.

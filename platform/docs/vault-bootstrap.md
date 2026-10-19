@@ -395,11 +395,11 @@ no copy of it is kept anywhere:
 vault token revoke "$ROOT_TOKEN"
 ```
 
-Three share holders can make a new root token at any time:
-
-```bash
-vault operator generate-root -init
-```
+Production does not make one from the shares: since Vault 2.0, `sys/generate-root` needs a
+token, and production keeps it that way. Admin work signs in through the `admin` OIDC role. A
+restore signs in through the `restore` role, whose `restore` policy may overwrite Vault with a
+snapshot and nothing else (`scripts/restore.sh` does this). Only the local recovery Vault, when
+the site itself is gone, makes a root token from the shares (`platform/recovery/README.md`, 7c).
 
 ## 7. Rotating credentials
 

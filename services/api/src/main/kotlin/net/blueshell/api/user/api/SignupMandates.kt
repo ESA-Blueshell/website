@@ -21,8 +21,7 @@ class SignupMandates(
 ) {
     /**
      * Authorised under [wordingVersion], with [address] the address the signup has just taken. The
-     * token asks no step-up, so replacing bank details already on file is logged and notified as the
-     * account page's change is.
+     * token asks no step-up, so replacing bank details already on file is logged and the person told.
      */
     fun setUp(
         userId: Long,

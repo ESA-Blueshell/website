@@ -1006,15 +1006,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       ownDeclarations.set(held.id, saved)
       return answer(route, "saveDeclarationDraft", saved)
     }
-    if (path === "/users/me/mandate" || (method === "PUT" && path === "/signup/mandate")) {
-      if (method === "GET") return answer(route, "findOwnMandate", ownMandate)
+    if (method === "PUT" && path === "/signup/mandate") {
       const {iban} = request.postDataJSON() as {iban: string}
-      const signup = path.startsWith("/signup")
+      const compact = iban.replace(/\s/g, "")
       ownMandate = {
-        standing: "MANDATE_RECORDED", ibanCountry: iban.replace(/\s/g, "").slice(0, 2), ibanLastTwo: iban.replace(/\s/g, "").slice(-2),
+        standing: "MANDATE_RECORDED", ibanCountry: compact.slice(0, 2), ibanLastTwo: compact.slice(-2),
         reference: "BLUESHELL-1-20260930", signedOn: "2026-09-30",
       }
-      return signup ? route.fulfill({status: 204, body: ""}) : answer(route, "setUpOwnMandate", ownMandate)
+      return route.fulfill({status: 204, body: ""})
+    }
+    if (path === "/users/me/mandate") {
+      if (method === "GET") return answer(route, "findOwnMandate", ownMandate)
+      if (!ownBankAccount) return fulfillJson(route, {code: "NoBankAccount"}, 409)
+      ownMandate = {
+        standing: "MANDATE_RECORDED", ibanCountry: ownBankAccount.ibanCountry, ibanLastTwo: ownBankAccount.ibanLastTwo,
+        reference: "BLUESHELL-1-20261019", signedOn: "2026-10-19",
+      }
+      return answer(route, "signOwnMandate", ownMandate)
+    }
+    if (method === "POST" && path === "/users/me/mandate/end") {
+      ownMandate = {standing: "NONE"}
+      return answer(route, "endOwnMandate", ownMandate)
     }
     if (method === "POST" && /^\/users\/\d+\/mandate\/reveal$/.test(path)) {
       return answer(route, "revealIban", {iban: "NL91ABNA0417164300"})

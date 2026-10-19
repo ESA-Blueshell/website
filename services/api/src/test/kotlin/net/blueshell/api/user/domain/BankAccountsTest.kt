@@ -33,7 +33,7 @@ class BankAccountsTest {
     private val published: org.springframework.context.ApplicationEventPublisher = mock()
     private val events = AfterCommitEventPublisher(published)
     private val retention: MandateRetentionRepository = mock()
-    private val mandates = Mandates(payments, sealing, clock, events, retention)
+    private val mandates = Mandates(payments, sealing, clock, events, retention, mock(), mock())
     private val accounts = BankAccounts(payments, retention, sealing, clock, events)
 
     init {

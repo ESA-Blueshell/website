@@ -9,7 +9,6 @@ import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OwnMandate
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.domain.Mandates
-import net.blueshell.api.user.domain.OnlineAuthorisation
 import net.blueshell.api.user.persistence.PaymentDetails
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -84,17 +83,16 @@ class MandateController(
     fun findOwnMandate(): OwnMandateResponse = mandates.own(reader()).asResponse()
 
     /**
-     * A member sets up or changes incasso themselves, the mandate signed today on the site. A sign-in
-     * left open must not quietly swap the account a contribution is taken from, so it asks a step-up.
+     * A member sets up direct debit themselves from the bank account on file, signed today. A
+     * sign-in left open must not quietly authorise a collection, so it asks a step-up.
      */
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/users/me/mandate")
-    fun setUpOwnMandate(
-        @Valid @RequestBody request: SetUpMandateRequest,
+    fun signOwnMandate(
+        @Valid @RequestBody request: SignOwnMandateRequest,
     ): OwnMandateResponse {
         stepUp.require()
-        val authorisation = OnlineAuthorisation(request.wordingVersion, requireNotNull(request.address).asFields())
-        return mandates.changeOwn(reader(), request.iban, request.accountHolder, authorisation).asResponse()
+        return mandates.signOwn(reader(), request.wordingVersion).asResponse()
     }
 
     /** The member stops their own direct debit today, behind a step-up as a change of bank details is. */

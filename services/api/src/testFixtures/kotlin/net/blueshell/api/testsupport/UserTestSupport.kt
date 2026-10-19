@@ -52,6 +52,7 @@ import org.springframework.security.web.FilterChainProxy
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.request.RequestPostProcessor
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
@@ -254,6 +255,40 @@ abstract class UserTestSupport : ServiceTestSupport() {
     ): User {
         user.replaceAddress(address)
         return persist(user)
+    }
+
+    /** Puts a bank account on file for [user] from their own page, stepped up as that page asks. */
+    protected fun putBankAccount(
+        user: User,
+        iban: String = "NL91ABNA0417164300",
+        holder: String = "Ann Vos",
+    ) = mvc.perform(
+        put("/users/me/bank-account")
+            .with(signedIn(user, steppedUp = true))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{"iban":"$iban","accountHolder":"$holder"}"""),
+    )
+
+    /** [user] agrees to direct debit from the bank account on file, as the Payment method page sends it. */
+    protected fun signOwnMandate(
+        user: User,
+        content: String = """{"authorised":true,"wordingVersion":"2026-10"}""",
+        steppedUp: Boolean = true,
+    ) = mvc.perform(
+        put("/users/me/mandate")
+            .with(signedIn(user, steppedUp = steppedUp))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(content),
+    )
+
+    /** An address, a bank account and an online mandate for [user], all as they would put them on file themselves. */
+    protected fun onlineMandateFor(
+        user: User,
+        iban: String = "NL91ABNA0417164300",
+    ) {
+        assignAddress(user)
+        putBankAccount(user, iban).andExpect(status().isOk)
+        signOwnMandate(user).andExpect(status().isOk)
     }
 
     protected fun assignMemberProfile(user: User): User {

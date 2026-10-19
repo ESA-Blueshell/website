@@ -5,7 +5,6 @@ import net.blueshell.api.auth.web.SignupMandateRequest
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.web.SignupHeaders
 import net.blueshell.api.testsupport.UserTestSupport
-import net.blueshell.api.user.persistence.User
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,23 +31,22 @@ class OwnMandateIT : UserTestSupport() {
         """{"iban":"NL91ABNA0417164300","accountHolder":"Ann Vos","authorised":true,"wordingVersion":"2026-10",""" +
             """"address":{"country":"NL","city":"Enschede","street":"Hallenweg","houseNumber":"5","zipCode":"7522NH"}}"""
 
-    private fun setUp(
-        by: User,
-        content: String = body,
-        steppedUp: Boolean = true,
-    ) = mvc.perform(
-        put("/users/me/mandate")
-            .with(signedIn(by, steppedUp = steppedUp))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(content),
-    )
-
     @Test
-    fun `a member sets up incasso themselves, signed today, and sees only the last four`() {
+    fun `a member sets up direct debit from the bank account on file, signed today, and sees only the last two`() {
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member)
 
-        setUp(member)
+        signOwnMandate(member).andExpect(status().isConflict).andExpect(jsonPath("$.code").value("NoBankAccount"))
+        putBankAccount(member).andExpect(status().isOk)
+        // The mandate records the address on the account, so an account without one has nothing to record.
+        signOwnMandate(member).andExpect(status().isBadRequest).andExpect(jsonPath("$.code").value("MandateAddressMissing"))
+        assignAddress(member)
+
+        signOwnMandate(member, """{"authorised":false,"wordingVersion":"2026-10"}""").andExpect(status().isBadRequest)
+        signOwnMandate(member, """{"authorised":true,"wordingVersion":"1999-01"}""")
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.code").value("MandateWordingOutdated"))
+        signOwnMandate(member)
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
             .andExpect(jsonPath("$.signedOn").value(LocalDate.now(ZoneOffset.UTC).toString()))
@@ -56,44 +54,35 @@ class OwnMandateIT : UserTestSupport() {
         mvc
             .perform(get("/users/me/mandate").with(signedIn(member)))
             .andExpect(jsonPath("$.ibanLastTwo").value("00"))
-        setUp(member, body.replace("true", "false")).andExpect(status().isBadRequest)
-        // What a request may carry is bounded, so a sealed value always fits its column.
-        setUp(member, body.replace("Ann Vos", "A".repeat(71))).andExpect(status().isBadRequest)
-        setUp(member, body.replace("Hallenweg", "H".repeat(151))).andExpect(status().isBadRequest)
-        setUp(member, body.replace("\"NL\"", "\"Nowhere\"")).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.reference").value("BLUESHELL-${member.id}-${LocalDate.now(ZoneOffset.UTC).toString().replace("-", "")}"))
     }
 
     @Test
-    fun `a change from the account page asks a step-up first, and is written to the security log`() {
+    fun `setting up direct debit asks a step-up first`() {
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member)
+        assignAddress(member)
+        putBankAccount(member).andExpect(status().isOk)
 
-        setUp(member, steppedUp = false)
+        signOwnMandate(member, steppedUp = false)
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.code").value("StepUpRequired"))
-        setUp(member).andExpect(status().isOk)
-
-        mvc
-            .perform(get("/users/me/security-events").with(signedIn(member)))
-            .andExpect(jsonPath("$.events[0].kind").value("BANK_DETAILS_CHANGED"))
-            .andExpect(jsonPath("$.events[0].note").value("NL•• … ••00"))
+        signOwnMandate(member).andExpect(status().isOk)
     }
 
     @Test
-    fun `details given before any membership stand on the person, and are there once a membership starts`() {
+    fun `direct debit set up before any membership stands on the person, and is there once a membership starts`() {
         val applicant = createUserWithRole(Role.GUEST)
         val board = createUserWithRole(Role.BOARD)
 
-        setUp(applicant)
-            .andExpect(status().isOk)
-            .andExpect(jsonPath("$.standing").value("MANDATE_RECORDED"))
+        onlineMandateFor(applicant)
         val kept =
             jdbc.queryForMap(
                 "SELECT mandate_ended_on, mandate_address, mandate_kind, mandate_wording_version, mandate_authorised_by " +
                     "FROM payment_details WHERE user_id = ?",
                 applicant.id,
             )
-        assertThat(kept["mandate_address"].toString()).doesNotContain("Hallenweg").doesNotContain("Enschede").doesNotContain("7522")
+        assertThat(kept["mandate_address"].toString()).doesNotContain("Street").doesNotContain("Enschede").doesNotContain("1234AB")
         assertThat(kept["mandate_kind"]).isEqualTo("ONLINE")
         assertThat(kept["mandate_wording_version"]).isEqualTo("2026-10")
         assertThat((kept["mandate_authorised_by"] as Number).toLong()).isEqualTo(applicant.id)
@@ -122,7 +111,7 @@ class OwnMandateIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member)
-        setUp(member).andExpect(status().isOk)
+        onlineMandateFor(member)
         val paper = """{"iban":"GB82WEST12345698765432","accountHolder":"Ann Vos","signedOn":"${LocalDate.now()}"}"""
         val record = { content: String ->
             mvc.perform(
@@ -140,7 +129,7 @@ class OwnMandateIT : UserTestSupport() {
         assertThat(jdbc.queryForMap("SELECT mandate_address FROM payment_details WHERE user_id = ?", member.id)["mandate_address"]).isNull()
 
         // Online is dominant: the member authorising again replaces the paper mandate without asking.
-        setUp(member).andExpect(status().isOk)
+        signOwnMandate(member).andExpect(status().isOk)
         mvc.perform(get("/users/${member.id}/mandate").with(signedIn(board))).andExpect(jsonPath("$.kind").value("ONLINE"))
     }
 

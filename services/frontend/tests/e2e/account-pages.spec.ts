@@ -53,24 +53,14 @@ test.describe("the account pages", () => {
     expect(badge!.x).toBeGreaterThan(heading!.x)
   })
 
-  test("let a member set up incasso and show the account only by its last two", async ({page}) => {
+  test("show a member their contributions and how to pay by hand", async ({page}) => {
     await installApiMocks(page)
     await loginAsMember(page.context())
 
     await page.goto("/account/payment-details")
-    const incasso = page.getByTestId("incasso-set-up")
-    await expect(incasso.getByTestId("incasso-none")).toContainText("Incasso is automatic")
-    await expect(incasso.getByTestId("incasso-open")).toHaveText("Set up incasso")
     await expect(page.getByTestId("own-contribution-201")).toContainText("Paid 15 Jul 2025")
     await expect(page.getByTestId("payment-manual")).toContainText("NL19 INGB 0008 0964 62")
-    await incasso.getByTestId("incasso-open").click()
-    await incasso.getByLabel("IBAN").fill("NL91 ABNA 0417 1643 00")
-    await incasso.getByLabel("Account holder").fill("Mock User")
-    await incasso.getByRole("checkbox").check()
-    await incasso.getByTestId("incasso-save").click()
-
-    await expect(incasso.getByTestId("incasso-current")).toContainText("NL•• … ••00")
-    await expect(incasso).not.toContainText("0417")
+    await expect(page.getByTestId("payment-details-method-row")).toContainText("Bank transfer or cash")
   })
 
   test("tell a pending member what their first contribution is", async ({page}) => {

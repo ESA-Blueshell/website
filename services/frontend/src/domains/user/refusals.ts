@@ -21,11 +21,12 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   InvalidIban: () => "That is not a valid IBAN. Check it against the bank card or statement.",
   MandateSignedInFuture: () => "A mandate is signed today or before, not after.",
   AccountHolderMissing: () => "Say whose account it is.",
-  MandateAddressMissing: () => "Fill in your whole address. It is recorded with the mandate.",
+  MandateAddressMissing: () => "Direct debit needs your full home address. Add the missing parts to your account, then try again.",
   MandateWordingOutdated: () => "The authorisation wording has changed since this page was opened. Reload the page and authorise again.",
   ReplacesOnlineMandate: r =>
     `This replaces the online mandate the member authorised on ${day(r.authorisedAt)}. Its PDF will no longer be available. Confirm to record it.`,
   NoOnlineMandate: () => "Only a mandate the member authorised on the site has a PDF.",
+  NoBankAccount: () => "Add a bank account first. Direct debit collects your contribution from it.",
   NoMandateRecorded: () => "No mandate is recorded for this person.",
   BankDetailsUnopenable: () => "These bank details were changed outside the site and no longer open. Record the mandate again.",
   MembershipTypeOutsideMembership: r => (r.endDate

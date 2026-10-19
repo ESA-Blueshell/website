@@ -9,12 +9,15 @@ import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.OpenedOnlineMandate
 import net.blueshell.api.user.api.OwnMandate
+import net.blueshell.api.user.api.SealedAddresses
+import net.blueshell.api.user.domain.sealing.SealingUnavailable
 import net.blueshell.api.user.persistence.BankAccount
 import net.blueshell.api.user.persistence.IncassoMandate
 import net.blueshell.api.user.persistence.MandateKind
 import net.blueshell.api.user.persistence.MandateRetentionRepository
 import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.PaymentDetailsRepository
+import net.blueshell.api.user.persistence.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -80,6 +83,8 @@ class Mandates(
     // After commit: a change that rolls back is neither logged nor notified.
     private val events: AfterCommitEventPublisher,
     private val retention: MandateRetentionRepository,
+    private val users: UserRepository,
+    private val addresses: SealedAddresses,
 ) {
     /**
      * Records a paper mandate, replacing any before it, and puts the person on incasso. A
@@ -155,7 +160,6 @@ class Mandates(
         signedOn: LocalDate,
         recordedBy: Long?,
         online: OnlineAuthorisation?,
-        announce: Boolean = false,
     ): PaymentDetails {
         val userId = details.userId
         // An account that no longer opens for its person is replaced as a new one, under a new reference.
@@ -168,7 +172,7 @@ class Mandates(
                 }
             }
         // Whoever records it, the person hears that the account they are paid to and collected from changed.
-        val replacing = announce || (details.bankAccount != null && onFile?.iban != iban)
+        val replacing = details.bankAccount != null && onFile?.iban != iban
         val before = onFile?.takeIf { details.collectableMandate(today()) != null }
         val reference =
             details
@@ -180,42 +184,79 @@ class Mandates(
         val now = clock.instant()
         // The same IBAN keeps the bank's BIC; a new one is typed on the bank account page.
         val account = details.replaceAccount(sealed, iban, bic = details.bankAccount?.bic?.takeIf { onFile?.iban == iban }, now)
-        details.mandate =
-            IncassoMandate(
-                ibanMasked = iban.masked,
-                reference = reference,
-                signedOn = signedOn,
-                recordedBy = recordedBy,
-                recordedAt = now,
-                kind = if (online == null) MandateKind.PAPER else MandateKind.ONLINE,
-                authorisedAt = online?.let { now },
-                wordingVersion = online?.wordingVersion,
-                authorisedBy = online?.let { userId },
-                sealedAddress = sealed.address,
-                accountVersion = account.version,
-            )
-        return payments.save(details).also {
-            retention.clearMandateCopy(userId)
+        details.mandate = mandateFor(iban.masked, reference, signedOn, recordedBy, online, sealed.address, account.version)
+        return save(details).also {
             if (replacing) events.publish(BankDetailsChanged(userId, requireNotNull(MaskedIban.of(iban.masked))))
         }
     }
 
-    /**
-     * A member changing their bank details from their account page, behind a step-up the caller
-     * asked for. The security log records it, a first account too, with the new account masked.
-     */
-    @Transactional
-    fun changeOwn(
-        userId: Long,
-        rawIban: String,
-        accountHolder: String,
-        authorisation: OnlineAuthorisation,
-    ): OwnMandate = setUpOwn(userId, rawIban, accountHolder, authorisation, announce = true)
+    private fun mandateFor(
+        ibanMasked: String?,
+        reference: String,
+        signedOn: LocalDate,
+        recordedBy: Long?,
+        online: OnlineAuthorisation?,
+        sealedAddress: String?,
+        accountVersion: Int,
+    ): IncassoMandate {
+        val now = clock.instant()
+        return IncassoMandate(
+            ibanMasked = ibanMasked,
+            reference = reference,
+            signedOn = signedOn,
+            recordedBy = recordedBy,
+            recordedAt = now,
+            kind = if (online == null) MandateKind.PAPER else MandateKind.ONLINE,
+            authorisedAt = online?.let { now },
+            wordingVersion = online?.wordingVersion,
+            authorisedBy = online?.let { recordedBy },
+            sealedAddress = sealedAddress,
+            accountVersion = accountVersion,
+        )
+    }
+
+    // The old columns the release before ADR-041 still reads go once a mandate is written anew.
+    private fun save(details: PaymentDetails): PaymentDetails = payments.save(details).also { retention.clearMandateCopy(details.userId) }
 
     /**
-     * A member setting up or changing incasso themselves: an online mandate, authorised now under
-     * the wording and the address they confirmed. It replaces a paper mandate without asking. One
-     * set up during signup is kept on the person and goes unused until their membership runs.
+     * A member authorising direct debit from the bank account on file, under [wordingVersion] and
+     * the address on their account (api ADR-041). It replaces a paper mandate without asking;
+     * signed again for the same account, it keeps its reference.
+     */
+    @Transactional
+    fun signOwn(
+        userId: Long,
+        wordingVersion: String,
+    ): OwnMandate {
+        val details = of(userId)
+        val account = details.bankAccount ?: throw NoBankAccount()
+        val authorisation = OnlineAuthorisation(wordingVersion, addressOf(userId))
+        checkAuthorisation(authorisation)
+        val today = today()
+        details.mandate =
+            mandateFor(
+                ibanMasked = account.ibanMasked,
+                reference = details.collectableMandate(today)?.reference ?: referenceFor(userId, today),
+                signedOn = today,
+                recordedBy = userId,
+                online = authorisation,
+                sealedAddress = sealing.sealAddress(userId, authorisation.address),
+                accountVersion = account.version,
+            )
+        save(details)
+        return own(userId)
+    }
+
+    // An address that is on file but does not open now is an outage, not a missing address.
+    private fun addressOf(userId: Long): AddressFields {
+        val onFile = users.findById(userId).orElse(null)?.address ?: return AddressFields(null, null, null, null, null)
+        return addresses.open(onFile) ?: throw SealingUnavailable()
+    }
+
+    /**
+     * The signup's incasso step: the bank details typed there and an online mandate for them,
+     * authorised now under the wording and the signup's address. It replaces a paper mandate
+     * without asking, and is kept on the person, unused until their membership runs.
      */
     @Transactional
     fun setUpOwn(
@@ -223,17 +264,20 @@ class Mandates(
         rawIban: String,
         accountHolder: String,
         authorisation: OnlineAuthorisation,
-        announce: Boolean = false,
     ): OwnMandate {
         val iban = Iban.parse(rawIban) ?: throw InvalidIban()
         val holder = accountHolder.trim().ifEmpty { throw AccountHolderMissing() }
+        checkAuthorisation(authorisation)
+        write(of(userId), iban, holder, LocalDate.now(clock), userId, authorisation)
+        return own(userId)
+    }
+
+    private fun checkAuthorisation(authorisation: OnlineAuthorisation) {
         if (authorisation.wordingVersion != MandateWording.CURRENT) throw MandateWordingOutdated()
         val address = authorisation.address
         if (listOf(address.country, address.city, address.street, address.houseNumber, address.zipCode).any { it.isNullOrBlank() }) {
             throw MandateAddressMissing()
         }
-        write(of(userId), iban, holder, LocalDate.now(clock), userId, authorisation, announce)
-        return own(userId)
     }
 
     /** The person's own mandate and standing, masked. */

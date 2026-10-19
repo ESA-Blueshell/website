@@ -49,17 +49,6 @@ class SealedBankDetailsIT : UserTestSupport() {
             .content("""{"iban":"$iban","accountHolder":"$holder","signedOn":"${LocalDate.now().minusDays(3)}"}"""),
     )
 
-    private fun setUpOwn(by: User) =
-        mvc.perform(
-            put("/users/me/mandate")
-                .with(signedIn(by, steppedUp = true))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """{"iban":"$iban","accountHolder":"Ann Vos","authorised":true,"wordingVersion":"2026-10",""" +
-                        """"address":{"country":"NL","city":"Enschede","street":"Hallenweg","houseNumber":"5","zipCode":"7522NH"}}""",
-                ),
-        )
-
     /** A member on incasso with a recorded mandate, and their id. */
     private fun onIncasso(
         board: User,
@@ -100,7 +89,7 @@ class SealedBankDetailsIT : UserTestSupport() {
     fun `a paper and an online mandate hold no plaintext, and their two values share a key version`() {
         val (_, memberId) = onIncasso(createUserWithRole(Role.BOARD), "Ann Vos")
         val applicant = createUserWithRole(Role.GUEST)
-        setUpOwn(applicant).andExpect(status().isOk)
+        onlineMandateFor(applicant)
 
         val rows = listOf(sealedOf(memberId), sealedOf(applicant.id!!))
 
@@ -153,7 +142,7 @@ class SealedBankDetailsIT : UserTestSupport() {
             unrecorded.userId,
             "Cas Bos",
         ).andExpect(status().isServiceUnavailable).andExpect(jsonPath("$.code").value("SealingUnavailable"))
-        setUpOwn(applicant).andExpect(status().isServiceUnavailable).andExpect(jsonPath("$.code").value("SealingUnavailable"))
+        putBankAccount(applicant).andExpect(status().isServiceUnavailable).andExpect(jsonPath("$.code").value("SealingUnavailable"))
         mvc
             .perform(get("/incassoRuns/$runId/file").with(signedIn(board)))
             .andExpect(status().isServiceUnavailable)
@@ -177,7 +166,7 @@ class SealedBankDetailsIT : UserTestSupport() {
         val board = createUserWithRole(Role.BOARD)
         val (_, memberId) = onIncasso(board, "Ann Vos")
         val applicant = createUserWithRole(Role.GUEST)
-        setUpOwn(applicant).andExpect(status().isOk)
+        onlineMandateFor(applicant)
         val newest = sealer.rotate("api-bank-details")
 
         rewrap.handle(mapper.writeValueAsString(UserJobs.RewrapSealedValuesPayload()), null, false)
@@ -233,7 +222,7 @@ class SealedBankDetailsIT : UserTestSupport() {
         val admin = createUserWithRole(Role.ADMIN)
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
-        setUpOwn(member).andExpect(status().isOk)
+        onlineMandateFor(member)
         val (_, paper) = onIncasso(board, "Bob Smit")
 
         val pdf =
@@ -254,7 +243,7 @@ class SealedBankDetailsIT : UserTestSupport() {
                         .PDFTextStripper()
                         .getText(it)
                 }.replace(Regex("\\s+"), " ")
-        assertThat(text).contains("NL91 ABNA 0417 1643 00", "Ann Vos", "Hallenweg 5", "signed in as ${member.username}")
+        assertThat(text).contains("NL91 ABNA 0417 1643 00", "Ann Vos", "Street 1", "signed in as ${member.username}")
 
         mvc.perform(get("/users/${member.id}/mandate/pdf").with(signedIn(member))).andExpect(status().isForbidden)
         mvc

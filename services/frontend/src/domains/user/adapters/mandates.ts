@@ -10,7 +10,6 @@ import {
   findMandate,
   findOwnMandate,
   IncassoStanding,
-  type MandateAddressRequest,
   MandateKind,
   type MandateResponse,
   type OwnMandateResponse,
@@ -18,7 +17,7 @@ import {
   type RecordMandateRequest,
   revealIban,
   setUpMandate,
-  setUpOwnMandate,
+  signOwnMandate,
 } from "@/services/api"
 import {SIGNUP_TOKEN_HEADER} from "@/plugins/signupContinuation"
 import type {Refused} from "@/types/api"
@@ -27,7 +26,7 @@ import {readBlobRefusal, readOr} from "@/utils/answers"
 import {MANDATE_WORDING} from "../mandateWording"
 import {accepted, reasonFor, refusable} from "../refusals"
 
-export type {MandateAddressRequest, MandateResponse, OwnMandateResponse, RecordMandateRequest}
+export type {MandateResponse, OwnMandateResponse, RecordMandateRequest}
 export {IncassoStanding, MandateKind}
 
 /** How the person pays and their mandate, or nothing where it could not be read. */
@@ -41,15 +40,21 @@ export const saveMandate = (userId: number, body: RecordMandateRequest): Promise
 export const stopMandate = (userId: number): Promise<Saved<MandateResponse> | Refused> =>
   refusable(endMandate({path: {userId}}), "We could not stop incasso. Try again.")
 
-/** The reader stops their own direct debit today, which waits on a step-up the page asks for. */
-export async function stopOwnIncasso(): Promise<Saved<OwnMandateResponse> | (Refused & {needsStepUp?: boolean})> {
+/** A write that may wait on a step-up the page asks for, as a change of bank details does. */
+type NeedsStepUp<T> = T | (Refused & {needsStepUp?: boolean})
+
+const guarded = (error: unknown, fallback: string) => ({ok: false as const, reason: reasonFor(error, fallback), needsStepUp: needsStepUp(error)})
+
+/** The reader stops their own direct debit today. */
+export async function stopOwnDirectDebit(): Promise<NeedsStepUp<Saved<OwnMandateResponse>>> {
   const res = await endOwnMandate()
-  if (res.data) return {ok: true, saved: res.data}
-  return {
-    ok: false,
-    reason: reasonFor(res.error, "We could not stop your incasso. Try again."),
-    needsStepUp: needsStepUp(res.error),
-  }
+  return res.data ? {ok: true, saved: res.data} : guarded(res.error, "We could not stop your direct debit. Try again.")
+}
+
+/** The reader sets up direct debit from the bank account on file, agreeing to the current wording. */
+export async function setUpOwnDirectDebit(): Promise<NeedsStepUp<Saved<OwnMandateResponse>>> {
+  const res = await signOwnMandate({body: {authorised: true, wordingVersion: MANDATE_WORDING.version}})
+  return res.data ? {ok: true, saved: res.data} : guarded(res.error, "We could not set up direct debit. Try again.")
 }
 
 /**
@@ -71,29 +76,14 @@ export async function fetchMandatePdf(userId: number): Promise<{ok: true; file: 
 export const readOwnMandate = (): Promise<OwnMandateResponse | null> => readOr(findOwnMandate(), null)
 
 /**
- * The reader sets up or changes incasso, signed today. During a signup it goes on the signup's
- * token and is kept on the person; it answers nothing then, since the reader has no session.
+ * The signup's incasso step, on the signup's token: the details are kept on the person, and the
+ * mandate takes the address the signup has just taken.
  */
-export async function setUpIncasso(
-  body: {iban: string; accountHolder: string; authorised: boolean; address: MandateAddressRequest},
-  signupToken?: string,
-): Promise<{ok: true; saved: OwnMandateResponse | null} | (Refused & {needsStepUp?: boolean})> {
-  const wordingVersion = MANDATE_WORDING.version
-  if (signupToken) {
-    // The signup's mandate takes the address the signup has just taken, so it sends none.
-    const {iban, accountHolder, authorised} = body
-    const answered = await accepted(
-      setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body: {iban, accountHolder, authorised, wordingVersion}}),
-      "Your bank details could not be saved.",
-    )
-    return answered.ok ? {ok: true, saved: null} : answered
-  }
-  // From the account page a change waits on a step-up, which the page asks for and then saves again.
-  const res = await setUpOwnMandate({body: {...body, wordingVersion}})
-  if (res.data) return {ok: true, saved: res.data}
-  return {
-    ok: false,
-    reason: reasonFor(res.error, "Your bank details could not be saved."),
-    needsStepUp: needsStepUp(res.error),
-  }
-}
+export const setUpIncasso = (
+  body: {iban: string; accountHolder: string; authorised: boolean},
+  signupToken: string,
+): Promise<{ok: true} | Refused> =>
+  accepted(
+    setUpMandate({headers: {[SIGNUP_TOKEN_HEADER]: signupToken}, body: {...body, wordingVersion: MANDATE_WORDING.version}}),
+    "Your bank details could not be saved.",
+  )

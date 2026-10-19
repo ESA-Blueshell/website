@@ -4,10 +4,12 @@ import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.IbanRevealed
 import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.MaskedIban
+import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.SignupMandates
 import net.blueshell.api.user.domain.sealing.LocalSealer
 import net.blueshell.api.user.domain.sealing.Sealed
@@ -17,10 +19,10 @@ import net.blueshell.api.user.domain.sealing.keyVersionOf
 import net.blueshell.api.user.persistence.MandateKind
 import net.blueshell.api.user.persistence.PaymentDetails
 import net.blueshell.api.user.persistence.PaymentDetailsRepository
-import net.blueshell.api.user.web.MandateAddressRequest
+import net.blueshell.api.user.persistence.UserRepository
 import net.blueshell.api.user.web.MandateController
 import net.blueshell.api.user.web.RecordMandateRequest
-import net.blueshell.api.user.web.SetUpMandateRequest
+import net.blueshell.api.user.web.SignOwnMandateRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -41,6 +43,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.Optional
 
 class MandatesTest {
     private val now = Instant.parse("2026-09-30T10:00:00Z")
@@ -52,12 +55,15 @@ class MandatesTest {
     private val stepUp: net.blueshell.api.security.StepUp = mock()
     private val clock = Clock.fixed(now, ZoneOffset.UTC)
     private val today = LocalDate.of(2026, 9, 30)
-    private val mandates = Mandates(payments, sealing, clock, AfterCommitEventPublisher(published), mock())
+    private val people: UserRepository = mock()
+    private val addresses: SealedAddresses = mock()
+    private val mandates = Mandates(payments, sealing, clock, AfterCommitEventPublisher(published), mock(), people, addresses)
     private val currentUser: CurrentUserProvider = mock()
-    private val home = MandateAddressRequest("NL", "Enschede", "Hallenweg", "5", "7522NH")
-    private val online = OnlineAuthorisation("2026-10", home.asFields())
+    private val home = AddressFields("NL", "Enschede", "Hallenweg", "5", "7522NH")
+    private val online = OnlineAuthorisation("2026-10", home)
     private val users: net.blueshell.api.user.api.UserService = mock()
     private val controller = MandateController(mandates, currentUser, stepUp, users)
+    private val agreed = SignOwnMandateRequest(authorised = true, wordingVersion = "2026-10")
     private val details = PaymentDetails(12)
 
     init {
@@ -70,6 +76,16 @@ class MandatesTest {
             (saving.arguments[0] as PaymentDetails).also { held[it.userId] = it }
         }
         whenever(currentUser.currentUser()).thenReturn(CurrentUser(12, emptySet(), null))
+        val reader = Entities.user(12)
+        val lives = Entities.address(user = reader).also(reader::replaceAddress)
+        whenever(people.findById(12)).thenReturn(Optional.of(reader))
+        whenever(addresses.open(lives)).thenReturn(home)
+    }
+
+    /** Puts a bank account on file for user 12, as the bank account page does. */
+    private fun onFile(raw: String = "NL91ABNA0417164300") {
+        val iban = Iban.parse(raw)!!
+        details.replaceAccount(sealing.seal(12, iban, "Ann Vos"), iban, null, now)
     }
 
     @Test
@@ -134,23 +150,38 @@ class MandatesTest {
     }
 
     @Test
-    fun `a member sets up incasso themselves, signed today, and a new IBAN gets a new reference`() {
-        // The signed-in reader is user 3.
+    fun `a member sets up direct debit from the bank account on file, signed today, and signing again keeps the reference`() {
+        onFile()
 
-        val own =
-            controller.setUpOwnMandate(
-                SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
-            )
+        val own = controller.signOwnMandate(agreed)
 
         assertThat(own.standing).isEqualTo(IncassoStanding.MANDATE_RECORDED)
-        assertThat(own.signedOn).isEqualTo(LocalDate.of(2026, 9, 30))
+        assertThat(own.signedOn).isEqualTo(today)
+        assertThat(listOf(own.ibanCountry, own.ibanLastTwo)).containsExactly("NL", "00")
         assertThat(details.mandate!!.recordedBy).isEqualTo(12)
-        controller.setUpOwnMandate(
-            SetUpMandateRequest("GB82WEST12345698765432", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
-        )
+        assertThat(details.mandateAccountKept).isTrue()
+        // The account is on file already, so signing seals only the address it is authorised under.
+        verify(sealer).seal(eq("api-bank-details"), argThat { size == 1 && single().context == "mandate-address:12" })
+        mandates.signOwn(12, "2026-10")
         assertThat(controller.findOwnMandate().reference).isEqualTo("BLUESHELL-12-20260930")
-        assertThat(controller.findOwnMandate().let { listOf(it.ibanCountry, it.ibanLastTwo) }).containsExactly("GB", "32")
-        assertThat(SetUpMandateRequest("NL91ABNA0417164300", "Ann").toString()).doesNotContain("0417")
+    }
+
+    @Test
+    fun `direct debit without a bank account on file is refused, and nothing is recorded`() {
+        assertThatThrownBy { mandates.signOwn(12, "2026-10") }.isInstanceOf(NoBankAccount::class.java)
+        // Every field has a default, so a body that leaves one out is refused by validation rather than parsing.
+        assertThat(SignOwnMandateRequest().let { it.authorised to it.wordingVersion }).isEqualTo(false to "")
+        // Without an address on the account, the mandate has none to record.
+        onFile()
+        whenever(people.findById(12)).thenReturn(Optional.of(Entities.user(12)))
+        assertThatThrownBy { controller.signOwnMandate(agreed) }.isInstanceOf(MandateAddressMissing::class.java)
+        whenever(people.findById(12)).thenReturn(Optional.empty())
+        assertThatThrownBy { controller.signOwnMandate(agreed) }.isInstanceOf(MandateAddressMissing::class.java)
+        // An address on file that does not open now is an outage, which the member cannot fix.
+        val unopenable = Entities.user(12).also { it.replaceAddress(Entities.address(user = it)) }
+        whenever(people.findById(12)).thenReturn(Optional.of(unopenable))
+        assertThatThrownBy { controller.signOwnMandate(agreed) }.isInstanceOf(SealingUnavailable::class.java)
+        assertThat(details.mandate).isNull()
     }
 
     @Test
@@ -242,33 +273,22 @@ class MandatesTest {
     }
 
     @Test
-    fun `a change from the account page asks a step-up, and tells the security log with the account masked`() {
-        controller.setUpOwnMandate(
-            SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
-        )
+    fun `setting up direct debit asks a step-up, and leaves the bank account and the security log alone`() {
+        onFile()
+        controller.signOwnMandate(agreed)
 
-        org.mockito.kotlin
-            .verify(stepUp)
-            .require()
-        org.mockito.kotlin.verify(published).publishEvent(
-            net.blueshell.api.user.api
-                .BankDetailsChanged(
-                    12,
-                    net.blueshell.api.user.api
-                        .MaskedIban("NL", "00"),
-                ),
-        )
+        verify(stepUp).require()
+        verify(published, never()).publishEvent(any<BankDetailsChanged>())
 
+        details.mandate = null
         whenever(stepUp.require()).thenThrow(
             net.blueshell.api.security
                 .StepUpRequiredException(),
         )
         assertThatThrownBy {
-            controller.setUpOwnMandate(
-                SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
-            )
+            controller.signOwnMandate(agreed)
         }.isInstanceOf(net.blueshell.api.security.StepUpRequiredException::class.java)
-        org.mockito.kotlin.verifyNoMoreInteractions(published)
+        assertThat(details.mandate).isNull()
     }
 
     @Test
@@ -364,9 +384,7 @@ class MandatesTest {
 
     @Test
     fun `an online mandate records its kind, the moment, the wording and who authorised it, and seals the address with the account`() {
-        controller.setUpOwnMandate(
-            SetUpMandateRequest("NL91ABNA0417164300", "Ann Vos", authorised = true, wordingVersion = "2026-10", address = home),
-        )
+        mandates.setUpOwn(12, "NL91ABNA0417164300", "Ann Vos", online)
         val held = details.mandate!!
 
         assertThat(held.kind).isEqualTo(MandateKind.ONLINE)
@@ -380,8 +398,6 @@ class MandatesTest {
         assertThat(controller.findMandate(12).let { it.kind to it.authorisedAt }).isEqualTo(MandateKind.ONLINE to now)
         assertThat(MandateWording.textOf(held.wordingVersion!!)).startsWith("I authorise ESA Blueshell")
         assertThat(MandateWording.textOf("1999-01")).isNull()
-        // A request that leaves the address out fails validation rather than parsing.
-        assertThat(MandateAddressRequest().asFields().street).isEmpty()
     }
 
     @Test
@@ -414,6 +430,11 @@ class MandatesTest {
                 online.copy(address = online.address.copy(zipCode = null)),
             )
         }.isInstanceOf(MandateAddressMissing::class.java)
+        onFile()
+        assertThatThrownBy { mandates.signOwn(12, "2025-01") }
+            .isInstanceOf(MandateWordingOutdated::class.java)
+        whenever(addresses.open(any())).thenReturn(home.copy(city = null))
+        assertThatThrownBy { mandates.signOwn(12, "2026-10") }.isInstanceOf(MandateAddressMissing::class.java)
         assertThat(details.mandate).isNull()
     }
 

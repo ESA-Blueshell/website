@@ -54,6 +54,12 @@ class SealedBankDetails(
         return SealedAccount(sealed[0], sealed[1], sealed.getOrNull(2))
     }
 
+    /** Seals the address an online mandate is authorised under, for an account already on file. */
+    fun sealAddress(
+        userId: Long,
+        address: AddressFields,
+    ): String = sealer.seal(key, listOf(Sealed(mapper.writeValueAsString(address), sealingContext(ADDRESS, userId)))).single()
+
     /** Opens every account in one call. One that does not open for its member refuses them all with [BankDetailsUnopenable]. */
     fun open(accounts: List<HeldAccount>): List<BankDetails> {
         val values =

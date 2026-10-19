@@ -173,8 +173,9 @@ asks for the backup's date, then:
 
 - **database:** first proves, in scratch, that the dump loads and that the shares unseal the Vault
   snapshot, so it never writes a snapshot production cannot open. It then scales the api to 0,
-  replaces the `blueshell` database with the dump, restores the snapshot over `vault-v2` with a
-  root token made from the shares (the snapshot's token store replaces it), and starts the api.
+  replaces the `blueshell` database with the dump, restores the snapshot over `vault-v2`, and
+  starts the api. For this store the script signs in with the `restore` OIDC role, the only one
+  whose tokens may overwrite Vault; the dry run checks the sign-in can before anything changes.
 - **uploads:** copies every file back beside the live ones, as the api's user. Files added since
   stay.
 - **valkey**, **stalwart**, **gatus:** scales the app to 0, replaces its files in the claim from a

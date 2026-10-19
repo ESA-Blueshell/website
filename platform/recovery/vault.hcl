@@ -12,3 +12,6 @@ storage "raft" {
   path    = "/vault/data"
   node_id = "vault-0"
 }
+
+# Step 7c makes a root token from the shares, which Vault 2.0 allows only when asked.
+enable_unauthenticated_access = ["generate-root"]

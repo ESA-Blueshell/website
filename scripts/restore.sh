@@ -173,8 +173,11 @@ forward() { # namespace target remote-port
 read -r port pid < <(forward data-system svc/vault-v2 8200) || die "No port-forward to Vault."
 forward_pids+=("$pid"); live_addr=http://127.0.0.1:$port
 
+# Only the restore role may overwrite Vault; everything else signs in as a plain admin.
+role="admin"
+[[ $mode == cluster ]] && wants database && role=restore
 echo "- A browser opens on the site's sign-in; sign in with an admin account."
-live_token=$(VAULT_ADDR=$live_addr vault login -method=oidc -no-store -token-only) ||
+live_token=$(VAULT_ADDR=$live_addr vault login -method=oidc -no-store -token-only role=$role) ||
   die "The Vault sign-in did not complete."
 live() { VAULT_ADDR=$live_addr VAULT_TOKEN=$live_token vault "$@"; }
 oidc=$(live read -field=oidc_discovery_url auth/oidc/config 2>/dev/null || true)
@@ -238,7 +241,7 @@ download() { # part
     die "Kopia could not restore the $1 snapshot."
 }
 
-# --- Shares and root tokens ---------------------------------------------------------------------
+# --- Unseal shares ------------------------------------------------------------------------------
 
 ask_shares() {
   ((${#shares[@]})) && return
@@ -260,22 +263,6 @@ unseal_with_shares() { # vault address
   unset share
   [[ $(VAULT_ADDR=$1 vault status -format=json 2>/dev/null | jq -r .sealed) == false ]]
 }
-# Prints a root token made from the shares, or nothing.
-root_from_shares() { # vault address
-  local init nonce otp share out encoded=""
-  VAULT_ADDR=$1 vault operator generate-root -cancel >/dev/null 2>&1 || true
-  init=$(VAULT_ADDR=$1 vault operator generate-root -init -format=json) || return 1
-  nonce=$(jq -r .nonce <<<"$init"); otp=$(jq -r .otp <<<"$init")
-  for share in "${shares[@]}"; do
-    out=$(printf '{"key":"%s","nonce":"%s"}' "$share" "$nonce" |
-      curl -sS -X PUT --data-binary @- "$1/v1/sys/generate-root/update")
-    encoded=$(jq -r '.encoded_token // empty' <<<"$out")
-  done
-  unset share
-  [[ -n $encoded ]] || return 1
-  printf '%s' "$encoded" | VAULT_ADDR=$1 vault operator generate-root -decode=- -otp="$otp" | tr -d '[:space:]'
-}
-
 # --- Rehearsals, one per store ------------------------------------------------------------------
 
 scratch_db_up() {
@@ -549,7 +536,7 @@ plan_database() {
   echo "  1. check the dump loads and the Vault snapshot unseals with three shares, in scratch"
   echo "  2. suspend Flux apps-stateless; scale default/api-primary and default/api to 0"
   echo "  3. MariaDB: drop the blueshell database and load the dump into a new one"
-  echo "  4. Vault: make a root token from the shares, restore the snapshot over vault-v2"
+  echo "  4. Vault: restore the snapshot over vault-v2 as the restore role"
   echo "  5. scale the api back up; resume Flux"
 }
 plan_uploads() {
@@ -582,6 +569,10 @@ preflight() {
   wants stalwart && { k -n mail-system get deployment/stalwart pvc/stalwart-data >/dev/null 2>&1 || missing+=("mail-system/stalwart"); }
   wants gatus && { k -n utility-system get deployment/gatus pvc/gatus-data >/dev/null 2>&1 || missing+=("utility-system/gatus"); }
   ((${#missing[@]} == 0)) || die "Not in the cluster: ${missing[*]}."
+  if wants database; then
+    live token capabilities sys/storage/raft/snapshot-force | grep -qw sudo ||
+      die "This sign-in may not restore Vault: the restore OIDC role is missing or lacks the restore policy."
+  fi
 }
 
 restore_database() {
@@ -597,13 +588,10 @@ restore_database() {
     die "MariaDB did not take the dump. The api stays down until this script exits; rerun once the cause is fixed."
   check ok "MariaDB holds the dump of $(taken mariadb)"
 
-  local root
-  root=$(root_from_shares "$live_addr") || true
-  [[ $root == hvs.* ]] || die "No root token could be made for the live Vault. MariaDB is restored; Vault is not."
-  # The snapshot replaces the token store, so this root token is gone afterwards by itself.
-  VAULT_ADDR=$live_addr VAULT_TOKEN=$root vault operator raft snapshot restore -force "$work/restore/vault/vault.snap" ||
+  live operator raft snapshot restore -force "$work/restore/vault/vault.snap" ||
     die "Vault did not take the snapshot. MariaDB is restored; Vault is not."
-  unset root
+  # The snapshot replaced the token store, so the sign-in is gone and has nothing to revoke.
+  live_token=""
   for _ in $(seq 1 60); do
     [[ $(VAULT_ADDR=$live_addr vault status -format=json 2>/dev/null | jq -r '.sealed') == false ]] && break
     sleep 2

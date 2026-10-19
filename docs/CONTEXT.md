@@ -618,7 +618,9 @@ A person's one bank account on the site: the account holder, the IBAN and, for a
 the Netherlands, the BIC. It is **sealed** and kept once, apart from anything that uses it, and
 replaced whole rather than edited. Beside it a preview stays open, the country and the last
 four digits, which is all the site shows its owner. Declarations are paid to it and a
-**mandate** collects from it. It is deleted 13 months after its last use, a collection or a
+**mandate** collects from it. The sealed account is opened only for the board's work, such as
+paying a declaration or an incasso run. A declaration is paid to the account as it is when the
+board pays, and the paid declaration records the preview of that account. It is deleted 13 months after its last use, a collection or a
 declaration paid to it, unless a mandate still stands.
 
 _Avoid_: payout account, IBAN (for the whole record).
@@ -650,6 +652,46 @@ for a refund. The treasurer records it: the contribution is unpaid again and the
 asked by transfer. The mandate stays unless the treasurer ends it.
 
 _Avoid_: chargeback, reversal (in the interface).
+
+## Declarations
+
+### Declaration
+
+A request from anyone with an account to be paid back money they spent for the association. It
+holds one or more expenses, at least one receipt and the submitter's statement that it is
+correct, and is paid to the submitter's bank account. Only someone with a bank account can
+submit one. Any board member approves it, sends it back or rejects it, and marks it paid once
+the money is transferred; a board member may do so for their own. The submitter is told when it
+is sent back, rejected or paid. Only the submitter and the board see it. It is kept for 7 years
+after it is paid or rejected; erasing the account deletes its drafts and rejects what is still
+submitted.
+
+_Avoid_: claim, reimbursement, expense report.
+
+### Expense
+
+One thing paid for on a declaration: the day it was paid, what it was for, the amount and the
+receipts. It may name the committee or the event it was for. A declaration's total is the sum of
+its expenses.
+
+_Avoid_: cost, row, item.
+
+### Receipt
+
+A photo or PDF of a bill. It belongs to one expense or to the declaration as a whole, and a
+declaration needs at least one before it can be submitted.
+
+_Avoid_: bill, proof.
+
+### Draft, Submitted, Approved, Paid
+
+The states of a declaration. A draft is seen only by the person writing it. Submitting hands it
+to the board; the submitter may withdraw it to a draft until it is approved. A board member
+approves it, sends it back with a reason, which makes it a draft again, or rejects it with a
+reason. An approved declaration is paid when a board member marks the transfer done. A rejected
+declaration stays rejected.
+
+_Avoid_: pending, open, closed.
 
 ## Boards
 

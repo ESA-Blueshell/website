@@ -29,6 +29,7 @@ This index tracks architecture decisions for the Kotlin/Spring API.
 | [038](ADR-038-private-details-are-sealed-by-vault-transit.md) | Private Details Are Sealed by Vault Transit | Accepted | Address and bank details sealed by Transit under a derived key, bound to the member; refused, never plaintext, when Vault is down |
 | [039](ADR-039-sending-addresses-keep-their-logins-in-vault.md) | Sending Addresses Keep Their Logins in Vault | Accepted | The board keeps addresses that send and are read; one login per address, tested, written to Vault and never answered back; only an admin sets the default, which sends the site's own mail |
 | [040](ADR-040-a-membership-type-is-dated-and-a-mandate-decides-direct-debit.md) | A Membership Type Is Dated, and a Mandate Decides Direct Debit | Accepted | One membership per unbroken spell with a dated membership type (regular, alumni, honorary); fees follow the membership type when asked; a mandate is the only pays-by; only incasso runs notify, 14 days ahead |
+| [041](ADR-041-a-bank-account-is-kept-once-and-declarations-for-seven-years.md) | A Bank Account Is Kept Once, and Declarations for Seven Years | Accepted | One sealed bank account per person, kept apart; a mandate is given for it and declarations are paid to it; the account follows the 13-month wipe, declarations and receipts are kept 7 years |
 | [015](ADR-015-jpa-specifications-dynamic-queries.md) | JPA Specifications and Dynamic Queries | Accepted | Query-object driven dynamic filtering |
 
 ### Validation and Mapping

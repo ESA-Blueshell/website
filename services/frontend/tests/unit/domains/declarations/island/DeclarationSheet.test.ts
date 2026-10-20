@@ -9,6 +9,7 @@ const receipt = {id: 1, path: "1.webp", name: "a", type: "image/webp", url: "/r/
 
 const sheet = (declaration: Partial<Declaration>, payTo: unknown = null) => mount(DeclarationSheet, {props: {
   declaration: {
+    submitterId: 12,
     submitter: "Ann Vos",
     confirmed: false,
     state: "DRAFT",

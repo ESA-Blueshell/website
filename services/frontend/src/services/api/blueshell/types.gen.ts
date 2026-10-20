@@ -1214,6 +1214,10 @@ export type DeclarationDraftRequest = {
     receipts: Array<number>;
 };
 
+export type DeclarationReasonRequest = {
+    reason: string;
+};
+
 export type DeclarationResponse = {
     confirmed: boolean;
     createdAt: string;
@@ -1232,6 +1236,7 @@ export type DeclarationResponse = {
      * The submitter's name as it is now.
      */
     submitter: string;
+    submitterId: number;
 };
 
 export enum DeclarationState {
@@ -6629,6 +6634,47 @@ export type CsrfResponses = {
 
 export type CsrfResponse = CsrfResponses[keyof CsrfResponses];
 
+export type ListDeclarationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/declarations';
+};
+
+export type ListDeclarationsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListDeclarationsError = ListDeclarationsErrors[keyof ListDeclarationsErrors];
+
+export type ListDeclarationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<DeclarationResponse>;
+};
+
+export type ListDeclarationsResponse = ListDeclarationsResponses[keyof ListDeclarationsResponses];
+
 export type UploadReceiptData = {
     body?: {
         file: Blob | File;
@@ -6714,6 +6760,178 @@ export type OpenReceiptResponses = {
 };
 
 export type OpenReceiptResponse = OpenReceiptResponses[keyof OpenReceiptResponses];
+
+export type FindDeclarationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}';
+};
+
+export type FindDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeclarationError = FindDeclarationErrors[keyof FindDeclarationErrors];
+
+export type FindDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type FindDeclarationResponse = FindDeclarationResponses[keyof FindDeclarationResponses];
+
+export type ApproveDeclarationData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}/approve';
+};
+
+export type ApproveDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ApproveDeclarationError = ApproveDeclarationErrors[keyof ApproveDeclarationErrors];
+
+export type ApproveDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type ApproveDeclarationResponse = ApproveDeclarationResponses[keyof ApproveDeclarationResponses];
+
+export type RejectDeclarationData = {
+    body: DeclarationReasonRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}/reject';
+};
+
+export type RejectDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RejectDeclarationError = RejectDeclarationErrors[keyof RejectDeclarationErrors];
+
+export type RejectDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type RejectDeclarationResponse = RejectDeclarationResponses[keyof RejectDeclarationResponses];
+
+export type SendBackDeclarationData = {
+    body: DeclarationReasonRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}/send-back';
+};
+
+export type SendBackDeclarationErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type SendBackDeclarationError = SendBackDeclarationErrors[keyof SendBackDeclarationErrors];
+
+export type SendBackDeclarationResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type SendBackDeclarationResponse = SendBackDeclarationResponses[keyof SendBackDeclarationResponses];
 
 export type PreviewDescriptionData = {
     body: DescriptionPreviewRequest;

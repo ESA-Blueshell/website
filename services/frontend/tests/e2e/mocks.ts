@@ -647,6 +647,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
   const declared = (id: number, body: DeclarationDraftRequest, held?: Wire<DeclarationResponse>): Wire<DeclarationResponse> => ({
     id,
     state: held?.state ?? "DRAFT",
+    submitterId: 12,
     submitter: "M. Member",
     confirmed: body.confirmed ?? false,
     createdAt: held?.createdAt ?? "2026-10-15T10:00:00.000Z",
@@ -666,6 +667,27 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     ownDeclarations.set(held.id, moved)
     return moved
   }
+  // Declarations other members submitted, as the board sees them.
+  const submittedStep = {state: "SUBMITTED" as const, at: "2026-10-16T10:00:00.000Z", by: "Ann Vos", reason: null}
+  const boardDeclarations = new Map<number, Wire<DeclarationResponse>>([30, 31].map(id => [id, {
+    id,
+    state: id === 30 ? "SUBMITTED" : "APPROVED",
+    submitterId: 20,
+    submitter: "Ann Vos",
+    confirmed: true,
+    createdAt: "2026-10-16T09:00:00.000Z",
+    receipts: [],
+    expenses: [{
+      id: id * 100,
+      paidOn: "2026-10-14",
+      description: id === 30 ? "Pizza for the committee meeting" : "Cables for the LAN",
+      amountCents: id === 30 ? 1250 : 3999,
+      bookedTo: null,
+      receipts: [{id: 600 + id, name: "bill.webp", mediaType: "image/webp", url: `/declarations/receipts/${600 + id}`}],
+    }],
+    steps: [{state: "DRAFT", at: "2026-10-16T09:00:00.000Z", by: "Ann Vos", reason: null}, submittedStep,
+      ...(id === 31 ? [{state: "APPROVED" as const, at: "2026-10-17T10:00:00.000Z", by: "B. Board", reason: null}] : [])],
+  }]))
   const payingByIncasso = new Set(fixtures.onIncasso ?? [])
   const recordedMandates = new Map<number, Wire<MandateResponse>>()
   // A standing mandate is the only "pays by direct debit"; ending one keeps it as the record.
@@ -984,6 +1006,21 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     }
     if (method === "GET" && /^\/declarations\/receipts\/\d+$/.test(path)) {
       return route.fulfill({status: 200, contentType: "image/webp", body: Buffer.from("UklGRi4AAABXRUJQVlA4TCIAAAAv/8F/AAdQs840s/8BgUCyv/cMRfQ/4z//+c9//vOf//wf", "base64")})
+    }
+    if (method === "GET" && path === "/declarations") {
+      return answer(route, "listDeclarations", [...boardDeclarations.values()].filter(one => one.state !== "DRAFT"))
+    }
+    const reviewPath = /^\/declarations\/(\d+)(?:\/(approve|send-back|reject))?$/.exec(path)
+    if (reviewPath) {
+      const held = boardDeclarations.get(Number(reviewPath[1]))
+      if (!held) return fulfillJson(route, {code: "DeclarationNotFound"}, 404)
+      if (!reviewPath[2]) return answer(route, "findDeclaration", held)
+      const reason = reviewPath[2] === "approve" ? null : (request.postDataJSON() as {reason: string}).reason
+      const state = ({approve: "APPROVED", "send-back": "DRAFT", reject: "REJECTED"} as const)[reviewPath[2] as "approve" | "send-back" | "reject"]
+      const moved = {...held, state, steps: [...held.steps, {state, at: "2026-10-18T10:00:00.000Z", by: "B. Board", reason}]}
+      boardDeclarations.set(held.id, moved)
+      const op = ({approve: "approveDeclaration", "send-back": "sendBackDeclaration", reject: "rejectDeclaration"} as const)[reviewPath[2] as "approve" | "send-back" | "reject"]
+      return answer(route, op, moved)
     }
     if (path === "/users/me/declarations") {
       if (method === "GET") return answer(route, "listOwnDeclarations", [...ownDeclarations.values()].reverse())

@@ -16,6 +16,7 @@ vi.mock("@/components/common/AccountFrame.vue", () => ({
 const at = "2026-10-02T10:00:00Z"
 const one = (id: number, state: Declaration["state"], amount: string): Declaration => ({
   id,
+  submitterId: 12,
   submitter: "Ann Vos",
   state,
   confirmed: true,

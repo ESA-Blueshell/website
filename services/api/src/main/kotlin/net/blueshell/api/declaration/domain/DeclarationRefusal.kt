@@ -1,5 +1,6 @@
 package net.blueshell.api.declaration.domain
 
+import net.blueshell.api.declaration.persistence.DeclarationState
 import net.blueshell.api.shared.refusal.Refusal
 import org.springframework.http.HttpStatus
 
@@ -17,6 +18,19 @@ class DeclarationNotDraft : DeclarationRefusal(HttpStatus.CONFLICT, "Declaration
 
 class DeclarationNotSubmitted :
     DeclarationRefusal(HttpStatus.CONFLICT, "DeclarationNotSubmitted", "Only a declaration not yet approved is withdrawn.")
+
+/** The declaration moved on before the board acted: approving asks a submitted one, sending back or rejecting one not yet paid. */
+class DeclarationStateChanged(
+    state: DeclarationState,
+) : DeclarationRefusal(
+        HttpStatus.CONFLICT,
+        "DeclarationStateChanged",
+        "That declaration is no longer waiting for this.",
+        mapOf("state" to state.name),
+    )
+
+/** Sending back and rejecting both tell the submitter why. */
+class ReasonMissing : DeclarationRefusal(HttpStatus.BAD_REQUEST, "ReasonMissing", "Sending back or rejecting gives a reason.")
 
 class NoBankAccount : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NoBankAccount", "A declaration is paid to a bank account on file.")
 

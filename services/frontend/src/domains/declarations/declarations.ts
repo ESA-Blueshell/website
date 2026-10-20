@@ -1,4 +1,5 @@
 import {DateTime} from "luxon"
+import type {StateKind} from "@/components/island/StateMark.vue"
 import {BookingKind, DeclarationState} from "@/services/api"
 
 export {BookingKind, DeclarationState}
@@ -47,6 +48,7 @@ export interface DeclarationStep {
 
 export interface Declaration {
   id: number
+  submitterId: number
   submitter: string
   state: DeclarationState
   expenses: Expense[]
@@ -90,6 +92,19 @@ const STATES: Record<DeclarationState, {label: string; tone: Tone}> = {
   [DeclarationState.REJECTED]: {label: "Rejected", tone: "warn"},
 }
 
+/* The marks the other Management lists use: an outline waits for someone, a filled one is under way. */
+export const STATE_MARKS: Record<DeclarationState, StateKind> = {
+  [DeclarationState.SUBMITTED]: "extra",
+  [DeclarationState.APPROVED]: "missing",
+  [DeclarationState.PAID]: "in-sync",
+  [DeclarationState.REJECTED]: "not-created",
+  [DeclarationState.DRAFT]: "not-compared",
+}
+
+/** What the board can still send back or reject. TWIN: `WITH_THE_BOARD` in the api's `DeclarationReviews.kt`. */
+export const withTheBoard = (declaration: Pick<Declaration, "state">): boolean =>
+  declaration.state === DeclarationState.SUBMITTED || declaration.state === DeclarationState.APPROVED
+
 /** A draft the board returned reads differently from one never sent. */
 export const sentBack = (declaration: Pick<Declaration, "state" | "steps">): DeclarationStep | null => {
   const last = declaration.steps.at(-1)
@@ -116,7 +131,11 @@ export const stepLabel = (step: DeclarationStep, index: number): string => {
 export const stepAt = (declaration: Pick<Declaration, "steps">, state: DeclarationState): DeclarationStep | null =>
   declaration.steps.findLast(step => step.state === state) ?? null
 
-/** The declaration named by what it was for, since several are often open at once. */
+/** The committees and events the expenses were for, each once. */
+export const forsOf = (declaration: Declaration): string[] =>
+  [...new Set(declaration.expenses.flatMap(expense => (expense.for ? [expense.for.name] : [])))]
+
+/** The declaration named by what it was for, since several are often open at once. TWIN: `titleOf` in the api's `DeclarationReviews.kt`. */
 export function titleOf(declaration: Declaration): string {
   const first = declaration.expenses[0]?.description.trim()
   if (!first) return "New declaration"

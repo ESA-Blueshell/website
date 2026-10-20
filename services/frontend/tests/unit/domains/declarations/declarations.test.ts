@@ -21,6 +21,7 @@ const step = (state: DeclarationStep["state"], at: string, reason?: string): Dec
 
 const declaration = (over: Partial<Declaration> = {}): Declaration => ({
   id: 4,
+  submitterId: 12,
   submitter: "Ann Vos",
   state: "DRAFT",
   expenses: [expense("Pizza", "12.50")],

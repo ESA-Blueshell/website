@@ -43,7 +43,10 @@ class ReceiptsAndBookingsTest {
         userId: Long,
         submitted: Boolean,
     ) = Declaration(userId, Instant.EPOCH).apply {
-        if (submitted) steps += DeclarationStep(DeclarationState.SUBMITTED, Instant.EPOCH, userId)
+        if (submitted) {
+            state = DeclarationState.SUBMITTED
+            steps += DeclarationStep(DeclarationState.SUBMITTED, Instant.EPOCH, userId)
+        }
     }
 
     private fun reader(
@@ -52,7 +55,7 @@ class ReceiptsAndBookingsTest {
     ) = CurrentUser(id, roles.toSet(), null)
 
     @Test
-    fun `a receipt is opened by the submitter who uploaded it and, once submitted, the board`() {
+    fun `a receipt is opened by the submitter who uploaded it and, while it is past draft, the board`() {
         whenever(files.findStored(501, FileType.RECEIPT)).thenReturn(receipt(uploader = 13))
         whenever(repository.findAllHoldingReceipt(501)).thenReturn(listOf(declaration(13, submitted = false)))
 

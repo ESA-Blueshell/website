@@ -1,12 +1,10 @@
 package net.blueshell.api.user.web
 
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.Valid
 import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
-import net.blueshell.api.user.api.AddressFields
 import net.blueshell.api.user.domain.IncassoStanding
 import net.blueshell.api.user.persistence.MandateKind
 import java.time.Instant
@@ -20,8 +18,6 @@ import java.time.LocalDate
 const val IBAN_MAX = 42
 const val ACCOUNT_HOLDER_MAX = 70
 const val WORDING_VERSION_MAX = 16
-private const val ADDRESS_LINE_MAX = 150
-private const val ADDRESS_PART_MAX = 20
 
 /** How a person pays and their mandate as any response shows it: the account number masked to its last four. */
 @Schema(name = "MandateResponse")
@@ -96,52 +92,14 @@ data class OwnMandateResponse(
     val signedOn: LocalDate?,
 )
 
-/** The address a member confirms when authorising incasso online. */
-@Schema(name = "MandateAddressRequest")
-data class MandateAddressRequest(
-    @field:NotBlank
-    @field:ValidCountryCode
-    val country: String = "",
-    @field:NotBlank
-    @field:Size(max = ADDRESS_LINE_MAX)
-    val city: String = "",
-    @field:NotBlank
-    @field:Size(max = ADDRESS_LINE_MAX)
-    val street: String = "",
-    @field:NotBlank
-    @field:Size(max = ADDRESS_PART_MAX)
-    val houseNumber: String = "",
-    @field:NotBlank
-    @field:Size(max = ADDRESS_PART_MAX)
-    val zipCode: String = "",
-) {
-    fun asFields() = AddressFields(country.trim(), city.trim(), street.trim(), houseNumber.trim(), zipCode.trim())
-}
-
-/** A member's own bank details; the mandate is signed on the day they are sent. */
-@Schema(name = "SetUpMandateRequest")
-data class SetUpMandateRequest(
-    @field:NotBlank
-    @field:Size(max = IBAN_MAX)
-    val iban: String,
-    @field:NotBlank
-    @field:Size(max = ACCOUNT_HOLDER_MAX)
-    val accountHolder: String,
-    @field:AssertTrue(message = "Authorise the collection to set up incasso.")
+/** A member agreeing to direct debit from their bank account on file; the mandate is signed on the day it is sent. */
+@Schema(name = "SignOwnMandateRequest")
+data class SignOwnMandateRequest(
+    // TWIN: the Payment method page asks the same before it sends.
+    @field:AssertTrue(message = "Tick the box to allow direct debit.")
     val authorised: Boolean = false,
     /** The version of the authorisation wording the member was shown. */
     @field:NotBlank
     @field:Size(max = WORDING_VERSION_MAX)
     val wordingVersion: String = "",
-    /** The address the member confirmed, which the mandate keeps as its own record. */
-    @field:Valid
-    @field:NotNull
-    val address: MandateAddressRequest? = null,
-) {
-    // A request is logged on a failure; the account number is not.
-    override fun toString(): String = "SetUpMandateRequest(iban=****${iban.takeLast(SHOWN)})"
-
-    private companion object {
-        const val SHOWN = 4
-    }
-}
+)

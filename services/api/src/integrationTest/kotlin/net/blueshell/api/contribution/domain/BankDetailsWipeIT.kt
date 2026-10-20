@@ -13,7 +13,6 @@ import org.springframework.http.MediaType
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
@@ -31,24 +30,15 @@ class BankDetailsWipeIT : UserTestSupport() {
     private lateinit var erasure: UserErasureService
 
     private val payload get() = mapper.writeValueAsString(ContributionJobs.WipeBankDetailsPayload())
-    private val online =
-        """{"iban":"NL91ABNA0417164300","accountHolder":"Ann Vos","authorised":true,"wordingVersion":"2026-10",""" +
-            """"address":{"country":"NL","city":"Enschede","street":"Hallenweg","houseNumber":"5","zipCode":"7522NH"}}"""
 
     @AfterEach
     fun resetClock() = clock.reset()
-
-    private fun authorise(member: User) =
-        mvc
-            .perform(
-                put("/users/me/mandate").with(signedIn(member, steppedUp = true)).contentType(MediaType.APPLICATION_JSON).content(online),
-            ).andExpect(status().isOk)
 
     /** A member with a running membership and an online mandate, and their id. */
     private fun onIncasso(): Pair<User, Long> {
         val member = createUserWithRole(Role.MEMBER)
         createMembershipFixture(member, startDate = LocalDate.now().minusMonths(2))
-        authorise(member)
+        onlineMandateFor(member)
         return member to member.id!!
     }
 
@@ -142,7 +132,7 @@ class BankDetailsWipeIT : UserTestSupport() {
     @Test
     fun `an applicant's mandate waits for their first membership and is not wiped meanwhile`() {
         val applicant = createUserWithRole(Role.GUEST)
-        authorise(applicant)
+        onlineMandateFor(applicant)
 
         runOn(LocalDate.now().plusMonths(2))
 
@@ -179,7 +169,7 @@ class BankDetailsWipeIT : UserTestSupport() {
     fun `erasing an account stops collecting, so a mandate never collected from goes at once and one collected under in 13 months`() {
         val board = createUserWithRole(Role.BOARD)
         val applicant = createUserWithRole(Role.GUEST)
-        authorise(applicant)
+        onlineMandateFor(applicant)
         val (member, memberId) = onIncasso()
         val collection = LocalDate.now().plusDays(14)
         collected(board, member, collection)

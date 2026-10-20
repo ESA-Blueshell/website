@@ -2636,14 +2636,6 @@ export enum MailSecurity {
     NONE = 'NONE'
 }
 
-export type MandateAddressRequest = {
-    city: string;
-    country: string;
-    houseNumber: string;
-    street: string;
-    zipCode: string;
-};
-
 export enum MandateKind {
     ONLINE = 'ONLINE',
     PAPER = 'PAPER'
@@ -3502,14 +3494,6 @@ export type ServiceEntry = {
     url: string;
 };
 
-export type SetUpMandateRequest = {
-    accountHolder: string;
-    address: MandateAddressRequest | null;
-    authorised: boolean;
-    iban: string;
-    wordingVersion: string;
-};
-
 export type SignInAnswer = {
     login?: LoginResponse | null;
     status: SignInStatus;
@@ -3528,6 +3512,11 @@ export enum SignInStatus {
     SIGNED_IN = 'SIGNED_IN',
     TWO_FACTOR_REQUIRED = 'TWO_FACTOR_REQUIRED'
 }
+
+export type SignOwnMandateRequest = {
+    authorised: boolean;
+    wordingVersion: string;
+};
 
 export type SignupAddressRequest = {
     city: string;
@@ -15598,14 +15587,14 @@ export type FindOwnMandateResponses = {
 
 export type FindOwnMandateResponse = FindOwnMandateResponses[keyof FindOwnMandateResponses];
 
-export type SetUpOwnMandateData = {
-    body: SetUpMandateRequest;
+export type SignOwnMandateData = {
+    body: SignOwnMandateRequest;
     path?: never;
     query?: never;
     url: '/users/me/mandate';
 };
 
-export type SetUpOwnMandateErrors = {
+export type SignOwnMandateErrors = {
     /**
      * Validation error
      */
@@ -15628,16 +15617,16 @@ export type SetUpOwnMandateErrors = {
     500: ApiError;
 };
 
-export type SetUpOwnMandateError = SetUpOwnMandateErrors[keyof SetUpOwnMandateErrors];
+export type SignOwnMandateError = SignOwnMandateErrors[keyof SignOwnMandateErrors];
 
-export type SetUpOwnMandateResponses = {
+export type SignOwnMandateResponses = {
     /**
      * OK
      */
     200: OwnMandateResponse;
 };
 
-export type SetUpOwnMandateResponse = SetUpOwnMandateResponses[keyof SetUpOwnMandateResponses];
+export type SignOwnMandateResponse = SignOwnMandateResponses[keyof SignOwnMandateResponses];
 
 export type EndOwnMandateData = {
     body?: never;

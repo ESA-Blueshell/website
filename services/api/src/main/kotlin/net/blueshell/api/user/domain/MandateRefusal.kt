@@ -25,6 +25,9 @@ class BicMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "BicMissing", "A bank 
 
 class InvalidBic : MandateRefusal(HttpStatus.BAD_REQUEST, "InvalidBic", "That is not a valid BIC.")
 
+/** Direct debit is set up for the bank account on file, and there is none. */
+class NoBankAccount : MandateRefusal(HttpStatus.CONFLICT, "NoBankAccount", "There is no bank account on file to collect from.")
+
 class AccountHolderMissing : MandateRefusal(HttpStatus.BAD_REQUEST, "AccountHolderMissing", "A mandate names the account holder.")
 
 /** A mandate's sealed bank details do not open for their member: they were changed outside the site. */

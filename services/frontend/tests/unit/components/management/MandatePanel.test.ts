@@ -189,7 +189,7 @@ describe("the mandate panel", () => {
 
     const refusals = [
       ["MandateSignedInFuture", "signed today or before"], ["AccountHolderMissing", "whose account"], ["SealingUnavailable", "Try again in a moment"],
-      ["MandateAddressMissing", "whole address"], ["MandateWordingOutdated", "Reload the page"],
+      ["MandateAddressMissing", "full home address"], ["MandateWordingOutdated", "Reload the page"],
     ] as const
     for (const [code, words] of refusals) {
       api.recordMandate.mockResolvedValue({status: 400, error: {code, detail: code}})

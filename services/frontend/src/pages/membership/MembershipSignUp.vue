@@ -113,7 +113,10 @@
             <h3 class="signup-incasso__title">
               Set up incasso (optional)
             </h3>
-            <incasso-set-up :signup-token="signupToken" />
+            <incasso-set-up
+              v-if="signupToken"
+              :signup-token="signupToken"
+            />
           </section>
           <div class="panel-acts panel-acts--split">
             <cut-button

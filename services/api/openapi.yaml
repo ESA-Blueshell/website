@@ -5182,34 +5182,6 @@ components:
       - SSL
       - NONE
       type: string
-    MandateAddressRequest:
-      properties:
-        city:
-          maxLength: 150
-          minLength: 0
-          type: string
-        country:
-          minLength: 1
-          type: string
-        houseNumber:
-          maxLength: 20
-          minLength: 0
-          type: string
-        street:
-          maxLength: 150
-          minLength: 0
-          type: string
-        zipCode:
-          maxLength: 20
-          minLength: 0
-          type: string
-      required:
-      - city
-      - country
-      - houseNumber
-      - street
-      - zipCode
-      type: object
     MandateKind:
       enum:
       - ONLINE
@@ -6839,33 +6811,6 @@ components:
       - name
       - url
       type: object
-    SetUpMandateRequest:
-      properties:
-        accountHolder:
-          maxLength: 70
-          minLength: 0
-          type: string
-        address:
-          oneOf:
-          - $ref: '#/components/schemas/MandateAddressRequest'
-          - type: 'null'
-        authorised:
-          type: boolean
-        iban:
-          maxLength: 42
-          minLength: 0
-          type: string
-        wordingVersion:
-          maxLength: 16
-          minLength: 0
-          type: string
-      required:
-      - accountHolder
-      - address
-      - authorised
-      - iban
-      - wordingVersion
-      type: object
     SignInAnswer:
       properties:
         login:
@@ -6906,6 +6851,18 @@ components:
       - SIGNED_IN
       - TWO_FACTOR_REQUIRED
       type: string
+    SignOwnMandateRequest:
+      properties:
+        authorised:
+          type: boolean
+        wordingVersion:
+          maxLength: 16
+          minLength: 0
+          type: string
+      required:
+      - authorised
+      - wordingVersion
+      type: object
     SignupAddressRequest:
       properties:
         city:
@@ -37517,12 +37474,12 @@ paths:
       tags:
       - Memberships
     put:
-      operationId: setUpOwnMandate
+      operationId: signOwnMandate
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SetUpMandateRequest'
+              $ref: '#/components/schemas/SignOwnMandateRequest'
         required: true
       responses:
         '200':

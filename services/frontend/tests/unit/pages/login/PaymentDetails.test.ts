@@ -1,7 +1,17 @@
-import {describe, expect, it, vi} from "vitest"
+import {beforeEach, describe, expect, it, vi} from "vitest"
 import PaymentDetails from "@/pages/login/PaymentDetails.vue"
+import {RouterLinkStub} from "@vue/test-utils"
+import {IncassoStanding} from "@/services/api"
 import {mountInApp, settle} from "../helpers"
 
+const api = vi.hoisted(() => ({findOwnBankAccount: vi.fn(), findOwnMandate: vi.fn()}))
+
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
+  ...api,
+}))
+
+const mockRoute = vi.hoisted(() => ({path: "/account/payment-details", params: {}, hash: ""}))
 const {mockStore} = vi.hoisted(() => ({
   mockStore: {getters: {getLogin: {userId: 5, addressId: 12} as {userId: number; addressId?: number} | null}, dispatch: vi.fn()},
 }))
@@ -13,12 +23,7 @@ vi.mock("vuex", async (importOriginal) => {
 
 vi.mock("vue-router", async (importOriginal) => {
   const {withVueRouter} = await import("../../helpers/testUtils")
-  return withVueRouter(importOriginal, {route: {path: "/account/payment-details", params: {}}, router: {replace: vi.fn()}})
-})
-
-vi.mock("@/components/account/IncassoSetUp.vue", async () => {
-  const {defineComponent} = await import("vue")
-  return {default: defineComponent({name: "IncassoSetUp", props: {addressId: {type: Number, default: null}}, setup: () => () => null})}
+  return withVueRouter(importOriginal, {route: mockRoute, router: {replace: vi.fn()}})
 })
 
 vi.mock("@/components/account/ManualPayment.vue", async () => {
@@ -32,27 +37,60 @@ vi.mock("@/components/account/OwnContributions.vue", async () => {
 })
 
 describe("the account's Payment details page", () => {
-  it("is a page of its own under the account, carrying the address the mandate is written to", async () => {
+  beforeEach(() => {
     mockStore.getters.getLogin = {userId: 5, addressId: 12}
-    const wrapper = mountInApp(PaymentDetails)
+    mockRoute.hash = ""
+    api.findOwnBankAccount.mockResolvedValue({status: 200, data: {ibanCountry: "NL", ibanLastTwo: "00", bic: null, recordedAt: "2026-10-15T10:00:00Z"}})
+    api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.NONE}})
+  })
+
+  it("links to the Payment method page, and lists how to pay by hand under How to pay", async () => {
+    const wrapper = mountInApp(PaymentDetails, {global: {stubs: {RouterLink: RouterLinkStub}}})
     await settle()
 
     expect(wrapper.getComponent({name: "AccountFrame"}).props("heading")).toBe("Payment details")
-    expect(wrapper.getComponent({name: "IncassoSetUp"}).props("addressId")).toBe(12)
     expect(wrapper.findComponent({name: "OwnContributions"}).exists()).toBe(true)
-    // Incasso stands under Automated payment, and paying by hand under Manual payment.
-    expect(wrapper.get('[data-testid="payment-automated"]').text()).toContain("Automated payment")
-    expect(wrapper.get('[data-testid="payment-automated"]').findComponent({name: "IncassoSetUp"}).exists()).toBe(true)
-    expect(wrapper.get('[data-testid="payment-manual"]').text()).toContain("Manual payment")
-    expect(wrapper.get('[data-testid="payment-manual"]').findComponent({name: "ManualPayment"}).exists()).toBe(true)
+    const row = wrapper.findAllComponents(RouterLinkStub).find(link => link.attributes("data-testid") === "payment-details-method-row")!
+    expect(row.props("to")).toBe("/account/payment-details/payment-method")
+    expect(row.text()).toContain("Bank transfer or cash")
+    expect(wrapper.get("#how-to-pay").text()).toContain("How to pay")
+    expect(wrapper.get("#how-to-pay").findComponent({name: "ManualPayment"}).exists()).toBe(true)
   })
 
-  it("hands on no address where none is on file, and nothing to somebody not signed in", async () => {
-    mockStore.getters.getLogin = {userId: 5}
-    expect(mountInApp(PaymentDetails).getComponent({name: "IncassoSetUp"}).props("addressId")).toBeNull()
+  it("shows direct debit with the account it collects from and since when", async () => {
+    api.findOwnMandate.mockResolvedValue({status: 200, data: {
+      standing: IncassoStanding.MANDATE_RECORDED, ibanCountry: "NL", ibanLastTwo: "00", reference: "BLUESHELL-5-20261019", signedOn: "2026-10-19",
+    }})
+    const wrapper = mountInApp(PaymentDetails)
+    await settle()
 
+    const row = wrapper.get('[data-testid="payment-details-method-row"]')
+    expect(row.text()).toContain("Direct debit from NL •• … ••00 since 19 Oct 2026.")
+  })
+
+  it("counts a paper mandate without an account as direct debit, waiting for the account", async () => {
+    api.findOwnMandate.mockResolvedValue({status: 200, data: {standing: IncassoStanding.ON_INCASSO_WITHOUT_BANK_DETAILS}})
+    const wrapper = mountInApp(PaymentDetails)
+    await settle()
+
+    const row = wrapper.get('[data-testid="payment-details-method-row"]')
+    expect(row.text()).toContain("Direct debit")
+    expect(row.text()).toContain("Add a bank account")
+  })
+
+  it("scrolls to the section a link names", async () => {
+    mockRoute.hash = "#how-to-pay"
+    const scrolled = vi.fn()
+    const wrapper = mountInApp(PaymentDetails, {attachTo: document.body})
+    Object.defineProperty(wrapper.get("#how-to-pay").element, "scrollIntoView", {value: scrolled})
+    await settle()
+
+    expect(scrolled).toHaveBeenCalledWith({block: "start"})
+    wrapper.unmount()
+  })
+
+  it("shows nothing to somebody not signed in", () => {
     mockStore.getters.getLogin = null
-    expect(mountInApp(PaymentDetails).findComponent({name: "IncassoSetUp"}).exists()).toBe(false)
     expect(mountInApp(PaymentDetails).findComponent({name: "OwnContributions"}).exists()).toBe(false)
   })
 })

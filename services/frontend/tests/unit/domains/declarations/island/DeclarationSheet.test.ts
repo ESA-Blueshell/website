@@ -45,5 +45,10 @@ describe("the declaration sheet", () => {
     expect(sheet({state: "DRAFT", steps: [step("DRAFT", "Missing receipt.")]}).text()).toContain("Sent back on 2 October 2026 by Ann Vos: Missing receipt.")
     expect(sheet({state: "APPROVED", steps: [step("APPROVED")]}).text()).toContain("Approved on 2 October 2026 by Ann Vos.")
     expect(sheet({state: "PAID", steps: [step("APPROVED"), step("PAID")]}).text()).toContain("Paid on 2 October 2026.")
+    expect(sheet({state: "PAID", steps: [step("APPROVED"), {...step("PAID"), paidTo: "NL •• … ••00"}]}).text())
+      .toContain("Paid on 2 October 2026 to NL •• … ••00.")
+    // Approved, sent back and submitted again, it waits to be approved anew.
+    expect(sheet({state: "SUBMITTED", steps: [step("SUBMITTED"), step("APPROVED"), step("DRAFT", "Cut off"), step("SUBMITTED")]}).text())
+      .toContain("Not approved yet.")
   })
 })

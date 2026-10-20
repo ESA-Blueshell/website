@@ -38,6 +38,16 @@ class NoBankAccount : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NoBankAccount"
 class SubmitterHasNoBankAccount :
     DeclarationRefusal(HttpStatus.CONFLICT, "SubmitterHasNoBankAccount", "A declaration is marked paid to the bank account on file.")
 
+/** One PDF holds between one and [most] declarations. */
+class PdfSelectionSize(
+    most: Int,
+) : DeclarationRefusal(
+        HttpStatus.BAD_REQUEST,
+        "PdfSelectionSize",
+        "A PDF holds one declaration or more, up to a limit.",
+        mapOf("most" to most),
+    )
+
 class NoReceipt : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NoReceipt", "A declaration holds at least one receipt.")
 
 class NotConfirmed : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NotConfirmed", "The submitter states the declaration is correct.")

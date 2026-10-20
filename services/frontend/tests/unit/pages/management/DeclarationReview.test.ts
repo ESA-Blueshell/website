@@ -14,7 +14,10 @@ const api = vi.hoisted(() => ({
   findDeclarationBankAccount: vi.fn(),
   markDeclarationPaid: vi.fn(),
   revealIban: vi.fn(),
+  downloadDeclarationsPdf: vi.fn(),
 }))
+const saved = vi.hoisted(() => ({saveFile: vi.fn()}))
+vi.mock("@/utils/saveFile", () => saved)
 const ACCOUNT = {accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00", bic: null}
 const mockRoute = vi.hoisted(() => ({params: {id: "1"}}))
 
@@ -223,5 +226,19 @@ describe("a declaration as the board checks it", () => {
     await mini(wrapper, "declaration-reveal")!.trigger("click")
     await settle()
     expect(wrapper.get('[data-testid="declaration-reveal-failure"]').text()).toBe("The IBAN could not be shown.")
+  })
+
+  it("downloads its PDF, and says when it could not be made", async () => {
+    api.downloadDeclarationsPdf.mockResolvedValueOnce({status: 200, data: new Blob(["%PDF"])})
+    const wrapper = await mount()
+    await mini(wrapper, "declaration-pdf")!.trigger("click")
+    await settle()
+    expect(api.downloadDeclarationsPdf).toHaveBeenCalledWith({query: {ids: [1]}})
+    expect(saved.saveFile).toHaveBeenCalledWith(expect.any(Blob), "declaration-1.pdf")
+
+    api.downloadDeclarationsPdf.mockResolvedValueOnce({status: 500, error: {}, response: {status: 500}})
+    await mini(wrapper, "declaration-pdf")!.trigger("click")
+    await settle()
+    expect(wrapper.get('[data-testid="declaration-review-failure"]').text()).toBe("We could not make the PDF. Try again.")
   })
 })

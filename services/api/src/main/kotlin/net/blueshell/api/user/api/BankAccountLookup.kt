@@ -21,6 +21,9 @@ class BankAccountLookup(
 ) {
     fun isOnFile(userId: Long): Boolean = accounts.own(userId) != null
 
+    /** The account on file now as anybody but the board sees it, or null where none is. */
+    fun preview(userId: Long): MaskedIban? = accounts.own(userId)?.iban
+
     fun toPay(userId: Long): BankAccountToPay? = accounts.toPay(userId)
 
     /** Counts a payout on [on] as a use of the account on file, and answers its preview; null where none is on file. */

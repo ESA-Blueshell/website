@@ -6703,6 +6703,49 @@ export type ListDeclarationsResponses = {
 
 export type ListDeclarationsResponse = ListDeclarationsResponses[keyof ListDeclarationsResponses];
 
+export type DownloadDeclarationsPdfData = {
+    body?: never;
+    path?: never;
+    query: {
+        ids: Array<number>;
+    };
+    url: '/declarations/pdf';
+};
+
+export type DownloadDeclarationsPdfErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type DownloadDeclarationsPdfError = DownloadDeclarationsPdfErrors[keyof DownloadDeclarationsPdfErrors];
+
+export type DownloadDeclarationsPdfResponses = {
+    /**
+     * OK
+     */
+    200: Blob | File;
+};
+
+export type DownloadDeclarationsPdfResponse = DownloadDeclarationsPdfResponses[keyof DownloadDeclarationsPdfResponses];
+
 export type UploadReceiptData = {
     body?: {
         file: Blob | File;

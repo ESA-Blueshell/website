@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title th:text="${title}">Declaration</title>
+    <!-- The association's paper declaration form, filled in. The PDF renderer reads CSS 2.1, so tables lay it out. -->
+    <style>
+        @page { size: A4; margin: 18mm; }
+        body { font-family: 'Barlow', sans-serif; font-size: 10.5pt; line-height: 1.4; color: #1c1c1c; }
+        .title { font-size: 15pt; font-weight: 700; padding-bottom: 9pt; margin: 0 0 10pt 0; border-bottom: 3px solid #1c1c1c; }
+        .parties { width: 100%; margin-bottom: 14pt; }
+        .parties td { vertical-align: top; width: 50%; padding: 0; }
+        .facts td { padding: 0 10pt 1pt 0; vertical-align: top; }
+        .facts .name { font-weight: 700; white-space: nowrap; }
+        .expenses { width: 100%; border-collapse: collapse; }
+        .expenses th, .expenses td { border: 1px solid #1c1c1c; padding: 4pt 5pt; text-align: left; vertical-align: top; }
+        .expenses thead th { font-weight: 400; }
+        .expenses tfoot th { text-align: right; }
+        .date { white-space: nowrap; }
+        .amount { text-align: right; white-space: nowrap; }
+        .faint { display: block; color: #666; }
+        .signed { margin-top: 16pt; }
+        .signed td { padding: 0 10pt 6pt 0; vertical-align: top; }
+        .signed .name { font-weight: 700; white-space: nowrap; }
+    </style>
+</head>
+<body>
+<p class="title">Declaration form Blueshell E-Sports Vereniging Enschede</p>
+
+<table class="parties">
+    <tr>
+        <td>
+            <table class="facts">
+                <tr><td class="name">Submitted by</td><td th:text="${submitter}">Ann Vos</td></tr>
+                <tr><td class="name">IBAN</td><td th:text="${iban}">NL•• … ••34</td></tr>
+            </table>
+        </td>
+        <td>
+            <strong>Blueshell E-Sports Vereniging Enschede</strong><br/>
+            Bastille 49, Postbus 217<br/>
+            7500 AE Enschede<br/>
+            Netherlands
+        </td>
+    </tr>
+</table>
+
+<table class="expenses">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Committee or event</th>
+        <th class="amount">Amount</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="expense : ${expenses}">
+        <td class="date" th:text="${expense.date}">2026-10-14</td>
+        <td><span th:text="${expense.description}">Pizza</span><span class="faint" th:if="${expense.receipts}" th:text="${expense.receipts}">2 receipts</span></td>
+        <td th:text="${expense.bookedTo}">Autumn LAN party</td>
+        <td class="amount" th:text="${expense.amount}">€ 12.50</td>
+    </tr>
+    </tbody>
+    <tfoot>
+    <tr>
+        <th colspan="3">Total</th>
+        <td class="amount" th:text="${total}">€ 12.50</td>
+    </tr>
+    </tfoot>
+</table>
+<p class="faint" th:if="${wholeReceipts}" th:text="${wholeReceipts}">2 receipts for the whole declaration</p>
+
+<table class="signed">
+    <tr><td class="name">Statement</td><td th:text="${statement}">Submitted on 1 October 2026 by Ann Vos.</td></tr>
+    <tr><td class="name">Board</td><td th:text="${board}">Not approved yet.</td></tr>
+</table>
+</body>
+</html>

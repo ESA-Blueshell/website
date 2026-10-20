@@ -20,6 +20,7 @@ import {
   type Declaration,
   DeclarationState,
   euros,
+  fetchDeclarationsPdf,
   forsOf,
   listDeclarations,
   markDeclarationPaid,
@@ -32,6 +33,7 @@ import {
   withTheBoard,
 } from "@/domains/declarations"
 import {fold} from "@/domains/user"
+import {saveFile} from "@/utils/saveFile"
 
 /** The board's list of declarations, opened on the ones that wait to be checked. */
 defineOptions({name: "DeclarationManagerPage"})
@@ -165,6 +167,15 @@ const runOn = async (list: Declaration[], move: (id: number) => Promise<{ok: boo
   }
 }
 
+const fetchingPdf = ref(false)
+const downloadPdfs = async () => {
+  fetchingPdf.value = true
+  const answered = await fetchDeclarationsPdf(picked.value.map(one => one.id))
+  fetchingPdf.value = false
+  if (answered.ok) saveFile(answered.file, picked.value.length === 1 ? `declaration-${picked.value[0]!.id}.pdf` : "declarations.pdf")
+  else store.commit("setStatusSnackbarMessage", answered.reason)
+}
+
 const startRejecting = () => {
   reason.value = ""
   rejecting.value = true
@@ -286,6 +297,14 @@ const startRejecting = () => {
       testid="declarations-selection"
       @clear="clearSelection"
     >
+      <cut-button
+        :disabled="picked.length === 0 || fetchingPdf"
+        small
+        testid="declarations-download-pdfs"
+        @click="downloadPdfs"
+      >
+        Download PDFs
+      </cut-button>
       <cut-button
         :disabled="approvable.length === 0 || working"
         small

@@ -5,6 +5,7 @@
 export {
   approveDeclaration,
   deleteDraft,
+  fetchDeclarationsPdf,
   listDeclarations,
   listOwnDeclarations,
   markDeclarationPaid,

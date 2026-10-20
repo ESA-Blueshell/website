@@ -2,6 +2,8 @@ package net.blueshell.api.declaration.web
 
 import io.mockk.every
 import io.mockk.mockk
+import net.blueshell.api.declaration.domain.DeclarationPdf
+import net.blueshell.api.declaration.domain.DeclarationPdfs
 import net.blueshell.api.declaration.domain.DeclarationReviews
 import net.blueshell.api.declaration.domain.declarationOf
 import net.blueshell.api.declaration.persistence.DeclarationRepository
@@ -25,9 +27,10 @@ class DeclarationReviewControllerTest {
     private val users: UserService = mockk()
     private val currentUser: CurrentUserProvider = mockk()
     private val bankAccounts: BankAccountLookup = mockk()
+    private val pdfs: DeclarationPdfs = mockk()
     private val reviews = DeclarationReviews(repository, mockk(relaxed = true), bankAccounts, Clock.systemUTC())
     private val controller =
-        DeclarationReviewController(reviews, DeclarationResponses(users, mockk(relaxed = true)), currentUser)
+        DeclarationReviewController(reviews, pdfs, DeclarationResponses(users, mockk(relaxed = true)), currentUser)
 
     init {
         every { repository.findById(40) } answers { Optional.of(declarationOf(40, DeclarationState.SUBMITTED, "Pizza" to 1250)) }
@@ -62,6 +65,18 @@ class DeclarationReviewControllerTest {
         assertThat(listOf(paid.state, paid.paidToCountry, paid.paidToLastTwo)).containsExactly(DeclarationState.PAID, "DE", "00")
         every { bankAccounts.toPay(12) } returns null
         assertThat(controller.findDeclarationBankAccount(40).bankAccount).isNull()
+    }
+
+    @Test
+    fun `answers the PDF as a download that nothing keeps`() {
+        every { pdfs.pdf(listOf(40, 41)) } returns DeclarationPdf("declarations.pdf", byteArrayOf(1, 2))
+
+        val answer = controller.downloadDeclarationsPdf(listOf(40, 41))
+
+        assertThat(answer.body).containsExactly(1, 2)
+        assertThat(answer.headers.contentType.toString()).isEqualTo("application/pdf")
+        assertThat(answer.headers.contentDisposition.filename).isEqualTo("declarations.pdf")
+        assertThat(answer.headers.cacheControl).isEqualTo("no-store")
     }
 
     @Test

@@ -1,17 +1,15 @@
 package net.blueshell.api.contribution.domain
 
-import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle
-import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import net.blueshell.api.contribution.api.MandatePdfDownloaded
 import net.blueshell.api.platform.config.BankProperties
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.shared.pdf.HtmlPdf
 import net.blueshell.api.user.api.OnlineMandates
 import net.blueshell.api.user.api.OpenedOnlineMandate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
-import java.io.ByteArrayOutputStream
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -43,7 +41,7 @@ class MandatePdfs(
         downloadedBy: Long,
     ): MandatePdf {
         val mandate = mandates.open(userId)
-        val bytes = render(templates.process("mandates/online-mandate", Context(Locale.ENGLISH, fields(mandate))))
+        val bytes = HtmlPdf.render(templates.process("mandates/online-mandate", Context(Locale.ENGLISH, fields(mandate))))
         events.publish(MandatePdfDownloaded(userId, mandate.reference, downloadedBy))
         return MandatePdf("mandate-${mandate.reference}.pdf", bytes)
     }
@@ -70,26 +68,8 @@ class MandatePdfs(
 
     private fun countryName(code: String): String = Locale.of("", code).getDisplayCountry(Locale.ENGLISH).ifBlank { code }
 
-    private fun render(html: String): ByteArray =
-        ByteArrayOutputStream().use { out ->
-            PdfRendererBuilder()
-                .useFont({ font("BarlowSemiCondensed-Regular.ttf") }, FONT, REGULAR, FontStyle.NORMAL, true)
-                .useFont({ font("BarlowSemiCondensed-Bold.ttf") }, FONT, BOLD, FontStyle.NORMAL, true)
-                .withHtmlContent(html, requireNotNull(javaClass.getResource(ASSETS)).toExternalForm())
-                .toStream(out)
-                .run()
-            out.toByteArray()
-        }
-
-    private fun font(file: String) =
-        requireNotNull(javaClass.getResourceAsStream("${ASSETS}fonts/$file")) { "The font $file is not packaged" }
-
     private companion object {
         const val TEMPLATE_VERSION = "Online mandate V2.0, October 2026"
-        const val ASSETS = "/templates/assets/"
-        const val FONT = "Barlow"
-        const val REGULAR = 400
-        const val BOLD = 700
         const val IBAN_GROUP = 4
         val ZONE: ZoneId = ZoneId.of("Europe/Amsterdam")
         val DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)

@@ -5,7 +5,15 @@ import {DeclarationState} from "@/services/api"
 import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 import {answered} from "./declarationFixtures"
 
-const api = vi.hoisted(() => ({listDeclarations: vi.fn(), approveDeclaration: vi.fn(), rejectDeclaration: vi.fn(), markDeclarationPaid: vi.fn()}))
+const api = vi.hoisted(() => ({
+  listDeclarations: vi.fn(),
+  approveDeclaration: vi.fn(),
+  rejectDeclaration: vi.fn(),
+  markDeclarationPaid: vi.fn(),
+  downloadDeclarationsPdf: vi.fn(),
+}))
+const saved = vi.hoisted(() => ({saveFile: vi.fn()}))
+vi.mock("@/utils/saveFile", () => saved)
 const mockStore = vi.hoisted(() => ({commit: vi.fn(), getters: {}}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -123,6 +131,27 @@ describe("the Declarations page in Management", () => {
     dialog.vm.$emit("update:open", false)
     await settle()
     expect(dialog.props("open")).toBe(false)
+  })
+
+  it("downloads the ticked declarations as one PDF, and says why it could not", async () => {
+    api.downloadDeclarationsPdf.mockResolvedValue({status: 200, data: new Blob(["%PDF"])})
+    const wrapper = await mount()
+    await pick(wrapper, "declarations-status", null)
+    await tick(wrapper, 1)
+    await wrapper.get('[data-testid="declarations-download-pdfs"]').trigger("click")
+    await settle()
+    expect(saved.saveFile).toHaveBeenLastCalledWith(expect.any(Blob), "declaration-1.pdf")
+
+    await tick(wrapper, 2)
+    await wrapper.get('[data-testid="declarations-download-pdfs"]').trigger("click")
+    await settle()
+    expect(api.downloadDeclarationsPdf).toHaveBeenLastCalledWith({query: {ids: [1, 2]}})
+    expect(saved.saveFile).toHaveBeenLastCalledWith(expect.any(Blob), "declarations.pdf")
+
+    api.downloadDeclarationsPdf.mockResolvedValue({status: 400, error: {code: "PdfSelectionSize", most: 100}, response: {status: 400}})
+    await wrapper.get('[data-testid="declarations-download-pdfs"]').trigger("click")
+    await settle()
+    expect(saved.saveFile).toHaveBeenCalledTimes(2)
   })
 
   it("rejects the ticked open ones with a reason, and says how many could not be changed", async () => {

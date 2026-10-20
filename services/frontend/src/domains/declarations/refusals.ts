@@ -5,6 +5,7 @@ import {refusalReader, type RefusalCode} from "@/utils/refusals"
 
 interface DeclarationRefusal extends RefusalCode {
   state?: DeclarationState
+  most?: number
   expense?: number
   field?: "paidOn" | "amount" | "description"
 }
@@ -34,6 +35,7 @@ const sentences: Record<string, (r: DeclarationRefusal) => string> = {
   ReasonMissing: () => "Write the reason. The person who submitted it gets it by email.",
   NoBankAccount: () => "Add your bank account before you submit.",
   SubmitterHasNoBankAccount: () => "The person who submitted it has no bank account on file, so it cannot be marked paid. Ask them to add one on their Payment details page.",
+  PdfSelectionSize: r => (r.most ? `Choose at most ${r.most} declarations for one PDF.` : "Choose fewer declarations for one PDF."),
   NoReceipt: () => "Add at least one receipt.",
   NotConfirmed: () => "Tick the box to confirm.",
   NoExpense: () => "Add at least one expense.",

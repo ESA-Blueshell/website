@@ -17,6 +17,8 @@ class BankAccountLookupTest {
 
         assertThat(BankAccountLookup(accounts).isOnFile(12)).isTrue()
         assertThat(BankAccountLookup(accounts).isOnFile(13)).isFalse()
+        assertThat(BankAccountLookup(accounts).preview(12)).isEqualTo(MaskedIban("NL", "00"))
+        assertThat(BankAccountLookup(accounts).preview(13)).isNull()
     }
 
     @Test

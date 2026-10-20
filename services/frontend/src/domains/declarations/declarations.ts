@@ -44,6 +44,16 @@ export interface DeclarationStep {
   at: string
   by: string
   reason?: string
+  /** The masked account a paid declaration went to, since the account on file may change after. */
+  paidTo?: string
+}
+
+/** A bank account as the board pays to it; the full IBAN opens only through a logged reveal. */
+export interface BankAccountToPay {
+  /** Nothing where it cannot be opened now. */
+  holder: string | null
+  preview: string
+  bic: string | null
 }
 
 export interface Declaration {

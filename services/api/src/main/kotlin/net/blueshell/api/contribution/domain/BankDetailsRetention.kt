@@ -12,8 +12,10 @@ import java.time.LocalDate
 /**
  * Wipes a mandate's sealed bank details once nobody can dispute a debit under it any more. Under
  * SEPA that is 13 months after the last collection: the latest debit date of a notification under
- * the mandate in a run submitted to ING, or whose date has passed. It only judges mandates no longer collected from, so one
- * in use is never wiped, and one that was never collected from is wiped as soon as collecting stops.
+ * the mandate in a run submitted to ING, or whose date has passed. A declaration paid to the account
+ * is a use of it too, so the 13 months count from whichever came last (api ADR-041). It only judges
+ * mandates no longer collected from, so one in use is never wiped, and one that was never collected
+ * from is wiped as soon as collecting stops.
  * A run whose file may be in ING already, not yet marked as submitted and with its date still
  * ahead, holds the wipe off, so bank details never go while a debit under them is on its way.
  */
@@ -34,9 +36,10 @@ class BankDetailsRetention(
         val today = LocalDate.now(clock)
         return mandates.stopped(today).count { stopped ->
             // An account no mandate was ever given for counts from the day it was put on file instead.
-            val last =
+            val collected =
                 notifications.lastCollectionDate(stopped.userId, stopped.reference, today)
                     ?: stopped.recordedOn.takeIf { stopped.reference.isEmpty() }
+            val last = listOfNotNull(collected, stopped.lastPaidToOn).maxOrNull()
             val disputable = last != null && last.plusMonths(DISPUTE_MONTHS).isAfter(today)
             val onItsWay = notifications.countPendingCollections(stopped.userId, stopped.reference, today) > 0
             !disputable && !onItsWay && mandates.wipe(stopped, today)

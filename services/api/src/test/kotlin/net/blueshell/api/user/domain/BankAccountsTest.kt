@@ -2,6 +2,7 @@ package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
 import net.blueshell.api.user.api.AddressFields
+import net.blueshell.api.user.api.BankAccountToPay
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.MaskedIban
@@ -58,6 +59,25 @@ class BankAccountsTest {
         assertThat(mandates.bankDetailsOf(12).iban.value).isEqualTo("NL91ABNA0417164300")
         assertThat(mandates.bankDetailsOf(12).accountHolder).isEqualTo("Ann Vos")
         verify(published, never()).publishEvent(isA<BankDetailsChanged>())
+    }
+
+    @Test
+    fun `the board pays to the account on file, which records the day as its last use until it is replaced`() {
+        whenever(payments.recordPaidTo(any(), any())).thenAnswer { call ->
+            held[call.arguments[0] as Long]?.bankAccount?.let {
+                it.lastPaidToOn = call.arguments[1] as LocalDate
+                1
+            } ?: 0
+        }
+        assertThat(accounts.toPay(12)).isNull()
+        assertThat(accounts.recordPaidTo(12, LocalDate.of(2026, 10, 15))).isNull()
+        accounts.replace(12, "DE89370400440532013000", " Ann Vos ", "COBADEFFXXX")
+
+        assertThat(accounts.toPay(12)).isEqualTo(BankAccountToPay("Ann Vos", MaskedIban("DE", "00"), "COBADEFFXXX"))
+        assertThat(accounts.recordPaidTo(12, LocalDate.of(2026, 10, 15))).isEqualTo(MaskedIban("DE", "00"))
+        assertThat(held.getValue(12).bankAccount!!.lastPaidToOn).isEqualTo(LocalDate.of(2026, 10, 15))
+        accounts.replace(12, "NL91ABNA0417164300", "Ann Vos", null)
+        assertThat(held.getValue(12).bankAccount!!.lastPaidToOn).isNull()
     }
 
     @Test

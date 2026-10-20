@@ -7,14 +7,14 @@ import {type BankAccountPreviewResponse, deleteOwnBankAccount, findOwnBankAccoun
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
-import type {BankAccount, BankAccountPreview} from "../bankAccount"
+import {type BankAccount, type BankAccountPreview, maskedIban} from "../bankAccount"
 import {reasonFor} from "../refusals"
 
 /** A write that waits on a step-up the page asks for, as a change of bank details does. */
 type Guarded<T> = T | (Refused & {needsStepUp?: boolean})
 
 const shown = (account: BankAccountPreviewResponse): BankAccountPreview => ({
-  preview: `${account.ibanCountry} •• … ••${account.ibanLastTwo}`,
+  preview: maskedIban(account.ibanCountry, account.ibanLastTwo),
   addedAt: account.recordedAt,
 })
 

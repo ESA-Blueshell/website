@@ -1,5 +1,7 @@
 package net.blueshell.api.declaration.web
 
+import net.blueshell.api.contribution.domain.ContributionJobs
+import net.blueshell.api.contribution.domain.WipeBankDetailsJob
 import net.blueshell.api.declaration.domain.DeclarationJobs
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
@@ -8,20 +10,35 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasItem
 import org.hamcrest.Matchers.not
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.mock.web.MockMultipartFile
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.json.JsonMapper
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 @SpringBootTest
 class DeclarationReviewIT : UserTestSupport() {
     private val json = JsonMapper.builder().build()
+
+    @Autowired
+    private lateinit var jdbc: JdbcTemplate
+
+    @Autowired
+    private lateinit var wipe: WipeBankDetailsJob
+
+    @AfterEach
+    fun resetClock() = clock.reset()
 
     private fun idOf(answer: String) = json.readTree(answer)["id"].asLong()
 
@@ -161,5 +178,76 @@ class DeclarationReviewIT : UserTestSupport() {
             .anySatisfy { assertThat(it).contains("\"declarationId\":$id", "REJECTED") }
         act(board, id, "send-back", "Again").andExpect(status().isConflict).andExpect(jsonPath("$.code").value("DeclarationStateChanged"))
         act(board, 999_999, "approve").andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `an approved declaration is paid to the account on file, keeps its preview, and the submitter is emailed`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val id = declared(member)
+
+        act(board, id, "mark-paid").andExpect(status().isConflict).andExpect(jsonPath("$.code").value("DeclarationStateChanged"))
+        act(board, id, "approve").andExpect(status().isOk)
+        mvc
+            .perform(get("/declarations/$id/bank-account").with(signedIn(board)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.bankAccount.accountHolder").value("Ann Vos"))
+            .andExpect(jsonPath("$.bankAccount.ibanCountry").value("NL"))
+            .andExpect(jsonPath("$.bankAccount.ibanLastTwo").value("00"))
+        // The full IBAN opens only through a reveal, which is logged; a member without a mandate is revealed too.
+        mvc
+            .perform(post("/users/${member.id}/mandate/reveal").with(signedIn(board)).with(csrfToken()))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.iban").value("NL91ABNA0417164300"))
+
+        act(board, id, "mark-paid")
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.state").value("PAID"))
+            .andExpect(jsonPath("$.steps[3].by").value(board.fullName))
+            .andExpect(jsonPath("$.steps[3].paidToCountry").value("NL"))
+            .andExpect(jsonPath("$.steps[3].paidToLastTwo").value("00"))
+        assertThat(findJobsByType(DeclarationJobs.DeclarationPaid.type).map { it.payload })
+            .anySatisfy { assertThat(it).contains("\"declarationId\":$id", "\"paidTo\":\"NL00\"") }
+        act(board, id, "mark-paid").andExpect(status().isConflict)
+        act(board, id, "reject", "Too late").andExpect(status().isConflict)
+        // A later account does not change where it went.
+        putBankAccount(member, iban = "NL20INGB0001234567").andExpect(status().isOk)
+        mvc.perform(get("/declarations/$id").with(signedIn(board))).andExpect(jsonPath("$.steps[3].paidToLastTwo").value("00"))
+    }
+
+    @Test
+    fun `nobody below board reads the account to pay to or marks a declaration paid, and one without an account on file is not paid`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val id = declared(member)
+        act(board, id, "approve").andExpect(status().isOk)
+
+        mvc.perform(get("/declarations/$id/bank-account").with(signedIn(member))).andExpect(status().isForbidden)
+        act(member, id, "mark-paid").andExpect(status().isForbidden)
+        mvc
+            .perform(delete("/users/me/bank-account").with(signedIn(member, steppedUp = true)).with(csrfToken()))
+            .andExpect(status().is2xxSuccessful)
+
+        mvc.perform(get("/declarations/$id/bank-account").with(signedIn(board))).andExpect(jsonPath("$.bankAccount").doesNotExist())
+        act(board, id, "mark-paid").andExpect(status().isConflict).andExpect(jsonPath("$.code").value("SubmitterHasNoBankAccount"))
+    }
+
+    @Test
+    fun `a declaration paid to an account is a use of it, so the 13-month wipe counts from the payout`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val id = declared(member)
+        act(board, id, "approve").andExpect(status().isOk)
+        val paidOn = LocalDate.now().plusMonths(6)
+        clock.set(paidOn.atTime(10, 0).toInstant(ZoneOffset.UTC))
+        act(board, id, "mark-paid").andExpect(status().isOk)
+
+        fun wipedOn(day: LocalDate): Boolean {
+            clock.set(day.atTime(4, 30).toInstant(ZoneOffset.UTC))
+            wipe.handle(mapper.writeValueAsString(ContributionJobs.WipeBankDetailsPayload()), null, false)
+            return jdbc.queryForObject("SELECT account_iban FROM payment_details WHERE user_id = ?", String::class.java, member.id) == null
+        }
+        assertThat(wipedOn(paidOn.plusMonths(13).minusDays(1))).isFalse()
+        assertThat(wipedOn(paidOn.plusMonths(13))).isTrue()
     }
 }

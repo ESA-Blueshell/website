@@ -25,13 +25,14 @@ class MandateRetentionTest {
                 override val userId = 7L
                 override val reference = "BLUESHELL-7-20250901"
                 override val recordedAt: Instant = Instant.parse("2025-09-01T10:00:00Z")
+                override val lastPaidToOn: LocalDate = LocalDate.of(2025, 10, 1)
             }
         whenever(mandates.findStopped(today)).thenReturn(listOf(row))
         // The write checks the row again: the second time the mandate was recorded anew, so it is left.
         whenever(mandates.wipe(7, "BLUESHELL-7-20250901", today)).thenReturn(1, 0)
 
         val stopped = retention.stopped(today).single()
-        assertThat(stopped).isEqualTo(StoppedAccount(7, "BLUESHELL-7-20250901", LocalDate.of(2025, 9, 1)))
+        assertThat(stopped).isEqualTo(StoppedAccount(7, "BLUESHELL-7-20250901", LocalDate.of(2025, 9, 1), LocalDate.of(2025, 10, 1)))
         assertThat(retention.wipe(stopped, today)).isTrue()
         assertThat(retention.wipe(stopped, today)).isFalse()
     }

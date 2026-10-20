@@ -14,13 +14,16 @@ interface StoppedAccountRow {
     /** The reference of the mandate given for this account, or empty where none was. */
     val reference: String
     val recordedAt: Instant
+
+    val lastPaidToOn: LocalDate?
 }
 
 /** The mandates the retention rule judges, and the wipe it ends with. */
 interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
     @Query(
         value =
-            "SELECT p.user_id AS userId, " + GIVEN_FOR + " AS reference, p.account_recorded_at AS recordedAt " +
+            "SELECT p.user_id AS userId, " + GIVEN_FOR + " AS reference, p.account_recorded_at AS recordedAt, " +
+                "p.account_last_paid_to_on AS lastPaidToOn " +
                 "FROM payment_details p WHERE p.account_iban IS NOT NULL AND " + STOPPED,
         nativeQuery = true,
     )
@@ -37,7 +40,8 @@ interface MandateRetentionRepository : Repository<PaymentDetails, Long> {
     @Query(
         value =
             "UPDATE payment_details p SET p.account_iban = NULL, p.account_holder = NULL, p.account_bic = NULL, " +
-                "p.account_iban_masked = NULL, p.account_recorded_at = NULL, p.account_version = NULL, p.mandate_address = NULL, " +
+                "p.account_iban_masked = NULL, p.account_recorded_at = NULL, p.account_version = NULL, " +
+                "p.account_last_paid_to_on = NULL, p.mandate_address = NULL, " +
                 "p.mandate_iban = NULL, p.mandate_account_holder = NULL " +
                 "WHERE p.user_id = :userId AND p.account_iban IS NOT NULL AND " + GIVEN_FOR + " = :reference AND " + STOPPED,
         nativeQuery = true,

@@ -17,6 +17,8 @@ databaseChangeLog:
               - column: {name: account_iban_masked, type: CHAR(4)}
               - column: {name: account_version, type: INT}
               - column: {name: account_recorded_at, type: DATETIME(6)}
+              # The last day a declaration was paid to the account, a use as a collection is.
+              - column: {name: account_last_paid_to_on, type: DATE}
               - column: {name: mandate_account_version, type: INT}
         - customChange:
             class: net.blueshell.api.platform.migration.BankDetailsMoveToTheAccount

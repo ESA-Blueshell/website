@@ -6,6 +6,7 @@ import net.blueshell.api.declaration.persistence.BookingKind
 import net.blueshell.api.declaration.persistence.Declaration
 import net.blueshell.api.declaration.persistence.DeclarationState
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.api.UserService
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -63,6 +64,26 @@ data class DeclarationStepResponse(
     @field:Schema(description = "Who made the change, by name, or nothing where their account is gone.")
     val by: String?,
     val reason: String?,
+    @field:Schema(description = "The country code of the IBAN a paid declaration went to.")
+    val paidToCountry: String?,
+    @field:Schema(description = "The last two characters of the IBAN a paid declaration went to.")
+    val paidToLastTwo: String?,
+)
+
+@Schema(name = "DeclarationBankAccountResponse")
+data class DeclarationBankAccountResponse(
+    @field:Schema(description = "The submitter's bank account on file now, or nothing where none is.")
+    val bankAccount: BankAccountToPayResponse?,
+)
+
+@Schema(name = "BankAccountToPayResponse")
+data class BankAccountToPayResponse(
+    @field:Schema(description = "The account holder, or nothing where it cannot be opened now.")
+    val accountHolder: String?,
+    val ibanCountry: String,
+    val ibanLastTwo: String,
+    @field:Schema(description = "Named only for a bank outside the Netherlands.")
+    val bic: String?,
 )
 
 /** Declarations as a response names them: people by name, receipts by where they are opened. */
@@ -99,7 +120,12 @@ class DeclarationResponses(
                         )
                     },
                 receipts = receiptsOf(declaration.receiptFileIds),
-                steps = declaration.steps.map { DeclarationStepResponse(it.state, it.at, it.byUserId?.let(names::get), it.reason) },
+                steps =
+                    declaration.steps.map { step ->
+                        val paidTo = MaskedIban.of(step.paidTo)
+                        val by = step.byUserId?.let(names::get)
+                        DeclarationStepResponse(step.state, step.at, by, step.reason, paidTo?.country, paidTo?.lastTwo)
+                    },
             )
         }
     }

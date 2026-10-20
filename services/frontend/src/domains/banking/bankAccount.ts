@@ -15,6 +15,9 @@ export interface BankAccountPreview {
   addedAt: string
 }
 
+/** An account by its country code and last two characters, as the api answers a preview. */
+export const maskedIban = (country: string, lastTwo: string): string => `${country} •• … ••${lastTwo}`
+
 /** The IBAN check digits, so a typo is caught before the treasurer's bank refuses the transfer. */
 export function ibanValid(iban: string): boolean {
   const held = plain(iban)

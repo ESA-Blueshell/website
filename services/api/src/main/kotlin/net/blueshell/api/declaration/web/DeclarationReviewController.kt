@@ -47,5 +47,22 @@ class DeclarationReviewController(
         @Valid @RequestBody request: DeclarationReasonRequest,
     ): DeclarationResponse = responses.of(reviews.reject(id, reader(), request.reason))
 
+    /** The submitter's account on file now, as the board transfers to it; the full IBAN opens only through a reveal. */
+    @GetMapping("/declarations/{id}/bank-account")
+    fun findDeclarationBankAccount(
+        @PathVariable id: Long,
+    ): DeclarationBankAccountResponse {
+        val account = reviews.bankAccountOf(id)
+        return DeclarationBankAccountResponse(
+            account?.let { BankAccountToPayResponse(it.accountHolder, it.iban.country, it.iban.lastTwo, it.bic) },
+        )
+    }
+
+    /** The board transferred the money by hand; the declaration keeps the day and the account it went to. */
+    @PostMapping("/declarations/{id}/mark-paid")
+    fun markDeclarationPaid(
+        @PathVariable id: Long,
+    ): DeclarationResponse = responses.of(reviews.markPaid(id, reader()))
+
     private fun reader(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 }

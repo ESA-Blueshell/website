@@ -9,6 +9,9 @@ data class MaskedIban(
     val country: String,
     val lastTwo: String,
 ) {
+    /** As it is kept beside the sealed IBAN, read back by [of]. */
+    val stored: String get() = "$country$lastTwo"
+
     override fun toString(): String = "$country•• … ••$lastTwo"
 
     companion object {

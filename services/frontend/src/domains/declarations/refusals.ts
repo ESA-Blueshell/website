@@ -33,6 +33,7 @@ const sentences: Record<string, (r: DeclarationRefusal) => string> = {
   },
   ReasonMissing: () => "Write the reason. The person who submitted it gets it by email.",
   NoBankAccount: () => "Add your bank account before you submit.",
+  SubmitterHasNoBankAccount: () => "The person who submitted it has no bank account on file, so it cannot be marked paid. Ask them to add one on their Payment details page.",
   NoReceipt: () => "Add at least one receipt.",
   NotConfirmed: () => "Tick the box to confirm.",
   NoExpense: () => "Add at least one expense.",

@@ -268,6 +268,19 @@ export type BankAccountResponse = {
     iban: string;
 };
 
+export type BankAccountToPayResponse = {
+    /**
+     * The account holder, or nothing where it cannot be opened now.
+     */
+    accountHolder?: string | null;
+    /**
+     * Named only for a bank outside the Netherlands.
+     */
+    bic?: string | null;
+    ibanCountry: string;
+    ibanLastTwo: string;
+};
+
 export type BlogResponse = {
     createdAt: string;
     html: string;
@@ -1205,6 +1218,13 @@ export type CsrfToken = {
     token?: string;
 };
 
+export type DeclarationBankAccountResponse = {
+    /**
+     * The submitter's bank account on file now, or nothing where none is.
+     */
+    bankAccount?: BankAccountToPayResponse | null;
+};
+
 export type DeclarationDraftRequest = {
     confirmed: boolean;
     expenses: Array<ExpenseRequest>;
@@ -1253,6 +1273,14 @@ export type DeclarationStepResponse = {
      * Who made the change, by name, or nothing where their account is gone.
      */
     by?: string | null;
+    /**
+     * The country code of the IBAN a paid declaration went to.
+     */
+    paidToCountry?: string | null;
+    /**
+     * The last two characters of the IBAN a paid declaration went to.
+     */
+    paidToLastTwo?: string | null;
     reason?: string | null;
     state: DeclarationState;
 };
@@ -6846,6 +6874,92 @@ export type ApproveDeclarationResponses = {
 };
 
 export type ApproveDeclarationResponse = ApproveDeclarationResponses[keyof ApproveDeclarationResponses];
+
+export type FindDeclarationBankAccountData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}/bank-account';
+};
+
+export type FindDeclarationBankAccountErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type FindDeclarationBankAccountError = FindDeclarationBankAccountErrors[keyof FindDeclarationBankAccountErrors];
+
+export type FindDeclarationBankAccountResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationBankAccountResponse;
+};
+
+export type FindDeclarationBankAccountResponse = FindDeclarationBankAccountResponses[keyof FindDeclarationBankAccountResponses];
+
+export type MarkDeclarationPaidData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/declarations/{id}/mark-paid';
+};
+
+export type MarkDeclarationPaidErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type MarkDeclarationPaidError = MarkDeclarationPaidErrors[keyof MarkDeclarationPaidErrors];
+
+export type MarkDeclarationPaidResponses = {
+    /**
+     * OK
+     */
+    200: DeclarationResponse;
+};
+
+export type MarkDeclarationPaidResponse = MarkDeclarationPaidResponses[keyof MarkDeclarationPaidResponses];
 
 export type RejectDeclarationData = {
     body: DeclarationReasonRequest;

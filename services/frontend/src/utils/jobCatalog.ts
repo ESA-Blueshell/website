@@ -50,6 +50,12 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "and where to ask about it. Sent only when the board asks for it while removing the " +
       "sign-up; safe to re-run.",
   },
+  "email.declaration-paid": {
+    title: "Send declaration paid email",
+    description:
+      "Emails the person who submitted a declaration that the board paid it, naming the bank account " +
+      "the money went to. Safe to re-run.",
+  },
   "email.declaration-returned": {
     title: "Send declaration sent back or rejected email",
     description:

@@ -13,11 +13,13 @@ data class StoppedAccount(
     /** The mandate given for this account, whose collections it may be disputed under; empty where none was. */
     val reference: String,
     val recordedOn: LocalDate,
+    /** The last day a declaration was paid to it, a use as a collection is. */
+    val lastPaidToOn: LocalDate? = null,
 )
 
 /**
  * How long a bank account is kept once no mandate stands for it. Under SEPA a member can dispute a
- * debit for 13 months, so the account outlives its last use by that long and is wiped then; what
+ * debit for 13 months, so the account outlives its last use, a collection or a declaration paid to it, by that long and is wiped then; what
  * was collected under, the reference, the signed-on date and the masked IBAN, stays (api ADR-041).
  */
 @Service
@@ -31,7 +33,9 @@ class MandateRetention(
      */
     @Transactional(readOnly = true)
     fun stopped(today: LocalDate): List<StoppedAccount> =
-        mandates.findStopped(today).map { StoppedAccount(it.userId, it.reference, it.recordedAt.atZone(clock.zone).toLocalDate()) }
+        mandates.findStopped(today).map {
+            StoppedAccount(it.userId, it.reference, it.recordedAt.atZone(clock.zone).toLocalDate(), it.lastPaidToOn)
+        }
 
     /**
      * Empties the sealed IBAN, account holder and address of [stopped], and keeps the rest of it.

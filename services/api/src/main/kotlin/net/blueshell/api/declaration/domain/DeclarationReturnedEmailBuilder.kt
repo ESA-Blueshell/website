@@ -1,6 +1,7 @@
 package net.blueshell.api.declaration.domain
 
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.user.api.MaskedIban
 import net.blueshell.api.user.persistence.User
 import java.util.Locale
 
@@ -10,7 +11,7 @@ fun declarationReturnedEmail(
     payload: DeclarationJobs.DeclarationReturnedPayload,
     frontendUrl: String,
 ): EmailContent {
-    val named = "**${payload.title}** of €${String.format(Locale.ROOT, "%.2f", payload.totalCents / CENTS)}"
+    val named = named(payload.title, payload.totalCents)
     val sentBack = payload.outcome == DeclarationJobs.Outcome.SENT_BACK
     val markdownContent =
         buildList {
@@ -41,6 +42,37 @@ fun declarationReturnedEmail(
         replyToOverride = BOARD,
     )
 }
+
+/** Tells the submitter the board paid their declaration, and to which account, masked. */
+fun declarationPaidEmail(
+    recipient: User,
+    payload: DeclarationJobs.DeclarationPaidPayload,
+): EmailContent {
+    val account = requireNotNull(MaskedIban.of(payload.paidTo)) { "A paid declaration keeps the account it went to" }
+    val markdownContent =
+        listOf(
+            "Dear ${recipient.fullName},",
+            "",
+            "The board paid your declaration ${named(payload.title, payload.totalCents)}. The money went to your bank account $account.",
+            "",
+            "If the money has not arrived in a few days, reply to this email. Your reply goes to the board.",
+            "",
+            "Kind regards,",
+            "The board of ESA Blueshell",
+        ).joinToString("\n")
+    return EmailContent(
+        recipientEmail = recipient.email,
+        recipientName = recipient.fullName,
+        subject = "Your declaration is paid",
+        markdownContent = markdownContent,
+        replyToOverride = BOARD,
+    )
+}
+
+private fun named(
+    title: String,
+    totalCents: Int,
+) = "**$title** of €${String.format(Locale.ROOT, "%.2f", totalCents / CENTS)}"
 
 private const val CENTS = 100.0
 private const val BOARD = "board@blueshell.utwente.nl"

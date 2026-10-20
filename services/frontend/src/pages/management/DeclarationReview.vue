@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from "vue"
 import {useRoute} from "vue-router"
+import ConfirmDialog from "@/components/island/ConfirmDialog.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormControl from "@/components/island/FormControl.vue"
 import ModalDialog from "@/components/island/ModalDialog.vue"
@@ -8,6 +9,7 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateMark from "@/components/island/StateMark.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
+import MiniButton from "@/components/management/MiniButton.vue"
 import {
   approveDeclaration,
   BookingKind,
@@ -15,7 +17,10 @@ import {
   type Declaration,
   DeclarationState,
   euros,
+  markDeclarationPaid,
+  type BankAccountToPay,
   readDeclaration,
+  readBankAccountToPay,
   ReceiptStrip,
   rejectDeclaration,
   sendBackDeclaration,
@@ -27,24 +32,79 @@ import {
   totalOf,
   withTheBoard,
 } from "@/domains/declarations"
+import {revealMandateIban} from "@/domains/user"
 import type {Refused} from "@/types/api"
 import type {Saved} from "@/utils/refusals"
 
-/** One declaration as the board checks it: the expenses, the receipts and what happened so far. */
+/** One declaration as the board checks it: what to transfer, the expenses, the receipts and what happened so far. */
 defineOptions({name: "DeclarationReviewPage"})
 
 const route = useRoute()
 const declaration = ref<Declaration | null>(null)
 const loaded = ref(false)
 
+// The account on file now, read only once the declaration waits to be paid.
+const account = ref<BankAccountToPay | null>(null)
+const accountUnread = ref(false)
+const loadAccount = async (id: number) => {
+  const read = await readBankAccountToPay(id)
+  account.value = read ?? null
+  accountUnread.value = read === undefined
+}
+
+// Both come in before either shows, or "no bank account yet" flashes while the account loads.
 onMounted(async () => {
-  declaration.value = await readDeclaration(Number(route.params.id))
+  const found = await readDeclaration(Number(route.params.id))
+  if (found?.state === DeclarationState.APPROVED) await loadAccount(found.id)
+  declaration.value = found
   loaded.value = true
 })
 
 const total = computed(() => (declaration.value ? totalOf(declaration.value.expenses) : 0))
 const submitted = computed(() => (declaration.value ? stepAt(declaration.value, DeclarationState.SUBMITTED) : null))
 const actable = computed(() => !!declaration.value && withTheBoard(declaration.value))
+// TWIN: `markPaid` in the api's `DeclarationReviews.kt`.
+const payable = computed(() => declaration.value?.state === DeclarationState.APPROVED)
+
+/* The full IBAN opens only through a reveal, which the api writes to the submitter's security log. */
+const revealed = ref<string | null>(null)
+const revealing = ref(false)
+const revealFailure = ref<string | null>(null)
+const reveal = async () => {
+  revealing.value = true
+  revealFailure.value = null
+  const answered = await revealMandateIban(declaration.value!.submitterId)
+  revealing.value = false
+  if (answered.ok) revealed.value = answered.saved
+  else revealFailure.value = answered.reason
+}
+
+// A SEPA transfer's description holds 140 characters.
+const DESCRIPTION_MAX = 140
+const reference = computed(() => (declaration.value ? `Declaration ${declaration.value.id} ${titleOf(declaration.value)}`.slice(0, DESCRIPTION_MAX) : ""))
+
+/* What the board types into the bank's own transfer form, each copied as the bank wants it. */
+const transfer = computed(() => {
+  if (!account.value) return []
+  return [
+    {key: "holder", label: "Name", shown: account.value.holder ?? "Name unavailable", copied: account.value.holder},
+    {key: "iban", label: "IBAN", shown: revealed.value?.replaceAll(/(.{4})(?=.)/g, "$1 ") ?? account.value.preview, copied: revealed.value},
+    ...(account.value.bic ? [{key: "bic", label: "BIC", shown: account.value.bic, copied: account.value.bic}] : []),
+    {key: "amount", label: "Amount", shown: euros(total.value), copied: total.value.toFixed(2)},
+    {key: "reference", label: "Description", shown: reference.value, copied: reference.value},
+  ]
+})
+
+const copiedKey = ref<string | null>(null)
+const copy = async (key: string, text: string) => {
+  await navigator.clipboard.writeText(text)
+  copiedKey.value = key
+  setTimeout(() => {
+    if (copiedKey.value === key) copiedKey.value = null
+  }, 1500)
+}
+
+const confirmingPaid = ref(false)
 
 const working = ref(false)
 const failure = ref<string | null>(null)
@@ -55,11 +115,14 @@ const move = async (answer: () => Promise<Saved<Declaration> | Refused>) => {
   failure.value = null
   try {
     const moved = await answer()
-    if (moved.ok) declaration.value = moved.saved
-    else failure.value = moved.reason
+    if (moved.ok) {
+      if (moved.saved.state === DeclarationState.APPROVED) await loadAccount(moved.saved.id)
+      declaration.value = moved.saved
+    } else failure.value = moved.reason
   } finally {
     working.value = false
     asking.value = null
+    confirmingPaid.value = false
   }
 }
 
@@ -115,6 +178,15 @@ const lede = computed(() => (declaration.value
         Approve
       </cut-button>
       <cut-button
+        v-if="payable"
+        :disabled="working || !account"
+        testid="declaration-mark-paid"
+        tone="solid"
+        @click="confirmingPaid = true"
+      >
+        Mark as paid
+      </cut-button>
+      <cut-button
         :disabled="working"
         testid="declaration-send-back"
         @click="ask('sendBack')"
@@ -160,6 +232,68 @@ const lede = computed(() => (declaration.value
         aside-title="What happened"
         wide
       >
+        <section
+          v-if="payable"
+          data-testid="declaration-review-pay-to"
+        >
+          <p class="review__title">
+            Pay to
+          </p>
+          <notice-box
+            v-if="accountUnread"
+            testid="declaration-review-account-unread"
+            tone="danger"
+          >
+            We cannot load this bank account right now. Try again in a moment.
+          </notice-box>
+          <p
+            v-else-if="!account"
+            class="review__note"
+            data-testid="declaration-review-no-bank"
+          >
+            {{ declaration.submitter }} has not added a bank account yet. Ask them to add one on their Payment details page.
+          </p>
+          <ul
+            v-else
+            class="review__rows"
+          >
+            <li
+              v-for="line in transfer"
+              :key="line.key"
+              class="review__pair"
+            >
+              <span>{{ line.label }}</span>
+              <span
+                class="review__value"
+                :data-testid="`declaration-review-${line.key}`"
+              >{{ line.shown }}</span>
+              <mini-button
+                v-if="line.key === 'iban'"
+                :disabled="revealing"
+                testid="declaration-reveal"
+                @click="revealed ? (revealed = null) : reveal()"
+              >
+                {{ revealed ? "Hide the IBAN" : "Reveal the IBAN" }}
+              </mini-button>
+              <mini-button
+                v-if="line.copied"
+                :testid="`declaration-copy-${line.key}`"
+                @click="copy(line.key, line.copied)"
+              >
+                {{ copiedKey === line.key ? "Copied" : "Copy" }}
+              </mini-button>
+            </li>
+          </ul>
+          <p
+            v-if="revealFailure"
+            class="review__failure"
+            data-testid="declaration-reveal-failure"
+            role="alert"
+          >
+            {{ revealFailure }}
+          </p>
+        </section>
+
         <section>
           <p class="review__title">
             Expenses
@@ -209,7 +343,7 @@ const lede = computed(() => (declaration.value
               v-for="(step, index) in declaration.steps"
               :key="step.at + step.state"
             >
-              <span>{{ stepLabel(step, index) }}<template v-if="step.by"> by {{ step.by }}</template></span>
+              <span>{{ stepLabel(step, index) }}<template v-if="step.by"> by {{ step.by }}</template><template v-if="step.paidTo">, to {{ step.paidTo }}</template></span>
               <span class="review__when">{{ day(step.at) }}</span>
               <span
                 v-if="step.reason"
@@ -248,6 +382,16 @@ const lede = computed(() => (declaration.value
         </cut-button>
       </template>
     </modal-dialog>
+
+    <confirm-dialog
+      v-model:open="confirmingPaid"
+      confirm-label="Mark as paid"
+      :question="`You sent ${euros(total)} to ${account?.preview}. They get an email saying it is paid.`"
+      testid="declaration-paid-dialog"
+      title="Mark as paid?"
+      :working="working"
+      @confirm="move(() => markDeclarationPaid(declaration!.id))"
+    />
   </management-page>
 </template>
 
@@ -343,9 +487,11 @@ const lede = computed(() => (declaration.value
   list-style: none;
 }
 
+/* The day moves under the step when the aside is too narrow for both. */
 .review__steps li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 0.1rem 0.8rem;
 }
 
@@ -354,8 +500,13 @@ const lede = computed(() => (declaration.value
 }
 
 .review__reason {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   font-style: italic;
+}
+
+.review__failure {
+  margin: 0.5rem 0 0;
+  color: var(--color-danger);
 }
 
 .review__ask {

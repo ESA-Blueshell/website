@@ -1092,6 +1092,8 @@ jobs:
           - { name: motion+smoke, projects: motion smoke, shard: 1, total: 1 }
     defaults:
       run:
+        # A container job's default shell is sh, which has no pipefail.
+        shell: bash
         working-directory: services/frontend
     steps:
       - name: Checkout repository

@@ -649,7 +649,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Download every shard's coverage execution data
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: services/api/build/jacoco/shards
           pattern: api-integration-exec-*
@@ -703,7 +703,7 @@ jobs:
 
       - name: Download the api jar
         if: matrix.service.name == 'api'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: api-jar
           path: /tmp/api-jar
@@ -1008,21 +1008,21 @@ jobs:
       # looks. A suite that failed uploads nothing, and its own job reports that.
       - name: Download the api unit coverage
         if: steps.measurable.outputs.ran == 'true' && needs.api-unit-tests.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: api-unit-test-reports
           path: coverage-artifacts/api-unit-test-reports
 
       - name: Download the frontend unit coverage
         if: steps.measurable.outputs.ran == 'true' && needs.fe-unit.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: frontend-unit-coverage
           path: coverage-artifacts/frontend-unit-coverage
 
       - name: Download the imaging unit coverage
         if: steps.measurable.outputs.ran == 'true' && needs.imaging.result == 'success'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: imaging-unit-coverage
           path: coverage-artifacts/imaging-unit-coverage
@@ -1151,7 +1151,7 @@ jobs:
         uses: ./.github/actions/setup-node-yarn
 
       - name: Download the blob reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           path: services/frontend/all-blob-reports
           pattern: frontend-e2e-blob-*

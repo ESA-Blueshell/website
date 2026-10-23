@@ -29,6 +29,10 @@
       "/^platform/cluster/flux/.+\\.ya?ml$/"
     ]
   },
+  "nix": {
+    "description": "The nix manager is opt-in while Renovate calls it beta. Without this, platform/flake.lock never moves.",
+    "enabled": true
+  },
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
@@ -125,6 +129,19 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "The sbomnix release the NixOS vulnerability scan runs. nixpkgs' own sbomnix fails to build, so the scan runs the upstream flake at a tag.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/nix-vulnerabilities\\.yml$/"
+      ],
+      "matchStrings": [
+        "github:tiiuae/sbomnix/(?<currentValue>v[^#\\s]+)#"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "tiiuae/sbomnix",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
@@ -229,6 +246,17 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional",
       "addLabels": [
         "area:ci-cd"
+      ]
+    },
+    {
+      "description": "A flake.lock bump reaches the host only when someone rebuilds it, so each gets a reviewed pull request that prompts the rebuild. The cooldown needs a release date, which a branch head does not have.",
+      "matchManagers": [
+        "nix"
+      ],
+      "automerge": false,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "addLabels": [
+        "nix"
       ]
     },
     {

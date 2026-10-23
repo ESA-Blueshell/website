@@ -1036,20 +1036,110 @@ jobs:
           COVERAGE_DIR: coverage-artifacts
         run: python3 .github/scripts/pr_report.py gate
 
-  fe-e2e:
-    # Split the suite across N parallel shards. Playwright's own `--shard`
-    # partitions by spec file, so a spec always lands on the same shard and a
-    # failure is easy to place. The build in front of the run is 38s against
-    # ~12m of tests, so paying for it six times still wins by a wide margin.
-    name: Frontend e2e (shard ${{ matrix.shard }}/6)
-    needs: [ changes, fe-static ]
+  fe-e2e-version:
+    # The container below has to carry the browsers the locked @playwright/test
+    # expects, so its tag is read from yarn.lock and follows a Renovate bump.
+    name: Frontend e2e Playwright version
+    needs: changes
     if: fromJSON(needs.changes.outputs.run).frontend
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read the locked @playwright/test version
+        id: read
+        run: |
+          set -euo pipefail
+          version=$(awk '/^"@playwright\/test@npm:/ { found = 1; next } found && /^  version:/ { print $2; exit }' services/frontend/yarn.lock)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::no @playwright/test version in services/frontend/yarn.lock"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  fe-e2e:
+    # The official image holds Chromium and every system package it needs.
+    # `playwright install --with-deps` ran apt on each job instead, and a slow
+    # Ubuntu mirror held a job there for ten minutes.
+    #
+    # One job per project, `chromium` in `--shard` slices of about a hundred
+    # tests. `--shard` partitions by spec file, so a spec always lands on the
+    # same slice and a failure is easy to place. `motion` and `smoke` are too
+    # small to pay for a job each.
+    name: Frontend e2e (${{ matrix.name }} ${{ matrix.shard }}/${{ matrix.total }})
+    needs: [ changes, fe-static, fe-e2e-version ]
+    if: fromJSON(needs.changes.outputs.run).frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.fe-e2e-version.outputs.version }}-noble
+      options: --ipc=host
+    env:
+      # Playwright's setting for container jobs: the runner's /github/home is
+      # not owned by the image's root user, and Firefox refuses such a HOME.
+      HOME: /root
     strategy:
       fail-fast: false
       matrix:
-        shard: [ 1, 2, 3, 4, 5, 6 ]
+        include:
+          - { name: chromium, projects: chromium, shard: 1, total: 5 }
+          - { name: chromium, projects: chromium, shard: 2, total: 5 }
+          - { name: chromium, projects: chromium, shard: 3, total: 5 }
+          - { name: chromium, projects: chromium, shard: 4, total: 5 }
+          - { name: chromium, projects: chromium, shard: 5, total: 5 }
+          - { name: mobile-chrome, projects: mobile-chrome, shard: 1, total: 1 }
+          - { name: motion+smoke, projects: motion smoke, shard: 1, total: 1 }
+    defaults:
+      run:
+        # A container job's default shell is sh, which has no pipefail.
+        shell: bash
+        working-directory: services/frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js and Yarn
+        uses: ./.github/actions/setup-node-yarn
+
+      - name: Run frontend end-to-end tests
+        env:
+          PROJECTS: ${{ matrix.projects }}
+          SHARD: ${{ matrix.shard }}/${{ matrix.total }}
+          # Unique per job, so the merge job's download cannot overwrite one.
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{ matrix.name }}-${{ matrix.shard }}.zip
+        run: |
+          set -euo pipefail
+          args=()
+          for project in $PROJECTS; do args+=("--project=$project"); done
+          yarn test:e2e "${args[@]}" --shard="$SHARD"
+
+      - name: Upload the blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: frontend-e2e-blob-${{ matrix.name }}-${{ matrix.shard }}
+          path: services/frontend/blob-report
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload frontend e2e traces
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          # Per-job artifact name so parallel jobs don't collide.
+          name: frontend-e2e-traces-${{ matrix.name }}-${{ matrix.shard }}
+          path: services/frontend/test-results
+          if-no-files-found: ignore
+
+  fe-e2e-report:
+    # One HTML report from every e2e job, to read a failure in. Validate
+    # complete does not wait on it: the e2e jobs carry the verdict.
+    name: Frontend e2e report
+    needs: fe-e2e
+    if: ${{ !cancelled() && needs.fe-e2e.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: services/frontend
@@ -1060,20 +1150,22 @@ jobs:
       - name: Set up Node.js and Yarn
         uses: ./.github/actions/setup-node-yarn
 
-      - name: Install Playwright browser dependencies
-        run: yarn playwright install --with-deps chromium
+      - name: Download the blob reports
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: services/frontend/all-blob-reports
+          pattern: frontend-e2e-blob-*
+          merge-multiple: true
 
-      - name: Run frontend end-to-end tests
-        run: yarn test:e2e --shard=${{ matrix.shard }}/6
+      - name: Merge them into one HTML report
+        run: yarn playwright merge-reports --reporter html ./all-blob-reports
 
-      - name: Upload frontend e2e traces
-        if: failure()
+      - name: Upload the HTML report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          # Per-shard artifact name so parallel jobs don't collide.
-          name: frontend-e2e-traces-shard-${{ matrix.shard }}
-          path: services/frontend/test-results
-          if-no-files-found: ignore
+          name: frontend-e2e-report
+          path: services/frontend/playwright-report
+          retention-days: 7
 
   openapi-sync:
     name: Validate OpenAPI client generation
@@ -1156,6 +1248,7 @@ jobs:
       - acceptance-features
       - fe-unit
       - patch-coverage
+      - fe-e2e-version
       - fe-e2e
       - openapi-sync
     runs-on: ubuntu-latest

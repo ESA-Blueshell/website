@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.25.0](https://github.com/ESA-Blueshell/website/compare/v1.24.1...v1.25.0) (2026-10-23)
+
+
+### Features
+
+* **platform:** a production restore puts back Vault without a root token ([#2539](https://github.com/ESA-Blueshell/website/issues/2539)) ([fda5823](https://github.com/ESA-Blueshell/website/commit/fda5823ea0a96cdeeec95ed3ced5ab9bfdb3b3bd)), closes [#2537](https://github.com/ESA-Blueshell/website/issues/2537)
+* **platform:** a script unseals Vault after a restart ([#2517](https://github.com/ESA-Blueshell/website/issues/2517)) ([d743580](https://github.com/ESA-Blueshell/website/commit/d74358019e696c33bb7804de0dd63953348c9778))
+* **platform:** close NixOS scan findings only on evidence that the host has the fix ([#2552](https://github.com/ESA-Blueshell/website/issues/2552)) ([deb395a](https://github.com/ESA-Blueshell/website/commit/deb395a3dd1ce7bb1a13a06863497b6b24b79651))
+* **platform:** scan the NixOS host into code scanning and let Renovate move the flake ([#2550](https://github.com/ESA-Blueshell/website/issues/2550)) ([091caa0](https://github.com/ESA-Blueshell/website/commit/091caa01ab35e1d87ce6895a2de2a1414f5559e7))
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.googlecode.libphonenumber:libphonenumber to v9.0.41 ([#2532](https://github.com/ESA-Blueshell/website/issues/2532)) ([f9fbe6a](https://github.com/ESA-Blueshell/website/commit/f9fbe6a13901f0bb27505db7818b1addbe2a0da2))
+* **frontend:** country and nationality selects send the matched code ([#2555](https://github.com/ESA-Blueshell/website/issues/2555)) ([28f7032](https://github.com/ESA-Blueshell/website/commit/28f70329e18795da369a0d53fd692bd46392089a))
+* **platform:** the restore rehearsal opens a Vault 2.0 snapshot ([#2536](https://github.com/ESA-Blueshell/website/issues/2536)) ([ad3192e](https://github.com/ESA-Blueshell/website/commit/ad3192e9cce9ad525baf53faa534899eabdd2e54)), closes [#2535](https://github.com/ESA-Blueshell/website/issues/2535)
+
+
+### Performance
+
+* **platform:** a published release reaches Flagger within a minute ([#2514](https://github.com/ESA-Blueshell/website/issues/2514)) ([1bdee88](https://github.com/ESA-Blueshell/website/commit/1bdee882ed3dae5565f135468e1823e44e735795))
+
+
+### Build and Dependencies
+
+* **deps:** bump follow-redirects ([#2546](https://github.com/ESA-Blueshell/website/issues/2546)) ([63a2c45](https://github.com/ESA-Blueshell/website/commit/63a2c4531fb09642ef838f231bf93ed16cb79f6c))
+
 ## [1.24.1](https://github.com/ESA-Blueshell/website/compare/v1.24.0...v1.24.1) (2026-10-15)
 
 

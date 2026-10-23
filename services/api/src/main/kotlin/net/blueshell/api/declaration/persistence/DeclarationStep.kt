@@ -18,6 +18,9 @@ data class DeclarationStep(
     val byUserId: Long?,
     @Column(name = "reason", length = REASON_MAX)
     val reason: String? = null,
+    /** Kept as `MaskedIban.stored`, since the account on file may change after it was paid. */
+    @Column(name = "paid_to", length = 4)
+    val paidTo: String? = null,
 ) {
     companion object {
         const val REASON_MAX = 1000

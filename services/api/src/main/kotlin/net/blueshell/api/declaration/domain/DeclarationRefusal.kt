@@ -34,6 +34,10 @@ class ReasonMissing : DeclarationRefusal(HttpStatus.BAD_REQUEST, "ReasonMissing"
 
 class NoBankAccount : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NoBankAccount", "A declaration is paid to a bank account on file.")
 
+/** Marking paid records the submitter's account on file, and they have none now. */
+class SubmitterHasNoBankAccount :
+    DeclarationRefusal(HttpStatus.CONFLICT, "SubmitterHasNoBankAccount", "A declaration is marked paid to the bank account on file.")
+
 class NoReceipt : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NoReceipt", "A declaration holds at least one receipt.")
 
 class NotConfirmed : DeclarationRefusal(HttpStatus.BAD_REQUEST, "NotConfirmed", "The submitter states the declaration is correct.")

@@ -10,6 +10,8 @@ import net.blueshell.api.declaration.persistence.DeclarationState
 import net.blueshell.api.declaration.persistence.DeclarationStep
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.user.api.BankAccountLookup
+import net.blueshell.api.user.api.MaskedIban
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -42,7 +44,8 @@ class DeclarationReviewsTest {
     private val now = Instant.parse("2026-10-20T09:00:00Z")
     private val repository: DeclarationRepository = mockk()
     private val jobs: JobQueue = mockk(relaxed = true)
-    private val reviews = DeclarationReviews(repository, jobs, Clock.fixed(now, ZoneOffset.UTC))
+    private val bankAccounts: BankAccountLookup = mockk()
+    private val reviews = DeclarationReviews(repository, jobs, bankAccounts, Clock.fixed(now, ZoneOffset.UTC))
     private val submitted = declarationOf(40, DeclarationState.SUBMITTED, " Pizza " to 1250, "Drinks" to null, "Cups" to 250)
 
     init {
@@ -104,6 +107,29 @@ class DeclarationReviewsTest {
         val rejected = DeclarationJobs.Outcome.REJECTED
         verify { jobs.runAsync(DeclarationJobs.DeclarationReturned, match { it.outcome == rejected }, any(), any()) }
         assertThatThrownBy { reviews.sendBack(40, 3, "Again") }.isInstanceOf(DeclarationStateChanged::class.java)
+    }
+
+    @Test
+    fun `marking paid records the account on file as a use of it, keeps its preview and tells the submitter`() {
+        every { bankAccounts.recordPaidTo(12, LocalDate.of(2026, 10, 20)) } returns MaskedIban("NL", "34")
+        assertThatThrownBy { reviews.markPaid(40, 3) }.isInstanceOf(DeclarationStateChanged::class.java)
+        reviews.approve(40, 3)
+
+        assertThat(reviews.markPaid(40, 3).state).isEqualTo(DeclarationState.PAID)
+
+        assertThat(submitted.steps.last()).isEqualTo(DeclarationStep(DeclarationState.PAID, now, 3, paidTo = "NL34"))
+        val payload = DeclarationJobs.DeclarationPaidPayload(40, 12, "Pizza and 2 more", 1500, "NL34")
+        verify { jobs.runAsync(DeclarationJobs.DeclarationPaid, payload, JobTrigger.SITE_ACTION, null) }
+        assertThatThrownBy { reviews.markPaid(40, 3) }.isInstanceOf(DeclarationStateChanged::class.java)
+    }
+
+    @Test
+    fun `a declaration is not marked paid while its submitter has no bank account on file`() {
+        every { bankAccounts.recordPaidTo(12, any()) } returns null
+        reviews.approve(40, 3)
+
+        assertThatThrownBy { reviews.markPaid(40, 3) }.isInstanceOf(SubmitterHasNoBankAccount::class.java)
+        verify(exactly = 0) { jobs.runAsync(any<DeclarationJobs.DeclarationPaid>(), any(), any(), any()) }
     }
 
     @Test

@@ -2,10 +2,13 @@
  * A person's own declarations and their receipts (api ADR-041). Receipts are private files: their
  * urls open only for the submitter and the board, through the sign-in cookie.
  */
+import {maskedIban} from "@/domains/banking"
 import {apiUrl} from "@/services/api/apiUrl"
 import {
   approveDeclaration as approve,
   findDeclaration,
+  findDeclarationBankAccount,
+  markDeclarationPaid as markPaid,
   listDeclarations as listAll,
   rejectDeclaration as reject,
   sendBackDeclaration as sendBack,
@@ -24,7 +27,7 @@ import {
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
-import {centsOf, type Declaration, type DeclarationDraft, type Expense, type Receipt} from "../declarations"
+import {centsOf, type Declaration, type DeclarationDraft, type Expense, type BankAccountToPay, type Receipt} from "../declarations"
 import {accepted, refusable} from "../refusals"
 
 const asReceipt = (receipt: ReceiptResponse): Receipt => ({
@@ -51,7 +54,13 @@ const shown = (declaration: DeclarationResponse): Declaration => ({
     for: expense.bookedTo ?? null,
     receipts: expense.receipts.map(asReceipt),
   })),
-  steps: declaration.steps.map(step => ({state: step.state, at: step.at, by: step.by ?? "", ...(step.reason ? {reason: step.reason} : {})})),
+  steps: declaration.steps.map(step => ({
+    state: step.state,
+    at: step.at,
+    by: step.by ?? "",
+    ...(step.reason ? {reason: step.reason} : {}),
+    ...(step.paidToCountry && step.paidToLastTwo ? {paidTo: maskedIban(step.paidToCountry, step.paidToLastTwo)} : {}),
+  })),
 })
 
 const written = (draft: DeclarationDraft): DeclarationDraftRequest => ({
@@ -118,6 +127,21 @@ export const sendBackDeclaration = (id: number, reason: string) =>
 /** Final; the submitter is emailed [reason]. */
 export const rejectDeclaration = (id: number, reason: string) =>
   declarationRefusable(reject({path: {id}, body: {reason}}), "We could not reject the declaration. Try again.")
+
+/** The board transferred the money by hand; it went to the account on file now, and the submitter is emailed. */
+export const markDeclarationPaid = (id: number) =>
+  declarationRefusable(markPaid({path: {id}}), "We could not mark the declaration as paid. Try again.")
+
+/**
+ * The submitter's account on file now, as the board transfers to it, or nothing where none is on
+ * file; undefined where it could not be read. The full IBAN opens only through a logged reveal.
+ */
+export async function readBankAccountToPay(id: number): Promise<BankAccountToPay | null | undefined> {
+  const held = await readOr(findDeclarationBankAccount({path: {id}}), undefined)
+  if (!held) return undefined
+  const account = held.bankAccount
+  return account ? {holder: account.accountHolder ?? null, preview: maskedIban(account.ibanCountry, account.ibanLastTwo), bic: account.bic ?? null} : null
+}
 
 export const deleteDraft = (id: number) =>
   accepted(deleteDeclarationDraft({path: {id}}), "We could not delete the draft. Try again.")

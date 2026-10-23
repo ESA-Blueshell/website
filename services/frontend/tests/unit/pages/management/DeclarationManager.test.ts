@@ -5,7 +5,7 @@ import {DeclarationState} from "@/services/api"
 import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 import {answered} from "./declarationFixtures"
 
-const api = vi.hoisted(() => ({listDeclarations: vi.fn(), approveDeclaration: vi.fn(), rejectDeclaration: vi.fn()}))
+const api = vi.hoisted(() => ({listDeclarations: vi.fn(), approveDeclaration: vi.fn(), rejectDeclaration: vi.fn(), markDeclarationPaid: vi.fn()}))
 const mockStore = vi.hoisted(() => ({commit: vi.fn(), getters: {}}))
 
 vi.mock("@/services/api", async (importOriginal) => ({
@@ -99,6 +99,30 @@ describe("the Declarations page in Management", () => {
     expect(api.approveDeclaration).toHaveBeenCalledTimes(1)
     expect(api.approveDeclaration).toHaveBeenCalledWith({path: {id: 1}})
     expect(api.listDeclarations).toHaveBeenCalledTimes(2)
+  })
+
+  it("marks the ticked approved declarations paid, and skips the rest", async () => {
+    api.markDeclarationPaid.mockResolvedValue({status: 200, data: answered(2, DeclarationState.PAID)})
+    const wrapper = await mount()
+    await pick(wrapper, "declarations-status", null)
+    await tick(wrapper, 1)
+    await tick(wrapper, 2)
+    await wrapper.get('[data-testid="declarations-mark-paid"]').trigger("click")
+    const dialog = wrapper.findAllComponents({name: "ConfirmDialog"}).find(one => one.props("testid") === "declarations-paid-dialog")!
+    expect(dialog.props("title")).toBe("Mark 1 declaration as paid?")
+    expect(dialog.props("question")).toContain("Only approved declarations can be marked paid, so 1 other is skipped.")
+
+    dialog.vm.$emit("confirm")
+    await settle()
+    expect(api.markDeclarationPaid).toHaveBeenCalledTimes(1)
+    expect(api.markDeclarationPaid).toHaveBeenCalledWith({path: {id: 2}})
+
+    await tick(wrapper, 2)
+    await wrapper.get('[data-testid="declarations-mark-paid"]').trigger("click")
+    expect(dialog.props("question")).toMatch(/^Make sure you have sent/)
+    dialog.vm.$emit("update:open", false)
+    await settle()
+    expect(dialog.props("open")).toBe(false)
   })
 
   it("rejects the ticked open ones with a reason, and says how many could not be changed", async () => {

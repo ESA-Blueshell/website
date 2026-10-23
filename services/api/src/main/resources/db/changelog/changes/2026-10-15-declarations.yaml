@@ -97,6 +97,8 @@ databaseChangeLog:
               - column: {name: at, type: DATETIME(6), constraints: {nullable: false}}
               - column: {name: by_user_id, type: BIGINT}
               - column: {name: reason, type: VARCHAR(1000)}
+              # The masked IBAN a paid declaration went to, as `NL34`, since the account may change after.
+              - column: {name: paid_to, type: CHAR(4)}
         - addForeignKeyConstraint:
             constraintName: fk_declaration_steps_declaration_id
             baseTableName: declaration_steps

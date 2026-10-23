@@ -70,6 +70,24 @@ class BankDetailsRetentionTest {
     }
 
     @Test
+    fun `a declaration paid to the account is a use of it, counted when it is later than the last collection`() {
+        val paidRecently = StoppedAccount(8, "", LocalDate.of(2020, 1, 1), lastPaidToOn = LocalDate.of(2025, 9, 4))
+        val paidLongAgo = StoppedAccount(9, "", LocalDate.of(2020, 1, 1), lastPaidToOn = LocalDate.of(2025, 9, 3))
+        val collectedLater =
+            StoppedAccount(10, "BLUESHELL-10", LocalDate.of(2020, 1, 1), lastPaidToOn = LocalDate.of(2024, 1, 1)).also {
+                whenever(notifications.lastCollectionDate(eq(it.userId), eq(it.reference), any())).thenReturn(LocalDate.of(2025, 9, 4))
+            }
+        val neverCollected = StoppedAccount(11, "BLUESHELL-11", LocalDate.of(2020, 1, 1), lastPaidToOn = LocalDate.of(2025, 9, 4))
+        whenever(mandates.stopped(today)).thenReturn(listOf(paidRecently, paidLongAgo, collectedLater, neverCollected))
+        whenever(mandates.wipe(paidLongAgo, today)).thenReturn(true)
+
+        assertThat(retention.wipeExpired()).isEqualTo(1)
+        verify(mandates, never()).wipe(paidRecently, today)
+        verify(mandates, never()).wipe(collectedLater, today)
+        verify(mandates, never()).wipe(neverCollected, today)
+    }
+
+    @Test
     fun `the daily run is queued as a scheduled run, and is skipped when nothing is due`() {
         retention.queueDailyWipe()
         verify(jobs).runAsync(ContributionJobs.WipeBankDetails, ContributionJobs.WipeBankDetailsPayload(), JobTrigger.SCHEDULED_RUN)

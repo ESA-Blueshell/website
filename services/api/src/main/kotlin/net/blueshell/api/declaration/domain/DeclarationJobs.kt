@@ -11,6 +11,14 @@ object DeclarationJobs {
         override fun dedupKey(payload: DeclarationReturnedPayload): String? = null
     }
 
+    /** Tells a submitter their declaration was paid, and to which account. */
+    object DeclarationPaid : JobDefinition<DeclarationPaidPayload> {
+        override val type: String = "email.declaration-paid"
+        override val payloadType: Class<DeclarationPaidPayload> = DeclarationPaidPayload::class.java
+
+        override fun dedupKey(payload: DeclarationPaidPayload): String? = null
+    }
+
     enum class Outcome { SENT_BACK, REJECTED }
 
     /** The declaration as the board acted on it, so the email names what they saw. */
@@ -21,5 +29,14 @@ object DeclarationJobs {
         val reason: String,
         val title: String,
         val totalCents: Int,
+    )
+
+    /** The declaration as it was paid; [paidTo] is the masked IBAN as `NL34`. */
+    data class DeclarationPaidPayload(
+        val declarationId: Long,
+        val submitterId: Long,
+        val title: String,
+        val totalCents: Int,
+        val paidTo: String,
     )
 }

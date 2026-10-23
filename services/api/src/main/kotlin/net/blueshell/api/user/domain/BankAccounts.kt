@@ -1,6 +1,7 @@
 package net.blueshell.api.user.domain
 
 import net.blueshell.api.shared.event.AfterCommitEventPublisher
+import net.blueshell.api.user.api.BankAccountToPay
 import net.blueshell.api.user.api.BankDetailsChanged
 import net.blueshell.api.user.api.MandateEnded
 import net.blueshell.api.user.api.MaskedIban
@@ -44,6 +45,24 @@ class BankAccounts(
 ) {
     @Transactional(readOnly = true)
     fun own(userId: Long): BankAccountPreview? = payments.findByUserId(userId)?.bankAccount?.preview()
+
+    /** The account as the board pays to it, or null where none is on file. */
+    @Transactional(readOnly = true)
+    fun toPay(userId: Long): BankAccountToPay? {
+        val account = payments.findByUserId(userId)?.bankAccount ?: return null
+        val holder = sealing.accountHolder(HeldAccount(userId, SealedAccount(account.sealedIban, account.sealedAccountHolder)))
+        return BankAccountToPay(holder, requireNotNull(MaskedIban.of(account.ibanMasked)), account.bic)
+    }
+
+    /** A declaration was paid to the account on file on [on], which the 13-month wipe counts as a use of it. */
+    @Transactional
+    fun recordPaidTo(
+        userId: Long,
+        on: LocalDate,
+    ): MaskedIban? {
+        if (payments.recordPaidTo(userId, on) == 0) return null
+        return payments.findByUserId(userId)?.bankAccount?.let { MaskedIban.of(it.ibanMasked) }
+    }
 
     /**
      * Replaces the person's bank account whole. A mandate given for the one before it ends, since it

@@ -6,9 +6,12 @@ import net.blueshell.api.declaration.persistence.DeclarationState
 import net.blueshell.api.declaration.persistence.DeclarationStep
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.user.api.BankAccountLookup
+import net.blueshell.api.user.api.BankAccountToPay
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import java.time.LocalDate
 
 /** A draft is seen only by the person writing it, one sent back included; anything past it is the board's to see too. */
 val Declaration.seenByBoard: Boolean
@@ -16,12 +19,13 @@ val Declaration.seenByBoard: Boolean
 
 /**
  * The board's side of declarations: it sees what was submitted and what came of it, and
- * approves, sends back or rejects it. A board member may act on a declaration of their own.
+ * approves, sends back, rejects or marks it paid. A board member may act on a declaration of their own.
  */
 @Service
 class DeclarationReviews(
     private val declarations: DeclarationRepository,
     private val jobs: JobQueue,
+    private val bankAccounts: BankAccountLookup,
     private val clock: Clock,
 ) {
     @Transactional(readOnly = true)
@@ -59,17 +63,49 @@ class DeclarationReviews(
             tell(it, DeclarationJobs.Outcome.REJECTED)
         }
 
+    /** The submitter's account on file now, which a payout goes to. */
+    @Transactional(readOnly = true)
+    fun bankAccountOf(id: Long): BankAccountToPay? = bankAccounts.toPay(one(id).userId)
+
+    /**
+     * The board transferred the money by hand; it went to the account on file now, which keeps its
+     * preview and counts as a use of that account (api ADR-041). The submitter is emailed.
+     */
+    @Transactional
+    fun markPaid(
+        id: Long,
+        by: Long,
+    ): Declaration {
+        val declaration = one(id)
+        // Checked before the payout is counted as a use of the account, not only inside move.
+        // TWIN: `payable` in the frontend's Declarations pages.
+        if (declaration.state != DeclarationState.APPROVED) throw DeclarationStateChanged(declaration.state)
+        val stored = bankAccounts.recordPaidTo(declaration.userId, LocalDate.now(clock))?.stored ?: throw SubmitterHasNoBankAccount()
+        move(declaration, setOf(DeclarationState.APPROVED), DeclarationState.PAID, by, paidTo = stored)
+        val payload =
+            DeclarationJobs.DeclarationPaidPayload(
+                declarationId = declaration.id!!,
+                submitterId = declaration.userId,
+                title = titleOf(declaration),
+                totalCents = totalCentsOf(declaration),
+                paidTo = stored,
+            )
+        jobs.runAsync(DeclarationJobs.DeclarationPaid, payload, JobTrigger.SITE_ACTION)
+        return declaration
+    }
+
     private fun move(
         declaration: Declaration,
         from: Set<DeclarationState>,
         to: DeclarationState,
         by: Long,
         reason: String? = null,
+        paidTo: String? = null,
     ): Declaration {
         if (declaration.state !in from) throw DeclarationStateChanged(declaration.state)
         val said = reason?.trim()?.ifEmpty { throw ReasonMissing() }
         declaration.state = to
-        declaration.steps += DeclarationStep(to, clock.instant(), by, said)
+        declaration.steps += DeclarationStep(to, clock.instant(), by, said, paidTo)
         return declaration
     }
 
@@ -85,7 +121,7 @@ class DeclarationReviews(
                 outcome = outcome,
                 reason = requireNotNull(declaration.steps.last().reason),
                 title = titleOf(declaration),
-                totalCents = declaration.expenses.sumOf { it.amountCents ?: 0 },
+                totalCents = totalCentsOf(declaration),
             )
         jobs.runAsync(DeclarationJobs.DeclarationReturned, payload, JobTrigger.SITE_ACTION)
     }
@@ -95,6 +131,8 @@ class DeclarationReviews(
         val WITH_THE_BOARD = setOf(DeclarationState.SUBMITTED, DeclarationState.APPROVED)
     }
 }
+
+private fun totalCentsOf(declaration: Declaration): Int = declaration.expenses.sumOf { it.amountCents ?: 0 }
 
 // TWIN: `titleOf` in the frontend's `domains/declarations/declarations.ts` names a declaration the same way.
 internal fun titleOf(declaration: Declaration): String {

@@ -22,6 +22,7 @@ import {
   euros,
   forsOf,
   listDeclarations,
+  markDeclarationPaid,
   rejectDeclaration,
   STATE_MARKS,
   stateOf,
@@ -136,13 +137,15 @@ const clearSelection = () => {
   selected.value = new Set()
 }
 
-// TWIN: `approve` and `WITH_THE_BOARD` in the api's `DeclarationReviews.kt`.
+// TWIN: `approve`, `markPaid` and `WITH_THE_BOARD` in the api's `DeclarationReviews.kt`.
 const approvable = computed(() => picked.value.filter(one => one.state === DeclarationState.SUBMITTED))
+const payable = computed(() => picked.value.filter(one => one.state === DeclarationState.APPROVED))
 const rejectable = computed(() => picked.value.filter(withTheBoard))
 const skipped = (n: number) => (picked.value.length - n === 1 ? "1 other is skipped" : `${picked.value.length - n} others are skipped`)
 
 const working = ref(false)
 const approving = ref(false)
+const paying = ref(false)
 const rejecting = ref(false)
 const reason = ref("")
 
@@ -157,6 +160,7 @@ const runOn = async (list: Declaration[], move: (id: number) => Promise<{ok: boo
   } finally {
     working.value = false
     approving.value = false
+    paying.value = false
     rejecting.value = false
   }
 }
@@ -292,6 +296,15 @@ const startRejecting = () => {
         Approve
       </cut-button>
       <cut-button
+        :disabled="payable.length === 0 || working"
+        small
+        testid="declarations-mark-paid"
+        tone="solid"
+        @click="paying = true"
+      >
+        Mark as paid
+      </cut-button>
+      <cut-button
         :disabled="rejectable.length === 0 || working"
         small
         testid="declarations-reject"
@@ -312,6 +325,17 @@ const startRejecting = () => {
       :title="approvable.length === 1 ? 'Approve 1 declaration?' : `Approve ${approvable.length} declarations?`"
       :working="working"
       @confirm="runOn(approvable, approveDeclaration)"
+    />
+
+    <confirm-dialog
+      v-model:open="paying"
+      :confirm-label="`Mark ${payable.length} as paid`"
+      :question="(payable.length === picked.length ? '' : `Only approved declarations can be marked paid, so ${skipped(payable.length)}. `) +
+        'Make sure you have sent each declaration\'s money to its bank account first. Each person gets an email saying their declaration is paid.'"
+      testid="declarations-paid-dialog"
+      :title="payable.length === 1 ? 'Mark 1 declaration as paid?' : `Mark ${payable.length} declarations as paid?`"
+      :working="working"
+      @confirm="runOn(payable, markDeclarationPaid)"
     />
 
     <modal-dialog

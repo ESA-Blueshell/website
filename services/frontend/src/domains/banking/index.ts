@@ -4,6 +4,6 @@
  * names is the promise.
  */
 export {readOwnBankAccount, removeOwnBankAccount, saveOwnBankAccount} from "./adapters/bankAccounts"
-export {type BankAccount, type BankAccountPreview} from "./bankAccount"
+export {type BankAccount, type BankAccountPreview, maskedIban} from "./bankAccount"
 export {default as BankAccountForm} from "./island/BankAccountForm.vue"
 export {default as BankGlyph} from "./island/BankGlyph.vue"

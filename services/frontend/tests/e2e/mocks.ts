@@ -1010,6 +1010,18 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/declarations") {
       return answer(route, "listDeclarations", [...boardDeclarations.values()].filter(one => one.state !== "DRAFT"))
     }
+    const bankAccountPath = /^\/declarations\/(\d+)\/bank-account$/.exec(path)
+    if (method === "GET" && bankAccountPath) {
+      return answer(route, "findDeclarationBankAccount", {bankAccount: {accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00", bic: null}})
+    }
+    const paidPath = /^\/declarations\/(\d+)\/mark-paid$/.exec(path)
+    if (method === "POST" && paidPath) {
+      const held = boardDeclarations.get(Number(paidPath[1]))!
+      const paid = {state: "PAID" as const, at: "2026-10-18T10:00:00.000Z", by: "B. Board", reason: null, paidToCountry: "NL", paidToLastTwo: "00"}
+      const moved = {...held, state: "PAID" as const, steps: [...held.steps, paid]}
+      boardDeclarations.set(held.id, moved)
+      return answer(route, "markDeclarationPaid", moved)
+    }
     const reviewPath = /^\/declarations\/(\d+)(?:\/(approve|send-back|reject))?$/.exec(path)
     if (reviewPath) {
       const held = boardDeclarations.get(Number(reviewPath[1]))

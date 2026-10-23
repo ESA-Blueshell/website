@@ -12,6 +12,7 @@ on:
       - 'platform/flake.nix'
       - 'platform/nix/**'
       - '.github/workflows/nix-vulnerabilities.yml'
+      - '.github/scripts/nix_vulnerability_triage.py'
   pull_request:
     branches: [main]
     paths:
@@ -19,6 +20,7 @@ on:
       - 'platform/flake.nix'
       - 'platform/nix/**'
       - '.github/workflows/nix-vulnerabilities.yml'
+      - '.github/scripts/nix_vulnerability_triage.py'
   # A new CVE lands without any change here.
   schedule:
     - cron: '23 5 * * *'
@@ -66,16 +68,28 @@ jobs:
           jq -e '[.components[] | select(.cpe | tostring | startswith("cpe:2.3:o:linux:linux_kernel:"))] | length > 0' sbom.cdx.json > /dev/null ||
             { echo "::error::The SBOM has no kernel CPE."; exit 1; }
 
+      - name: Self-test the triage rules
+        run: python3 .github/scripts/nix_vulnerability_triage.py --self-test
+
       # Only findings with a fixed release, since those are the ones an update
       # can clear. Grype leaves the location empty for an SBOM, which code
       # scanning refuses, so each finding points at the lock file.
       - name: Scan the SBOM
         run: |
           nix shell --inputs-from ./platform nixpkgs#grype -c \
-            grype sbom:sbom.cdx.json --only-fixed -o sarif --file grype.sarif
+            grype sbom:sbom.cdx.json --only-fixed -o sarif=grype.sarif -o json=grype.json
           jq '.runs[].results[].locations[].physicalLocation.artifactLocation.uri = "platform/flake.lock"' \
-            grype.sarif > nix-host.sarif
-          echo "Findings: $(jq '[.runs[].results[]] | length' nix-host.sarif)" >> "$GITHUB_STEP_SUMMARY"
+            grype.sarif > located.sarif
+
+      # NVD knows only upstream releases, so a kernel backport, a nixpkgs patch
+      # or a post-release snapshot looks unfixed to grype. The triage closes a
+      # finding only on evidence of the fix and lists each one in the summary.
+      - name: Close findings the host already has a fix for
+        run: |
+          python3 .github/scripts/nix_vulnerability_triage.py \
+            --grype grype.json --sarif located.sarif --sbom sbom.cdx.json \
+            --exceptions platform/nix/vulnerability-exceptions.json \
+            --out nix-host.sarif --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload result to code scanning
         uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4

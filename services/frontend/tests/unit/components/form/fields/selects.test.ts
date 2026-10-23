@@ -20,6 +20,19 @@ describe("CountrySelect", () => {
       .props("modelValue")).toBeNull()
   })
 
+  it("writes the matched code back, so the form never sends a name the api refuses", () => {
+    const fromName = mount(CountrySelect, {props: {modelValue: "Netherlands"}, global: {stubs}})
+    const fromLowercase = mount(CountrySelect, {props: {modelValue: "de"}, global: {stubs}})
+
+    expect(fromName.emitted("update:modelValue")?.at(-1)?.[0]).toBe("NL")
+    expect(fromLowercase.emitted("update:modelValue")?.at(-1)?.[0]).toBe("DE")
+  })
+
+  it("leaves a code that is already right alone", () => {
+    expect(mount(CountrySelect, {props: {modelValue: "BE"}, global: {stubs}})
+      .emitted("update:modelValue")).toBeUndefined()
+  })
+
   it("reports the code chosen, and takes the label it is given", () => {
     const wrapper = mount(CountrySelect, {
       props: {modelValue: null, label: "Where you live", testId: "home"},

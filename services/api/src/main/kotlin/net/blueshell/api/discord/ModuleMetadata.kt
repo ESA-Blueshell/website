@@ -26,6 +26,8 @@ import org.springframework.modulith.PackageInfo
         "game :: api",
         // GameChannel, the shape a game's channels are handed over in.
         "game :: entities",
+        // AbstractJsonJobHandler, which the seen emoji backfill extends.
+        "jobs :: api",
     ],
 )
 class ModuleMetadata

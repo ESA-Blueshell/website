@@ -146,6 +146,14 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Once the event is over it is left alone, as Discord ends it by itself. An event already " +
       "running is listed from a minute on. Safe to re-run: the Discord event is made once.",
   },
+  "discord.backfill-seen-emoji": {
+    title: "Find emoji used in the Discord server",
+    description:
+      "Reads the full history of every channel, thread and forum post the bot can see, and " +
+      "adds every server emoji used there, in a message or as a reaction, to the emoji the " +
+      "editor suggests. Runs in slices, each queueing the next, and a stopped run resumes where " +
+      "it was. Safe to re-run: places already read are skipped and a message counts once.",
+  },
 
   "calendar.sync-event": {
     title: "Sync calendar event",

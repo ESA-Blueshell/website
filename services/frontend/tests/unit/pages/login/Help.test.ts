@@ -15,7 +15,10 @@ vi.mock("@/components/common/AccountFrame.vue", () => ({
   default: {name: "AccountFrame", props: {heading: String, body: String, islandContent: Boolean}, template: "<div><slot /></div>"},
 }))
 
-vi.mock("@/domains/discord", () => ({discordChannel: (door: string) => `https://discord.test/${door}`}))
+vi.mock("@/domains/discord", async () => ({
+  DiscordEmojiKind: (await vi.importActual<typeof import("@/services/api")>("@/services/api")).DiscordEmojiKind,
+  discordChannel: (door: string) => `https://discord.test/${door}`,
+}))
 
 const signedInAs = (roles: Partial<typeof mockStore.getters>) => {
   Object.assign(mockStore.getters, {isMember: false, isActive: false, isBoard: false, isAdmin: false}, roles)

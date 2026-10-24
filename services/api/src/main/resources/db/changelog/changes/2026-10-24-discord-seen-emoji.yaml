@@ -1,0 +1,34 @@
+# Seen emoji: server emoji from any server that the bot has seen used in the association's Discord
+# server, so the editor can suggest them by name.
+#
+# discord_seen_emoji is one row per emoji ID, with its latest name, whether it is animated, when it
+# was first and last seen, and how many messages used it. No message text is kept.
+#
+# discord_seen_emoji_message is one row per emoji and message that used it, so a message counts
+# once: an edit, a second reaction, a message read live and by the backfill, or the same gateway
+# event reaching two api pods.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-24-discord-seen-emoji.yaml
+      id: discord-seen-emoji
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: discord_seen_emoji
+            columns:
+              - column: {name: emoji_id, type: VARCHAR(20), constraints: {primaryKey: true, nullable: false}}
+              - column: {name: name, type: VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, constraints: {nullable: false}}
+              - column: {name: animated, type: BOOLEAN, constraints: {nullable: false}}
+              - column: {name: first_seen, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: last_seen, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: use_count, type: BIGINT, constraints: {nullable: false}}
+        - createTable:
+            tableName: discord_seen_emoji_message
+            columns:
+              - column: {name: emoji_id, type: VARCHAR(20), constraints: {primaryKey: true, nullable: false}}
+              - column: {name: message_id, type: VARCHAR(20), constraints: {primaryKey: true, nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: discord_seen_emoji_message
+        - dropTable:
+            tableName: discord_seen_emoji

@@ -26,6 +26,7 @@ import org.springframework.core.env.Environment
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
@@ -34,11 +35,12 @@ import java.util.concurrent.TimeUnit
 /**
  * The live server, held by a gateway connection. Discord's REST API cannot list who is in voice,
  * so this listens instead: the full state arrives when the connection opens, and every change
- * after it, which [onChange] passes on.
+ * after it, which [onChange] passes on. Server emoji used in messages and reactions go to
+ * [onEmojiSeen].
  *
- * Presence and Server Members are privileged, and a gateway asking for one the application lacks
- * is refused outright, so the application's flags are read first and only granted intents are
- * asked for. Only members in voice are cached. Each api pod holds its own connection; the bot only
+ * Presence, Server Members and Message Content are privileged, and a gateway asking for one the
+ * application lacks is refused outright, so the application's flags are read first and only
+ * granted intents are asked for. Only members in voice are cached. Each api pod holds its own connection; the bot only
  * reads, so two during a rollout is harmless. JDA resumes a dropped session itself, but a start
  * that fails, or a session Discord ends for good, leaves [server] null and is tried again from
  * scratch, waiting longer each time.
@@ -55,6 +57,7 @@ class JdaVoiceServerSource(
     MemberEvents,
     RoomAccess,
     GatewayGuild,
+    EmojiSightings,
     SmartLifecycle {
     @Volatile private var jda: JDA? = null
 
@@ -70,6 +73,7 @@ class JdaVoiceServerSource(
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
     private val named = CopyOnWriteArrayList<(String, String) -> Unit>()
     private val connected = CopyOnWriteArrayList<() -> Unit>()
+    private val sightings = CopyOnWriteArrayList<(EmojiSighting) -> Unit>()
 
     private val invites = ConcurrentHashMap<String, String>()
     private val access = ConcurrentHashMap<String, KeptRead<Set<String>>>()
@@ -78,7 +82,7 @@ class JdaVoiceServerSource(
         EventListener { event ->
             listeners.forEach { it() }
             when (event) {
-                is RawGatewayEvent ->
+                is RawGatewayEvent -> {
                     if (event.type in MEMBER_CHANGES) {
                         namedIn(event.payload, guildId)?.let { (id, name) ->
                             // Their roles may have changed with it, so what they may join is read again.
@@ -86,6 +90,10 @@ class JdaVoiceServerSource(
                             named.forEach { it(id, name) }
                         }
                     }
+                    if (event.type in EMOJI_CARRIERS) {
+                        emojiSeenIn(event.type, event.payload, guildId, clock.instant()).forEach { seen -> sightings.forEach { it(seen) } }
+                    }
+                }
                 // A resumed session has Discord replay what it missed; a recreated one does not.
                 is GuildReadyEvent, is SessionRecreateEvent -> connected.forEach { it() }
                 is ShutdownEvent -> ended(event.jda)
@@ -124,6 +132,10 @@ class JdaVoiceServerSource(
 
     override fun onMemberNamed(listener: (String, String) -> Unit) {
         named += listener
+    }
+
+    override fun onEmojiSeen(listener: (EmojiSighting) -> Unit) {
+        sightings += listener
     }
 
     override fun onConnected(listener: () -> Unit) {
@@ -243,6 +255,7 @@ class JdaVoiceServerSource(
         private val LAST_RETRY: Duration = Duration.ofMinutes(30)
         private const val DOUBLINGS = 6
         private val MEMBER_CHANGES = setOf("GUILD_MEMBER_UPDATE", "GUILD_MEMBER_ADD")
+        private val EMOJI_CARRIERS = setOf("MESSAGE_CREATE", "MESSAGE_UPDATE", "MESSAGE_REACTION_ADD")
         private val log = LoggerFactory.getLogger(JdaVoiceServerSource::class.java)
     }
 }
@@ -252,6 +265,11 @@ private const val GATEWAY_PRESENCE = 1 shl 12
 private const val GATEWAY_PRESENCE_LIMITED = 1 shl 13
 private const val GATEWAY_GUILD_MEMBERS = 1 shl 14
 private const val GATEWAY_GUILD_MEMBERS_LIMITED = 1 shl 15
+private const val GATEWAY_MESSAGE_CONTENT = 1 shl 18
+private const val GATEWAY_MESSAGE_CONTENT_LIMITED = 1 shl 19
+
+// Messages and reactions are read only for the emoji in them; without Message Content a message's text arrives empty.
+private val ALWAYS = setOf(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS)
 
 /** The connection as [JdaVoiceServerSource] wants it, unbuilt: [granted] privileged intents, voice members cached. */
 internal fun gatewayOf(
@@ -260,7 +278,7 @@ internal fun gatewayOf(
     listener: EventListener,
 ): JDABuilder =
     JDABuilder
-        .createLight(token, granted + GatewayIntent.GUILD_VOICE_STATES)
+        .createLight(token, granted + ALWAYS)
         .setMemberCachePolicy(MemberCachePolicy.VOICE)
         .enableCache(listOfNotNull(CacheFlag.VOICE_STATE, CacheFlag.ONLINE_STATUS.takeIf { GatewayIntent.GUILD_PRESENCES in granted }))
         // Raw events too: a presence change of a member not in the cache fires nothing else.
@@ -291,7 +309,33 @@ internal fun privilegedIntentsOf(flags: Int): Set<GatewayIntent> =
     buildSet {
         if (flags and (GATEWAY_PRESENCE or GATEWAY_PRESENCE_LIMITED) != 0) add(GatewayIntent.GUILD_PRESENCES)
         if (flags and (GATEWAY_GUILD_MEMBERS or GATEWAY_GUILD_MEMBERS_LIMITED) != 0) add(GatewayIntent.GUILD_MEMBERS)
+        if (flags and (GATEWAY_MESSAGE_CONTENT or GATEWAY_MESSAGE_CONTENT_LIMITED) != 0) add(GatewayIntent.MESSAGE_CONTENT)
     }
+
+/** The server emoji a raw message or reaction event in [guildId] shows used, seen [at]. */
+internal fun emojiSeenIn(
+    type: String,
+    payload: DataObject,
+    guildId: String,
+    at: Instant,
+): List<EmojiSighting> {
+    if (payload.getString("guild_id", null) != guildId) return emptyList()
+    return when (type) {
+        "MESSAGE_CREATE", "MESSAGE_UPDATE" -> {
+            val messageId = payload.getString("id", null) ?: return emptyList()
+            emojiIn(payload.getString("content", null).orEmpty(), messageId, at)
+        }
+        "MESSAGE_REACTION_ADD" -> {
+            val messageId = payload.getString("message_id", null) ?: return emptyList()
+            val emoji = payload.optObject("emoji").orElse(null) ?: return emptyList()
+            // A standard emoji has no ID.
+            val id = emoji.getString("id", null) ?: return emptyList()
+            val name = emoji.getString("name", null) ?: return emptyList()
+            listOf(EmojiSighting(id, name, emoji.getBoolean("animated", false), messageId, at))
+        }
+        else -> emptyList()
+    }
+}
 
 /**
  * The voice rooms of [guild] everybody can see, with who is in each. The AFK room is left out:

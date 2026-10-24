@@ -1172,7 +1172,8 @@ export type DiscordChannelResponse = {
 
 export enum DiscordEmojiKind {
     SERVER = 'SERVER',
-    APPLICATION = 'APPLICATION'
+    APPLICATION = 'APPLICATION',
+    SEEN = 'SEEN'
 }
 
 /**
@@ -1185,10 +1186,14 @@ export type DiscordEmojiResponse = {
     animated: boolean;
     id: string;
     /**
-     * Uploaded to the server, or to the bot's Discord application
+     * Uploaded to the server or to the bot's Discord application, or seen used in the server
      */
     kind: DiscordEmojiKind;
     name: string;
+    /**
+     * How many messages in the server used a seen emoji; null for the others
+     */
+    uses?: number | null;
 };
 
 /**

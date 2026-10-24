@@ -112,7 +112,8 @@ class VoiceServerOfTest {
         assertThat(privilegedIntentsOf(0)).isEmpty()
         assertThat(privilegedIntentsOf(1 shl 12)).containsExactly(GatewayIntent.GUILD_PRESENCES)
         assertThat(privilegedIntentsOf(1 shl 15)).containsExactly(GatewayIntent.GUILD_MEMBERS)
+        assertThat(privilegedIntentsOf(1 shl 18)).containsExactly(GatewayIntent.MESSAGE_CONTENT)
         assertThat(privilegedIntentsOf((1 shl 13) or (1 shl 14) or (1 shl 19)))
-            .containsExactlyInAnyOrder(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MEMBERS)
+            .containsExactlyInAnyOrder(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
     }
 }

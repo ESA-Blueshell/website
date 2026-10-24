@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.domain.DiscordEmojiKind.APPLICATION
+import net.blueshell.api.discord.domain.DiscordEmojiKind.SEEN
 import net.blueshell.api.discord.domain.DiscordEmojiKind.SERVER
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -16,6 +17,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.request
 import org.springframework.test.web.client.response.MockRestResponseCreators.withServerError
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import java.time.Instant
 
 private const val SERVER_LIST = "https://discord.test/guilds/324/emojis"
 private const val SELF = "https://discord.test/users/@me"
@@ -25,9 +27,11 @@ class DiscordEmojiDirectoryTest {
     private val builder = RestClient.builder().baseUrl("https://discord.test")
     private val discord = MockRestServiceServer.bindTo(builder).build()
 
+    private val seen = seenEmojiIndex()
+
     private fun directory(source: DiscordEmojiSource? = RestDiscordEmojiSource(builder.build(), "324")): DiscordEmojiDirectory {
         val provider: ObjectProvider<DiscordEmojiSource> = mock { on { ifAvailable } doReturn source }
-        return DiscordEmojiDirectory(provider)
+        return DiscordEmojiDirectory(provider, seen)
     }
 
     // Discord's lists of the server's and the application's emoji as it answers them; names and IDs are made up.
@@ -66,6 +70,25 @@ class DiscordEmojiDirectoryTest {
             DiscordEmoji("42", "shellywave", animated = false, available = true, roleIds = emptyList(), kind = APPLICATION),
         )
         discord.verify()
+    }
+
+    @Test
+    fun `adds the seen emoji, listing one the server or the application has once, as theirs`() {
+        answering()
+        val noon = Instant.parse("2026-10-24T12:00:00Z")
+        seen.saw(EmojiSighting("9001", "spoopykat", false, "m1", noon))
+        seen.saw(EmojiSighting("9001", "spoopykat", false, "m2", noon))
+        seen.saw(EmojiSighting("2", "ShellyStar", true, "m1", noon))
+        seen.saw(EmojiSighting("42", "shellywave", false, "m1", noon))
+
+        val listed = directory().all()!!
+        assertThat(listed.map { listOf(it.id, it.kind, it.uses) }).containsExactly(
+            listOf("3", SERVER, null),
+            listOf("1", SERVER, null),
+            listOf("2", SERVER, null),
+            listOf("42", APPLICATION, null),
+            listOf("9001", SEEN, 2L),
+        )
     }
 
     @Test

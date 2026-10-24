@@ -2,8 +2,9 @@ import {DiscordEmojiKind, listServerEmoji} from "@/domains/discord"
 
 /**
  * Emoji by the names Discord types them with: the server's own, then the bot's application emoji,
- * then the standard ones by JoyPixels' names (`thumbsup`, `slight_smile`, `flag_nl`), which are
- * Discord's. Read only by the editor, so all are fetched when one opens.
+ * then the emoji seen used in the server, then the standard ones by JoyPixels' names (`thumbsup`,
+ * `slight_smile`, `flag_nl`), which are Discord's. Read only by the editor, so all are fetched
+ * when one opens.
  */
 export interface NamedEmoji {
   name: string
@@ -20,9 +21,14 @@ interface Listed {
 let known = new Map<string, string>()
 let loading: Promise<Map<string, string>> | undefined
 /* Where each kind ranks; a kind the api adds fails to compile until it is placed. */
-const RANK: Record<DiscordEmojiKind, number> = {[DiscordEmojiKind.SERVER]: 0, [DiscordEmojiKind.APPLICATION]: 1}
+const RANK: Record<DiscordEmojiKind, number> = {
+  [DiscordEmojiKind.SERVER]: 0,
+  [DiscordEmojiKind.APPLICATION]: 1,
+  [DiscordEmojiKind.SEEN]: 2,
+}
+type Custom = NamedEmoji & {uses: number}
 /* Each kind by the name lowercased, in rank order: Discord finds them whatever case they are typed in. */
-let custom: Map<string, NamedEmoji>[] = []
+let custom: Map<string, Custom>[] = []
 let asking: Promise<void> | undefined
 
 const read = async (): Promise<Map<string, string>> => {
@@ -48,7 +54,8 @@ const ask = async (): Promise<void> => {
   const listed = await listServerEmoji() ?? []
   custom = Object.values(RANK).map(() => new Map())
   for (const one of listed) {
-    custom[RANK[one.kind]]?.set(one.name.toLowerCase(), {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`})
+    const emoji = `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`
+    custom[RANK[one.kind]]?.set(one.name.toLowerCase(), {name: one.name, emoji, uses: one.uses ?? 0})
   }
 }
 
@@ -68,17 +75,20 @@ const MOST = 12
 
 /**
  * The emoji that answer to what was typed, the server's own first, then the application's, then
- * the standard ones: in each, names that start with it before names that only contain it, shortest first.
+ * the seen ones, then the standard ones: in each, names that start with it before names that only
+ * contain it, then the most used, then the shortest.
  */
 export const emojiMatching = (typed: string): NamedEmoji[] => {
-  const byStart = (a: NamedEmoji, b: NamedEmoji) =>
+  const startsFirst = (a: NamedEmoji, b: NamedEmoji) =>
     Number(!a.name.toLowerCase().startsWith(typed)) - Number(!b.name.toLowerCase().startsWith(typed))
-      || a.name.length - b.name.length || a.name.localeCompare(b.name)
-  const own = custom.flatMap(kind => [...kind.values()].filter(one => one.name.toLowerCase().includes(typed)).sort(byStart))
+  const shortest = (a: NamedEmoji, b: NamedEmoji) => a.name.length - b.name.length || a.name.localeCompare(b.name)
+  const own = custom.flatMap(kind => [...kind.values()]
+    .filter(one => one.name.toLowerCase().includes(typed))
+    .sort((a, b) => startsFirst(a, b) || b.uses - a.uses || shortest(a, b)))
   const found: NamedEmoji[] = []
   for (const [name, emoji] of known) {
     if (name.includes(typed)) found.push({name, emoji})
   }
-  return [...own, ...found.sort(byStart)].slice(0, MOST)
+  return [...own, ...found.sort((a, b) => startsFirst(a, b) || shortest(a, b))].slice(0, MOST)
 }
 

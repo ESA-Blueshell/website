@@ -36,6 +36,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.cloud.context.environment.EnvironmentChangeEvent
 import org.springframework.mock.env.MockEnvironment
 import java.time.Duration
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -353,6 +354,54 @@ class JdaVoiceServerSourceTest {
 
         assertThat(source.joinableBy("804")).containsExactly("11")
         assertThat(source.joinableBy("805")).isEmpty()
+    }
+
+    @Test
+    fun `passes on the server emoji used in a new or edited message, or as a reaction, in the server only`() {
+        val source = source(applicationWith(0))
+        val seen = mutableListOf<EmojiSighting>()
+        source.onEmojiSeen { seen += it }
+
+        source.relay.onEvent(raw("MESSAGE_CREATE", """{"guild_id": "324", "id": "m1", "content": "Carve! <:spoopykat:111> 🎃"}"""))
+        source.relay.onEvent(raw("MESSAGE_UPDATE", """{"guild_id": "324", "id": "m1", "content": "<a:ShellyStar:657>"}"""))
+        val reacted = """{"guild_id": "324", "message_id": "m2", "emoji": """
+        source.relay.onEvent(raw("MESSAGE_REACTION_ADD", """$reacted{"id": "42", "name": "shellywave"}}"""))
+        source.relay.onEvent(raw("MESSAGE_REACTION_ADD", """$reacted{"id": null, "name": "🎃"}}"""))
+        source.relay.onEvent(raw("MESSAGE_CREATE", """{"guild_id": "999", "id": "m3", "content": "<:elsewhere:7>"}"""))
+
+        assertThat(seen.map { listOf(it.emojiId, it.name, it.animated, it.messageId) }).containsExactly(
+            listOf("111", "spoopykat", false, "m1"),
+            listOf("657", "ShellyStar", true, "m1"),
+            listOf("42", "shellywave", false, "m2"),
+        )
+    }
+
+    @Test
+    fun `reads no emoji from an event missing what it needs`() {
+        val at = Instant.parse("2026-10-24T12:00:00Z")
+
+        fun seenIn(
+            type: String,
+            json: String,
+        ) = emojiSeenIn(type, DataObject.fromJson(json), "324", at)
+
+        assertThat(seenIn("MESSAGE_CREATE", """{"guild_id": "324", "content": "<:kat:1>"}""")).isEmpty()
+        assertThat(seenIn("MESSAGE_CREATE", """{"guild_id": "324", "id": "m1"}""")).isEmpty()
+        assertThat(seenIn("MESSAGE_REACTION_ADD", """{"guild_id": "324", "emoji": {"id": "1", "name": "kat"}}""")).isEmpty()
+        assertThat(seenIn("MESSAGE_REACTION_ADD", """{"guild_id": "324", "message_id": "m1"}""")).isEmpty()
+        assertThat(seenIn("MESSAGE_REACTION_ADD", """{"guild_id": "324", "message_id": "m1", "emoji": {"id": "1"}}""")).isEmpty()
+        assertThat(seenIn("TYPING_START", """{"guild_id": "324"}""")).isEmpty()
+    }
+
+    private fun raw(
+        type: String,
+        json: String,
+    ): RawGatewayEvent {
+        val payload = DataObject.fromJson(json)
+        return mock {
+            on { this.type } doReturn type
+            on { this.payload } doReturn payload
+        }
     }
 
     private fun memberUpdate(id: String): RawGatewayEvent {

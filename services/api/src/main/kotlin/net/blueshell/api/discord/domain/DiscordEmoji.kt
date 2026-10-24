@@ -1,5 +1,6 @@
 package net.blueshell.api.discord.domain
 
+import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import org.springframework.beans.factory.ObjectProvider
@@ -12,6 +13,7 @@ import java.time.Clock
 import java.time.Duration
 
 /** Where an emoji was uploaded: to the association's server, or to the bot's Discord application. */
+@Schema(enumAsRef = true)
 enum class DiscordEmojiKind { SERVER, APPLICATION }
 
 /**
@@ -104,9 +106,9 @@ class DiscordEmojiDirectory(
     fun all(): List<DiscordEmoji>? {
         val listed = source.ifAvailable ?: return null
         val own = server.get { listed.server() }
-        val bots = application.get { listed.application() }
-        if (own == null && bots == null) return null
-        return (own.orEmpty() + bots.orEmpty()).sortedBy { it.name.lowercase() }
+        val apps = application.get { listed.application() }
+        if (own == null && apps == null) return null
+        return (own.orEmpty() + apps.orEmpty()).sortedBy { it.name.lowercase() }
     }
 
     internal companion object {

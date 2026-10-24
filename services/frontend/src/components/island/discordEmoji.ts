@@ -1,4 +1,4 @@
-import {type DiscordEmojiResponse, listServerEmoji} from "@/domains/discord"
+import {DiscordEmojiKind, listServerEmoji} from "@/domains/discord"
 
 /**
  * Emoji by the names Discord types them with: the server's own, then the bot's application emoji,
@@ -19,8 +19,9 @@ interface Listed {
 
 let known = new Map<string, string>()
 let loading: Promise<Map<string, string>> | undefined
-/* Each kind by the name lowercased, in the order they rank: Discord finds them whatever case they are typed in. */
-const KINDS: DiscordEmojiResponse["kind"][] = ["SERVER", "APPLICATION"]
+/* Where each kind ranks; a kind the api adds fails to compile until it is placed. */
+const RANK: Record<DiscordEmojiKind, number> = {[DiscordEmojiKind.SERVER]: 0, [DiscordEmojiKind.APPLICATION]: 1}
+/* Each kind by the name lowercased, in rank order: Discord finds them whatever case they are typed in. */
 let custom: Map<string, NamedEmoji>[] = []
 let asking: Promise<void> | undefined
 
@@ -45,10 +46,10 @@ const read = async (): Promise<Map<string, string>> => {
 
 const ask = async (): Promise<void> => {
   const listed = await listServerEmoji() ?? []
-  custom = KINDS.map(kind => new Map(listed.filter(one => one.kind === kind).map(one => [one.name.toLowerCase(), {
-    name: one.name,
-    emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`,
-  }])))
+  custom = Object.values(RANK).map(() => new Map())
+  for (const one of listed) {
+    custom[RANK[one.kind]]?.set(one.name.toLowerCase(), {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`})
+  }
 }
 
 /** Starts reading the names, and answers once they are there. */

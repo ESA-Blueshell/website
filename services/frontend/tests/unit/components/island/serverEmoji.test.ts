@@ -6,16 +6,19 @@ import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/co
 import {markdownEditing} from "@/components/island/markdownEditing"
 import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
 import {listServerEmoji} from "@/domains/discord"
-import type {DiscordEmojiResponse} from "@/services/api"
+import {DiscordEmojiKind, type DiscordEmojiResponse} from "@/services/api"
 
-vi.mock("@/domains/discord", () => ({listServerEmoji: vi.fn()}))
+vi.mock("@/domains/discord", async () => ({
+  DiscordEmojiKind: (await vi.importActual<typeof import("@/services/api")>("@/services/api")).DiscordEmojiKind,
+  listServerEmoji: vi.fn(),
+}))
 
 const OWN: DiscordEmojiResponse[] = [
-  {id: "657733730491826186", name: "POGGERS", animated: false, kind: "SERVER"},
-  {id: "857733730491826187", name: "fire", animated: true, kind: "SERVER"},
-  {id: "857733730491826190", name: "bs_campfire", animated: false, kind: "SERVER"},
-  {id: "957733730491826188", name: "firework_shelly", animated: false, kind: "APPLICATION"},
-  {id: "957733730491826189", name: "shellyfire", animated: false, kind: "APPLICATION"},
+  {id: "657733730491826186", name: "POGGERS", animated: false, kind: DiscordEmojiKind.SERVER},
+  {id: "857733730491826187", name: "fire", animated: true, kind: DiscordEmojiKind.SERVER},
+  {id: "857733730491826190", name: "bs_campfire", animated: false, kind: DiscordEmojiKind.SERVER},
+  {id: "957733730491826188", name: "firework_shelly", animated: false, kind: DiscordEmojiKind.APPLICATION},
+  {id: "957733730491826189", name: "shellyfire", animated: false, kind: DiscordEmojiKind.APPLICATION},
 ]
 
 beforeAll(async () => {

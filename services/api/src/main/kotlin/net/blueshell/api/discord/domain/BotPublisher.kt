@@ -308,7 +308,7 @@ class BotPublisher(
         return listing.copy(description = description)
     }
 
-    // The server's emoji bar those over the boost limit and role-locked ones, and every application emoji.
+    // Every application emoji passes: the bot may use those anywhere.
     private fun usableEmojiIds(): Set<String> =
         emoji
             .all()

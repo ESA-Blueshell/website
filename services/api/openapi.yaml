@@ -2292,6 +2292,11 @@ components:
       - id
       - name
       type: object
+    DiscordEmojiKind:
+      enum:
+      - SERVER
+      - APPLICATION
+      type: string
     DiscordEmojiResponse:
       description: A picture uploaded to the Discord server, which a description writes as <:name:id>
       properties:
@@ -2301,11 +2306,8 @@ components:
         id:
           type: string
         kind:
+          $ref: '#/components/schemas/DiscordEmojiKind'
           description: Uploaded to the server, or to the bot's Discord application
-          enum:
-          - SERVER
-          - APPLICATION
-          type: string
         name:
           type: string
       required:

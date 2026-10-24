@@ -83,6 +83,7 @@ class DiscordEmojiDirectoryTest {
         answering(server = false)
 
         assertThat(directory().all()!!.map { it.name }).containsExactly("shellywave")
+        discord.verify()
     }
 
     @Test

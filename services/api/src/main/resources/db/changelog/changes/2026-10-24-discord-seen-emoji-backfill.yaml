@@ -1,0 +1,17 @@
+# Where the seen emoji backfill is in each channel, thread and forum post it reads, newest message
+# first, so a run that stops resumes there.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-24-discord-seen-emoji-backfill.yaml
+      id: discord-seen-emoji-backfill
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: discord_seen_emoji_backfill
+            columns:
+              - column: {name: channel_id, type: VARCHAR(20), constraints: {primaryKey: true, nullable: false}}
+              - column: {name: before_message_id, type: VARCHAR(20)}
+              - column: {name: done, type: BOOLEAN, defaultValueBoolean: false, constraints: {nullable: false}}
+      rollback:
+        - dropTable:
+            tableName: discord_seen_emoji_backfill

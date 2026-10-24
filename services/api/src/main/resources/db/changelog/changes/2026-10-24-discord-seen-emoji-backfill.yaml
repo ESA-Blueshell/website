@@ -1,7 +1,5 @@
-# The seen emoji backfill's place in each channel, thread and forum post it reads, oldest first back
-# from the newest message, so a run that stops resumes where it was. before_message_id is the oldest
-# message read so far, null before the first page; done is set once the channel's first message is
-# read, or once the bot may no longer read it.
+# Where the seen emoji backfill is in each channel, thread and forum post it reads, newest message
+# first, so a run that stops resumes there.
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-10-24-discord-seen-emoji-backfill.yaml

@@ -27,7 +27,7 @@ class RestDiscordHistoryTest {
 
     @Test
     fun `finds every channel, thread and forum post holding messages`() {
-        // A text channel, a voice channel, a forum and an announcement channel the bot may not list threads of.
+        // A text channel, a voice channel with its chat, a forum and an announcement channel the bot may not list threads of.
         answers(
             "https://discord.test/guilds/324/channels",
             """[{"id": "10", "type": 0}, {"id": "11", "type": 2}, {"id": "12", "type": 15}, {"id": "13", "type": 5}]""",
@@ -46,21 +46,27 @@ class RestDiscordHistoryTest {
             .expect(requestTo("https://discord.test/channels/13/threads/archived/public?limit=100"))
             .andRespond(withStatus(HttpStatus.FORBIDDEN))
 
-        assertThat(history.places()).containsExactly("10", "13", "20", "21", "22")
+        assertThat(history.places()).containsExactly("10", "11", "13", "20", "21", "22")
         discord.verify()
     }
 
     @Test
     fun `reads a page of messages older than a message, and nothing where the bot may not read`() {
+        val newest =
+            (101..200).map {
+                """{"id": "$it", "timestamp": "2026-10-24T12:00:00Z", "author": {"id": "u1"}, "content": "<:kat:7>"}"""
+            }
+        answers("https://discord.test/channels/10/messages?limit=100", newest.reversed().joinToString(prefix = "[", postfix = "]"))
         answers("https://discord.test/users/@me", """{"id": "b1"}""")
-        answers("https://discord.test/channels/10/messages?limit=100", """[{"id": "2"}]""")
-        answers("https://discord.test/channels/10/messages?limit=100&before=2", """[{"id": "1"}]""")
+        answers("https://discord.test/channels/10/messages?limit=100&before=101", """[{"id": "1"}]""")
+        answers("https://discord.test/channels/10/messages?limit=100&before=1", "[]")
         discord.expect(requestTo("https://discord.test/channels/11/messages?limit=100")).andRespond(withStatus(HttpStatus.NOT_FOUND))
         discord.expect(requestTo("https://discord.test/channels/12/messages?limit=100")).andRespond(withServerError())
 
-        assertThat(history.selfId).isEqualTo("b1")
-        assertThat(history.page("10", null)!!.map { it["id"] }).containsExactly("2")
-        assertThat(history.page("10", "2")!!.map { it["id"] }).containsExactly("1")
+        val first = history.page("10", null)!!
+        assertThat(listOf(first.sightings.size, first.oldestMessageId, first.last)).containsExactly(100, "101", false)
+        assertThat(history.page("10", "101")).isEqualTo(HistoryPage(emptyList(), "1", true))
+        assertThat(history.page("10", "1")).isEqualTo(HistoryPage(emptyList(), "1", true))
         assertThat(history.page("11", null)).isNull()
         assertThatThrownBy { history.page("12", null) }.isInstanceOf(HttpServerErrorException::class.java)
         discord.verify()

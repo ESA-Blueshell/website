@@ -10,8 +10,7 @@ import tools.jackson.databind.ObjectMapper
 object DiscordJobs {
     /**
      * Reads the server's history for seen emoji, a bounded slice per run, each run queueing the
-     * next until every place is read. Safe to run again: places already read stay read, and a
-     * message counts once.
+     * next until every place is read. Safe to run again: a message counts once.
      */
     object BackfillSeenEmoji : JobDefinition<BackfillSeenEmojiPayload> {
         override val type: String = "discord.backfill-seen-emoji"
@@ -21,9 +20,9 @@ object DiscordJobs {
         override val queuesBehindRunning: Boolean get() = true
     }
 
-    /** [discover] looks for channels, threads and forum posts first; a run the job queued itself skips it. */
+    /** [restart] starts a pass over every channel, thread and forum post; a run the job queued itself goes on with it. */
     data class BackfillSeenEmojiPayload(
-        val discover: Boolean = true,
+        val restart: Boolean = true,
     )
 }
 
@@ -34,9 +33,10 @@ class BackfillSeenEmojiJob(
     private val jobs: JobQueue,
 ) : AbstractJsonJobHandler<DiscordJobs.BackfillSeenEmojiPayload>(objectMapper, DiscordJobs.BackfillSeenEmoji) {
     override fun handlePayload(payload: DiscordJobs.BackfillSeenEmojiPayload) {
-        if (payload.discover && !backfill.discover()) return skip("The Discord bot is not set up")
+        if (!backfill.available) return skip("The Discord bot is not set up")
+        if (payload.restart) backfill.startPass()
         if (backfill.readSome(PAGES_PER_RUN)) {
-            jobs.runAsync(DiscordJobs.BackfillSeenEmoji, DiscordJobs.BackfillSeenEmojiPayload(discover = false), JobTrigger.ANOTHER_JOB)
+            jobs.runAsync(DiscordJobs.BackfillSeenEmoji, DiscordJobs.BackfillSeenEmojiPayload(restart = false), JobTrigger.ANOTHER_JOB)
         }
     }
 

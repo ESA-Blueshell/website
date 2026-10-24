@@ -152,7 +152,8 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Reads the full history of every channel, thread and forum post the bot can see, and " +
       "adds every server emoji used there, in a message or as a reaction, to the emoji the " +
       "editor suggests. Runs in slices, each queueing the next, and a stopped run resumes where " +
-      "it was. Safe to re-run: places already read are skipped and a message counts once.",
+      "it was. Leave restart on: it reads every channel again from its newest message, which " +
+      "the slices the job queues itself turn off. Safe to re-run: a message counts once.",
   },
 
   "calendar.sync-event": {

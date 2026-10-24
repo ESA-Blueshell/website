@@ -10,37 +10,37 @@ import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionStatus
 import tools.jackson.databind.json.JsonMapper
 
-// The places as the repository's SQL keeps them: one row per channel, added once.
+// The places as SeenEmojiBackfillPlaceRepository's SQL keeps them; SeenEmojiBackfillIT holds the SQL to the same.
 private class HeldPlaces : SeenEmojiBackfillPlaceRepository {
     val held = sortedMapOf<String, SeenEmojiBackfillPlace>()
 
-    override fun add(channelId: String): Int {
-        val added = held.putIfAbsent(channelId, SeenEmojiBackfillPlace(channelId, null, false)) == null
-        return if (added) 1 else 0
+    override fun restart(channelId: String) {
+        held[channelId] = SeenEmojiBackfillPlace(channelId, null, false)
     }
 
     override fun findFirstByDoneFalseOrderByIdAsc(): SeenEmojiBackfillPlace? = held.values.firstOrNull { !it.done }
 
-    override fun move(
+    override fun markRead(
         channelId: String,
         before: String?,
         done: Boolean,
-    ): Int {
+    ) {
         held[channelId] = SeenEmojiBackfillPlace(channelId, before, done)
-        return 1
     }
 }
 
-// A server's history: each place's messages oldest first, IDs rising with age as Discord's do.
-private class HeldHistory(
+// A server's history: each place's messages oldest first, with IDs rising as Discord's do.
+internal class HeldHistory(
     val messages: MutableMap<String, List<Map<String, Any?>>>,
 ) : DiscordHistory {
-    override val selfId = "b1"
     val unreadable = mutableSetOf<String>()
 
     override fun places(): List<String> = messages.keys.toList()
@@ -48,14 +48,15 @@ private class HeldHistory(
     override fun page(
         channelId: String,
         before: String?,
-    ): List<Map<String, Any?>>? {
+    ): HistoryPage? {
         if (channelId in unreadable) return null
         val older = messages.getValue(channelId).filter { before == null || (it["id"] as String).toLong() < before.toLong() }
-        return older.reversed().take(PAGE)
+        val page = older.reversed().take(100)
+        return HistoryPage(page.flatMap { sightingsIn(it, "b1") }, page.lastOrNull()?.get("id") as String? ?: before, page.size < 100)
     }
 }
 
-private fun message(
+internal fun message(
     id: Long,
     content: String = "",
     author: String = "u1",
@@ -73,6 +74,7 @@ class BackfillSeenEmojiJobTest {
     private val places = HeldPlaces()
     private val index = seenEmojiIndex()
     private val queued = mutableListOf<Any>()
+    private val transactions: PlatformTransactionManager = mock { on { getTransaction(anyOrNull()) } doReturn mock<TransactionStatus>() }
     private val jobs =
         object : JobQueue {
             override fun <T : Any> runAsync(
@@ -88,7 +90,7 @@ class BackfillSeenEmojiJobTest {
 
     private fun job(history: DiscordHistory?): BackfillSeenEmojiJob {
         val provider: ObjectProvider<DiscordHistory> = mock { on { ifAvailable } doReturn history }
-        return BackfillSeenEmojiJob(mapper, SeenEmojiBackfill(provider, places, index), jobs)
+        return BackfillSeenEmojiJob(mapper, SeenEmojiBackfill(provider, places, index, transactions), jobs)
     }
 
     private fun BackfillSeenEmojiJob.run(payload: DiscordJobs.BackfillSeenEmojiPayload = DiscordJobs.BackfillSeenEmojiPayload()) =
@@ -128,13 +130,14 @@ class BackfillSeenEmojiJobTest {
         job(history).run()
         queued.clear()
 
-        job(history).run(DiscordJobs.BackfillSeenEmojiPayload(discover = false))
+        job(history).run(DiscordJobs.BackfillSeenEmojiPayload(restart = false))
         queued.clear()
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 4000L))
 
         history.messages["c2"] = listOf(message(9001, kat))
         job(history).runToTheEnd()
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 4001L))
+        assertThat(places.held.values.map { it.done }).containsOnly(true)
     }
 
     @Test
@@ -151,8 +154,18 @@ class BackfillSeenEmojiJobTest {
     @Test
     fun `skips without a bot`() {
         assertThat(job(null).run()).isInstanceOf(JobOutcome.Skipped::class.java)
-        assertThat(job(null).run(DiscordJobs.BackfillSeenEmojiPayload(discover = false))).isInstanceOf(JobOutcome.Done::class.java)
+        assertThat(job(null).run(DiscordJobs.BackfillSeenEmojiPayload(restart = false))).isInstanceOf(JobOutcome.Skipped::class.java)
         assertThat(queued).isEmpty()
+    }
+
+    @Test
+    fun `reads nothing where the bot went away between the check and the read`() {
+        val gone: ObjectProvider<DiscordHistory> = mock { on { ifAvailable } doReturn null }
+        val backfill = SeenEmojiBackfill(gone, places, index, transactions)
+
+        backfill.startPass()
+        assertThat(backfill.readSome(1)).isFalse()
+        assertThat(places.held).isEmpty()
     }
 
     @Test

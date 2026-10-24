@@ -29,8 +29,8 @@ fun interface ServerEmojiSource {
 }
 
 /**
- * Reads Discord's list of the server's emoji rather than the whole server, so a server field the
- * generated models do not know cannot break it. Read as maps, since the client has no method for it.
+ * Reads Discord's list of the server's emoji as maps, since the client has no method for it, so
+ * a server field the generated models do not know cannot break it.
  */
 @Component
 @WhenCredentialsSet(Credentials.DISCORD_BOT)

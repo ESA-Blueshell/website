@@ -121,6 +121,32 @@ describe("suggestions opened before the server's own emoji arrive", () => {
     await vi.waitFor(() => expect(currentCompletions(view.state).map(one => one.label)).toContain(":POGGERS:"))
   })
 
+  it("replace a list shown with the standard emoji alone", async () => {
+    vi.mocked(listServerEmoji).mockResolvedValue(null)
+    await loadServerEmoji()
+    let arrive: (listed: DiscordEmojiResponse[]) => void = () => {}
+    vi.mocked(listServerEmoji).mockReturnValue(new Promise(resolve => {
+      arrive = resolve
+    }))
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc: ":fir",
+        selection: EditorSelection.cursor(4),
+        extensions: autocompletion({override: [emojiCompletion]}),
+      }),
+    })
+    views.push(view)
+
+    const arriving = emojiOnArrival(view)
+    startCompletion(view)
+    await vi.waitFor(() => expect(currentCompletions(view.state)[0]?.apply).toBe("🔥"))
+
+    arrive(OWN)
+    await arriving
+    await vi.waitFor(() => expect(currentCompletions(view.state)[0]?.apply).toBe("<a:fire:857733730491826187>"))
+  })
+
   it("are left alone where no emoji name is being typed", async () => {
     vi.mocked(listServerEmoji).mockResolvedValue(OWN)
     const view = new EditorView({

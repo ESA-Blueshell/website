@@ -12,10 +12,12 @@ import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.nullValue
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
@@ -48,7 +50,8 @@ class BotPublisherTest {
     private val mapper = JsonMapper.builder().build()
     private val builder = RestClient.builder().baseUrl("https://discord.test")
     private val discord = MockRestServiceServer.bindTo(builder).build()
-    private val publisher = BotPublisher(api, builder.build(), mapper, doors, "324")
+    private val emoji = DiscordEmojiDirectory(provided(RestServerEmojiSource(builder.build(), "324")))
+    private val publisher = BotPublisher(api, builder.build(), mapper, doors, emoji, "324")
 
     private val banner = DiscordImage("banner.webp", "image/webp", byteArrayOf(1, 2, 3))
 
@@ -190,7 +193,7 @@ class BotPublisherTest {
                 override fun invite(channelId: String): String? = null
             }
 
-        assertThatThrownBy { BotPublisher(api, builder.build(), mapper, down, "324").post("events-info", post) }
+        assertThatThrownBy { BotPublisher(api, builder.build(), mapper, down, emoji, "324").post("events-info", post) }
             .isInstanceOf(ExplainedJobFailure::class.java)
             .hasMessage("The Discord gateway is not connected, so no channel called #events-info can be found yet.")
         assertThatThrownBy { publisher.post("events-calendar", post) }
@@ -395,6 +398,62 @@ class BotPublisherTest {
     }
 
     @Test
+    fun `leaves out the custom emoji the bot may not use when listing a Discord event, keeping the cover`() {
+        val carving = listing.copy(description = "Carve! <:spoopykat:111> <a:ShellyStar:657> <:shellywave:42> <:locked:5> <:faded:7> 🎃")
+        val kept = "Carve! <a:ShellyStar:657> <:shellywave:42> 🎃"
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/emojis"))
+            .andRespond(withSuccess(SERVER_EMOJI, MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/users/@me"))
+            .andRespond(withSuccess("""{"id": "b1"}""", MediaType.APPLICATION_JSON))
+        for (path in listOf("scheduled-events", "scheduled-events/e1")) {
+            discord
+                .expect(requestTo("https://discord.test/applications/b1/emojis"))
+                .andRespond(withSuccess("""{"items": [{"id": "42", "name": "shellywave"}]}""", MediaType.APPLICATION_JSON))
+            discord
+                .expect(requestTo("https://discord.test/guilds/324/$path"))
+                .andExpect(jsonPath("$.description").value(kept))
+                .andExpect(jsonPath("$.image").value("data:x"))
+                .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
+        }
+
+        assertThat(publisher.createDiscordEvent(carving)).isEqualTo("e1")
+        assertThat(publisher.updateDiscordEvent("e1", carving)).isTrue()
+        assertThat(carving.description).contains("<:spoopykat:111>")
+        discord.verify()
+    }
+
+    @Test
+    fun `still lists a Discord event when its emoji cannot be read, leaving out the custom emoji`() {
+        val carving = listing.copy(description = "Carve! <a:ShellyStar:657> <:shellywave:42> 🎃")
+        discord.expect(requestTo("https://discord.test/guilds/324/emojis")).andRespond(withServerError())
+        discord
+            .expect(requestTo("https://discord.test/users/@me"))
+            .andRespond(withSuccess("""{"id": "b1"}""", MediaType.APPLICATION_JSON))
+        discord.expect(requestTo("https://discord.test/applications/b1/emojis")).andRespond(withServerError())
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andExpect(jsonPath("$.description").value("Carve! 🎃"))
+            .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
+
+        assertThat(publisher.createDiscordEvent(carving)).isEqualTo("e1")
+        discord.verify()
+    }
+
+    @Test
+    fun `asks for no emoji when a description holds no custom emoji`() {
+        val plain = listing.copy(description = "Carve! 🎃")
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andExpect(jsonPath("$.description").value("Carve! 🎃"))
+            .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
+
+        assertThat(publisher.createDiscordEvent(plain)).isEqualTo("e1")
+        discord.verify()
+    }
+
+    @Test
     fun `lists and relists without the cover where Discord refuses it, and gives up on anything else`() {
         discord.expect(requestTo("https://discord.test/guilds/324/scheduled-events")).andRespond(withBadRequest())
         discord
@@ -498,3 +557,15 @@ class BotPublisherTest {
         discord.verify()
     }
 }
+
+// The server's emoji list: ShellyStar may be used, one is locked to a role and one is over the boost limit.
+private val SERVER_EMOJI =
+    """
+    [
+      {"id": "657", "name": "ShellyStar", "roles": [], "animated": true, "available": true},
+      {"id": "5", "name": "locked", "roles": ["9"], "animated": false, "available": true},
+      {"id": "7", "name": "faded", "roles": [], "animated": false, "available": false}
+    ]
+    """.trimIndent()
+
+private fun <T : Any> provided(bean: T): ObjectProvider<T> = mock { on { ifAvailable } doReturn bean }

@@ -105,7 +105,7 @@ class DiscordMemberController(
     // What a description may be written with, for whoever writes one, so it needs a login.
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/emojis")
-    @Operation(operationId = "listDiscordEmojis", summary = "The Discord server's own emoji, by name")
+    @Operation(operationId = "listDiscordEmojis", summary = "The Discord server's own emoji and the bot's application emoji, by name")
     @ApiResponse(
         responseCode = "200",
         content = [Content(array = ArraySchema(schema = Schema(implementation = DiscordEmojiResponse::class)))],
@@ -113,6 +113,6 @@ class DiscordMemberController(
     @ApiResponse(responseCode = "503", description = "The bot is not set up, or Discord did not answer", content = [Content()])
     fun emojis(): ResponseEntity<List<DiscordEmojiResponse>> {
         val found = emoji.all() ?: return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()
-        return ResponseEntity.ok(found.map { DiscordEmojiResponse(it.id, it.name, it.animated) })
+        return ResponseEntity.ok(found.map { DiscordEmojiResponse(it.id, it.name, it.animated, it.kind) })
     }
 }

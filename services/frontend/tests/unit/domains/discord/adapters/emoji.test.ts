@@ -7,8 +7,8 @@ vi.mock("@/services/api", () => ({listDiscordEmojis: vi.fn()}))
 
 describe("listServerEmoji", () => {
   it("answers the server's own emoji, or nothing where the api cannot ask", async () => {
-    vi.mocked(listDiscordEmojis).mockResolvedValue(answer(listDiscordEmojis, [{id: "657", name: "ShellyStar", animated: false}]))
-    expect(await listServerEmoji()).toEqual([{id: "657", name: "ShellyStar", animated: false}])
+    vi.mocked(listDiscordEmojis).mockResolvedValue(answer(listDiscordEmojis, [{id: "657", name: "ShellyStar", animated: false, kind: "SERVER"}]))
+    expect(await listServerEmoji()).toEqual([{id: "657", name: "ShellyStar", animated: false, kind: "SERVER"}])
 
     vi.mocked(listDiscordEmojis).mockResolvedValue(refusal(listDiscordEmojis, {status: 503}))
     expect(await listServerEmoji()).toBeNull()

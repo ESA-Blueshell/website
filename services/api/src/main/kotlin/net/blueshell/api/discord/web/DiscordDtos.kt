@@ -1,6 +1,7 @@
 package net.blueshell.api.discord.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.discord.domain.DiscordEmojiKind
 import net.blueshell.api.discord.domain.DiscordLive
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.StarboardEntry
@@ -59,6 +60,8 @@ data class DiscordEmojiResponse(
     val name: String,
     @Schema(description = "Moving, written <a:name:id> rather than <:name:id>")
     val animated: Boolean,
+    @Schema(description = "Uploaded to the server, or to the bot's Discord application")
+    val kind: DiscordEmojiKind,
 )
 
 @Schema(description = "What a description's mentions name: the members, roles and channels the server has")

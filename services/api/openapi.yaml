@@ -2300,11 +2300,18 @@ components:
           type: boolean
         id:
           type: string
+        kind:
+          description: Uploaded to the server, or to the bot's Discord application
+          enum:
+          - SERVER
+          - APPLICATION
+          type: string
         name:
           type: string
       required:
       - animated
       - id
+      - kind
       - name
       type: object
     DiscordLiveResponse:
@@ -12739,7 +12746,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord did not answer
-      summary: The Discord server's own emoji, by name
+      summary: The Discord server's own emoji and the bot's application emoji, by name
       tags:
       - Discord
   /discord/game-channels:

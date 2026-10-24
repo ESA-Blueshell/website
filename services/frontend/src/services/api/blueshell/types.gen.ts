@@ -1179,6 +1179,10 @@ export type DiscordEmojiResponse = {
      */
     animated: boolean;
     id: string;
+    /**
+     * Uploaded to the server, or to the bot's Discord application
+     */
+    kind: 'SERVER' | 'APPLICATION';
     name: string;
 };
 

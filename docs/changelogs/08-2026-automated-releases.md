@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.25.1](https://github.com/ESA-Blueshell/website/compare/v1.25.0...v1.25.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* **discord:** Discord events leave out emoji the bot may not use ([#2556](https://github.com/ESA-Blueshell/website/issues/2556)) ([#2568](https://github.com/ESA-Blueshell/website/issues/2568)) ([def7b5c](https://github.com/ESA-Blueshell/website/commit/def7b5cad66bc138f19791a25be71a6a7a3b3ff3))
+* **discord:** server emoji show in the editor's suggestions again ([#2558](https://github.com/ESA-Blueshell/website/issues/2558)) ([#2566](https://github.com/ESA-Blueshell/website/issues/2566)) ([1dea4bc](https://github.com/ESA-Blueshell/website/commit/1dea4bcd7858d30ba439b987c84e7b3190683fd8))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2564](https://github.com/ESA-Blueshell/website/issues/2564)) ([02f6962](https://github.com/ESA-Blueshell/website/commit/02f69629c50e30eb1804d881e8ddecc08b905074))
+
 ## [1.25.0](https://github.com/ESA-Blueshell/website/compare/v1.24.1...v1.25.0) (2026-10-23)
 
 

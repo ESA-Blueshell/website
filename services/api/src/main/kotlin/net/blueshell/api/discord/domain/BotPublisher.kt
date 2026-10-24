@@ -41,6 +41,7 @@ class BotPublisher(
     private val discordRestClient: RestClient,
     private val jsonMapper: JsonMapper,
     private val doors: DoorSource,
+    private val emoji: DiscordEmojiDirectory,
     @Value($$"${discord.guildId:}") private val guildId: String,
 ) : DiscordPublisher {
     override fun post(
@@ -215,7 +216,8 @@ class BotPublisher(
 
     override fun createDiscordEvent(listing: DiscordEventListing): String =
         explained(LISTING) {
-            withoutImageIfRefused(listing.cover != null) { withCover -> create(if (withCover) listing else listing.copy(cover = null)) }
+            val usable = withUsableEmoji(listing)
+            withoutImageIfRefused(usable.cover != null) { withCover -> create(if (withCover) usable else usable.copy(cover = null)) }
         }
 
     override fun updateDiscordEvent(
@@ -223,9 +225,10 @@ class BotPublisher(
         listing: DiscordEventListing,
     ): Boolean =
         explained(LISTING) {
+            val usable = withUsableEmoji(listing)
             stillOpen {
-                withoutImageIfRefused(listing.cover != null) { withCover ->
-                    update(discordEventId, if (withCover) listing else listing.copy(cover = null))
+                withoutImageIfRefused(usable.cover != null) { withCover ->
+                    update(discordEventId, if (withCover) usable else usable.copy(cover = null))
                 }
             }
         }
@@ -297,6 +300,36 @@ class BotPublisher(
             .body(REPLY)!!
             .getValue("id") as String
 
+    /*
+     * Discord refuses a whole Discord event over one custom emoji the bot may not use, such as one
+     * pasted from another server, and does not say which. The bot may use its own and the server's,
+     * bar those over the boost limit and role-locked ones.
+     */
+    private fun withUsableEmoji(listing: DiscordEventListing): DiscordEventListing {
+        if (!CUSTOM_EMOJI.containsMatchIn(listing.description)) return listing
+        val usable = serverEmojiIds() + applicationEmojiIds()
+        val description = CUSTOM_EMOJI.replace(listing.description) { if (it.groupValues[1] in usable) it.value else "" }
+        return listing.copy(description = description)
+    }
+
+    private fun serverEmojiIds(): Set<String> =
+        emoji
+            .all()
+            .orEmpty()
+            .filter { it.available && it.roleIds.isEmpty() }
+            .mapTo(mutableSetOf()) { it.id }
+
+    // A bot's application shares its user's ID.
+    private fun applicationEmojiIds(): Set<String> {
+        val reply =
+            discordRestClient
+                .get()
+                .uri("/applications/{application}/emojis", selfId)
+                .retrieve()
+                .body(REPLY)!!
+        return (reply["items"] as List<*>).mapTo(mutableSetOf()) { (it as Map<*, *>)["id"] as String }
+    }
+
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
         if (doors.textRooms().isEmpty()) {
@@ -317,7 +350,7 @@ class BotPublisher(
         reference: String,
     ): Pair<String, String> = split(reference) ?: (channelIdOf(channel) to reference)
 
-    // Asked once, and only once a message links the page: another bot's post may link it too.
+    // Asked once, and only where needed: another bot's post may link the page too.
     private val selfId: String by lazy {
         discordRestClient
             .get()
@@ -354,6 +387,9 @@ private fun buttonLinksOf(component: Map<*, *>?): List<Any?> =
 // A reference is the channel's ID and the message's, split by a slash.
 private fun split(reference: String): Pair<String, String>? =
     reference.split('/', limit = 2).takeIf { it.size == 2 }?.let { (channelId, messageId) -> channelId to messageId }
+
+// A custom emoji as a description writes it, `<:name:id>` or `<a:name:id>` for an animated one, with the space before it.
+private val CUSTOM_EMOJI = Regex(""" ?<a?:\w+:(\d+)>""")
 
 private fun Instant.utc(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 

@@ -20,7 +20,8 @@ class SeenEmojiBackfill(
     transactionManager: PlatformTransactionManager,
 ) {
     // Each page commits on its own: one transaction per slice would hold the counts' row locks across its Discord calls.
-    private val eachPage =
+    // Places are looked up in their own too, since the job's transaction keeps a snapshot from before those commits.
+    private val ownTransaction =
         TransactionTemplate(transactionManager).apply { propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW }
 
     /** Whether a bot is set up to read the history. */
@@ -29,7 +30,7 @@ class SeenEmojiBackfill(
     /** Starts a pass: every place the bot can see now is read again from its newest message. */
     fun startPass() {
         val source = history.ifAvailable ?: return
-        source.places().forEach { place -> eachPage.executeWithoutResult { places.restart(place) } }
+        source.places().forEach { place -> ownTransaction.executeWithoutResult { places.restart(place) } }
     }
 
     /** Reads up to [pages] pages, place by place; true while a place has more to read. */
@@ -37,7 +38,7 @@ class SeenEmojiBackfill(
         val source = history.ifAvailable ?: return false
         var left = pages
         while (left > 0) {
-            val place = places.findFirstByDoneFalseOrderByIdAsc() ?: return false
+            val place = nextPlace() ?: return false
             var before = place.beforeMessageId
             var done = false
             while (left > 0 && !done) {
@@ -45,12 +46,14 @@ class SeenEmojiBackfill(
                 val page = source.page(place.id, before)
                 before = page?.oldestMessageId ?: before
                 done = page?.last ?: true
-                eachPage.executeWithoutResult {
+                ownTransaction.executeWithoutResult {
                     page?.sightings?.forEach(index::saw)
                     places.markRead(place.id, before, done)
                 }
             }
         }
-        return places.findFirstByDoneFalseOrderByIdAsc() != null
+        return nextPlace() != null
     }
+
+    private fun nextPlace() = ownTransaction.execute { places.findFirstByDoneFalseOrderByIdAsc() }
 }

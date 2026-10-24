@@ -52,14 +52,18 @@ const read = async (): Promise<Map<string, string>> => {
 
 const ask = async (): Promise<void> => {
   const listed = await listServerEmoji() ?? []
-  custom = Object.values(RANK).map(() => new Map())
+  const kinds = (Object.keys(RANK) as DiscordEmojiKind[]).sort((a, b) => RANK[a] - RANK[b])
+  const byKind = Object.fromEntries(kinds.map(kind => [kind, new Map<string, Custom>()])) as Record<DiscordEmojiKind, Map<string, Custom>>
   for (const one of listed) {
-    const kind = custom[RANK[one.kind]]
+    const named = byKind[one.kind]
+    const key = one.name.toLowerCase()
     const uses = one.uses ?? 0
+    const held = named.get(key)
     // Emoji from several servers may share a name; the most used answers to it.
-    if ((kind?.get(one.name.toLowerCase())?.uses ?? -1) >= uses) continue
-    kind?.set(one.name.toLowerCase(), {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`, uses})
+    if (held && held.uses >= uses) continue
+    named.set(key, {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`, uses})
   }
+  custom = kinds.map(kind => byKind[kind])
 }
 
 /** Starts reading the names, and answers once they are there. */

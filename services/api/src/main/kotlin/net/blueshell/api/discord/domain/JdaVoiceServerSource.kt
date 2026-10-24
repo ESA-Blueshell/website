@@ -323,25 +323,37 @@ internal fun emojiSeenIn(
     guildId: String,
     selfId: String,
     at: Instant,
-): List<EmojiSighting> {
-    if (payload.getString("guild_id", null) != guildId) return emptyList()
-    return when (type) {
-        "MESSAGE_CREATE", "MESSAGE_UPDATE" -> {
-            if (payload.optObject("author").map { it.getString("id", null) }.orElse(null) == selfId) return emptyList()
-            val messageId = payload.getString("id", null) ?: return emptyList()
-            emojiIn(payload.getString("content", null).orEmpty(), messageId, at)
-        }
-        "MESSAGE_REACTION_ADD" -> {
-            if (payload.getString("user_id", null) == selfId) return emptyList()
-            val messageId = payload.getString("message_id", null) ?: return emptyList()
-            val emoji = payload.optObject("emoji").orElse(null) ?: return emptyList()
-            // A standard emoji has no ID.
-            val id = emoji.getString("id", null) ?: return emptyList()
-            val name = emoji.getString("name", null) ?: return emptyList()
-            listOf(EmojiSighting(id, name, emoji.getBoolean("animated", false), messageId, at))
-        }
+): List<EmojiSighting> =
+    when {
+        payload.getString("guild_id", null) != guildId -> emptyList()
+        type == "MESSAGE_CREATE" || type == "MESSAGE_UPDATE" -> emojiInText(payload, selfId, at)
+        type == "MESSAGE_REACTION_ADD" -> listOfNotNull(emojiReacted(payload, selfId, at))
         else -> emptyList()
     }
+
+private fun emojiInText(
+    payload: DataObject,
+    selfId: String,
+    at: Instant,
+): List<EmojiSighting> {
+    val author = payload.optObject("author").map { it.getString("id", null) }.orElse(null)
+    val messageId = payload.getString("id", null)
+    if (author == selfId || messageId == null) return emptyList()
+    return emojiIn(payload.getString("content", null).orEmpty(), messageId, at)
+}
+
+// A standard emoji has no ID.
+private fun emojiReacted(
+    payload: DataObject,
+    selfId: String,
+    at: Instant,
+): EmojiSighting? {
+    val messageId = payload.getString("message_id", null)
+    val emoji = payload.optObject("emoji").orElse(null)
+    val id = emoji?.getString("id", null) ?: return null
+    val name = emoji.getString("name", null)
+    if (payload.getString("user_id", null) == selfId || messageId == null || name == null) return null
+    return EmojiSighting(id, name, emoji.getBoolean("animated", false), messageId, at)
 }
 
 /**

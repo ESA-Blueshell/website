@@ -19,6 +19,7 @@ const OWN: DiscordEmojiResponse[] = [
   {id: "857733730491826190", name: "bs_campfire", animated: false, kind: DiscordEmojiKind.SERVER},
   {id: "957733730491826188", name: "firework_shelly", animated: false, kind: DiscordEmojiKind.APPLICATION},
   {id: "957733730491826189", name: "shellyfire", animated: false, kind: DiscordEmojiKind.APPLICATION},
+  {id: "957733730491826190", name: "firefly_bs", animated: false, kind: DiscordEmojiKind.APPLICATION},
   {id: "757733730491826191", name: "bigfire", animated: false, kind: DiscordEmojiKind.SEEN, uses: 50},
   {id: "757733730491826192", name: "firecat", animated: false, kind: DiscordEmojiKind.SEEN, uses: 1},
   {id: "757733730491826193", name: "firedog", animated: false, kind: DiscordEmojiKind.SEEN, uses: 9},
@@ -58,16 +59,17 @@ describe("the server's own emoji", () => {
   it("rank the server's own first, then the application's, then the seen ones by use, then the standard ones", () => {
     const found = emojiMatching("fire").map(one => one.emoji)
 
-    expect(found.slice(0, 7)).toEqual([
+    expect(found.slice(0, 8)).toEqual([
       "<a:fire:857733730491826187>",
       "<:bs_campfire:857733730491826190>",
+      "<:firefly_bs:957733730491826190>",
       "<:firework_shelly:957733730491826188>",
       "<:shellyfire:957733730491826189>",
       "<:firedog:757733730491826193>",
       "<:firecat:757733730491826192>",
       "<:bigfire:757733730491826191>",
     ])
-    expect(found[7]).toBe("🔥")
+    expect(found[8]).toBe("🔥")
   })
 
   it("answer a name several seen emoji share with the most used", () => {

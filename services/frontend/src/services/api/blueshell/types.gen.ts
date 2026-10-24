@@ -1170,6 +1170,11 @@ export type DiscordChannelResponse = {
     name: string;
 };
 
+export enum DiscordEmojiKind {
+    SERVER = 'SERVER',
+    APPLICATION = 'APPLICATION'
+}
+
 /**
  * A picture uploaded to the Discord server, which a description writes as <:name:id>
  */
@@ -1179,6 +1184,10 @@ export type DiscordEmojiResponse = {
      */
     animated: boolean;
     id: string;
+    /**
+     * Uploaded to the server, or to the bot's Discord application
+     */
+    kind: DiscordEmojiKind;
     name: string;
 };
 

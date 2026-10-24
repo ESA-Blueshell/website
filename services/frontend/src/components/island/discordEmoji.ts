@@ -1,9 +1,9 @@
-import {listServerEmoji} from "@/domains/discord"
+import {DiscordEmojiKind, listServerEmoji} from "@/domains/discord"
 
 /**
- * Emoji by the names Discord types them with: the server's own, then the standard ones by
- * JoyPixels' names (`thumbsup`, `slight_smile`, `flag_nl`), which are Discord's. Read only by
- * the editor, so both are fetched when one opens.
+ * Emoji by the names Discord types them with: the server's own, then the bot's application emoji,
+ * then the standard ones by JoyPixels' names (`thumbsup`, `slight_smile`, `flag_nl`), which are
+ * Discord's. Read only by the editor, so all are fetched when one opens.
  */
 export interface NamedEmoji {
   name: string
@@ -19,8 +19,10 @@ interface Listed {
 
 let known = new Map<string, string>()
 let loading: Promise<Map<string, string>> | undefined
-/* By the name lowercased: Discord finds a server's emoji whatever case it is typed in. */
-let server = new Map<string, NamedEmoji>()
+/* Where each kind ranks; a kind the api adds fails to compile until it is placed. */
+const RANK: Record<DiscordEmojiKind, number> = {[DiscordEmojiKind.SERVER]: 0, [DiscordEmojiKind.APPLICATION]: 1}
+/* Each kind by the name lowercased, in rank order: Discord finds them whatever case they are typed in. */
+let custom: Map<string, NamedEmoji>[] = []
 let asking: Promise<void> | undefined
 
 const read = async (): Promise<Map<string, string>> => {
@@ -44,35 +46,35 @@ const read = async (): Promise<Map<string, string>> => {
 
 const ask = async (): Promise<void> => {
   const listed = await listServerEmoji() ?? []
-  server = new Map(listed.map(one => [one.name.toLowerCase(), {
-    name: one.name,
-    emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`,
-  }]))
+  custom = Object.values(RANK).map(() => new Map())
+  for (const one of listed) {
+    custom[RANK[one.kind]]?.set(one.name.toLowerCase(), {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`})
+  }
 }
 
 /** Starts reading the names, and answers once they are there. */
 export const loadDiscordEmoji = (): Promise<Map<string, string>> => (loading ??= read())
 
-/** Starts asking the api for the server's own emoji; a later ask asks again. */
+/** Starts asking the api for the server's and the application's emoji; a later ask asks again. */
 export const loadServerEmoji = (): Promise<void> => (asking ??= ask().finally(() => {
   asking = undefined
 }))
 
-/** The emoji a name stands for, the server's own first, once the names have been read. */
+/** The emoji a name stands for, by kind, once the names have been read. */
 export const emojiNamed = (name: string): string | undefined =>
-  server.get(name.toLowerCase())?.emoji ?? known.get(name.toLowerCase())
+  custom.map(kind => kind.get(name.toLowerCase())?.emoji).find(Boolean) ?? known.get(name.toLowerCase())
 
 const MOST = 12
 
 /**
- * The server's own emoji that answer to what was typed, then the standard ones: in each, names
- * that start with it before names that only contain it, shortest first.
+ * The emoji that answer to what was typed, the server's own first, then the application's, then
+ * the standard ones: in each, names that start with it before names that only contain it, shortest first.
  */
 export const emojiMatching = (typed: string): NamedEmoji[] => {
   const byStart = (a: NamedEmoji, b: NamedEmoji) =>
     Number(!a.name.toLowerCase().startsWith(typed)) - Number(!b.name.toLowerCase().startsWith(typed))
       || a.name.length - b.name.length || a.name.localeCompare(b.name)
-  const own = [...server.values()].filter(one => one.name.toLowerCase().includes(typed)).sort(byStart)
+  const own = custom.flatMap(kind => [...kind.values()].filter(one => one.name.toLowerCase().includes(typed)).sort(byStart))
   const found: NamedEmoji[] = []
   for (const [name, emoji] of known) {
     if (name.includes(typed)) found.push({name, emoji})

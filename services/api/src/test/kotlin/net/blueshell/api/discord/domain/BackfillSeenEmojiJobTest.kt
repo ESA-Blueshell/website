@@ -152,6 +152,11 @@ class BackfillSeenEmojiJobTest {
     }
 
     @Test
+    fun `queues the next slice behind the running one, which the queue would otherwise fold it into`() {
+        assertThat(DiscordJobs.BackfillSeenEmoji.queuesBehindRunning).isTrue()
+    }
+
+    @Test
     fun `skips without a bot`() {
         assertThat(job(null).run()).isInstanceOf(JobOutcome.Skipped::class.java)
         assertThat(job(null).run(DiscordJobs.BackfillSeenEmojiPayload(restart = false))).isInstanceOf(JobOutcome.Skipped::class.java)

@@ -60,8 +60,10 @@ data class DiscordEmojiResponse(
     val name: String,
     @Schema(description = "Moving, written <a:name:id> rather than <:name:id>")
     val animated: Boolean,
-    @Schema(description = "Uploaded to the server, or to the bot's Discord application")
+    @Schema(description = "Uploaded to the server or to the bot's Discord application, or seen used in the server")
     val kind: DiscordEmojiKind,
+    @Schema(description = "How many messages in the server used a seen emoji; null for the others")
+    val uses: Long?,
 )
 
 @Schema(description = "What a description's mentions name: the members, roles and channels the server has")

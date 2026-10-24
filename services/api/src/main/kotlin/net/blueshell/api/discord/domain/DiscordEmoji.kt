@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
@@ -12,13 +13,14 @@ import org.springframework.web.client.RestClient
 import java.time.Clock
 import java.time.Duration
 
-/** Where an emoji was uploaded: to the association's server, or to the bot's Discord application. */
+/** Where an emoji comes from: the association's server, the bot's Discord application, or seen used in the server. */
 @Schema(enumAsRef = true)
-enum class DiscordEmojiKind { SERVER, APPLICATION }
+enum class DiscordEmojiKind { SERVER, APPLICATION, SEEN }
 
 /**
  * A picture uploaded to Discord, which a description writes as `<:name:id>`. It is not
  * [available] while over the server's boost limit, and [roleIds] lists the roles it is locked to.
+ * [uses] counts the messages a seen emoji was used in.
  */
 data class DiscordEmoji(
     val id: String,
@@ -27,6 +29,7 @@ data class DiscordEmoji(
     val available: Boolean,
     val roleIds: List<String>,
     val kind: DiscordEmojiKind,
+    val uses: Long? = null,
 )
 
 /** The emoji Discord lists for the server and for the bot's application. */
@@ -91,13 +94,16 @@ class RestDiscordEmojiSource(
 }
 
 /**
- * The server's own emoji and the bot's application emoji, every one of them, by name: role-locked
- * ones and those over the boost limit too, since a description only shows a picture. Each list is
- * kept five minutes; null without a bot, or where Discord answered neither and nothing was kept.
+ * The server's own emoji, the bot's application emoji and the seen emoji, every one of them, by
+ * name: role-locked ones and those over the boost limit too, since a description only shows a
+ * picture. An emoji seen and also the server's or the application's is listed once, as the latter.
+ * Discord's lists are kept five minutes; null without a bot, or where Discord answered neither and
+ * nothing was kept.
  */
 @Service
 class DiscordEmojiDirectory(
     private val source: ObjectProvider<DiscordEmojiSource>,
+    private val seen: SeenEmojiIndex,
     clock: Clock = Clock.systemUTC(),
 ) {
     private val server = KeptRead<List<DiscordEmoji>>("Discord server emoji", KEPT_FOR, clock)
@@ -108,10 +114,19 @@ class DiscordEmojiDirectory(
         val own = server.get { listed.server() }
         val apps = application.get { listed.application() }
         if (own == null && apps == null) return null
-        return (own.orEmpty() + apps.orEmpty()).sortedBy { it.name.lowercase() }
+        val uploaded = own.orEmpty() + apps.orEmpty()
+        val ids = uploaded.mapTo(HashSet()) { it.id }
+        // The seen emoji only add names to type, so a failed read leaves them out rather than the list.
+        val seenOnly =
+            runCatching { seen.seen() }
+                .onFailure { log.warn("Seen emoji could not be read", it) }
+                .getOrDefault(emptyList())
+                .filter { it.id !in ids }
+        return (uploaded + seenOnly).sortedBy { it.name.lowercase() }
     }
 
     internal companion object {
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
+        private val log = LoggerFactory.getLogger(DiscordEmojiDirectory::class.java)
     }
 }

@@ -3,6 +3,7 @@ package net.blueshell.api.discord.web
 import net.blueshell.api.discord.domain.DiscordEmoji
 import net.blueshell.api.discord.domain.DiscordEmojiDirectory
 import net.blueshell.api.discord.domain.DiscordEmojiKind.APPLICATION
+import net.blueshell.api.discord.domain.DiscordEmojiKind.SEEN
 import net.blueshell.api.discord.domain.DiscordEmojiKind.SERVER
 import net.blueshell.api.discord.domain.DiscordGameChannels
 import net.blueshell.api.discord.domain.DiscordMember
@@ -35,7 +36,9 @@ class DiscordMemberControllerTest {
         }
     private val shellyStar = DiscordEmoji("657", "ShellyStar", animated = true, available = true, roleIds = emptyList(), kind = SERVER)
     private val shellyWave = DiscordEmoji("42", "shellywave", animated = false, available = true, roleIds = emptyList(), kind = APPLICATION)
-    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(shellyStar, shellyWave) }
+    private val spoopyKat =
+        DiscordEmoji("9001", "spoopykat", animated = false, available = true, roleIds = emptyList(), kind = SEEN, uses = 3)
+    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(shellyStar, shellyWave, spoopyKat) }
     private val controller = DiscordMemberController(directory, roles, channels, emoji)
 
     @Test
@@ -90,10 +93,11 @@ class DiscordMemberControllerTest {
     }
 
     @Test
-    fun `answers the server's and the application's emoji with their kind, or 503 without a bot`() {
-        assertThat(controller.emojis().body!!.map { listOf(it.id, it.name, it.animated, it.kind) }).containsExactly(
-            listOf("657", "ShellyStar", true, SERVER),
-            listOf("42", "shellywave", false, APPLICATION),
+    fun `answers every emoji with its kind and a seen emoji's uses, or 503 without a bot`() {
+        assertThat(controller.emojis().body!!.map { listOf(it.id, it.name, it.animated, it.kind, it.uses) }).containsExactly(
+            listOf("657", "ShellyStar", true, SERVER, null),
+            listOf("42", "shellywave", false, APPLICATION, null),
+            listOf("9001", "spoopykat", false, SEEN, 3L),
         )
 
         val offline: DiscordEmojiDirectory = mock { on { all() } doReturn null }

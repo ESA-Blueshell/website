@@ -454,7 +454,7 @@ export const listDiscordChannels = <ThrowOnError extends boolean = false>(option
 });
 
 /**
- * The Discord server's own emoji and the bot's application emoji, by name
+ * The Discord server's own emoji, the bot's application emoji and the emoji seen used in the server, by name
  */
 export const listDiscordEmojis = <ThrowOnError extends boolean = false>(options?: Options<ListDiscordEmojisData, ThrowOnError>): RequestResult<ListDiscordEmojisResponses, ListDiscordEmojisErrors, ThrowOnError> => (options?.client ?? client).get<ListDiscordEmojisResponses, ListDiscordEmojisErrors, ThrowOnError>({
     responseType: 'json',

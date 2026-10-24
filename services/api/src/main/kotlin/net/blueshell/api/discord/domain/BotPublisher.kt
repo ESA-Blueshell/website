@@ -308,12 +308,12 @@ class BotPublisher(
         return listing.copy(description = description)
     }
 
-    // Every application emoji passes: the bot may use those anywhere.
+    // Every application emoji passes: the bot may use those anywhere. A seen emoji it may not.
     private fun usableEmojiIds(): Set<String> =
         emoji
             .all()
             .orEmpty()
-            .filter { it.available && it.roleIds.isEmpty() }
+            .filter { it.kind != DiscordEmojiKind.SEEN && it.available && it.roleIds.isEmpty() }
             .mapTo(mutableSetOf()) { it.id }
 
     // The channel list comes from the gateway, which holds none while it is not connected.

@@ -50,7 +50,8 @@ class BotPublisherTest {
     private val mapper = JsonMapper.builder().build()
     private val builder = RestClient.builder().baseUrl("https://discord.test")
     private val discord = MockRestServiceServer.bindTo(builder).build()
-    private val emoji = DiscordEmojiDirectory(provided(RestDiscordEmojiSource(builder.build(), "324")))
+    private val seen = seenEmojiIndex()
+    private val emoji = DiscordEmojiDirectory(provided(RestDiscordEmojiSource(builder.build(), "324")), seen)
     private val publisher = BotPublisher(api, builder.build(), mapper, doors, emoji, "324")
 
     private val banner = DiscordImage("banner.webp", "image/webp", byteArrayOf(1, 2, 3))
@@ -399,6 +400,8 @@ class BotPublisherTest {
 
     @Test
     fun `leaves out the custom emoji the bot may not use when listing a Discord event, keeping the cover`() {
+        // Seen used in the server, but from another server: the bot may not use it.
+        seen.saw(EmojiSighting("111", "spoopykat", false, "m1", Instant.parse("2026-10-24T12:00:00Z")))
         val carving = listing.copy(description = "Carve! <:spoopykat:111> <a:ShellyStar:657> <:shellywave:42> <:locked:5> <:faded:7> 🎃")
         val kept = "Carve! <a:ShellyStar:657> <:shellywave:42> 🎃"
         discord

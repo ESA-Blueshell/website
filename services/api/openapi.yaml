@@ -2296,6 +2296,7 @@ components:
       enum:
       - SERVER
       - APPLICATION
+      - SEEN
       type: string
     DiscordEmojiResponse:
       description: A picture uploaded to the Discord server, which a description writes as <:name:id>
@@ -2307,9 +2308,15 @@ components:
           type: string
         kind:
           $ref: '#/components/schemas/DiscordEmojiKind'
-          description: Uploaded to the server, or to the bot's Discord application
+          description: Uploaded to the server or to the bot's Discord application, or seen used in the server
         name:
           type: string
+        uses:
+          description: How many messages in the server used a seen emoji; null for the others
+          format: int64
+          type:
+          - integer
+          - 'null'
       required:
       - animated
       - id
@@ -12748,7 +12755,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord did not answer
-      summary: The Discord server's own emoji and the bot's application emoji, by name
+      summary: The Discord server's own emoji, the bot's application emoji and the emoji seen used in the server, by name
       tags:
       - Discord
   /discord/game-channels:

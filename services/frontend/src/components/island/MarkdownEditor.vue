@@ -6,9 +6,8 @@ import {Compartment, EditorState} from "@codemirror/state"
 import {drawSelection, EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {CODE_FONT} from "@/components/island/markdownLive"
-import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
-import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
 import {channelCompletion, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
@@ -213,8 +212,6 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
 })
 
 onMounted(() => {
-  void loadDiscordEmoji()
-  void loadServerEmoji()
   view = new EditorView({
     parent: host.value as HTMLElement,
     state: EditorState.create({
@@ -250,6 +247,7 @@ onMounted(() => {
       ],
     }),
   })
+  void emojiOnArrival(view)
 })
 
 /* A value set from outside replaces the document; one typed here is already in it. */

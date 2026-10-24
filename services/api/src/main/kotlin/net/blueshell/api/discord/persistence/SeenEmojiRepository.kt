@@ -18,7 +18,7 @@ interface SeenEmojiRepository : Repository<SeenEmoji, String> {
         @Param("messageId") messageId: String,
     ): Int
 
-    // The name and animation follow the newest sighting, so a backfill reading old messages keeps a rename.
+    // The name and animation follow the newest sighting, so one seen late keeps a rename. HeldSeenEmoji mirrors this in tests.
     @Modifying
     @Query(
         value =

@@ -3,9 +3,11 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.discord.domain.DiscordEmojiKind.APPLICATION
 import net.blueshell.api.discord.domain.DiscordEmojiKind.SEEN
 import net.blueshell.api.discord.domain.DiscordEmojiKind.SERVER
+import net.blueshell.api.discord.persistence.SeenEmojiRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.http.HttpMethod
@@ -89,6 +91,16 @@ class DiscordEmojiDirectoryTest {
             listOf("42", APPLICATION, null),
             listOf("9001", SEEN, 2L),
         )
+    }
+
+    @Test
+    fun `lists Discord's emoji where the seen emoji cannot be read`() {
+        answering()
+        val down: SeenEmojiRepository = mock { on { findAllByOrderByUseCountDesc() } doThrow IllegalStateException("down") }
+        val source = RestDiscordEmojiSource(builder.build(), "324")
+        val provider: ObjectProvider<DiscordEmojiSource> = mock { on { ifAvailable } doReturn source }
+
+        assertThat(DiscordEmojiDirectory(provider, seenEmojiIndex(down)).all()).hasSize(4)
     }
 
     @Test

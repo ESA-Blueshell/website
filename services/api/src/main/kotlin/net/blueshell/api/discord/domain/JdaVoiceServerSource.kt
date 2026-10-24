@@ -91,7 +91,8 @@ class JdaVoiceServerSource(
                         }
                     }
                     if (event.type in EMOJI_CARRIERS) {
-                        emojiSeenIn(event.type, event.payload, guildId, clock.instant()).forEach { seen -> sightings.forEach { it(seen) } }
+                        emojiSeenIn(event.type, event.payload, guildId, event.jda.selfUser.id, clock.instant())
+                            .forEach { seen -> sightings.forEach { it(seen) } }
                     }
                 }
                 // A resumed session has Discord replay what it missed; a recreated one does not.
@@ -269,7 +270,7 @@ private const val GATEWAY_MESSAGE_CONTENT = 1 shl 18
 private const val GATEWAY_MESSAGE_CONTENT_LIMITED = 1 shl 19
 
 // Messages and reactions are read only for the emoji in them; without Message Content a message's text arrives empty.
-private val ALWAYS = setOf(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS)
+private val ALWAYS_ASKED = setOf(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS)
 
 /** The connection as [JdaVoiceServerSource] wants it, unbuilt: [granted] privileged intents, voice members cached. */
 internal fun gatewayOf(
@@ -278,7 +279,7 @@ internal fun gatewayOf(
     listener: EventListener,
 ): JDABuilder =
     JDABuilder
-        .createLight(token, granted + ALWAYS)
+        .createLight(token, granted + ALWAYS_ASKED)
         .setMemberCachePolicy(MemberCachePolicy.VOICE)
         .enableCache(listOfNotNull(CacheFlag.VOICE_STATE, CacheFlag.ONLINE_STATUS.takeIf { GatewayIntent.GUILD_PRESENCES in granted }))
         // Raw events too: a presence change of a member not in the cache fires nothing else.
@@ -312,20 +313,26 @@ internal fun privilegedIntentsOf(flags: Int): Set<GatewayIntent> =
         if (flags and (GATEWAY_MESSAGE_CONTENT or GATEWAY_MESSAGE_CONTENT_LIMITED) != 0) add(GatewayIntent.MESSAGE_CONTENT)
     }
 
-/** The server emoji a raw message or reaction event in [guildId] shows used, seen [at]. */
+/**
+ * The server emoji a raw message or reaction event in [guildId] shows used, seen [at]. The bot's
+ * own posts and reactions are left out: they repeat the site's descriptions.
+ */
 internal fun emojiSeenIn(
     type: String,
     payload: DataObject,
     guildId: String,
+    selfId: String,
     at: Instant,
 ): List<EmojiSighting> {
     if (payload.getString("guild_id", null) != guildId) return emptyList()
     return when (type) {
         "MESSAGE_CREATE", "MESSAGE_UPDATE" -> {
+            if (payload.optObject("author").map { it.getString("id", null) }.orElse(null) == selfId) return emptyList()
             val messageId = payload.getString("id", null) ?: return emptyList()
             emojiIn(payload.getString("content", null).orEmpty(), messageId, at)
         }
         "MESSAGE_REACTION_ADD" -> {
+            if (payload.getString("user_id", null) == selfId) return emptyList()
             val messageId = payload.getString("message_id", null) ?: return emptyList()
             val emoji = payload.optObject("emoji").orElse(null) ?: return emptyList()
             // A standard emoji has no ID.

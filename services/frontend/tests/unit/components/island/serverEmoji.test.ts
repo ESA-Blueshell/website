@@ -22,6 +22,9 @@ const OWN: DiscordEmojiResponse[] = [
   {id: "757733730491826191", name: "bigfire", animated: false, kind: DiscordEmojiKind.SEEN, uses: 50},
   {id: "757733730491826192", name: "firecat", animated: false, kind: DiscordEmojiKind.SEEN, uses: 1},
   {id: "757733730491826193", name: "firedog", animated: false, kind: DiscordEmojiKind.SEEN, uses: 9},
+  {id: "757733730491826194", name: "kekw", animated: false, kind: DiscordEmojiKind.SEEN, uses: 2},
+  {id: "757733730491826195", name: "KEKW", animated: false, kind: DiscordEmojiKind.SEEN, uses: 40},
+  {id: "757733730491826196", name: "kekw", animated: false, kind: DiscordEmojiKind.SEEN, uses: 5},
 ]
 
 beforeAll(async () => {
@@ -65,6 +68,10 @@ describe("the server's own emoji", () => {
       "<:bigfire:757733730491826191>",
     ])
     expect(found[7]).toBe("🔥")
+  })
+
+  it("answer a name several seen emoji share with the most used", () => {
+    expect(emojiNamed("kekw")).toBe("<:KEKW:757733730491826195>")
   })
 
   it("write the bot's application emoji in by name", () => {

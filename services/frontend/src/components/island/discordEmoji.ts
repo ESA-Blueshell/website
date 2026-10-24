@@ -54,8 +54,11 @@ const ask = async (): Promise<void> => {
   const listed = await listServerEmoji() ?? []
   custom = Object.values(RANK).map(() => new Map())
   for (const one of listed) {
-    const emoji = `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`
-    custom[RANK[one.kind]]?.set(one.name.toLowerCase(), {name: one.name, emoji, uses: one.uses ?? 0})
+    const kind = custom[RANK[one.kind]]
+    const uses = one.uses ?? 0
+    // Emoji from several servers may share a name; the most used answers to it.
+    if ((kind?.get(one.name.toLowerCase())?.uses ?? -1) >= uses) continue
+    kind?.set(one.name.toLowerCase(), {name: one.name, emoji: `<${one.animated ? "a" : ""}:${one.name}:${one.id}>`, uses})
   }
 }
 
@@ -82,13 +85,13 @@ export const emojiMatching = (typed: string): NamedEmoji[] => {
   const startsFirst = (a: NamedEmoji, b: NamedEmoji) =>
     Number(!a.name.toLowerCase().startsWith(typed)) - Number(!b.name.toLowerCase().startsWith(typed))
   const shortest = (a: NamedEmoji, b: NamedEmoji) => a.name.length - b.name.length || a.name.localeCompare(b.name)
-  const own = custom.flatMap(kind => [...kind.values()]
+  const customFound = custom.flatMap(kind => [...kind.values()]
     .filter(one => one.name.toLowerCase().includes(typed))
     .sort((a, b) => startsFirst(a, b) || b.uses - a.uses || shortest(a, b)))
   const found: NamedEmoji[] = []
   for (const [name, emoji] of known) {
     if (name.includes(typed)) found.push({name, emoji})
   }
-  return [...own, ...found.sort((a, b) => startsFirst(a, b) || shortest(a, b))].slice(0, MOST)
+  return [...customFound, ...found.sort((a, b) => startsFirst(a, b) || shortest(a, b))].slice(0, MOST)
 }
 

@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import io.swagger.v3.oas.annotations.media.Schema
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
@@ -115,10 +116,17 @@ class DiscordEmojiDirectory(
         if (own == null && apps == null) return null
         val uploaded = own.orEmpty() + apps.orEmpty()
         val ids = uploaded.mapTo(HashSet()) { it.id }
-        return (uploaded + seen.seen().filter { it.id !in ids }).sortedBy { it.name.lowercase() }
+        // The seen emoji only add names to type, so a failed read leaves them out rather than the list.
+        val seenOnly =
+            runCatching { seen.seen() }
+                .onFailure { log.warn("Seen emoji could not be read", it) }
+                .getOrDefault(emptyList())
+                .filter { it.id !in ids }
+        return (uploaded + seenOnly).sortedBy { it.name.lowercase() }
     }
 
     internal companion object {
         val KEPT_FOR: Duration = Duration.ofMinutes(5)
+        private val log = LoggerFactory.getLogger(DiscordEmojiDirectory::class.java)
     }
 }

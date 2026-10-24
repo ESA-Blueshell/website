@@ -93,7 +93,7 @@ class DiscordMemberControllerTest {
     }
 
     @Test
-    fun `answers the server's and the application's emoji with their kind, or 503 without a bot`() {
+    fun `answers every emoji with its kind and a seen emoji's uses, or 503 without a bot`() {
         assertThat(controller.emojis().body!!.map { listOf(it.id, it.name, it.animated, it.kind, it.uses) }).containsExactly(
             listOf("657", "ShellyStar", true, SERVER, null),
             listOf("42", "shellywave", false, APPLICATION, null),

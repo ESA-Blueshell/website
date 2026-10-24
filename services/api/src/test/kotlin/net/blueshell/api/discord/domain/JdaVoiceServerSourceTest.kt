@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Invite
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.SelfUser
 import net.dv8tion.jda.api.entities.channel.concrete.Category
 import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
@@ -357,7 +358,7 @@ class JdaVoiceServerSourceTest {
     }
 
     @Test
-    fun `passes on the server emoji used in a new or edited message, or as a reaction, in the server only`() {
+    fun `passes on the server emoji used in a new or edited message, or as a reaction, in the server only and not by the bot`() {
         val source = source(applicationWith(0))
         val seen = mutableListOf<EmojiSighting>()
         source.onEmojiSeen { seen += it }
@@ -368,6 +369,9 @@ class JdaVoiceServerSourceTest {
         source.relay.onEvent(raw("MESSAGE_REACTION_ADD", """$reacted{"id": "42", "name": "shellywave"}}"""))
         source.relay.onEvent(raw("MESSAGE_REACTION_ADD", """$reacted{"id": null, "name": "🎃"}}"""))
         source.relay.onEvent(raw("MESSAGE_CREATE", """{"guild_id": "999", "id": "m3", "content": "<:elsewhere:7>"}"""))
+        source.relay.onEvent(raw("MESSAGE_CREATE", """{"guild_id": "324", "id": "m4", "author": {"id": "b1"}, "content": "<:posted:8>"}"""))
+        val botReacted = """{"guild_id": "324", "message_id": "m4", "user_id": "b1", "emoji": {"id": "9", "name": "own"}}"""
+        source.relay.onEvent(raw("MESSAGE_REACTION_ADD", botReacted))
 
         assertThat(seen.map { listOf(it.emojiId, it.name, it.animated, it.messageId) }).containsExactly(
             listOf("111", "spoopykat", false, "m1"),
@@ -383,7 +387,7 @@ class JdaVoiceServerSourceTest {
         fun seenIn(
             type: String,
             json: String,
-        ) = emojiSeenIn(type, DataObject.fromJson(json), "324", at)
+        ) = emojiSeenIn(type, DataObject.fromJson(json), "324", "b1", at)
 
         assertThat(seenIn("MESSAGE_CREATE", """{"guild_id": "324", "content": "<:kat:1>"}""")).isEmpty()
         assertThat(seenIn("MESSAGE_CREATE", """{"guild_id": "324", "id": "m1"}""")).isEmpty()
@@ -398,9 +402,12 @@ class JdaVoiceServerSourceTest {
         json: String,
     ): RawGatewayEvent {
         val payload = DataObject.fromJson(json)
+        val bot: SelfUser = mock { on { id } doReturn "b1" }
+        val session: JDA = mock { on { selfUser } doReturn bot }
         return mock {
             on { this.type } doReturn type
             on { this.payload } doReturn payload
+            on { jda } doReturn session
         }
     }
 

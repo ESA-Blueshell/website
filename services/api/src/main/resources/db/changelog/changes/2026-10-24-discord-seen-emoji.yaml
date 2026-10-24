@@ -5,8 +5,7 @@
 # was first and last seen, and how many messages used it. No message text is kept.
 #
 # discord_seen_emoji_message is one row per emoji and message that used it, so a message counts
-# once: an edit, a second reaction, a message read live and by the backfill, or the same gateway
-# event reaching two api pods.
+# once: an edit, a second reaction, or the same gateway event reaching two api pods.
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-10-24-discord-seen-emoji.yaml

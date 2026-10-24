@@ -1,6 +1,6 @@
-import type {Completion, CompletionContext, CompletionResult} from "@codemirror/autocomplete"
+import {type Completion, CompletionContext, type CompletionResult, startCompletion} from "@codemirror/autocomplete"
 import {EditorView} from "@codemirror/view"
-import {emojiMatching, emojiNamed} from "@/components/island/discordEmoji"
+import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {literalAt} from "@/components/island/markdownLive"
 import {pictureOf} from "@/plugins/emojiArt"
 
@@ -28,6 +28,15 @@ export const emojiCompletion = (context: CompletionContext): CompletionResult | 
     })),
     validFor: /^:[a-z0-9_+-]*$/i,
   }
+}
+
+/**
+ * Reads the emoji, then asks again where a name is being typed: suggestions made before they
+ * arrived would otherwise stay without them, since a shown list is kept while the name grows.
+ */
+export const emojiOnArrival = async (view: EditorView): Promise<void> => {
+  await Promise.all([loadDiscordEmoji(), loadServerEmoji()])
+  if (emojiCompletion(new CompletionContext(view.state, view.state.selection.main.head, false))) startCompletion(view)
 }
 
 /** Draws an entry's emoji the way the page will, before its name. */

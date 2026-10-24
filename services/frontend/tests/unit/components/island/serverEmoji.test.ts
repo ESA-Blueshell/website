@@ -1,11 +1,12 @@
 import {afterEach, beforeAll, describe, expect, it, vi} from "vitest"
 import {EditorSelection, EditorState} from "@codemirror/state"
-import {CompletionContext} from "@codemirror/autocomplete"
+import {autocompletion, CompletionContext, completionStatus, currentCompletions, startCompletion} from "@codemirror/autocomplete"
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
 import {listServerEmoji} from "@/domains/discord"
+import type {DiscordEmojiResponse} from "@/services/api"
 
 vi.mock("@/domains/discord", () => ({listServerEmoji: vi.fn()}))
 
@@ -89,5 +90,47 @@ describe("the server's own emoji", () => {
 
     expect(emojiNamed("poggers")).toBeUndefined()
     expect(emojiNamed("fire")).toBe("🔥")
+  })
+})
+
+describe("suggestions opened before the server's own emoji arrive", () => {
+  it("are asked again once they are there", async () => {
+    vi.mocked(listServerEmoji).mockResolvedValue(null)
+    await loadServerEmoji()
+    let arrive: (listed: DiscordEmojiResponse[]) => void = () => {}
+    vi.mocked(listServerEmoji).mockReturnValue(new Promise(resolve => {
+      arrive = resolve
+    }))
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc: ":pogg",
+        selection: EditorSelection.cursor(5),
+        extensions: autocompletion({override: [emojiCompletion]}),
+      }),
+    })
+    views.push(view)
+
+    const arriving = emojiOnArrival(view)
+    startCompletion(view)
+    await vi.waitFor(() => expect(completionStatus(view.state)).toBeNull())
+    expect(currentCompletions(view.state)).toEqual([])
+
+    arrive(OWN)
+    await arriving
+    await vi.waitFor(() => expect(currentCompletions(view.state).map(one => one.label)).toContain(":POGGERS:"))
+  })
+
+  it("are left alone where no emoji name is being typed", async () => {
+    vi.mocked(listServerEmoji).mockResolvedValue(OWN)
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({doc: "we won", extensions: autocompletion({override: [emojiCompletion]})}),
+    })
+    views.push(view)
+
+    await emojiOnArrival(view)
+
+    expect(currentCompletions(view.state)).toEqual([])
   })
 })

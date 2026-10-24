@@ -31,7 +31,8 @@ class DiscordMemberControllerTest {
             on { offered(GameChannelCategory.GAMES) } doReturn listOf(TextRoom("11", "324", "valorant", "Games"))
             on { offered(GameChannelCategory.ESPORTS) } doReturn listOf(TextRoom("12", "324", "valorant-esports", "Esports"))
         }
-    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(DiscordEmoji("657", "ShellyStar", true)) }
+    private val shellyStar = DiscordEmoji("657", "ShellyStar", animated = true, available = true, roleIds = emptyList())
+    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(shellyStar) }
     private val controller = DiscordMemberController(directory, roles, channels, emoji)
 
     @Test

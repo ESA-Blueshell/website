@@ -11,6 +11,8 @@ import net.blueshell.clients.discord.api.DiscordApi
 import net.blueshell.clients.discord.model.CreateGuildScheduledEventRequest
 import net.blueshell.clients.discord.model.GuildScheduledEventEntityTypes
 import net.blueshell.clients.discord.model.UpdateGuildScheduledEventRequest
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.core.io.ByteArrayResource
@@ -300,11 +302,7 @@ class BotPublisher(
             .body(REPLY)!!
             .getValue("id") as String
 
-    /*
-     * Discord refuses a whole Discord event over one custom emoji the bot may not use, such as one
-     * pasted from another server, and does not say which. The bot may use its own and the server's,
-     * bar those over the boost limit and role-locked ones.
-     */
+    // Discord refuses a whole Discord event over one custom emoji the bot may not use, and does not say which.
     private fun withUsableEmoji(listing: DiscordEventListing): DiscordEventListing {
         if (!CUSTOM_EMOJI.containsMatchIn(listing.description)) return listing
         val usable = serverEmojiIds() + applicationEmojiIds()
@@ -319,16 +317,18 @@ class BotPublisher(
             .filter { it.available && it.roleIds.isEmpty() }
             .mapTo(mutableSetOf()) { it.id }
 
-    // A bot's application shares its user's ID.
-    private fun applicationEmojiIds(): Set<String> {
-        val reply =
-            discordRestClient
-                .get()
-                .uri("/applications/{application}/emojis", selfId)
-                .retrieve()
-                .body(REPLY)!!
-        return (reply["items"] as List<*>).mapTo(mutableSetOf()) { (it as Map<*, *>)["id"] as String }
-    }
+    // A bot's application shares its user's ID. Unread, they are left out like any other: the event still goes.
+    private fun applicationEmojiIds(): Set<String> =
+        runCatching {
+            val reply =
+                discordRestClient
+                    .get()
+                    .uri("/applications/{application}/emojis", selfId)
+                    .retrieve()
+                    .body(REPLY)!!
+            (reply["items"] as List<*>).mapTo(mutableSetOf()) { (it as Map<*, *>)["id"] as String }
+        }.onFailure { log.warn("The bot's application emoji could not be read", it) }
+            .getOrDefault(emptySet())
 
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
@@ -350,7 +350,7 @@ class BotPublisher(
         reference: String,
     ): Pair<String, String> = split(reference) ?: (channelIdOf(channel) to reference)
 
-    // Asked once, and only where needed: another bot's post may link the page too.
+    // Asked once, and only when a read needs it: whose post links the page, or which emoji the bot owns.
     private val selfId: String by lazy {
         discordRestClient
             .get()
@@ -373,6 +373,8 @@ class BotPublisher(
         // Only the ID is read back, so a field Discord adds or leaves null cannot break it.
         val REPLY = object : ParameterizedTypeReference<Map<String, Any?>>() {}
         val REPLIES = object : ParameterizedTypeReference<List<Map<String, Any?>>>() {}
+
+        val log: Logger = LoggerFactory.getLogger(BotPublisher::class.java)
     }
 }
 

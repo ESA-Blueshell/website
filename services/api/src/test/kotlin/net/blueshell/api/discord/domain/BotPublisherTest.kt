@@ -425,6 +425,23 @@ class BotPublisherTest {
     }
 
     @Test
+    fun `still lists a Discord event when its emoji cannot be read, leaving out the custom emoji`() {
+        val carving = listing.copy(description = "Carve! <a:ShellyStar:657> <:shellywave:42> 🎃")
+        discord.expect(requestTo("https://discord.test/guilds/324/emojis")).andRespond(withServerError())
+        discord
+            .expect(requestTo("https://discord.test/users/@me"))
+            .andRespond(withSuccess("""{"id": "b1"}""", MediaType.APPLICATION_JSON))
+        discord.expect(requestTo("https://discord.test/applications/b1/emojis")).andRespond(withServerError())
+        discord
+            .expect(requestTo("https://discord.test/guilds/324/scheduled-events"))
+            .andExpect(jsonPath("$.description").value("Carve! 🎃"))
+            .andRespond(withSuccess("""{"id": "e1"}""", MediaType.APPLICATION_JSON))
+
+        assertThat(publisher.createDiscordEvent(carving)).isEqualTo("e1")
+        discord.verify()
+    }
+
+    @Test
     fun `asks for no emoji when a description holds no custom emoji`() {
         val plain = listing.copy(description = "Carve! 🎃")
         discord

@@ -1151,7 +1151,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       ])
     }
     if (method === "GET" && path === "/discord/emojis") {
-      return answer(route, "listDiscordEmojis", [{id: "657733730491826186", name: "POGGERS", animated: false}])
+      return answer(route, "listDiscordEmojis", [{id: "657733730491826186", name: "POGGERS", animated: false, kind: "SERVER"}])
     }
     if (method === "GET" && path === "/discord/starboard") {
       // Most stars first, as the api orders them; the lengths vary so the feed shows whole messages.

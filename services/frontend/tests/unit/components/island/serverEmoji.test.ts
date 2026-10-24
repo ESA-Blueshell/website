@@ -6,13 +6,19 @@ import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/co
 import {markdownEditing} from "@/components/island/markdownEditing"
 import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
 import {listServerEmoji} from "@/domains/discord"
-import type {DiscordEmojiResponse} from "@/services/api"
+import {DiscordEmojiKind, type DiscordEmojiResponse} from "@/services/api"
 
-vi.mock("@/domains/discord", () => ({listServerEmoji: vi.fn()}))
+vi.mock("@/domains/discord", async () => ({
+  DiscordEmojiKind: (await vi.importActual<typeof import("@/services/api")>("@/services/api")).DiscordEmojiKind,
+  listServerEmoji: vi.fn(),
+}))
 
-const OWN = [
-  {id: "657733730491826186", name: "POGGERS", animated: false},
-  {id: "857733730491826187", name: "fire", animated: true},
+const OWN: DiscordEmojiResponse[] = [
+  {id: "657733730491826186", name: "POGGERS", animated: false, kind: DiscordEmojiKind.SERVER},
+  {id: "857733730491826187", name: "fire", animated: true, kind: DiscordEmojiKind.SERVER},
+  {id: "857733730491826190", name: "bs_campfire", animated: false, kind: DiscordEmojiKind.SERVER},
+  {id: "957733730491826188", name: "firework_shelly", animated: false, kind: DiscordEmojiKind.APPLICATION},
+  {id: "957733730491826189", name: "shellyfire", animated: false, kind: DiscordEmojiKind.APPLICATION},
 ]
 
 beforeAll(async () => {
@@ -41,6 +47,22 @@ describe("the server's own emoji", () => {
   it("are written as Discord writes them, whatever case the name is typed in", () => {
     expect(emojiNamed("poggers")).toBe("<:POGGERS:657733730491826186>")
     expect(emojiNamed("Fire")).toBe("<a:fire:857733730491826187>")
+  })
+
+  it("rank the server's own first, then the bot's application emoji, then the standard ones", () => {
+    const found = emojiMatching("fire").map(one => one.emoji)
+
+    expect(found.slice(0, 4)).toEqual([
+      "<a:fire:857733730491826187>",
+      "<:bs_campfire:857733730491826190>",
+      "<:firework_shelly:957733730491826188>",
+      "<:shellyfire:957733730491826189>",
+    ])
+    expect(found[4]).toBe("🔥")
+  })
+
+  it("write the bot's application emoji in by name", () => {
+    expect(emojiNamed("SHELLYFIRE")).toBe("<:shellyfire:957733730491826189>")
   })
 
   it("come before a standard emoji of the same name", () => {

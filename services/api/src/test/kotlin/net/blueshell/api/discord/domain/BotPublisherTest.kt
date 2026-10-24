@@ -50,7 +50,7 @@ class BotPublisherTest {
     private val mapper = JsonMapper.builder().build()
     private val builder = RestClient.builder().baseUrl("https://discord.test")
     private val discord = MockRestServiceServer.bindTo(builder).build()
-    private val emoji = DiscordEmojiDirectory(provided(RestServerEmojiSource(builder.build(), "324")))
+    private val emoji = DiscordEmojiDirectory(provided(RestDiscordEmojiSource(builder.build(), "324")))
     private val publisher = BotPublisher(api, builder.build(), mapper, doors, emoji, "324")
 
     private val banner = DiscordImage("banner.webp", "image/webp", byteArrayOf(1, 2, 3))
@@ -407,10 +407,11 @@ class BotPublisherTest {
         discord
             .expect(requestTo("https://discord.test/users/@me"))
             .andRespond(withSuccess("""{"id": "b1"}""", MediaType.APPLICATION_JSON))
+        discord
+            .expect(requestTo("https://discord.test/applications/b1/emojis"))
+            .andRespond(withSuccess("""{"items": [{"id": "42", "name": "shellywave"}]}""", MediaType.APPLICATION_JSON))
+        // The emoji are kept, so the update asks Discord for none.
         for (path in listOf("scheduled-events", "scheduled-events/e1")) {
-            discord
-                .expect(requestTo("https://discord.test/applications/b1/emojis"))
-                .andRespond(withSuccess("""{"items": [{"id": "42", "name": "shellywave"}]}""", MediaType.APPLICATION_JSON))
             discord
                 .expect(requestTo("https://discord.test/guilds/324/$path"))
                 .andExpect(jsonPath("$.description").value(kept))

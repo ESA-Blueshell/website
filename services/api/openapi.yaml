@@ -2292,6 +2292,11 @@ components:
       - id
       - name
       type: object
+    DiscordEmojiKind:
+      enum:
+      - SERVER
+      - APPLICATION
+      type: string
     DiscordEmojiResponse:
       description: A picture uploaded to the Discord server, which a description writes as <:name:id>
       properties:
@@ -2300,11 +2305,15 @@ components:
           type: boolean
         id:
           type: string
+        kind:
+          $ref: '#/components/schemas/DiscordEmojiKind'
+          description: Uploaded to the server, or to the bot's Discord application
         name:
           type: string
       required:
       - animated
       - id
+      - kind
       - name
       type: object
     DiscordLiveResponse:
@@ -12739,7 +12748,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord did not answer
-      summary: The Discord server's own emoji, by name
+      summary: The Discord server's own emoji and the bot's application emoji, by name
       tags:
       - Discord
   /discord/game-channels:

@@ -25,6 +25,8 @@ class SeenEmojiBackfillIT : ServiceTestSupport() {
         object : DiscordHistory {
             val asked = mutableListOf<String?>()
 
+            override fun readsText() = true
+
             override fun places() = listOf("8801")
 
             override fun page(

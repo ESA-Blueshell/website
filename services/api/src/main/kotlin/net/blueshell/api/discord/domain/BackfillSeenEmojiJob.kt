@@ -34,6 +34,9 @@ class BackfillSeenEmojiJob(
 ) : AbstractJsonJobHandler<DiscordJobs.BackfillSeenEmojiPayload>(objectMapper, DiscordJobs.BackfillSeenEmoji) {
     override fun handlePayload(payload: DiscordJobs.BackfillSeenEmojiPayload) {
         if (!backfill.available) return skip("The Discord bot is not set up")
+        if (!backfill.readsText) {
+            return skip("Message Content is off for the bot in the Discord Developer Portal, so Discord sends no message text to read")
+        }
         if (payload.restart) backfill.startPass()
         if (backfill.readSome(PAGES_PER_RUN)) {
             jobs.runAsync(DiscordJobs.BackfillSeenEmoji, DiscordJobs.BackfillSeenEmojiPayload(restart = false), JobTrigger.ANOTHER_JOB)

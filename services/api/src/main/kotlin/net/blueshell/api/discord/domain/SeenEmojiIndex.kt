@@ -7,6 +7,12 @@ import org.springframework.context.SmartLifecycle
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionOperations
 import java.time.Instant
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy
+import java.util.concurrent.TimeUnit
 
 /** A server emoji used in one message of the association's server, in its text or as a reaction. */
 data class EmojiSighting(
@@ -49,6 +55,8 @@ class SeenEmojiIndex(
 ) : SmartLifecycle {
     @Volatile private var running = false
 
+    @Volatile private var writer: ExecutorService? = null
+
     fun saw(sighting: EmojiSighting) {
         transactions.executeWithoutResult {
             if (repository.recordMessage(sighting.emojiId, sighting.messageId) == 1) {
@@ -71,20 +79,38 @@ class SeenEmojiIndex(
             )
         }
 
+    /*
+     * Written on a thread of its own: the gateway calls back on the thread that reads it, which a
+     * slow database would hold past its heartbeat. Past QUEUED_MAX waiting, or once stopped, a
+     * sighting is dropped; the backfill counts it on its next pass.
+     */
     override fun start() {
         running = true
-        sightings.ifAvailable?.onEmojiSeen { sighting ->
-            runCatching { saw(sighting) }.onFailure { log.warn("A seen emoji could not be counted", it) }
+        val source = sightings.ifAvailable ?: return
+        val queue = LinkedBlockingQueue<Runnable>(QUEUED_MAX)
+        val thread = ThreadFactory { Thread(it, "discord-emoji").apply { isDaemon = true } }
+        val worker = ThreadPoolExecutor(1, 1, 0, TimeUnit.MILLISECONDS, queue, thread, DiscardPolicy())
+        writer = worker
+        source.onEmojiSeen { sighting ->
+            worker.execute { runCatching { saw(sighting) }.onFailure { log.warn("A seen emoji could not be counted", it) } }
         }
     }
 
+    // What is waiting is written first, for a while.
     override fun stop() {
         running = false
+        writer?.run {
+            shutdown()
+            if (!awaitTermination(DRAIN_SECONDS, TimeUnit.SECONDS)) shutdownNow()
+        }
+        writer = null
     }
 
     override fun isRunning(): Boolean = running
 
     private companion object {
+        const val QUEUED_MAX = 10_000
+        const val DRAIN_SECONDS = 5L
         val log = LoggerFactory.getLogger(SeenEmojiIndex::class.java)
     }
 }

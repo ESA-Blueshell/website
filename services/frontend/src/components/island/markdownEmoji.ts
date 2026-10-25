@@ -64,7 +64,8 @@ export const emojiOnClose = EditorView.inputHandler.of((view, from, to, text) =>
   view.dispatch({
     changes: {from: start, to, insert: emoji},
     selection: {anchor: start + emoji.length},
-    userEvent: "input.type",
+    // A completion, as a picked suggestion is: the cap takes it whole or not at all.
+    userEvent: "input.complete",
   })
   return true
 })

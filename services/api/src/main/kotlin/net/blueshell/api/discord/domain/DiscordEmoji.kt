@@ -110,9 +110,7 @@ class DiscordEmojiDirectory(
     private val application = KeptRead<List<DiscordEmoji>>("Discord application emoji", KEPT_FOR, clock)
 
     fun all(): List<DiscordEmoji>? {
-        val listed = source.ifAvailable ?: return null
-        val own = server.get { listed.server() }
-        val apps = application.get { listed.application() }
+        val (own, apps) = lists(KEPT_FOR) ?: return null
         if (own == null && apps == null) return null
         val uploaded = own.orEmpty() + apps.orEmpty()
         val ids = uploaded.mapTo(HashSet()) { it.id }
@@ -123,6 +121,20 @@ class DiscordEmojiDirectory(
                 .getOrDefault(emptyList())
                 .filter { it.id !in ids }
         return (uploaded + seenOnly).sortedBy { it.name.lowercase() }
+    }
+
+    /**
+     * The server's emoji and the bot's application emoji, as kept for no longer than [keptFor];
+     * null where the server's are not known. Application emoji that could not be read are left out.
+     */
+    fun uploaded(keptFor: Duration = KEPT_FOR): List<DiscordEmoji>? {
+        val (own, apps) = lists(keptFor) ?: return null
+        return own?.plus(apps.orEmpty())
+    }
+
+    private fun lists(keptFor: Duration): Pair<List<DiscordEmoji>?, List<DiscordEmoji>?>? {
+        val listed = source.ifAvailable ?: return null
+        return server.get(keptFor) { listed.server() } to application.get(keptFor) { listed.application() }
     }
 
     internal companion object {

@@ -19,7 +19,7 @@ class KeptReadTest {
 
         clock.advance(Duration.ofMinutes(5).minusSeconds(1))
         assertThat(kept.get { "second".also { reads++ } }).isEqualTo("first")
-        assertThat(kept.get(again = true) { "asked again".also { reads++ } }).isEqualTo("asked again")
+        assertThat(kept.get(keptFor = Duration.ZERO) { "asked again".also { reads++ } }).isEqualTo("asked again")
 
         clock.advance(Duration.ofMinutes(5))
         assertThat(kept.get { error("down") }).isEqualTo("asked again")

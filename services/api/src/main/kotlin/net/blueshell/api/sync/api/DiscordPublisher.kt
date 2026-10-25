@@ -98,6 +98,12 @@ interface DiscordPublisher {
     /** False where the Discord event is gone, removed by hand. */
     fun stillListed(discordEventId: String): Boolean
 
+    /**
+     * [listing] as Discord gets it, which [createDiscordEvent] and [updateDiscordEvent] send:
+     * without the custom emoji the bot may not use at the moment.
+     */
+    fun listedAs(listing: DiscordEventListing): DiscordEventListing
+
     /** Answers the Discord event's ID. */
     fun createDiscordEvent(listing: DiscordEventListing): String
 

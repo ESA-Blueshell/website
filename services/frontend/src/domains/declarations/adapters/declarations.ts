@@ -15,6 +15,7 @@ import {
   type DeclarationDraftRequest,
   type DeclarationResponse,
   deleteDeclarationDraft,
+  downloadDeclarationsPdf,
   findOwnDeclaration,
   listOwnDeclarations as listOwn,
   type ReceiptResponse,
@@ -25,7 +26,7 @@ import {
   withdrawDeclaration as withdraw,
 } from "@/services/api"
 import type {Refused} from "@/types/api"
-import {readOr} from "@/utils/answers"
+import {readBlobRefusal, readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
 import {centsOf, type Declaration, type DeclarationDraft, type Expense, type BankAccountToPay, type Receipt} from "../declarations"
 import {accepted, refusable} from "../refusals"
@@ -141,6 +142,12 @@ export async function readBankAccountToPay(id: number): Promise<BankAccountToPay
   if (!held) return undefined
   const account = held.bankAccount
   return account ? {holder: account.accountHolder ?? null, preview: maskedIban(account.ibanCountry, account.ibanLastTwo), bic: account.bic ?? null} : null
+}
+
+/** Declarations as one PDF in the layout of the paper form, each followed by its receipts; the api builds it as it answers. */
+export async function fetchDeclarationsPdf(ids: number[]): Promise<{ok: true; file: Blob} | Refused> {
+  const answered = await refusable(readBlobRefusal(downloadDeclarationsPdf({query: {ids}})), "We could not make the PDF. Try again.")
+  return answered.ok ? {ok: true, file: answered.saved as Blob} : answered
 }
 
 export const deleteDraft = (id: number) =>

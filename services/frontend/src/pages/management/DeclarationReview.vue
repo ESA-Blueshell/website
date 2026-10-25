@@ -17,6 +17,7 @@ import {
   type Declaration,
   DeclarationState,
   euros,
+  fetchDeclarationsPdf,
   markDeclarationPaid,
   type BankAccountToPay,
   readDeclaration,
@@ -34,6 +35,7 @@ import {
 } from "@/domains/declarations"
 import {revealMandateIban} from "@/domains/user"
 import type {Refused} from "@/types/api"
+import {saveFile} from "@/utils/saveFile"
 import type {Saved} from "@/utils/refusals"
 
 /** One declaration as the board checks it: what to transfer, the expenses, the receipts and what happened so far. */
@@ -105,6 +107,16 @@ const copy = async (key: string, text: string) => {
 }
 
 const confirmingPaid = ref(false)
+
+const fetchingPdf = ref(false)
+const downloadPdf = async () => {
+  fetchingPdf.value = true
+  failure.value = null
+  const answered = await fetchDeclarationsPdf([declaration.value!.id])
+  fetchingPdf.value = false
+  if (answered.ok) saveFile(answered.file, `declaration-${declaration.value!.id}.pdf`)
+  else failure.value = answered.reason
+}
 
 const working = ref(false)
 const failure = ref<string | null>(null)
@@ -334,6 +346,16 @@ const lede = computed(() => (declaration.value
           />
         </section>
 
+        <div class="review__acts">
+          <mini-button
+            :disabled="fetchingPdf"
+            testid="declaration-pdf"
+            @click="downloadPdf"
+          >
+            Download PDF
+          </mini-button>
+        </div>
+
         <template #aside>
           <ol
             class="review__steps"
@@ -502,6 +524,11 @@ const lede = computed(() => (declaration.value
 .review__reason {
   flex-basis: 100%;
   font-style: italic;
+}
+
+.review__acts {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .review__failure {

@@ -6,6 +6,8 @@ import net.blueshell.api.declaration.domain.DeclarationJobs
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
+import org.apache.pdfbox.Loader
+import org.apache.pdfbox.text.PDFTextStripper
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.hasItem
@@ -21,11 +23,15 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.json.JsonMapper
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import java.time.ZoneOffset
+import javax.imageio.ImageIO
 
 @SpringBootTest
 class DeclarationReviewIT : UserTestSupport() {
@@ -46,12 +52,12 @@ class DeclarationReviewIT : UserTestSupport() {
     private fun declared(
         by: User,
         submitted: Boolean = true,
+        file: MockMultipartFile = MockMultipartFile("file", "shop.pdf", MediaType.APPLICATION_PDF_VALUE, "%PDF-1.7\n%stub".toByteArray()),
     ): Long {
-        val pdf = MockMultipartFile("file", "shop.pdf", MediaType.APPLICATION_PDF_VALUE, "%PDF-1.7\n%stub".toByteArray())
         val receipt =
             idOf(
                 mvc
-                    .perform(multipart("/declarations/receipts").file(pdf).with(signedIn(by)).with(csrfToken()))
+                    .perform(multipart("/declarations/receipts").file(file).with(signedIn(by)).with(csrfToken()))
                     .andReturn()
                     .response.contentAsString,
             )
@@ -249,5 +255,39 @@ class DeclarationReviewIT : UserTestSupport() {
         }
         assertThat(wipedOn(paidOn.plusMonths(13).minusDays(1))).isFalse()
         assertThat(wipedOn(paidOn.plusMonths(13))).isTrue()
+    }
+
+    @Test
+    fun `the board downloads declarations as one PDF, each followed by its receipts, and nobody else does`() {
+        val board = createUserWithRole(Role.BOARD)
+        val member = createUserWithRole(Role.MEMBER)
+        val first = declared(member)
+        val photo = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(120, 80, BufferedImage.TYPE_INT_RGB), "png", it) }
+        val second = declared(member, file = MockMultipartFile("file", "bill.png", MediaType.IMAGE_PNG_VALUE, photo.toByteArray()))
+
+        val answer =
+            mvc
+                .perform(get("/declarations/pdf").param("ids", "$first,$second").with(signedIn(board)))
+                .andExpect(status().isOk)
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andReturn()
+                .response
+        assertThat(answer.getHeader("Content-Disposition")).contains("declarations.pdf")
+        Loader.loadPDF(answer.contentAsByteArray).use { pdf ->
+            val text = PDFTextStripper().getText(pdf)
+            assertThat(text).contains("Declaration form Blueshell E-Sports Vereniging Enschede", member.fullName, "NL•• … ••00")
+            assertThat(text).doesNotContain("NL91ABNA0417164300", "0417")
+            // Each form is followed by its one receipt: a stub PDF that cannot be read, and a photo kept as WebP.
+            assertThat(pdf.numberOfPages).isEqualTo(4)
+            assertThat(text).contains("This receipt is not in this download.")
+            assertThat(pdf.getPage(3).resources.xObjectNames).isNotEmpty()
+        }
+
+        mvc.perform(get("/declarations/pdf").param("ids", "$first").with(signedIn(member))).andExpect(status().isForbidden)
+        mvc.perform(get("/declarations/pdf").param("ids", "999999").with(signedIn(board))).andExpect(status().isNotFound)
+        mvc
+            .perform(get("/declarations/pdf").param("ids", "").with(signedIn(board)))
+            .andExpect(status().isBadRequest)
     }
 }

@@ -73,5 +73,26 @@ test.describe("the board's review of declarations", () => {
     await expect(page.getByTestId("declarations-manage-31")).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(PHONE.width)
   })
+
+  test("a board member downloads one declaration, and the ticked ones, as a PDF", async ({page}) => {
+    await installApiMocks(page)
+    await loginAsBoard(page.context())
+
+    await page.goto("/management/declarations/30")
+    const one = page.waitForEvent("download")
+    await page.getByTestId("declaration-pdf").click()
+    expect((await one).suggestedFilename()).toBe("declaration-30.pdf")
+
+    await page.goto("/management/declarations")
+    await page.getByTestId("declarations-status-search").click()
+    await page.getByTestId("declarations-status-pay").click()
+    await page.getByTestId("declarations-check-31").click()
+    await page.getByTestId("declarations-status-search").click()
+    await page.getByTestId("declarations-status-review").click()
+    await page.getByTestId("declarations-check-30").click()
+    const both = page.waitForEvent("download")
+    await page.getByTestId("declarations-download-pdfs").click()
+    expect((await both).suggestedFilename()).toBe("declarations.pdf")
+  })
 })
 

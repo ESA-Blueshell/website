@@ -34,8 +34,10 @@ const {declaration, payTo} = defineProps<{
 
 const total = computed(() => totalOf(declaration.expenses))
 const submitted = computed(() => declaration.state === DeclarationState.DRAFT ? null : stepAt(declaration, DeclarationState.SUBMITTED))
-const approved = computed(() => stepAt(declaration, DeclarationState.APPROVED))
-const paid = computed(() => stepAt(declaration, DeclarationState.PAID))
+// Steps before the last submit belong to an earlier round. TWIN: `form` in the api's `DeclarationPdfs.kt`.
+const round = computed(() => ({steps: declaration.steps.slice(declaration.steps.findLastIndex(step => step.state === DeclarationState.SUBMITTED) + 1)}))
+const approved = computed(() => stepAt(round.value, DeclarationState.APPROVED))
+const paid = computed(() => stepAt(round.value, DeclarationState.PAID))
 const rejected = computed(() => declaration.state === DeclarationState.REJECTED ? stepAt(declaration, DeclarationState.REJECTED) : null)
 const returned = computed(() => sentBack(declaration))
 
@@ -168,7 +170,7 @@ const returned = computed(() => sentBack(declaration))
         <dd v-else-if="approved">
           Approved on {{ day(approved.at) }} by {{ approved.by }}.
           <template v-if="paid">
-            Paid on {{ day(paid.at) }}.
+            Paid on {{ day(paid.at) }}{{ paid.paidTo ? ` to ${paid.paidTo}` : "" }}.
           </template>
         </dd>
         <dd v-else>

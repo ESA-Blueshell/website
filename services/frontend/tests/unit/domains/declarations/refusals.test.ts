@@ -18,6 +18,8 @@ describe("a refused declaration", () => {
     expect(said("ReasonMissing")).toBe("Write the reason. The person who submitted it gets it by email.")
     expect(reasonFor({code: "DeclarationStateChanged", state: "DRAFT"}, "x")).toBe("This declaration is a draft again. Reload the page.")
     expect(said("DeclarationStateChanged")).toBe("This declaration has changed. Reload the page.")
+    expect(reasonFor({code: "PdfSelectionSize", most: 100}, "x")).toBe("Choose at most 100 declarations for one PDF.")
+    expect(said("PdfSelectionSize")).toBe("Choose fewer declarations for one PDF.")
     expect(said("Unheard")).toBe("fallback")
   })
 })

@@ -1010,6 +1010,9 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
     if (method === "GET" && path === "/declarations") {
       return answer(route, "listDeclarations", [...boardDeclarations.values()].filter(one => one.state !== "DRAFT"))
     }
+    if (method === "GET" && path === "/declarations/pdf") {
+      return route.fulfill({status: 200, contentType: "application/pdf", headers: {"Content-Disposition": "attachment; filename=declarations.pdf"}, body: "%PDF-1.7\n%%EOF"})
+    }
     const bankAccountPath = /^\/declarations\/(\d+)\/bank-account$/.exec(path)
     if (method === "GET" && bankAccountPath) {
       return answer(route, "findDeclarationBankAccount", {bankAccount: {accountHolder: "Ann Vos", ibanCountry: "NL", ibanLastTwo: "00", bic: null}})

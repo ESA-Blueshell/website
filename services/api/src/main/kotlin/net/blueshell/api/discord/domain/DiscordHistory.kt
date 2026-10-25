@@ -2,6 +2,7 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
+import net.dv8tion.jda.api.requests.GatewayIntent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpStatus
@@ -19,6 +20,9 @@ data class HistoryPage(
 
 /** The association's server's message history, as the bot may read it. */
 interface DiscordHistory {
+    /** Whether Discord sends the bot message text: only with Message Content, over the gateway and REST alike. */
+    fun readsText(): Boolean
+
     /** Every channel, thread and forum post the bot can see that holds messages. */
     fun places(): List<String>
 
@@ -41,6 +45,11 @@ class RestDiscordHistory(
 ) : DiscordHistory {
     private val selfId: String by lazy { read("/users/@me")!!.getValue("id") as String }
 
+    override fun readsText(): Boolean {
+        val flags = (read("/applications/@me")?.get("flags") as? Number)?.toInt() ?: 0
+        return GatewayIntent.MESSAGE_CONTENT in privilegedIntentsOf(flags)
+    }
+
     override fun places(): List<String> {
         val channels = list("/guilds/{guild}/channels", guildId).orEmpty()
         val holdingMessages = channels.filter { it["type"] in MESSAGE_CHANNELS }.map { it.getValue("id") as String }
@@ -58,7 +67,9 @@ class RestDiscordHistory(
             val threads = (reply["threads"] as? List<*>).orEmpty().map { it as Map<*, *> }
             found += threads.map { it["id"] as String }
             if (reply["has_more"] != true || threads.isEmpty()) return found
-            before = (threads.last()["thread_metadata"] as Map<*, *>)["archive_timestamp"] as String
+            // Discord writes the time with an offset; its plus would be sent as it is and read as a space.
+            val archivedAt = (threads.last()["thread_metadata"] as Map<*, *>)["archive_timestamp"] as String
+            before = OffsetDateTime.parse(archivedAt).toInstant().toString()
         }
     }
 

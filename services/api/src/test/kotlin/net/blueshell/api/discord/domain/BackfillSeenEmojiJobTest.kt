@@ -2,6 +2,7 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlace
 import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlaceRepository
+import net.blueshell.api.discord.persistence.SeenEmojiRepository
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
@@ -10,7 +11,9 @@ import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.springframework.beans.factory.ObjectProvider
@@ -42,6 +45,9 @@ internal class HeldHistory(
     val messages: MutableMap<String, List<Map<String, Any?>>>,
 ) : DiscordHistory {
     val unreadable = mutableSetOf<String>()
+    var readsText = true
+
+    override fun readsText() = readsText
 
     override fun places(): List<String> = messages.keys.toList()
 
@@ -154,6 +160,47 @@ class BackfillSeenEmojiJobTest {
     @Test
     fun `queues the next slice behind the running one, which the queue would otherwise fold it into`() {
         assertThat(DiscordJobs.BackfillSeenEmoji.queuesBehindRunning).isTrue()
+    }
+
+    @Test
+    fun `skips without Message Content, which a pass would mark done having counted reactions only`() {
+        val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, kat)))).apply { readsText = false }
+
+        val outcome = job(history).run()
+
+        assertThat(outcome).isInstanceOf(JobOutcome.Skipped::class.java)
+        assertThat((outcome as JobOutcome.Skipped).reason).contains("Message Content")
+        assertThat(places.held).isEmpty()
+        assertThat(queued).isEmpty()
+    }
+
+    @Test
+    fun `writes each emoji a page shows in a transaction of its own, as a live one is, so the two cannot deadlock`() {
+        val log = mutableListOf<String>()
+        val repository =
+            object : SeenEmojiRepository by HeldSeenEmoji() {
+                override fun recordMessage(
+                    emojiId: String,
+                    messageId: String,
+                ): Int = 1.also { log += "count" }
+            }
+        val logging: PlatformTransactionManager =
+            mock {
+                on { getTransaction(anyOrNull()) } doAnswer {
+                    log += "begin"
+                    mock<TransactionStatus>()
+                }
+                on { commit(any()) } doAnswer { log += "commit" }
+            }
+        val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, "$kat $kat"), message(2, kat, reactions = listOf(pumpkin)))))
+        val provider: ObjectProvider<DiscordHistory> = mock { on { ifAvailable } doReturn history }
+
+        val backfill = SeenEmojiBackfill(provider, places, seenEmojiIndex(repository), logging)
+        backfill.startPass()
+        backfill.readSome(1)
+
+        assertThat(log.count { it == "count" }).isEqualTo(4)
+        assertThat(log.joinToString(" ").split("commit").map { it.split(" ").count { word -> word == "count" } }).allMatch { it <= 1 }
     }
 
     @Test

@@ -35,10 +35,13 @@ class RestDiscordHistoryTest {
         answers("https://discord.test/guilds/324/threads/active", """{"threads": [{"id": "20"}]}""")
         answers(
             "https://discord.test/channels/10/threads/archived/public?limit=100",
-            """{"threads": [{"id": "21", "thread_metadata": {"archive_timestamp": "2026-01-02T00:00:00Z"}}], "has_more": true}""",
+            // Discord writes the time with an offset, whose plus would read as a space if sent as it is.
+            """
+            {"threads": [{"id": "21", "thread_metadata": {"archive_timestamp": "2026-01-02T00:00:00.123456+00:00"}}], "has_more": true}
+            """.trimIndent(),
         )
         answers(
-            "https://discord.test/channels/10/threads/archived/public?limit=100&before=2026-01-02T00:00:00Z",
+            "https://discord.test/channels/10/threads/archived/public?limit=100&before=2026-01-02T00:00:00.123456Z",
             """{"threads": [{"id": "22", "thread_metadata": {"archive_timestamp": "2026-01-01T00:00:00Z"}}], "has_more": false}""",
         )
         answers("https://discord.test/channels/12/threads/archived/public?limit=100", """{"threads": [], "has_more": true}""")
@@ -47,6 +50,16 @@ class RestDiscordHistoryTest {
             .andRespond(withStatus(HttpStatus.FORBIDDEN))
 
         assertThat(history.places()).containsExactly("10", "11", "13", "20", "21", "22")
+        discord.verify()
+    }
+
+    @Test
+    fun `reads message text only where the application has Message Content, limited or not`() {
+        answers("https://discord.test/applications/@me", """{"id": "b1", "flags": ${1 shl 18}}""")
+        answers("https://discord.test/applications/@me", """{"id": "b1", "flags": ${1 shl 19}}""")
+        answers("https://discord.test/applications/@me", """{"id": "b1", "flags": ${1 shl 12}}""")
+
+        assertThat(listOf(history.readsText(), history.readsText(), history.readsText())).containsExactly(true, true, false)
         discord.verify()
     }
 

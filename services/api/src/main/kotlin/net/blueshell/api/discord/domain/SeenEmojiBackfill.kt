@@ -19,13 +19,16 @@ class SeenEmojiBackfill(
     private val index: SeenEmojiIndex,
     transactionManager: PlatformTransactionManager,
 ) {
-    // Each page commits on its own: one transaction per slice would hold the counts' row locks across its Discord calls.
+    // Each write commits on its own: one transaction per slice would hold the counts' row locks across its Discord calls.
     // Places are looked up in their own too, since the job's transaction keeps a snapshot from before those commits.
     private val ownTransaction =
         TransactionTemplate(transactionManager).apply { propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW }
 
     /** Whether a bot is set up to read the history. */
     val available: Boolean get() = history.ifAvailable != null
+
+    /** Whether Discord sends the history's text, which holds most emoji; without it only reactions would count. */
+    val readsText: Boolean get() = history.ifAvailable?.readsText() == true
 
     /** Starts a pass: every place the bot can see now is read again from its newest message. */
     fun startPass() {
@@ -46,10 +49,9 @@ class SeenEmojiBackfill(
                 val page = source.page(place.id, before)
                 before = page?.oldestMessageId ?: before
                 done = page?.last ?: true
-                ownTransaction.executeWithoutResult {
-                    page?.sightings?.forEach(index::saw)
-                    places.markRead(place.id, before, done)
-                }
+                // One emoji per transaction, as a live one is written, so a page holds no count a live sighting waits on.
+                page?.sightings?.forEach { sighting -> ownTransaction.executeWithoutResult { index.saw(sighting) } }
+                ownTransaction.executeWithoutResult { places.markRead(place.id, before, done) }
             }
         }
         return nextPlace() != null

@@ -64,7 +64,7 @@ class DiscordMemberDirectory(
 
     private fun everyone(fresh: Boolean = false): List<DiscordMember>? {
         val client = api.ifAvailable ?: return null
-        return kept.get(again = fresh) { readAll(client) }
+        return kept.get(if (fresh) Duration.ZERO else KEPT_FOR) { readAll(client) }
     }
 
     private fun readAll(client: DiscordApi): List<DiscordMember> {

@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.node.ObjectNode
+import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -216,7 +217,7 @@ class BotPublisher(
 
     override fun createDiscordEvent(listing: DiscordEventListing): String =
         explained(LISTING) {
-            val usable = withUsableEmoji(listing)
+            val usable = listedAs(listing)
             withoutImageIfRefused(usable.cover != null) { withCover -> create(if (withCover) usable else usable.copy(cover = null)) }
         }
 
@@ -225,7 +226,7 @@ class BotPublisher(
         listing: DiscordEventListing,
     ): Boolean =
         explained(LISTING) {
-            val usable = withUsableEmoji(listing)
+            val usable = listedAs(listing)
             stillOpen {
                 withoutImageIfRefused(usable.cover != null) { withCover ->
                     update(discordEventId, if (withCover) usable else usable.copy(cover = null))
@@ -301,20 +302,26 @@ class BotPublisher(
             .getValue("id") as String
 
     // Discord refuses a whole Discord event over one custom emoji the bot may not use, and does not say which.
-    private fun withUsableEmoji(listing: DiscordEventListing): DiscordEventListing {
-        if (!CUSTOM_EMOJI.containsMatchIn(listing.description)) return listing
-        val usable = usableEmojiIds()
-        val description = CUSTOM_EMOJI.replace(listing.description) { if (it.groupValues[1] in usable) it.value else "" }
-        return listing.copy(description = description)
+    override fun listedAs(listing: DiscordEventListing): DiscordEventListing {
+        val ids = CUSTOM_EMOJI.findAll(listing.description).mapTo(HashSet()) { it.groupValues[1] }
+        if (ids.isEmpty()) return listing
+        val usable = usableAmong(ids)
+        return listing.copy(description = withoutEmoji(listing.description, keeping = usable))
     }
 
-    // Every application emoji passes: the bot may use those anywhere. A seen emoji it may not.
-    private fun usableEmojiIds(): Set<String> =
-        emoji
-            .all()
-            .orEmpty()
-            .filter { it.kind != DiscordEmojiKind.SEEN && it.available && it.roleIds.isEmpty() }
-            .mapTo(mutableSetOf()) { it.id }
+    /*
+     * Every application emoji passes: the bot may use those anywhere. An emoji the kept lists lack
+     * may have been uploaded since, so they are asked again once a minute old. Without the server's
+     * own list nothing can be told apart, and the run fails to be retried rather than leave them out.
+     */
+    private fun usableAmong(ids: Set<String>): Set<String> {
+        val kept = emoji.uploaded() ?: throw emojiUnknown()
+        val listed = if (kept.map { it.id }.containsAll(ids)) kept else emoji.uploaded(ASKED_AGAIN_AFTER) ?: throw emojiUnknown()
+        return listed.filter { it.available && it.roleIds.isEmpty() }.mapTo(HashSet()) { it.id }
+    }
+
+    private fun emojiUnknown() =
+        ExplainedJobFailure("The server's emoji could not be read from Discord, so the Discord event waits until they can.")
 
     // The channel list comes from the gateway, which holds none while it is not connected.
     private fun channelIdOf(channel: String): String {
@@ -374,8 +381,42 @@ private fun buttonLinksOf(component: Map<*, *>?): List<Any?> =
 private fun split(reference: String): Pair<String, String>? =
     reference.split('/', limit = 2).takeIf { it.size == 2 }?.let { (channelId, messageId) -> channelId to messageId }
 
-// A custom emoji as a description writes it, `<:name:id>` or `<a:name:id>` for an animated one, with the space before it.
-private val CUSTOM_EMOJI = Regex(""" ?<a?:\w+:(\d+)>""")
+// A custom emoji as a description writes it, `<:name:id>` or `<a:name:id>` for an animated one.
+private val CUSTOM_EMOJI = Regex("""<a?:\w+:(\d+)>""")
+
+// Stands in for an emoji left out until the space around it is settled; a noncharacter, so no text holds it.
+private const val LEFT_OUT = '￿'
+private val LEFT_OUT_RUN = Regex("""[ \t]*$LEFT_OUT(?:[ \t]*$LEFT_OUT)*[ \t]*""")
+
+/*
+ * The emoji not in [keeping] left out with the space around them: a line start keeps its indent, a
+ * line end keeps nothing, and between words one space stays where there was one. A line that held
+ * only such emoji goes. Emoji in code go too, since Discord checks the text as written.
+ */
+private fun withoutEmoji(
+    text: String,
+    keeping: Set<String>,
+): String =
+    CUSTOM_EMOJI
+        .replace(text) { if (it.groupValues[1] in keeping) it.value else LEFT_OUT.toString() }
+        .lines()
+        .mapNotNull { line ->
+            val tidy = LEFT_OUT_RUN.replace(line) { run -> gapOf(run, line) }
+            tidy.takeUnless { it.isBlank() && line.isNotBlank() }
+        }.joinToString("\n")
+
+private fun gapOf(
+    run: MatchResult,
+    line: String,
+): String =
+    when {
+        run.range.first == 0 -> run.value.takeWhile { it != LEFT_OUT }
+        run.range.last == line.lastIndex -> ""
+        else -> if (run.value.any { it != LEFT_OUT }) " " else ""
+    }
+
+// Discord's lists change by hand only, so a minute is soon enough for one uploaded just before it is used.
+private val ASKED_AGAIN_AFTER: Duration = Duration.ofMinutes(1)
 
 private fun Instant.utc(): OffsetDateTime = atOffset(ZoneOffset.UTC)
 

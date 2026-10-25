@@ -128,4 +128,18 @@ class DiscordEmojiDirectoryTest {
         assertThat(directory(null).all()).isNull()
         assertThat(directory().all()).isNull()
     }
+
+    @Test
+    fun `answers the uploaded emoji only once the server's are known, without the seen ones`() {
+        seen.saw(EmojiSighting("9001", "spoopykat", false, "m1", Instant.parse("2026-10-24T12:00:00Z")))
+        answering(server = false)
+        val directory = directory()
+
+        assertThat(directory(null).uploaded()).isNull()
+        assertThat(directory.uploaded()).isNull()
+
+        discord.reset()
+        answering(application = false)
+        assertThat(directory().uploaded()!!.map { it.id }).containsExactlyInAnyOrder("1", "2", "3")
+    }
 }

@@ -94,7 +94,8 @@ class DiscordEventPosts(
             eventId,
             DiscordArtefact.DISCORD_EVENT,
             found,
-            fingerprint = fingerprintOf(DiscordPostContent.listingOf(event, site, cover = null) to event.bannerPath),
+            // Taken from what Discord gets, so an emoji left out for now goes back once Discord takes it.
+            fingerprint = fingerprintOf(bot.listedAs(DiscordPostContent.listingOf(event, site, cover = null)) to event.bannerPath),
             Remote(
                 make = { if (event.endTime.isAfter(madeStarting)) bot.createDiscordEvent(listingOf(event, madeStarting)) else null },
                 update = { bot.updateDiscordEvent(it, listingOf(event, event.startTime.takeIf { start -> start.isAfter(now) })) },

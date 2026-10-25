@@ -17,13 +17,13 @@ internal class KeptRead<T : Any>(
 ) {
     @Volatile private var kept: Pair<Instant, T>? = null
 
-    /** The kept answer while fresh, unless [again] asks Discord regardless. */
+    /** The kept answer while younger than [keptFor]; zero asks Discord regardless. */
     fun get(
-        again: Boolean = false,
+        keptFor: Duration = freshFor,
         read: () -> T?,
     ): T? {
         val now = clock.instant()
-        kept?.let { (at, answer) -> if (!again && Duration.between(at, now) < freshFor) return answer }
+        kept?.let { (at, answer) -> if (Duration.between(at, now) < keptFor) return answer }
         return runCatching(read)
             .onFailure { log.warn("$what could not be read", it) }
             .getOrNull()

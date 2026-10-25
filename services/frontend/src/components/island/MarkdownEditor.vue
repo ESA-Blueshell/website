@@ -194,9 +194,10 @@ const dress = EditorView.theme({
   ".cm-scroller": {fontFamily: "inherit"},
 })
 
-/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits.
-   A change that does not lengthen the text always goes through, so text over the cap can be
-   cut down. */
+/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits,
+   never half of a character such as an emoji. A completion, a picked suggestion or a closing
+   colon, goes in whole or not at all, since part of `<:name:id>` names nothing. A change that does
+   not lengthen the text always goes through, so text over the cap can be cut down. */
 const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.newDoc.length <= Math.max(cap, tr.startState.doc.length)) return tr
   const spans: {from: number, to: number, insert: string}[] = []
@@ -207,8 +208,10 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   if (spans.length !== 1 || !only) return []
   const {from, to, insert} = only
   const room = cap - (tr.startState.doc.length - (to - from))
-  if (room <= 0) return []
-  return {changes: {from, to, insert: insert.slice(0, room)}, selection: {anchor: from + room}}
+  if (room <= 0 || tr.isUserEvent("input.complete")) return []
+  const cut = insert.slice(0, room)
+  const kept = /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut
+  return {changes: {from, to, insert: kept}, selection: {anchor: from + kept.length}}
 })
 
 onMounted(() => {

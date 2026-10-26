@@ -26,6 +26,10 @@ on:
   merge_group:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 # No concurrency group, so a run is never cancelled. Even with
 # cancel-in-progress off, a group cancels a queued run once a newer one queues
 # behind it, and pr-report then records that cancellation on the default

@@ -46,7 +46,8 @@ while IFS='|' read -r flags options; do
     exit 1
   fi
   # Cached code is built for the runner's CPU and dies with SIGILL on another (#2594).
-  if grep -E 'Loaded [0-9]+ AOT code entries' "$log"; then
+  if ! grep -E 'AOT Code Cache is empty' "$log"; then
+    grep -E 'aot,codecache' "$log" || true
     echo "::error::$image carries machine code in its AOT cache"
     exit 1
   fi

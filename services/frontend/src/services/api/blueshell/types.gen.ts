@@ -1815,6 +1815,12 @@ export type InboundReconcileRow = {
     writable: boolean;
 };
 
+export type JobCount = {
+    channels: Array<string>;
+    count: number;
+    tally: JobTally;
+};
+
 export enum JobEffect {
     MADE = 'MADE',
     EDITED = 'EDITED',
@@ -1850,6 +1856,7 @@ export type JobExecution = {
     } | null;
     queuedAt?: string | null;
     relatedEntities: Array<JobExecutionRelatedEntity>;
+    report: Array<JobCount>;
     skipReason?: string | null;
     stackTrace?: string | null;
     startedAt?: string | null;
@@ -1918,6 +1925,13 @@ export type JobStatsDto = {
     successCount: number;
     totalCount: number;
 };
+
+export enum JobTally {
+    PLACES_READ = 'PLACES_READ',
+    MESSAGES_READ = 'MESSAGES_READ',
+    EMOJI_SEEN = 'EMOJI_SEEN',
+    PLACES_LEFT = 'PLACES_LEFT'
+}
 
 export enum JobTrigger {
     EVENT_CREATED = 'EVENT_CREATED',

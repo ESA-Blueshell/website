@@ -1,8 +1,10 @@
 package net.blueshell.api.jobs.api
 
 import net.blueshell.api.jobs.domain.JobHandler
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTally
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
 
@@ -23,6 +25,7 @@ abstract class AbstractJsonJobHandler<T : Any>(
         var skipped: String? = null
         var effect: JobEffect? = null
         var link: String? = null
+        val counts = mutableListOf<JobCount>()
     }
 
     // Thread-local is safe because @Async jobs each run on their own thread.
@@ -52,6 +55,15 @@ abstract class AbstractJsonJobHandler<T : Any>(
         }
     }
 
+    /** Adds a count to what the run reports about its work. */
+    protected fun counted(
+        tally: JobTally,
+        count: Long,
+        channels: List<String> = emptyList(),
+    ) {
+        run.get()?.counts?.add(JobCount(tally, count, channels))
+    }
+
     @Transactional
     override fun handle(
         payload: String?,
@@ -63,7 +75,7 @@ abstract class AbstractJsonJobHandler<T : Any>(
         run.set(current)
         try {
             handlePayload(objectMapper.readValue(body, payloadType))
-            return current.skipped?.let(JobOutcome::Skipped) ?: JobOutcome.Done(current.effect, current.link)
+            return current.skipped?.let(JobOutcome::Skipped) ?: JobOutcome.Done(current.effect, current.link, current.counts.toList())
         } finally {
             run.remove()
         }

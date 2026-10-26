@@ -6,7 +6,9 @@ import net.blueshell.api.jobs.domain.JobHandlerRegistry
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTally
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -149,7 +151,7 @@ class JobExecutorRetryScheduleTest {
         JobExecutor(executions, JobHandlerRegistry(listOf(skipping)), properties, SimpleMeterRegistry()).execute(execution)
 
         verify(executions).markSkipped(execution, "Not due yet.")
-        verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull())
+        verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull(), any())
         assertThat(told).isTrue()
     }
 
@@ -164,14 +166,14 @@ class JobExecutorRetryScheduleTest {
                     payload: String?,
                     executionId: Long?,
                     forced: Boolean,
-                ) = JobOutcome.Done(JobEffect.EDITED, "https://discord.test/m1")
+                ) = JobOutcome.Done(JobEffect.EDITED, "https://discord.test/m1", listOf(JobCount(JobTally.EMOJI_SEEN, 3)))
             }
         val execution = JobExecution(jobType = "failing", payload = "{}")
         whenever(executions.markRunning(any())).thenReturn(execution)
 
         JobExecutor(executions, JobHandlerRegistry(listOf(done)), properties, SimpleMeterRegistry()).execute(execution)
 
-        verify(executions).markSuccess(execution, JobEffect.EDITED, "https://discord.test/m1")
+        verify(executions).markSuccess(execution, JobEffect.EDITED, "https://discord.test/m1", listOf(JobCount(JobTally.EMOJI_SEEN, 3)))
         verify(executions, never()).markSkipped(any(), any())
     }
 

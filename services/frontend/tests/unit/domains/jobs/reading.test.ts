@@ -19,11 +19,14 @@ import {
   statusTitle,
   successRate,
   titleCase,
+  countLabel,
   effectLabel,
   foldedTriggerLabel,
+  reportChannels,
+  reportLabel,
   triggerLabel,
 } from "@/domains/jobs"
-import {ActionActorType, JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "@/services/api"
+import {ActionActorType, JobEffect, JobExecutionCategory, JobExecutionStatus, JobTally, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
@@ -57,6 +60,25 @@ describe("job reading", () => {
     expect(effectLabel(job({jobType: "discord.event", effect: JobEffect.MADE}))).toBe("Put up the Discord event")
     expect(effectLabel(job({jobType: "contact.sync", effect: JobEffect.EDITED}))).toBe("Edited what it keeps")
     expect(effectLabel(job({jobType: "discord.post"}))).toBe("")
+  })
+
+  it("puts what a run counted in words, one and many alike", () => {
+    expect(countLabel({tally: JobTally.PLACES_READ, count: 1, channels: ["1"]})).toBe("Read 1 channel")
+    expect(countLabel({tally: JobTally.MESSAGES_READ, count: 1, channels: []})).toBe("1 message")
+    expect(countLabel({tally: JobTally.MESSAGES_READ, count: 12345, channels: []})).toBe("12,345 messages")
+    expect(countLabel({tally: JobTally.EMOJI_SEEN, count: 0, channels: []})).toBe("0 emoji found")
+    expect(countLabel({tally: JobTally.PLACES_LEFT, count: 3, channels: []})).toBe("3 channels left")
+  })
+
+  it("reads a run's report as one line, naming each channel once", () => {
+    const reported = job({report: [
+      {tally: JobTally.PLACES_READ, count: 2, channels: ["1", "2"]},
+      {tally: JobTally.PLACES_LEFT, count: 1, channels: ["2"]},
+    ]})
+    expect(reportLabel(reported)).toBe("Read 2 channels · 1 channel left")
+    expect(reportChannels(reported)).toEqual(["1", "2"])
+    expect(reportLabel(job({}))).toBe("")
+    expect(reportChannels(job({}))).toEqual([])
   })
 
   it("titles a status and a snake-cased type", () => {

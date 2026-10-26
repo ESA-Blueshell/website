@@ -11,11 +11,12 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientResponseException
 import java.time.OffsetDateTime
 
-/** One page of a place's history: the emoji it shows used, and where the next, older page starts. */
+/** One page of a place's history: the emoji it shows used, where the next, older page starts, and how many messages it held. */
 data class HistoryPage(
     val sightings: List<EmojiSighting>,
     val oldestMessageId: String?,
     val last: Boolean,
+    val messages: Int = 0,
 )
 
 /** The association's server's message history, as the bot may read it. */
@@ -83,6 +84,7 @@ class RestDiscordHistory(
             sightings = messages.flatMap { sightingsIn(it, selfId) },
             oldestMessageId = messages.lastOrNull()?.get("id") as String? ?: before,
             last = messages.size < MESSAGES_PER_PAGE,
+            messages = messages.size,
         )
     }
 

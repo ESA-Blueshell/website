@@ -4,8 +4,10 @@ import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlace
 import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlaceRepository
 import net.blueshell.api.discord.persistence.SeenEmojiRepository
 import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
 import net.blueshell.api.shared.tracking.Actor
@@ -30,6 +32,8 @@ private class HeldPlaces : SeenEmojiBackfillPlaceRepository {
     }
 
     override fun findFirstByDoneFalseOrderByIdAsc(): SeenEmojiBackfillPlace? = held.values.firstOrNull { !it.done }
+
+    override fun countByDoneFalse(): Long = held.values.count { !it.done }.toLong()
 
     override fun markRead(
         channelId: String,
@@ -58,7 +62,8 @@ internal class HeldHistory(
         if (channelId in unreadable) return null
         val older = messages.getValue(channelId).filter { before == null || (it["id"] as String).toLong() < before.toLong() }
         val page = older.reversed().take(100)
-        return HistoryPage(page.flatMap { sightingsIn(it, "b1") }, page.lastOrNull()?.get("id") as String? ?: before, page.size < 100)
+        val sightings = page.flatMap { sightingsIn(it, "b1") }
+        return HistoryPage(sightings, page.lastOrNull()?.get("id") as String? ?: before, page.size < 100, page.size)
     }
 }
 
@@ -147,6 +152,27 @@ class BackfillSeenEmojiJobTest {
     }
 
     @Test
+    fun `reports the places a slice read, the messages and emoji in them, and the places left`() {
+        val history =
+            HeldHistory(
+                mutableMapOf(
+                    "c1" to listOf(message(1, kat), message(2, "$kat $kat")),
+                    "c2" to (1L..2500L).map { message(it) },
+                    "c3" to listOf(message(1, kat)),
+                ),
+            )
+
+        val outcome = job(history).run() as JobOutcome.Done
+
+        assertThat(outcome.counts).containsExactly(
+            JobCount(JobTally.PLACES_READ, 2, listOf("c1", "c2")),
+            JobCount(JobTally.MESSAGES_READ, 1902),
+            JobCount(JobTally.EMOJI_SEEN, 3),
+            JobCount(JobTally.PLACES_LEFT, 2),
+        )
+    }
+
+    @Test
     fun `skips a place the bot may no longer read`() {
         val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, kat)), "c2" to listOf(message(2, kat))))
         history.unreadable += "c1"
@@ -216,7 +242,7 @@ class BackfillSeenEmojiJobTest {
         val backfill = SeenEmojiBackfill(gone, places, index, transactions)
 
         backfill.startPass()
-        assertThat(backfill.readSome(1)).isFalse()
+        assertThat(backfill.readSome(1)).isEqualTo(BackfillSlice())
         assertThat(places.held).isEmpty()
     }
 

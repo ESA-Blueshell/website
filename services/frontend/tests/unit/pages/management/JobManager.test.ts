@@ -10,13 +10,14 @@ import type {VueWrapper} from "@vue/test-utils"
 import JobManager from "@/pages/management/JobManager.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockRoute, mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore} = vi.hoisted(() => ({
+const {mockRoute, mockRouterReplace, mockList, mockRetry, mockGetStats, mockStore, mockNameMentions} = vi.hoisted(() => ({
   mockRoute: {query: {} as Record<string, string>},
   mockRouterReplace: vi.fn(),
   mockList: vi.fn(),
   mockRetry: vi.fn(),
   mockGetStats: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {isAdmin: true}},
+  mockNameMentions: vi.fn(),
 }))
 
 vi.mock("vue-router", async (importOriginal) => {
@@ -25,6 +26,11 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
+
+vi.mock("@/domains/discord", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/domains/discord")>(),
+  nameMentions: mockNameMentions,
+}))
 
 vi.mock("@/services/api", async (importOriginal) => {
   // The real generated enums stay, so the filter options are the api's; only the calls are stubbed.
@@ -204,6 +210,35 @@ describe("JobManager page", () => {
     const folded = wrapper.find('[data-testid="job-folded-trigger-9-0"]').text()
     expect(folded).toContain("Also queued by: Editing the event")
     expect(folded).toContain("Jane Doe (@jdoe)")
+  })
+
+  it("says what a run counted, in its row and in its details with the channels it read by name", async () => {
+    mockNameMentions.mockResolvedValue((_kind: string, id: string) => ({said: id === "1001" ? "#general" : "#memes"}))
+    mockList.mockResolvedValue(pageOf([
+      job({
+        id: 8,
+        jobType: "discord.backfill-seen-emoji",
+        report: [
+          {tally: "PLACES_READ", count: 2, channels: ["1001", "1002"]},
+          {tally: "MESSAGES_READ", count: 1902, channels: []},
+          {tally: "EMOJI_SEEN", count: 1, channels: []},
+          {tally: "PLACES_LEFT", count: 1, channels: []},
+        ],
+      }),
+      job({id: 10, report: []}),
+    ]))
+
+    const wrapper = mountJobManager()
+    await settle()
+
+    const said = "Read 2 channels · 1,902 messages · 1 emoji found · 1 channel left"
+    expect(wrapper.find('[data-testid="job-row-report-8"]').text()).toBe(said)
+    expect(wrapper.find('[data-testid="job-row-report-10"]').exists()).toBe(false)
+    await wrapper.find('[data-testid="job-row-8"]').trigger("click")
+    await settle()
+    expect(wrapper.find('[data-testid="job-report-8"]').text()).toBe(said)
+    expect(wrapper.find('[data-testid="job-report-channels"]').text()).toBe("#general, #memes")
+    expect(mockNameMentions).toHaveBeenCalledWith({users: [], roles: [], channels: ["1001", "1002"]})
   })
 
   it("says what a run did, linking to it, and hides skipped runs on request", async () => {

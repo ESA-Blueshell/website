@@ -13,6 +13,7 @@ export {
   actorDisplay,
   canRetry,
   categoryOptions,
+  countLabel,
   effectLabel,
   errorSummary,
   foldedTriggerLabel,
@@ -22,6 +23,8 @@ export {
   previewActorDisplay,
   previewTitle,
   relatedEntityLabel,
+  reportChannels,
+  reportLabel,
   relatedEntityTypeLabel,
   retryLabel,
   rowStatusClass,
@@ -44,7 +47,7 @@ export {
   isUninterestingValue,
   payloadChips,
 } from "./payload"
-export type {Job, JobFilter, JobFoldedTrigger, JobRelatedEntity, JobStats} from "./adapters/jobs"
+export type {Job, JobCount, JobFilter, JobFoldedTrigger, JobRelatedEntity, JobStats} from "./adapters/jobs"
 export {JobExecutionCategory, JobExecutionStatus} from "./adapters/jobs"
 export {enqueueJob, listJobTypes, loadJobPage, loadJobStats, retryJob} from "./adapters/jobs"
 export type {JobPayloadField, JobTypeDescriptor} from "@/services/api"

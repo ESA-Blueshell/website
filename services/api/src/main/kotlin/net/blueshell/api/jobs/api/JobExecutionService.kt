@@ -9,6 +9,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
@@ -191,6 +192,7 @@ class JobExecutionService(
         execution.startedAt = Instant.now()
         execution.effect = null
         execution.effectLink = null
+        execution.report = emptyList()
         return rewritten(execution)
     }
 
@@ -199,11 +201,13 @@ class JobExecutionService(
         execution: JobExecution,
         effect: JobEffect? = null,
         link: String? = null,
+        counts: List<JobCount> = emptyList(),
     ): JobExecution {
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
         execution.effect = effect
         execution.effectLink = link
+        execution.report = counts
         execution.errorMessage = null
         execution.errorType = null
         execution.errorReason = null

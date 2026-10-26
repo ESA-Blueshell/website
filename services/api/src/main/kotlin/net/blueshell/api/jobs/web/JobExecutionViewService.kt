@@ -85,6 +85,7 @@ class JobExecutionViewService(
             trigger = execution.trigger,
             effect = execution.effect,
             effectLink = execution.effectLink,
+            report = execution.report,
             foldedTriggers = foldedTriggersOf(execution, userCache),
             payload = parsedPayload.raw,
             queuedAt = execution.queuedAt,

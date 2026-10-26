@@ -36,12 +36,16 @@ class SeenEmojiBackfill(
         source.places().forEach { place -> ownTransaction.executeWithoutResult { places.restart(place) } }
     }
 
-    /** Reads up to [pages] pages, place by place; true while a place has more to read. */
-    fun readSome(pages: Int): Boolean {
-        val source = history.ifAvailable ?: return false
+    /** Reads up to [pages] pages, place by place, and says what it read and how many places are left. */
+    fun readSome(pages: Int): BackfillSlice {
+        val source = history.ifAvailable ?: return BackfillSlice()
+        val read = linkedSetOf<String>()
+        var messages = 0L
+        var sightings = 0L
         var left = pages
         while (left > 0) {
-            val place = nextPlace() ?: return false
+            val place = nextPlace() ?: break
+            read += place.id
             var before = place.beforeMessageId
             var done = false
             while (left > 0 && !done) {
@@ -49,13 +53,23 @@ class SeenEmojiBackfill(
                 val page = source.page(place.id, before)
                 before = page?.oldestMessageId ?: before
                 done = page?.last ?: true
+                messages += page?.messages ?: 0
+                sightings += page?.sightings?.size ?: 0
                 // One emoji per transaction, as a live one is written, so a page holds no count a live sighting waits on.
                 page?.sightings?.forEach { sighting -> ownTransaction.executeWithoutResult { index.saw(sighting) } }
                 ownTransaction.executeWithoutResult { places.markRead(place.id, before, done) }
             }
         }
-        return nextPlace() != null
+        return BackfillSlice(read.toList(), messages, sightings, ownTransaction.execute { places.countByDoneFalse() })
     }
 
     private fun nextPlace() = ownTransaction.execute { places.findFirstByDoneFalseOrderByIdAsc() }
 }
+
+/** What one slice of a pass read: the places, by channel id, the messages and emoji sightings in them, and the places left. */
+data class BackfillSlice(
+    val places: List<String> = emptyList(),
+    val messages: Long = 0,
+    val sightings: Long = 0,
+    val left: Long = 0,
+)

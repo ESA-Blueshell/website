@@ -3480,6 +3480,22 @@ components:
       - externalUserId
       - writable
       type: object
+    JobCount:
+      properties:
+        channels:
+          items:
+            type: string
+          type: array
+        count:
+          format: int64
+          type: integer
+        tally:
+          $ref: '#/components/schemas/JobTally'
+      required:
+      - channels
+      - count
+      - tally
+      type: object
     JobEffect:
       enum:
       - MADE
@@ -3597,6 +3613,10 @@ components:
           items:
             $ref: '#/components/schemas/JobExecutionRelatedEntity'
           type: array
+        report:
+          items:
+            $ref: '#/components/schemas/JobCount'
+          type: array
         skipReason:
           type:
           - string
@@ -3633,6 +3653,7 @@ components:
       - forced
       - jobType
       - relatedEntities
+      - report
       - status
       type: object
     JobExecutionCategory:
@@ -3766,6 +3787,13 @@ components:
       - successCount
       - totalCount
       type: object
+    JobTally:
+      enum:
+      - PLACES_READ
+      - MESSAGES_READ
+      - EMOJI_SEEN
+      - PLACES_LEFT
+      type: string
     JobTrigger:
       enum:
       - EVENT_CREATED

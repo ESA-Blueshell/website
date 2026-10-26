@@ -145,6 +145,7 @@ export const aJob = (over: Partial<Wire<JobExecution>> = {}): Wire<JobExecution>
   attempts: 0,
   forced: false,
   foldedTriggers: [],
+  report: [],
   relatedEntities: [],
   ...over,
 })

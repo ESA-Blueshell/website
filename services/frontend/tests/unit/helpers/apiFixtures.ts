@@ -273,6 +273,7 @@ export const aJob = (over: Partial<JobExecution> = {}): JobExecution => ({
   attempts: 0,
   forced: false,
   foldedTriggers: [],
+  report: [],
   relatedEntities: [],
   ...over,
 })

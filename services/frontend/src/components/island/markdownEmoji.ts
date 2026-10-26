@@ -1,8 +1,11 @@
 import {type Completion, CompletionContext, type CompletionResult, startCompletion} from "@codemirror/autocomplete"
+import {markdownLanguage} from "@codemirror/lang-markdown"
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
-import {literalAt} from "@/components/island/markdownLive"
-import {pictureOf} from "@/plugins/emojiArt"
+import {discordDialect} from "@/components/island/markdownDialect"
+import {LITERAL, literalAt} from "@/components/island/markdownLive"
+import {TIMESTAMP} from "@/plugins/discordTime"
+import {pictureOf, SERVER_EMOJI} from "@/plugins/emojiArt"
 
 /* The document keeps the emoji itself, never its name: the name is only how it is typed. */
 
@@ -69,3 +72,38 @@ export const emojiOnClose = EditorView.inputHandler.of((view, from, to, text) =>
   })
   return true
 })
+
+const SHORTCODE = /:([a-z0-9_+-]+):/gi
+const pasted = markdownLanguage.parser.configure([discordDialect])
+
+/** Where a custom emoji starts that [at] would cut in half, or [at] when it cuts none. */
+export const outsideEmoji = (text: string, at: number): number => {
+  for (const found of text.matchAll(SERVER_EMOJI)) {
+    if (found.index < at && at < found.index + found[0].length) return found.index
+  }
+  return at
+}
+
+/**
+ * [text] with every name an emoji answers to written as that emoji, outside code, addresses, and
+ * the emoji and moments already written in it, whose colons name nothing.
+ */
+export const shortcodesWritten = (text: string): string => {
+  const kept: [number, number][] = []
+  pasted.parse(text).iterate({
+    enter: (node) => {
+      if (!LITERAL.has(node.name)) return true
+      kept.push([node.from, node.to])
+      return false
+    },
+  })
+  for (const found of [...text.matchAll(SERVER_EMOJI), ...text.matchAll(TIMESTAMP)]) {
+    kept.push([found.index, found.index + found[0].length])
+  }
+  return text.replace(SHORTCODE, (whole: string, name: string, at: number) =>
+    kept.some(([from, to]) => at < to && at + whole.length > from) ? whole : emojiNamed(name) ?? whole)
+}
+
+/** A paste keeps no name that an emoji answers to, unless it lands in code. */
+export const emojiOnPaste = EditorView.clipboardInputFilter.of((text, state) =>
+  literalAt(state, state.selection.main.from, -1) ? text : shortcodesWritten(text))

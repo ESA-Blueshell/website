@@ -4,7 +4,7 @@ import {autocompletion, CompletionContext, completionStatus, currentCompletions,
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption, shortcodesWritten} from "@/components/island/markdownEmoji"
 import {listServerEmoji} from "@/domains/discord"
 import {DiscordEmojiKind, type DiscordEmojiResponse} from "@/services/api"
 
@@ -195,5 +195,33 @@ describe("suggestions opened before the server's own emoji arrive", () => {
     await emojiOnArrival(view)
 
     expect(currentCompletions(view.state)).toEqual([])
+  })
+})
+
+/* Pasted as a browser pastes: the text passes the editor's clipboard filters before it goes in. */
+const paste = (doc: string, text: string) => {
+  const view = open(doc, doc.length)
+  const filtered = view.state.facet(EditorView.clipboardInputFilter).reduce((said, filter) => filter(said, view.state), text)
+  view.dispatch({changes: {from: doc.length, insert: filtered}, userEvent: "input.paste"})
+  return view.state.doc.toString()
+}
+
+describe("a paste", () => {
+  it("writes every name an emoji answers to as that emoji", () => {
+    expect(paste("", "see :poggers: by the :fire: at :spaghetti:"))
+      .toBe("see <:POGGERS:657733730491826186> by the <a:fire:857733730491826187> at \u{1F35D}")
+  })
+
+  it("keeps names no emoji answers to, and times", () => {
+    expect(paste("", "at 12:30:45, :notanemoji:")).toBe("at 12:30:45, :notanemoji:")
+  })
+
+  it("keeps names in code, in addresses and in what is already written", () => {
+    expect(shortcodesWritten("`:fire:` and\n```\n:fire:\n```\n<https://x.nl/:fire:/> <:fire:857733730491826187> <t:1700000000:R>"))
+      .toBe("`:fire:` and\n```\n:fire:\n```\n<https://x.nl/:fire:/> <:fire:857733730491826187> <t:1700000000:R>")
+  })
+
+  it("keeps every name where it lands in code", () => {
+    expect(paste("```\n", ":fire:")).toBe("```\n:fire:")
   })
 })

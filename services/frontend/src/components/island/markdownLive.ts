@@ -44,7 +44,7 @@ const quoteLine = Decoration.line({class: "cm-quote"})
 const inlineCode = Decoration.mark({class: "cm-code"})
 
 /** Where text is only characters: code, and an address. */
-const LITERAL = new Set(["InlineCode", "FencedCode", "CodeBlock", "URL", "Autolink", "HTMLTag"])
+export const LITERAL = new Set(["InlineCode", "FencedCode", "CodeBlock", "URL", "Autolink", "HTMLTag"])
 
 /* Only while the editor is written in: a cursor rests at the start whether or not anybody
    is there. */

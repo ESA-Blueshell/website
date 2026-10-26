@@ -7,7 +7,7 @@ import {drawSelection, EditorView, placeholder as showPlaceholder} from "@codemi
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {CODE_FONT} from "@/components/island/markdownLive"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
-import {emojiCompletion, emojiOnArrival, emojiOption} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption, outsideEmoji} from "@/components/island/markdownEmoji"
 import {channelCompletion, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
@@ -195,7 +195,7 @@ const dress = EditorView.theme({
 })
 
 /* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits,
-   never half of a character such as an emoji. A completion, a picked suggestion or a closing
+   never half of a character or of a custom emoji. A completion, a picked suggestion or a closing
    colon, goes in whole or not at all, since part of `<:name:id>` names nothing. A change that does
    not lengthen the text always goes through, so text over the cap can be cut down. */
 const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
@@ -209,7 +209,7 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   const {from, to, insert} = only
   const room = cap - (tr.startState.doc.length - (to - from))
   if (room <= 0 || tr.isUserEvent("input.complete")) return []
-  const cut = insert.slice(0, room)
+  const cut = insert.slice(0, outsideEmoji(insert, room))
   const kept = /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut
   return {changes: {from, to, insert: kept}, selection: {anchor: from + kept.length}}
 })

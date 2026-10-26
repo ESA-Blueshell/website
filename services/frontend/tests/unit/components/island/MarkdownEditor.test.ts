@@ -241,6 +241,15 @@ describe("the help the editor offers", () => {
       wrapper.unmount()
     })
 
+    it("never ends a cut paste in half of a custom emoji", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 2, insert: "c<:BS_Peepo:657733730491826186>"}})
+
+      expect(view.state.doc.toString()).toBe("abc")
+      wrapper.unmount()
+    })
+
     it("never ends a cut paste in half of an emoji", () => {
       const {wrapper, view} = capped("ab")
 

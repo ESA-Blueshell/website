@@ -1,0 +1,27 @@
+# discord.backfill-seen-emoji did two things on its restart field (#2598): a run with it on started
+# a pass, and one with it off read the next part. Each is now its own job, and the rows move to the
+# one they were, so a queued read runs after the deploy and the history keeps its meaning. A
+# payload without the field started a pass, as its default did.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-26-seen-emoji-pass-jobs.yaml
+      id: seen-emoji-pass-jobs
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'discord.read-seen-emoji-pass', payload = '{}'
+              WHERE job_type = 'discord.backfill-seen-emoji' AND payload LIKE '%"restart":false%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'discord.start-seen-emoji-pass', payload = '{}'
+              WHERE job_type = 'discord.backfill-seen-emoji'
+      rollback:
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'discord.backfill-seen-emoji', payload = '{"restart":false}'
+              WHERE job_type = 'discord.read-seen-emoji-pass'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'discord.backfill-seen-emoji', payload = '{"restart":true}'
+              WHERE job_type = 'discord.start-seen-emoji-pass'

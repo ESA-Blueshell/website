@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.Repository
 import org.springframework.data.repository.query.Param
 
-// HeldPlaces in BackfillSeenEmojiJobTest mirrors these statements.
+// HeldPlaces in SeenEmojiPassJobsTest mirrors these statements.
 interface SeenEmojiBackfillPlaceRepository : Repository<SeenEmojiBackfillPlace, String> {
     @Modifying
     @Query(

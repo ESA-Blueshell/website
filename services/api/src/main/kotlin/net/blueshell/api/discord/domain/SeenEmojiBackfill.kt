@@ -30,10 +30,20 @@ class SeenEmojiBackfill(
     /** Whether Discord sends the history's text, which holds most emoji; without it only reactions would count. */
     val readsText: Boolean get() = history.ifAvailable?.readsText() == true
 
-    /** Starts a pass: every place the bot can see now is read again from its newest message. */
-    fun startPass() {
-        val source = history.ifAvailable ?: return
-        source.places().forEach { place -> ownTransaction.executeWithoutResult { places.restart(place) } }
+    /** Why no pass can run now, or null when one can. */
+    fun whyNot(): String? =
+        when {
+            !available -> "The Discord bot is not set up"
+            !readsText -> "Message Content is off for the bot in the Discord Developer Portal, so Discord sends no message text to read"
+            else -> null
+        }
+
+    /** Starts a pass: every place the bot can see now is read again from its newest message. Returns how many there are. */
+    fun startPass(): Int {
+        val source = history.ifAvailable ?: return 0
+        val all = source.places()
+        all.forEach { place -> ownTransaction.executeWithoutResult { places.restart(place) } }
+        return all.size
     }
 
     /** Reads up to [pages] pages, place by place, and says what it read and how many places are left. */

@@ -217,7 +217,7 @@ describe("JobManager page", () => {
     mockList.mockResolvedValue(pageOf([
       job({
         id: 8,
-        jobType: "discord.backfill-seen-emoji",
+        jobType: "discord.read-seen-emoji-pass",
         report: [
           {tally: "PLACES_READ", count: 2, channels: ["1001", "1002"]},
           {tally: "MESSAGES_READ", count: 1902, channels: []},

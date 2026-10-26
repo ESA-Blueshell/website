@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {shallowMount} from "@vue/test-utils"
+import {humanizeJobType} from "@/utils/jobCatalog"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
 import {settle} from "../../../helpers/testUtils"
 
@@ -21,7 +22,7 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 const descriptors = [
   {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
   {type: "contact.sync-all", payloadFields: []},
-  {type: "discord.backfill-seen-emoji", payloadFields: [{name: "restart", type: "Boolean", kind: "PRIMITIVE", required: true}]},
+  {type: "demo.flag", payloadFields: [{name: "restart", type: "Boolean", kind: "PRIMITIVE", required: true}]},
 ]
 
 const openDialog = async (renderStubDefaultSlot = false) => {
@@ -45,7 +46,7 @@ describe("JobTriggerDialog", () => {
     expect((wrapper.vm as any).typeOptions).toEqual([
       {title: "Sync contact", value: "contact.sync"},
       {title: "Sync all contacts", value: "contact.sync-all"},
-      {title: "Find emoji used in the Discord server", value: "discord.backfill-seen-emoji"},
+      {title: humanizeJobType("demo.flag"), value: "demo.flag"},
     ])
   })
 
@@ -77,7 +78,7 @@ describe("JobTriggerDialog", () => {
   it("shows a yes/no field as a switch that sends false until it is turned on", async () => {
     const wrapper = await openDialog(true)
 
-    ;(wrapper.vm as any).selectedType = "discord.backfill-seen-emoji"
+    ;(wrapper.vm as any).selectedType = "demo.flag"
     await settle()
 
     const toggle = wrapper.findComponent({name: "VSwitch"})
@@ -85,19 +86,19 @@ describe("JobTriggerDialog", () => {
     expect((wrapper.vm as any).requiredMissing).toBe(false)
 
     await (wrapper.vm as any).submit()
-    expect(mockEnqueueJob).toHaveBeenLastCalledWith("discord.backfill-seen-emoji", {restart: false})
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("demo.flag", {restart: false})
   })
 
   it("sends true for a yes/no field once its switch is on", async () => {
     const wrapper = await openDialog(true)
 
-    ;(wrapper.vm as any).selectedType = "discord.backfill-seen-emoji"
+    ;(wrapper.vm as any).selectedType = "demo.flag"
     await settle()
     wrapper.findComponent({name: "VSwitch"}).vm.$emit("update:modelValue", true)
     await settle()
 
     await (wrapper.vm as any).submit()
-    expect(mockEnqueueJob).toHaveBeenLastCalledWith("discord.backfill-seen-emoji", {restart: true})
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("demo.flag", {restart: true})
   })
 
   it("surfaces an error when the enqueue fails", async () => {

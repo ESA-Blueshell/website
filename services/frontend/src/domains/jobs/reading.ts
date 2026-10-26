@@ -86,6 +86,7 @@ const COUNTED: Record<JobTally, (count: string, one: boolean) => string> = {
   [JobTally.PLACES_LEFT]: (count, one) => `${count} ${one ? "channel" : "channels"} left`,
   [JobTally.SHORTCODES_RESOLVED]: (count, one) => `Wrote ${count} ${one ? "shortcode" : "shortcodes"} as emoji`,
   [JobTally.SHORTCODES_LEFT]: (count, one) => `${count} ${one ? "shortcode" : "shortcodes"} left as text`,
+  [JobTally.EVENTS_QUEUED]: (count, one) => `Queued ${count} ${one ? "event" : "events"}`,
 }
 
 /** One count a run reported, in words. */

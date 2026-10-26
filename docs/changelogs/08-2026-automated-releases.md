@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.27.0](https://github.com/ESA-Blueshell/website/compare/v1.26.1...v1.27.0) (2026-10-26)
+
+
+### Features
+
+* **auth:** the recovery email job is one job per email ([#2600](https://github.com/ESA-Blueshell/website/issues/2600)) ([#2615](https://github.com/ESA-Blueshell/website/issues/2615)) ([c20cbac](https://github.com/ESA-Blueshell/website/commit/c20cbacbd60b66c05cc43b942415abba17ba6186))
+* **cohort:** cohort membership sync is two jobs, add and remove ([#2601](https://github.com/ESA-Blueshell/website/issues/2601)) ([#2616](https://github.com/ESA-Blueshell/website/issues/2616)) ([e802ec5](https://github.com/ESA-Blueshell/website/commit/e802ec5c11d726f3503b8f7b48ead46247f61567))
+* **discord:** the seen emoji backfill is two jobs, start a pass and read the next part ([#2598](https://github.com/ESA-Blueshell/website/issues/2598)) ([#2611](https://github.com/ESA-Blueshell/website/issues/2611)) ([7942338](https://github.com/ESA-Blueshell/website/commit/7942338f3221c4f6406f2f1b370cfc34755058ea))
+* **frontend:** a custom emoji in the editor is one picture, deleted whole ([#2617](https://github.com/ESA-Blueshell/website/issues/2617)) ([#2618](https://github.com/ESA-Blueshell/website/issues/2618)) ([c661b1c](https://github.com/ESA-Blueshell/website/commit/c661b1c40188cd4f41b3afe81c354f7eb0827641))
+* **frontend:** a paste into the editor turns known :name: shortcodes into emoji ([#2604](https://github.com/ESA-Blueshell/website/issues/2604)) ([#2609](https://github.com/ESA-Blueshell/website/issues/2609)) ([6c5d891](https://github.com/ESA-Blueshell/website/commit/6c5d89145f791c817564db4900aad92c4ada5db9))
+* **frontend:** the job form shows a yes/no payload field as a switch ([#2596](https://github.com/ESA-Blueshell/website/issues/2596)) ([#2603](https://github.com/ESA-Blueshell/website/issues/2603)) ([574e63b](https://github.com/ESA-Blueshell/website/commit/574e63ba818afb7dc6d806bdf47d93cb323966f1))
+* **jobs:** a job run records what it worked on and what it found ([#2597](https://github.com/ESA-Blueshell/website/issues/2597)) ([#2610](https://github.com/ESA-Blueshell/website/issues/2610)) ([e038cf5](https://github.com/ESA-Blueshell/website/commit/e038cf53c5b8f93b6fe688e63e694e949e508ebd))
+* **jobs:** jobs that name no subject report what they did ([#2599](https://github.com/ESA-Blueshell/website/issues/2599)) ([#2614](https://github.com/ESA-Blueshell/website/issues/2614)) ([0891d69](https://github.com/ESA-Blueshell/website/commit/0891d6970c836be8690c7b84482becd1b8d9287a))
+* **sync:** a job resolves the :name: shortcodes left in one event's description ([#2605](https://github.com/ESA-Blueshell/website/issues/2605)) ([#2612](https://github.com/ESA-Blueshell/website/issues/2612)) ([09bc4ea](https://github.com/ESA-Blueshell/website/commit/09bc4eaddb610bd06ce49db601f6f19efa6bc49a))
+* **sync:** a job resolves the emoji shortcodes in every event ([#2606](https://github.com/ESA-Blueshell/website/issues/2606)) ([#2613](https://github.com/ESA-Blueshell/website/issues/2613)) ([c1931be](https://github.com/ESA-Blueshell/website/commit/c1931be351cf0707a1e5fb479117197c9f46ecff))
+
 ## [1.26.1](https://github.com/ESA-Blueshell/website/compare/v1.26.0...v1.26.1) (2026-10-26)
 
 

@@ -90,4 +90,20 @@ class RecoveryEmailHandlerTest {
         assertThat(mailed.map { AuthJobs.recoveryEmailFor(it).purpose }).isEqualTo(mailed)
         assertThat(AuthJobs.recoveryEmails.map { it.type }).doesNotHaveDuplicates()
     }
+
+    @Test
+    fun `registers one handler for each email a link goes out in`() {
+        val handlers = RecoveryEmailHandlers(objectMapper, users, emails, "http://localhost:3000", mockk())
+
+        val registered =
+            listOf(
+                handlers.accountActivationEmailJob(),
+                handlers.memberActivationEmailJob(),
+                handlers.passwordResetEmailJob(),
+                handlers.emailChangeEmailJob(),
+                handlers.twoFactorReenrolmentEmailJob(),
+            )
+
+        assertThat(registered.map { it.jobType }).containsExactlyElementsOf(AuthJobs.recoveryEmails.map { it.type })
+    }
 }

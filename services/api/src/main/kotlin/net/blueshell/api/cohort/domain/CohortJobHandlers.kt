@@ -2,7 +2,9 @@ package net.blueshell.api.cohort.domain
 
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.NonRetryableJobException
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,14 +39,18 @@ class CohortJobHandlers(
 
     @Bean
     fun reconcileAllUserCohortsHandler() =
-        bind(CohortJobs.ReconcileAllUserCohorts) {
-            reconciliation.reconcileAllUserCohorts()
+        bindCounting(CohortJobs.ReconcileAllUserCohorts) {
+            listOf(JobCount(JobTally.USERS_QUEUED, reconciliation.reconcileAllUserCohorts().toLong()))
         }
 
     @Bean
     fun reconcileAllContributionPeriodCohortsHandler() =
-        bind(CohortJobs.ReconcileAllContributionPeriodCohorts) {
-            reconciliation.reconcileAllContributionPeriodCohorts()
+        bindCounting(CohortJobs.ReconcileAllContributionPeriodCohorts) {
+            val swept = reconciliation.reconcileAllContributionPeriodCohorts()
+            listOf(
+                JobCount(JobTally.COHORTS_RECOMPUTED, swept.recomputed.toLong()),
+                JobCount(JobTally.COHORTS_FAILED, swept.failed.toLong()),
+            )
         }
 
     @Bean
@@ -90,7 +96,13 @@ class CohortJobHandlers(
     private fun <T : Any> bindSkipping(
         definition: JobDefinition<T>,
         perform: (T) -> String?,
-    ): CohortJobBinding<T> = CohortJobBinding(objectMapper, definition, perform)
+    ): CohortJobBinding<T> = CohortJobBinding(objectMapper, definition) { CohortJobResult(skipped = perform(it)) }
+
+    // [perform] answers what the run counted about its work.
+    private fun <T : Any> bindCounting(
+        definition: JobDefinition<T>,
+        perform: (T) -> List<JobCount>,
+    ): CohortJobBinding<T> = CohortJobBinding(objectMapper, definition) { CohortJobResult(counts = perform(it)) }
 
     /** A payload naming a system that no longer exists will never parse, however often it is retried. */
     private fun targetSystem(name: String): TargetSystem =
@@ -107,9 +119,17 @@ class CohortJobHandlers(
 open class CohortJobBinding<T : Any>(
     objectMapper: ObjectMapper,
     definition: JobDefinition<T>,
-    private val perform: (T) -> String?,
+    private val perform: (T) -> CohortJobResult,
 ) : AbstractJsonJobHandler<T>(objectMapper, definition) {
     override fun handlePayload(payload: T) {
-        perform(payload)?.let(::skip)
+        val result = perform(payload)
+        result.skipped?.let(::skip)
+        result.counts.forEach { counted(it.tally, it.count, it.channels, it.names) }
     }
 }
+
+/** Why a cohort job did nothing, or what it counted about its work. */
+data class CohortJobResult(
+    val skipped: String? = null,
+    val counts: List<JobCount> = emptyList(),
+)

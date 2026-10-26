@@ -4,6 +4,7 @@ import net.blueshell.api.event.api.EventService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.enums.TargetSystem
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.api.ExternalIdMappingService.Companion.EVENT_AGGREGATE
@@ -47,6 +48,7 @@ class SyncUnsyncedEventsJob(
                 JobTrigger.ANOTHER_JOB,
             )
         }
+        counted(JobTally.EVENTS_QUEUED, unsynced.size.toLong())
     }
 
     companion object {

@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.user.api.SealedValueRewrap
 import net.blueshell.api.user.api.UserJobs
 import org.springframework.stereotype.Component
@@ -27,7 +28,8 @@ class RewrapSealedValuesJob(
                 ).joinToString(", ")}$more. The next run tries them again.",
             )
         }
-        if (report.moved == 0) skip("Every sealed value is on the newest key version")
+        if (report.moved == 0) return skip("Every sealed value is on the newest key version")
+        counted(JobTally.VALUES_REWRAPPED, report.moved.toLong())
     }
 
     private companion object {

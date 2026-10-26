@@ -3801,6 +3801,11 @@ components:
       - SHORTCODES_RESOLVED
       - SHORTCODES_LEFT
       - EVENTS_QUEUED
+      - USERS_QUEUED
+      - COHORTS_RECOMPUTED
+      - COHORTS_FAILED
+      - VALUES_SEALED
+      - VALUES_REWRAPPED
       type: string
     JobTrigger:
       enum:

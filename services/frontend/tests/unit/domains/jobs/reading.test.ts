@@ -75,6 +75,13 @@ describe("job reading", () => {
     expect(countLabel({tally: JobTally.SHORTCODES_LEFT, count: 4, channels: [], names: []})).toBe("4 shortcodes left as text")
     expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 1, channels: [], names: []})).toBe("Queued 1 event")
     expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 12, channels: [], names: []})).toBe("Queued 12 events")
+    const said = (tally: JobTally, count: number) => countLabel({tally, count, channels: [], names: []})
+    expect([said(JobTally.USERS_QUEUED, 1), said(JobTally.USERS_QUEUED, 40)]).toEqual(["Queued 1 member", "Queued 40 members"])
+    expect([said(JobTally.COHORTS_RECOMPUTED, 1), said(JobTally.COHORTS_RECOMPUTED, 5)]).toEqual(["Recomputed 1 cohort", "Recomputed 5 cohorts"])
+    expect(said(JobTally.COHORTS_FAILED, 1)).toBe("1 could not be recomputed")
+    expect([said(JobTally.VALUES_SEALED, 1), said(JobTally.VALUES_SEALED, 3)]).toEqual(["Sealed 1 address", "Sealed 3 addresses"])
+    expect([said(JobTally.VALUES_REWRAPPED, 1), said(JobTally.VALUES_REWRAPPED, 2)])
+      .toEqual(["Moved 1 sealed value to the newest key", "Moved 2 sealed values to the newest key"])
   })
 
   it("lists the names a report holds as shortcodes, under the count that names them", () => {

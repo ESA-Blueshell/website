@@ -6,6 +6,7 @@ import io.mockk.verify
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.user.api.UserService
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class CohortReconciliationServiceTest {
@@ -41,7 +42,7 @@ class CohortReconciliationServiceTest {
         every { registrar.register() } returns RegistrationReport(2, 0, 0, emptyList())
         every { definitions.all() } returns listOf(first, second)
 
-        service.reconcileAllContributionPeriodCohorts()
+        assertThat(service.reconcileAllContributionPeriodCohorts()).isEqualTo(CohortsRecomputed(recomputed = 2, failed = 0))
 
         verify { registrar.register() }
         verify { updater.updateCohort(first) }
@@ -57,7 +58,7 @@ class CohortReconciliationServiceTest {
         every { definitions.all() } returns listOf(first, broken, last)
         every { updater.updateCohort(broken) } throws RuntimeException("kaboom")
 
-        service.reconcileAllContributionPeriodCohorts()
+        assertThat(service.reconcileAllContributionPeriodCohorts()).isEqualTo(CohortsRecomputed(recomputed = 2, failed = 1))
 
         verify { updater.updateCohort(first) }
         verify { updater.updateCohort(last) }
@@ -75,7 +76,7 @@ class CohortReconciliationServiceTest {
         every { users.findActiveIdsAfter(0L, pageSize) } returns listOf(10L, 11L)
         every { users.findActiveIdsAfter(11L, pageSize) } returns emptyList()
 
-        service.reconcileAllUserCohorts()
+        assertThat(service.reconcileAllUserCohorts()).isEqualTo(2)
 
         verify { users.findActiveIdsAfter(0L, pageSize) }
         verify { users.findActiveIdsAfter(11L, pageSize) }
@@ -92,7 +93,7 @@ class CohortReconciliationServiceTest {
             jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(11L), JobTrigger.ANOTHER_JOB)
         } throws RuntimeException("boom")
 
-        service.reconcileAllUserCohorts()
+        assertThat(service.reconcileAllUserCohorts()).isEqualTo(2)
 
         // 10 (before the failure) and 12 (a later page) are still enqueued.
         verify { jobs.runAsync(CohortJobs.EvaluateUserCohorts, CohortJobs.EvaluateUserCohortsPayload(10L), JobTrigger.ANOTHER_JOB) }

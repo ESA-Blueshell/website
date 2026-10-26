@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.26.1](https://github.com/ESA-Blueshell/website/compare/v1.26.0...v1.26.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **api:** the api image's AOT cache holds no CPU-specific code ([#2594](https://github.com/ESA-Blueshell/website/issues/2594)) ([#2595](https://github.com/ESA-Blueshell/website/issues/2595)) ([73b5d42](https://github.com/ESA-Blueshell/website/commit/73b5d429f65d8bb0b277dcaa78844973f6d26eba))
+* **deps:** update dependency org.commonmark:commonmark-ext-gfm-tables to v0.30.1 ([#2590](https://github.com/ESA-Blueshell/website/issues/2590)) ([5dacbd8](https://github.com/ESA-Blueshell/website/commit/5dacbd8ca98f6ec646be448de08af6844718cf4b))
+
 ## [1.26.0](https://github.com/ESA-Blueshell/website/compare/v1.25.0...v1.26.0) (2026-10-26)
 
 

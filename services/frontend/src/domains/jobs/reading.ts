@@ -87,6 +87,11 @@ const COUNTED: Record<JobTally, (count: string, one: boolean) => string> = {
   [JobTally.SHORTCODES_RESOLVED]: (count, one) => `Wrote ${count} ${one ? "shortcode" : "shortcodes"} as emoji`,
   [JobTally.SHORTCODES_LEFT]: (count, one) => `${count} ${one ? "shortcode" : "shortcodes"} left as text`,
   [JobTally.EVENTS_QUEUED]: (count, one) => `Queued ${count} ${one ? "event" : "events"}`,
+  [JobTally.USERS_QUEUED]: (count, one) => `Queued ${count} ${one ? "member" : "members"}`,
+  [JobTally.COHORTS_RECOMPUTED]: (count, one) => `Recomputed ${count} ${one ? "cohort" : "cohorts"}`,
+  [JobTally.COHORTS_FAILED]: (count) => `${count} could not be recomputed`,
+  [JobTally.VALUES_SEALED]: (count, one) => `Sealed ${count} ${one ? "address" : "addresses"}`,
+  [JobTally.VALUES_REWRAPPED]: (count, one) => `Moved ${count} sealed ${one ? "value" : "values"} to the newest key`,
 }
 
 /** One count a run reported, in words. */

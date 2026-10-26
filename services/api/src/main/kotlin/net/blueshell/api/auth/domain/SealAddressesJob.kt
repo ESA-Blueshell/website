@@ -1,6 +1,7 @@
 package net.blueshell.api.auth.domain
 
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.user.api.SealedAddresses
 import net.blueshell.api.user.api.UserJobs
 import org.springframework.stereotype.Component
@@ -17,6 +18,7 @@ class SealAddressesJob(
 ) : AbstractJsonJobHandler<UserJobs.SealAddressesPayload>(objectMapper, UserJobs.SealAddresses) {
     override fun handlePayload(payload: UserJobs.SealAddressesPayload) {
         val sealed = addresses.sealEvery()
-        if (sealed == 0) skip("Every address is sealed already")
+        if (sealed == 0) return skip("Every address is sealed already")
+        counted(JobTally.VALUES_SEALED, sealed.toLong())
     }
 }

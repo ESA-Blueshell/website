@@ -3,7 +3,10 @@ package net.blueshell.api.cohort.domain
 import io.mockk.every
 import io.mockk.mockk
 import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.platform.config.JacksonConfig
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.testsupport.runJob
 import org.assertj.core.api.Assertions.assertThat
@@ -77,5 +80,26 @@ class CohortJobHandlersTest {
         assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
         assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
+    }
+
+    @Test
+    fun `the two sweeps report what they queued and recomputed`() {
+        val reconciliation = mockk<CohortReconciliationService>()
+        every { reconciliation.reconcileAllUserCohorts() } returns 40
+        every { reconciliation.reconcileAllContributionPeriodCohorts() } returns CohortsRecomputed(recomputed = 5, failed = 1)
+        val bound =
+            CohortJobHandlers(
+                JacksonConfig().jsonMapper(null),
+                reconciliation = reconciliation,
+                membership = mockk(relaxed = true),
+                targeting = mockk(relaxed = true),
+                remediation = mockk(relaxed = true),
+                inbound = mockk(relaxed = true),
+            )
+
+        assertThat((bound.reconcileAllUserCohortsHandler().runJob("{}") as JobOutcome.Done).counts)
+            .containsExactly(JobCount(JobTally.USERS_QUEUED, 40))
+        assertThat((bound.reconcileAllContributionPeriodCohortsHandler().runJob("{}") as JobOutcome.Done).counts)
+            .containsExactly(JobCount(JobTally.COHORTS_RECOMPUTED, 5), JobCount(JobTally.COHORTS_FAILED, 1))
     }
 }

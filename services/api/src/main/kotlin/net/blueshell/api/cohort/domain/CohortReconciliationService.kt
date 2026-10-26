@@ -50,7 +50,7 @@ class CohortReconciliationService(
      * created while the application was down, a member whose facts changed elsewhere.
      */
     @Transactional
-    fun reconcileAllContributionPeriodCohorts() {
+    fun reconcileAllContributionPeriodCohorts(): CohortsRecomputed {
         val report = registrar.register()
         log.info(
             "[cohort] {} definitions registered ({} new, {} orphaned)",
@@ -58,19 +58,23 @@ class CohortReconciliationService(
             report.created,
             report.orphaned.size,
         )
-        definitions.all().forEach { definition ->
-            runCatching { updater.updateCohort(definition) }
-                .onFailure { e -> log.warn("Failed to recompute {}: {}", definition.key, e.message) }
-        }
+        val outcomes =
+            definitions.all().map { definition ->
+                runCatching { updater.updateCohort(definition) }
+                    .onFailure { e -> log.warn("Failed to recompute {}: {}", definition.key, e.message) }
+                    .isSuccess
+            }
+        return CohortsRecomputed(recomputed = outcomes.count { it }, failed = outcomes.count { !it })
     }
 
     /**
      * Re-evaluates every user by enqueuing one per-user evaluation job, so one user's adapter
      * failure stays inside its own retry budget.
      */
-    fun reconcileAllUserCohorts() {
+    fun reconcileAllUserCohorts(): Int {
         var afterId = 0L
         var total = 0
+        var queued = 0
         while (true) {
             // Read + enqueue one page in its own short transaction. A page that
             // commits has dispatched its jobs even if a later page fails, and
@@ -78,17 +82,18 @@ class CohortReconciliationService(
             val page =
                 pageTransaction.execute {
                     val ids = users.findActiveIdsAfter(afterId, PAGE_SIZE)
-                    ids.forEach { userId ->
-                        runCatching {
-                            jobs.runAsync(
-                                CohortJobs.EvaluateUserCohorts,
-                                CohortJobs.EvaluateUserCohortsPayload(userId),
-                                JobTrigger.ANOTHER_JOB,
-                            )
-                        }.onFailure { e ->
-                            log.error("Failed to enqueue evaluation for user {}: {}", userId, e.message)
+                    queued +=
+                        ids.count { userId ->
+                            runCatching {
+                                jobs.runAsync(
+                                    CohortJobs.EvaluateUserCohorts,
+                                    CohortJobs.EvaluateUserCohortsPayload(userId),
+                                    JobTrigger.ANOTHER_JOB,
+                                )
+                            }.onFailure { e ->
+                                log.error("Failed to enqueue evaluation for user {}: {}", userId, e.message)
+                            }.isSuccess
                         }
-                    }
                     ids
                 }
             if (page.isEmpty()) break
@@ -96,6 +101,7 @@ class CohortReconciliationService(
             total += page.size
         }
         log.info("Enqueued per-user cohort evaluation across {} users in pages of {}", total, PAGE_SIZE)
+        return queued
     }
 
     companion object {
@@ -105,3 +111,9 @@ class CohortReconciliationService(
         private val log = LoggerFactory.getLogger(CohortReconciliationService::class.java)
     }
 }
+
+/** How many contribution period cohorts a sweep recomputed, and how many it could not. */
+data class CohortsRecomputed(
+    val recomputed: Int,
+    val failed: Int,
+)

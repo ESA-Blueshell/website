@@ -8,7 +8,7 @@ import {type EditorState, type Extension, Prec, Transaction, type TransactionSpe
 import {type EditorView, keymap} from "@codemirror/view"
 import {tags} from "@lezer/highlight"
 import {discordDialect, spoilerTag, subtextTag, underlineTag} from "@/components/island/markdownDialect"
-import {emojiOnClose} from "@/components/island/markdownEmoji"
+import {emojiOnClose, emojiOnPaste} from "@/components/island/markdownEmoji"
 import {CODE_FONT, emojiLive, markdownLive, wrapWith} from "@/components/island/markdownLive"
 
 /* What markdown looks like once it is being read rather than typed: as the Discord client draws
@@ -57,6 +57,7 @@ export const markdownEditing: Extension[] = [
   markdownLive,
   emojiLive,
   emojiOnClose,
+  emojiOnPaste,
 ]
 
 /**

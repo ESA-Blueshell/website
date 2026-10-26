@@ -201,32 +201,25 @@ const mentionsIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<
 }
 
 /* Like a mark, `<:name:id>` shows while the cursor touches it, so it can be read and mended. */
-const serverEmojiIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
-  const drawn: Range<Decoration>[] = []
-  for (const {from, to} of view.visibleRanges) {
-    for (const found of view.state.sliceDoc(from, to).matchAll(SERVER_EMOJI)) {
-      const at = from + found.index
-      const end = at + found[0].length
-      if (touches(ranges, at, end) || literalAt(view.state, at)) continue
-      const art = new EmojiArt(serverEmojiSrc(found[3] as string, found[1] === "a"), `:${found[2] as string}:`)
-      drawn.push(Decoration.replace({widget: art}).range(at, end))
-    }
-  }
-  return drawn
-}
-
-/* Always drawn, cursor or not: the character is the emoji, so there is no mark to show. */
+/* Always drawn, cursor or not, as Discord draws them: an emoji is one thing, never its code to edit. */
 const emojiIn = (view: EditorView): DecorationSet => {
   const drawn: Range<Decoration>[] = []
   for (const {from, to} of view.visibleRanges) {
-    for (const found of view.state.sliceDoc(from, to).matchAll(EMOJI)) {
+    const text = view.state.sliceDoc(from, to)
+    for (const found of text.matchAll(EMOJI)) {
       const at = from + found.index
       if (literalAt(view.state, at)) continue
       drawn.push(Decoration.replace({widget: new EmojiArt(emojiSrc(found[0]), found[0])})
         .range(at, at + found[0].length))
     }
+    for (const found of text.matchAll(SERVER_EMOJI)) {
+      const at = from + found.index
+      if (literalAt(view.state, at)) continue
+      const art = new EmojiArt(serverEmojiSrc(found[3] as string, found[1] === "a"), `:${found[2] as string}:`)
+      drawn.push(Decoration.replace({widget: art}).range(at, at + found[0].length))
+    }
   }
-  return Decoration.set(drawn)
+  return Decoration.set(drawn, true)
 }
 
 /** The fenced block a node sits in, whose fences and language show while it is written. */
@@ -293,7 +286,7 @@ const decorate = (view: EditorView): DecorationSet => {
     })
   }
   return Decoration.set(
-    [...marks, ...[...quoted].map(at => quoteLine.range(at)), ...serverEmojiIn(view, ranges), ...mentionsIn(view, ranges)],
+    [...marks, ...[...quoted].map(at => quoteLine.range(at)), ...mentionsIn(view, ranges)],
     true)
 }
 
@@ -315,21 +308,24 @@ export const markdownLive = ViewPlugin.fromClass(
   {decorations: plugin => plugin.decorations},
 )
 
-/** Draws every emoji as its picture. */
-export const emojiLive = ViewPlugin.fromClass(
-  class {
-    emoji: DecorationSet
+class EmojiPictures {
+  emoji: DecorationSet
 
-    constructor(view: EditorView) {
-      this.emoji = emojiIn(view)
-    }
+  constructor(view: EditorView) {
+    this.emoji = emojiIn(view)
+  }
 
-    update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) this.emoji = emojiIn(update.view)
-    }
-  },
-  {decorations: plugin => plugin.emoji},
-)
+  update(update: ViewUpdate) {
+    if (update.docChanged || update.viewportChanged) this.emoji = emojiIn(update.view)
+  }
+}
+
+/** Draws every emoji as its picture, which the cursor steps over and a delete takes whole. */
+export const emojiLive = ViewPlugin.fromClass(EmojiPictures, {
+  decorations: plugin => plugin.emoji,
+  // Installed with the facet that reads it, so the plugin is there whenever the facet is asked.
+  provide: plugin => EditorView.atomicRanges.of(view => (view.plugin(plugin) as EmojiPictures).emoji),
+})
 
 /** The span a mark writes, so `*` never mistakes the stars of a bold for its own. */
 const SPAN_OF: Record<string, string> = {"**": "StrongEmphasis", "*": "Emphasis"}

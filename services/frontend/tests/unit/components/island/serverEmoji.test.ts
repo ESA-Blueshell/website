@@ -2,6 +2,7 @@ import {afterEach, beforeAll, describe, expect, it, vi} from "vitest"
 import {EditorSelection, EditorState} from "@codemirror/state"
 import {autocompletion, CompletionContext, completionStatus, currentCompletions, startCompletion} from "@codemirror/autocomplete"
 import {EditorView} from "@codemirror/view"
+import {cursorCharLeft, cursorCharRight, deleteCharBackward, deleteCharForward} from "@codemirror/commands"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {markdownEditing} from "@/components/island/markdownEditing"
 import {emojiCompletion, emojiOnArrival, emojiOption, outsideEmoji, shortcodesWritten} from "@/components/island/markdownEmoji"
@@ -104,12 +105,48 @@ describe("the server's own emoji", () => {
     expect(view.state.doc.toString()).toBe("<:POGGERS:657733730491826186>")
   })
 
-  it("are drawn as their picture, and shown as written while the cursor touches one", () => {
+  it("are drawn as their picture, wherever the cursor is", () => {
     const doc = "we <:POGGERS:657733730491826186> won"
     const drawn = open(doc, 0).contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")
 
     expect(drawn?.getAttribute("src")).toBe("https://cdn.discordapp.com/emojis/657733730491826186.webp?size=48")
-    expect(open(doc, 5).contentDOM.textContent).toBe(doc)
+    expect(open(doc, 3).contentDOM.querySelector("img.cm-emoji")).not.toBeNull()
+    expect(open(doc, doc.indexOf(" won")).contentDOM.querySelector("img.cm-emoji")).not.toBeNull()
+  })
+
+  it("are one step for the cursor, and go whole on a delete", () => {
+    const doc = "we <:POGGERS:657733730491826186> won"
+    const after = doc.indexOf(" won")
+    const view = open(doc, 3)
+
+    expect(cursorCharRight(view)).toBe(true)
+    expect(view.state.selection.main.head).toBe(after)
+    expect(cursorCharLeft(view)).toBe(true)
+    expect(view.state.selection.main.head).toBe(3)
+
+    view.dispatch({selection: EditorSelection.cursor(after)})
+    deleteCharBackward(view)
+    expect(view.state.doc.toString()).toBe("we  won")
+
+    view.dispatch({selection: EditorSelection.cursor(3)})
+    view.dispatch({changes: {from: 3, insert: "<a:fire:857733730491826187>"}})
+    deleteCharForward(view)
+    expect(view.state.doc.toString()).toBe("we  won")
+  })
+
+  it("keep their picture while the text around them changes", () => {
+    const view = open("we <:POGGERS:657733730491826186> won", 0)
+    const drawn = view.contentDOM.querySelector("img.cm-emoji")
+
+    view.dispatch({changes: {from: view.state.doc.length, insert: "!"}})
+
+    expect(view.contentDOM.querySelector("img.cm-emoji")).toBe(drawn)
+  })
+
+  it("stay text inside code", () => {
+    const doc = "`<:POGGERS:657733730491826186>`"
+
+    expect(open(doc, 0).contentDOM.querySelector("img.cm-emoji")).toBeNull()
   })
 
   it("say their name where the picture will not load", () => {

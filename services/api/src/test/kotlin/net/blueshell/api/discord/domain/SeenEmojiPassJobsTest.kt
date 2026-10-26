@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlace
 import net.blueshell.api.discord.persistence.SeenEmojiBackfillPlaceRepository
 import net.blueshell.api.discord.persistence.SeenEmojiRepository
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobDefinition
@@ -80,11 +81,11 @@ internal fun message(
     "reactions" to reactions,
 )
 
-class BackfillSeenEmojiJobTest {
+class SeenEmojiPassJobsTest {
     private val mapper = JsonMapper.builder().build()
     private val places = HeldPlaces()
     private val index = seenEmojiIndex()
-    private val queued = mutableListOf<Any>()
+    private val queued = mutableListOf<String>()
     private val transactions: PlatformTransactionManager = mock { on { getTransaction(anyOrNull()) } doReturn mock<TransactionStatus>() }
     private val jobs =
         object : JobQueue {
@@ -94,23 +95,30 @@ class BackfillSeenEmojiJobTest {
                 trigger: JobTrigger,
                 actor: Actor?,
             ): QueuedJob? {
-                queued += payload
+                queued += job.type
                 return null
             }
         }
 
-    private fun job(history: DiscordHistory?): BackfillSeenEmojiJob {
+    private fun backfill(history: DiscordHistory?): SeenEmojiBackfill {
         val provider: ObjectProvider<DiscordHistory> = mock { on { ifAvailable } doReturn history }
-        return BackfillSeenEmojiJob(mapper, SeenEmojiBackfill(provider, places, index, transactions), jobs)
+        return SeenEmojiBackfill(provider, places, index, transactions)
     }
 
-    private fun BackfillSeenEmojiJob.run(payload: DiscordJobs.BackfillSeenEmojiPayload = DiscordJobs.BackfillSeenEmojiPayload()) =
-        handle(mapper.writeValueAsString(payload), 1, forced = false)
+    private fun start(history: DiscordHistory?) = StartSeenEmojiPassJob(mapper, backfill(history), jobs)
 
-    // Runs the job, then every run it queues, as the job queue would.
-    private fun BackfillSeenEmojiJob.runToTheEnd() {
-        run()
-        while (queued.isNotEmpty()) run(queued.removeFirst() as DiscordJobs.BackfillSeenEmojiPayload)
+    private fun read(history: DiscordHistory?) = ReadSeenEmojiPassJob(mapper, backfill(history), jobs)
+
+    private fun AbstractJsonJobHandler<DiscordJobs.SeenEmojiPassPayload>.run() =
+        handle(mapper.writeValueAsString(DiscordJobs.SeenEmojiPassPayload()), 1, forced = false)
+
+    // Starts a pass, then runs every read it queues, as the job queue would.
+    private fun passOver(history: DiscordHistory) {
+        start(history).run()
+        while (queued.isNotEmpty()) {
+            queued.removeFirst()
+            read(history).run()
+        }
     }
 
     private fun uses() = index.seen().associate { it.name to it.uses }
@@ -129,7 +137,7 @@ class BackfillSeenEmojiJobTest {
                 ),
             )
 
-        job(history).runToTheEnd()
+        passOver(history)
 
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 2L, "pumpkin" to 1L))
         assertThat(places.held.values.map { it.done }).containsOnly(true)
@@ -138,15 +146,16 @@ class BackfillSeenEmojiJobTest {
     @Test
     fun `resumes where a stopped run was, and a rerun counts nothing twice`() {
         val history = HeldHistory(mutableMapOf("c1" to (1L..4000L).map { message(it, "carve $kat") }))
-        job(history).run()
+        start(history).run()
+        read(history).run()
         queued.clear()
 
-        job(history).run(DiscordJobs.BackfillSeenEmojiPayload(restart = false))
+        read(history).run()
         queued.clear()
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 4000L))
 
         history.messages["c2"] = listOf(message(9001, kat))
-        job(history).runToTheEnd()
+        passOver(history)
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 4001L))
         assertThat(places.held.values.map { it.done }).containsOnly(true)
     }
@@ -162,7 +171,9 @@ class BackfillSeenEmojiJobTest {
                 ),
             )
 
-        val outcome = job(history).run() as JobOutcome.Done
+        assertThat((start(history).run() as JobOutcome.Done).counts).containsExactly(JobCount(JobTally.PLACES_LEFT, 3))
+        assertThat(queued).containsExactly(DiscordJobs.ReadSeenEmojiPass.type)
+        val outcome = read(history).run() as JobOutcome.Done
 
         assertThat(outcome.counts).containsExactly(
             JobCount(JobTally.PLACES_READ, 2, listOf("c1", "c2")),
@@ -177,25 +188,38 @@ class BackfillSeenEmojiJobTest {
         val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, kat)), "c2" to listOf(message(2, kat))))
         history.unreadable += "c1"
 
-        job(history).runToTheEnd()
+        passOver(history)
 
         assertThat(uses()).isEqualTo(mapOf("spoopykat" to 1L))
         assertThat(places.held.getValue("c1").done).isTrue()
     }
 
     @Test
-    fun `queues the next slice behind the running one, which the queue would otherwise fold it into`() {
-        assertThat(DiscordJobs.BackfillSeenEmoji.queuesBehindRunning).isTrue()
+    fun `queues the next read behind the running one, which the queue would otherwise fold it into`() {
+        assertThat(DiscordJobs.ReadSeenEmojiPass.queuesBehindRunning).isTrue()
+        assertThat(DiscordJobs.StartSeenEmojiPass.queuesBehindRunning).isFalse()
+    }
+
+    @Test
+    fun `a read past the end of the pass queues nothing more`() {
+        val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, kat))))
+        passOver(history)
+
+        val outcome = read(history).run() as JobOutcome.Done
+
+        assertThat(outcome.counts).contains(JobCount(JobTally.PLACES_READ, 0), JobCount(JobTally.PLACES_LEFT, 0))
+        assertThat(queued).isEmpty()
     }
 
     @Test
     fun `skips without Message Content, which a pass would mark done having counted reactions only`() {
         val history = HeldHistory(mutableMapOf("c1" to listOf(message(1, kat)))).apply { readsText = false }
 
-        val outcome = job(history).run()
+        val outcome = start(history).run()
 
         assertThat(outcome).isInstanceOf(JobOutcome.Skipped::class.java)
         assertThat((outcome as JobOutcome.Skipped).reason).contains("Message Content")
+        assertThat((read(history).run() as JobOutcome.Skipped).reason).contains("Message Content")
         assertThat(places.held).isEmpty()
         assertThat(queued).isEmpty()
     }
@@ -231,8 +255,8 @@ class BackfillSeenEmojiJobTest {
 
     @Test
     fun `skips without a bot`() {
-        assertThat(job(null).run()).isInstanceOf(JobOutcome.Skipped::class.java)
-        assertThat(job(null).run(DiscordJobs.BackfillSeenEmojiPayload(restart = false))).isInstanceOf(JobOutcome.Skipped::class.java)
+        assertThat(start(null).run()).isInstanceOf(JobOutcome.Skipped::class.java)
+        assertThat(read(null).run()).isInstanceOf(JobOutcome.Skipped::class.java)
         assertThat(queued).isEmpty()
     }
 
@@ -241,7 +265,7 @@ class BackfillSeenEmojiJobTest {
         val gone: ObjectProvider<DiscordHistory> = mock { on { ifAvailable } doReturn null }
         val backfill = SeenEmojiBackfill(gone, places, index, transactions)
 
-        backfill.startPass()
+        assertThat(backfill.startPass()).isZero()
         assertThat(backfill.readSome(1)).isEqualTo(BackfillSlice())
         assertThat(places.held).isEmpty()
     }

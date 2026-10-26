@@ -146,14 +146,20 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Once the event is over it is left alone, as Discord ends it by itself. An event already " +
       "running is listed from a minute on. Safe to re-run: the Discord event is made once.",
   },
-  "discord.backfill-seen-emoji": {
+  "discord.start-seen-emoji-pass": {
     title: "Find emoji used in the Discord server",
     description:
-      "Reads the full history of every channel, thread and forum post the bot can see, and " +
-      "adds every server emoji used there, in a message or as a reaction, to the emoji the " +
-      "editor suggests. Runs in slices, each queueing the next, and a stopped run resumes where " +
-      "it was. Leave restart on: it reads every channel again from its newest message, which " +
-      "the slices the job queues itself turn off. Safe to re-run: a message counts once.",
+      "Starts a pass over the full history of every channel, thread and forum post the bot can " +
+      "see: marks each one to be read again from its newest message, then queues the first " +
+      "read. The reads add every server emoji used there, in a message or as a reaction, to the " +
+      "emoji the editor suggests. Safe to re-run: a message counts once.",
+  },
+  "discord.read-seen-emoji-pass": {
+    title: "Read the next part of the emoji pass",
+    description:
+      "Reads the next 20 pages of message history in the pass that finding emoji used in the " +
+      "Discord server started, records the emoji in them, and queues the next part while " +
+      "channels are left. Queued by the pass itself; a stopped read resumes where it was.",
   },
 
   "calendar.sync-event": {

@@ -1,7 +1,5 @@
 import {type Completion, CompletionContext, type CompletionResult, startCompletion} from "@codemirror/autocomplete"
 import {markdown, markdownLanguage} from "@codemirror/lang-markdown"
-import {ensureSyntaxTree} from "@codemirror/language"
-import {EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {discordDialect} from "@/components/island/markdownDialect"
@@ -76,8 +74,6 @@ export const emojiOnClose = EditorView.inputHandler.of((view, from, to, text) =>
 })
 
 const SHORTCODE = /:([a-z0-9_+-]+):/gi
-// A description is at most 4096 characters, which parses in well under this.
-const PARSE_MS = 500
 const dialect = markdown({base: markdownLanguage, addKeymap: false, extensions: [discordDialect]})
 
 /** Where a custom emoji starts that [at] would cut in half, or [at] when it cuts none. */
@@ -94,8 +90,7 @@ export const outsideEmoji = (text: string, at: number): number => {
  */
 export const shortcodesWritten = (text: string): string => {
   const kept: [number, number][] = []
-  const tree = ensureSyntaxTree(EditorState.create({doc: text, extensions: dialect}), text.length, PARSE_MS)
-  tree?.iterate({
+  dialect.language.parser.parse(text).iterate({
     enter: (node) => {
       if (!LITERAL.has(node.name)) return true
       kept.push([node.from, node.to])

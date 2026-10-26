@@ -4,7 +4,7 @@ import {autocompletion, CompletionContext, completionStatus, currentCompletions,
 import {EditorView} from "@codemirror/view"
 import {emojiMatching, emojiNamed, loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {emojiCompletion, emojiOnArrival, emojiOption, shortcodesWritten} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption, outsideEmoji, shortcodesWritten} from "@/components/island/markdownEmoji"
 import {listServerEmoji} from "@/domains/discord"
 import {DiscordEmojiKind, type DiscordEmojiResponse} from "@/services/api"
 
@@ -221,7 +221,24 @@ describe("a paste", () => {
       .toBe("`:fire:` and\n```\n:fire:\n```\n<https://x.nl/:fire:/> <:fire:857733730491826187> <t:1700000000:R>")
   })
 
+  it("writes a name between code and what is already written", () => {
+    expect(shortcodesWritten("`x` :fire: <t:1700000000:R>")).toBe("`x` <a:fire:857733730491826187> <t:1700000000:R>")
+  })
+
   it("keeps every name where it lands in code", () => {
     expect(paste("```\n", ":fire:")).toBe("```\n:fire:")
+  })
+})
+
+describe("a cut", () => {
+  const written = "a<:fire:857733730491826187>b"
+
+  it("moves back to before a custom emoji it would split", () => {
+    expect(outsideEmoji(written, 5)).toBe(1)
+  })
+
+  it("stays where it falls before or after one", () => {
+    expect(outsideEmoji(written, 1)).toBe(1)
+    expect(outsideEmoji(written, written.length)).toBe(written.length)
   })
 })

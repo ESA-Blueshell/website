@@ -1,12 +1,14 @@
-package net.blueshell.api.platform.migration
+package net.blueshell.api.shared.text
 
 /**
  * Emoji shortcodes in a description, found where the site's renderer expanded them: outside code,
  * addresses and anything written in angle brackets, which holds mentions, server emoji and
  * timestamps. A shortcode is expanded only where [names] knows it, so `12:30:45` stays as it is.
  */
-internal object Shortcodes {
-    private val SHORTCODE = Regex("""^:([a-z0-9_+-]+):""")
+object Shortcodes {
+    // Any case: the site's names are lower case, a server emoji's name need not be.
+    private val SHORTCODE = Regex("""^:([A-Za-z0-9_+-]+):""")
+    private val WORDY = Regex("""[A-Za-z]""")
     private val ADDRESS = Regex("""^(https?://|www\.)\S+""")
     private val BRACKETED = Regex("""^<[^\s<>][^<>\n]*>""")
     private val FENCE = Regex("""^ {0,3}(`{3,}|~{3,})""")
@@ -26,9 +28,18 @@ internal object Shortcodes {
     fun rewrite(
         text: String,
         names: Map<String, String>,
-    ): Pair<String, Int> {
+    ): Pair<String, Int> = resolve(text, names::get).let { it.text to it.resolved.size }
+
+    /**
+     * [text] with every shortcode [emojiOf] answers written as that emoji, the names it answered,
+     * and the names it did not that read as names rather than numbers, as `12:30:45` holds `30`.
+     */
+    fun resolve(
+        text: String,
+        emojiOf: (String) -> String?,
+    ): ShortcodesResolved {
         val out = StringBuilder(text.length)
-        var count = 0
+        val found = Found(emojiOf)
         var fence: String? = null
         for (line in text.split('\n')) {
             val opened = FENCE.find(line)?.groupValues?.get(1)
@@ -41,20 +52,26 @@ internal object Shortcodes {
                     fence = opened
                     out.append(line)
                 }
-                else -> count += rewriteLine(line, names, out)
+                else -> rewriteLine(line, found, out)
             }
             out.append('\n')
         }
         out.setLength(out.length - 1)
-        return out.toString() to count
+        return ShortcodesResolved(out.toString(), found.resolved, found.left)
+    }
+
+    private class Found(
+        val emojiOf: (String) -> String?,
+    ) {
+        val resolved = mutableListOf<String>()
+        val left = mutableListOf<String>()
     }
 
     private fun rewriteLine(
         line: String,
-        names: Map<String, String>,
+        found: Found,
         out: StringBuilder,
-    ): Int {
-        var count = 0
+    ) {
         var at = 0
         while (at < line.length) {
             val rest = line.substring(at)
@@ -64,17 +81,19 @@ internal object Shortcodes {
                 at += literal
                 continue
             }
-            val emoji = SHORTCODE.find(rest)?.let { found -> names[found.groupValues[1]]?.let { found.value.length to it } }
+            val shortcode = SHORTCODE.find(rest)
+            val name = shortcode?.groupValues?.get(1)
+            val emoji = name?.let(found.emojiOf)
             if (emoji != null) {
-                out.append(emoji.second)
-                at += emoji.first
-                count++
+                out.append(emoji)
+                at += shortcode.value.length
+                found.resolved += name
             } else {
+                if (name != null && WORDY.containsMatchIn(name)) found.left += name
                 out.append(line[at])
                 at++
             }
         }
-        return count
     }
 
     // How much of [rest] the renderer took as it stands: an escaped character, a code span, an
@@ -100,3 +119,10 @@ internal object Shortcodes {
         }
     }
 }
+
+/** A text with its shortcodes written as emoji, the names that were, and the names no emoji answered. */
+data class ShortcodesResolved(
+    val text: String,
+    val resolved: List<String>,
+    val left: List<String>,
+)

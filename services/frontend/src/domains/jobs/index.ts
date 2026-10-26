@@ -25,6 +25,7 @@ export {
   relatedEntityLabel,
   reportChannels,
   reportLabel,
+  reportNames,
   relatedEntityTypeLabel,
   retryLabel,
   rowStatusClass,

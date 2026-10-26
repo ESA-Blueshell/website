@@ -162,6 +162,17 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "channels are left. Queued by the pass itself; a stopped read resumes where it was.",
   },
 
+  "event.resolve-emoji-shortcodes": {
+    title: "Write an event's emoji shortcodes as emoji",
+    thing: "the event description",
+    description:
+      "Rewrites the event's description so each :name: shortcode that names an emoji becomes " +
+      "that emoji: the server's own custom emoji first, then the bot's, then the standard ones. " +
+      "Code, links and anything already written stay as they are, and names no emoji has stay " +
+      "as text. An edited description refreshes the event's Discord posts and calendar entry. " +
+      "Safe to re-run: a second run finds nothing to write.",
+  },
+
   "calendar.sync-event": {
     title: "Sync calendar event",
     description:

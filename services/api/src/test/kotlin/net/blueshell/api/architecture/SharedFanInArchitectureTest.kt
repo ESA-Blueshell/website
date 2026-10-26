@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
  * A package reached by one module is that module's code filed in the wrong place, and one
  * reached by none is dead. Pinned at the fan-in measured when the rule landed rather than at the
  * ideal: a package below the threshold is named in [BELOW_THRESHOLD] with its reason, so the
- * rule still bites for every other package and every one added later. Thirteen of the fourteen
+ * rule still bites for every other package and every one added later. Thirteen of the fifteen
  * packages under `shared` clear it, from `shared/dto/bulk` at three consumers to `shared/enums`
  * at 22.
  */
@@ -33,6 +33,10 @@ class SharedFanInArchitectureTest : ArchJUnitTestBase(ArchitecturePackages.ROOT)
                 // is application-root wiring under ADR-003 rule 6 rather than a module,
                 // so `survey` is the only module that reaches it.
                 "shared/hibernate" to 1,
+                // The emoji shortcode scanner. Its other reader, ShortcodesBecomeCharacters,
+                // is a Liquibase change under platform rather than a module, so `sync` is
+                // the only module that reaches it.
+                "shared/text" to 1,
             )
     }
 

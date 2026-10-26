@@ -1,4 +1,4 @@
-package net.blueshell.api.platform.migration
+package net.blueshell.api.shared.text
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -53,5 +53,15 @@ class ShortcodesTest {
             .isEqualTo("[😄 here](https://x/:smile:) `:tada:` 🎉" to 2)
         assertThat(rewritten("```\n:smile:\n```\n:smile:")).isEqualTo("```\n:smile:\n```\n😄" to 1)
         assertThat(rewritten("a < b :smile: > c, and `unclosed :smile:")).isEqualTo("a < b 😄 > c, and `unclosed 😄" to 2)
+    }
+
+    @Test
+    fun `resolves names in any case through a lookup, and says which it left that read as names`() {
+        val custom = mapOf("datboythinK" to "<:datboythinK:1>")
+        val resolved = Shortcodes.resolve("Think :datboythinK: at 12:30:45, :nope: and `:datboythinK:`", custom::get)
+
+        assertThat(resolved).isEqualTo(
+            ShortcodesResolved("Think <:datboythinK:1> at 12:30:45, :nope: and `:datboythinK:`", listOf("datboythinK"), listOf("nope")),
+        )
     }
 }

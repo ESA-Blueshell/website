@@ -84,6 +84,8 @@ const COUNTED: Record<JobTally, (count: string, one: boolean) => string> = {
   [JobTally.MESSAGES_READ]: (count, one) => `${count} ${one ? "message" : "messages"}`,
   [JobTally.EMOJI_SEEN]: (count) => `${count} emoji found`,
   [JobTally.PLACES_LEFT]: (count, one) => `${count} ${one ? "channel" : "channels"} left`,
+  [JobTally.SHORTCODES_RESOLVED]: (count, one) => `Wrote ${count} ${one ? "shortcode" : "shortcodes"} as emoji`,
+  [JobTally.SHORTCODES_LEFT]: (count, one) => `${count} ${one ? "shortcode" : "shortcodes"} left as text`,
 }
 
 /** One count a run reported, in words. */
@@ -94,6 +96,13 @@ export function countLabel(counted: JobCount): string {
 /** What a successful run reported about its work, in one line; empty where it reported nothing. */
 export function reportLabel(job: Job): string {
   return (job.report ?? []).map(countLabel).join(" · ")
+}
+
+/** What a run's report names other than channels, as `:name:` shortcodes are written, with the count that names them. */
+export function reportNames(job: Job): {label: string, names: string}[] {
+  return (job.report ?? [])
+    .filter(counted => counted.names.length > 0)
+    .map(counted => ({label: countLabel(counted), names: counted.names.map(name => `:${name}:`).join(" ")}))
 }
 
 /** The Discord channels a run's report names, by id, each once. */

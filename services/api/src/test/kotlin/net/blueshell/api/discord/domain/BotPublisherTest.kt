@@ -2,6 +2,7 @@ package net.blueshell.api.discord.domain
 
 import net.blueshell.api.platform.config.SettableClock
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.sync.api.CustomEmoji
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordLink
@@ -439,6 +440,28 @@ class BotPublisherTest {
         discord
             .expect(requestTo("https://discord.test/applications/b1/emojis"))
             .andRespond(application?.let { withSuccess(it, MediaType.APPLICATION_JSON) } ?: withServerError())
+    }
+
+    @Test
+    fun `names the server's custom emoji before the application's, as a description writes them`() {
+        answeringEmoji()
+
+        assertThat(publisher.customEmoji()).containsExactly(
+            CustomEmoji("ShellyStar", "<a:ShellyStar:657>"),
+            CustomEmoji("locked", "<:locked:5>"),
+            CustomEmoji("faded", "<:faded:7>"),
+            CustomEmoji("shellywave", "<:shellywave:42>"),
+        )
+        discord.verify()
+    }
+
+    @Test
+    fun `names no custom emoji while the server's cannot be read, so the job tries again`() {
+        answeringEmoji(server = null)
+
+        assertThatThrownBy { publisher.customEmoji() }
+            .isInstanceOf(ExplainedJobFailure::class.java)
+            .hasMessageContaining("shortcodes wait")
     }
 
     @Test

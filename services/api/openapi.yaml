@@ -3489,11 +3489,16 @@ components:
         count:
           format: int64
           type: integer
+        names:
+          items:
+            type: string
+          type: array
         tally:
           $ref: '#/components/schemas/JobTally'
       required:
       - channels
       - count
+      - names
       - tally
       type: object
     JobEffect:
@@ -3793,6 +3798,8 @@ components:
       - MESSAGES_READ
       - EMOJI_SEEN
       - PLACES_LEFT
+      - SHORTCODES_RESOLVED
+      - SHORTCODES_LEFT
       type: string
     JobTrigger:
       enum:

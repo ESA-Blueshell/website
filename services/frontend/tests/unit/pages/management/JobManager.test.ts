@@ -219,10 +219,11 @@ describe("JobManager page", () => {
         id: 8,
         jobType: "discord.read-seen-emoji-pass",
         report: [
-          {tally: "PLACES_READ", count: 2, channels: ["1001", "1002"]},
-          {tally: "MESSAGES_READ", count: 1902, channels: []},
-          {tally: "EMOJI_SEEN", count: 1, channels: []},
-          {tally: "PLACES_LEFT", count: 1, channels: []},
+          {tally: "PLACES_READ", count: 2, channels: ["1001", "1002"], names: []},
+          {tally: "MESSAGES_READ", count: 1902, channels: [], names: []},
+          {tally: "EMOJI_SEEN", count: 1, channels: [], names: []},
+          {tally: "PLACES_LEFT", count: 1, channels: [], names: []},
+          {tally: "SHORTCODES_LEFT", count: 1, channels: [], names: ["nope"]},
         ],
       }),
       job({id: 10, report: []}),
@@ -231,13 +232,14 @@ describe("JobManager page", () => {
     const wrapper = mountJobManager()
     await settle()
 
-    const said = "Read 2 channels · 1,902 messages · 1 emoji found · 1 channel left"
+    const said = "Read 2 channels · 1,902 messages · 1 emoji found · 1 channel left · 1 shortcode left as text"
     expect(wrapper.find('[data-testid="job-row-report-8"]').text()).toBe(said)
     expect(wrapper.find('[data-testid="job-row-report-10"]').exists()).toBe(false)
     await wrapper.find('[data-testid="job-row-8"]').trigger("click")
     await settle()
     expect(wrapper.find('[data-testid="job-report-8"]').text()).toBe(said)
     expect(wrapper.find('[data-testid="job-report-channels"]').text()).toBe("#general, #memes")
+    expect(wrapper.find('[data-testid="job-report-8"]').element.parentElement?.textContent).toContain("1 shortcode left as text: :nope:")
     expect(mockNameMentions).toHaveBeenCalledWith({users: [], roles: [], channels: ["1001", "1002"]})
   })
 

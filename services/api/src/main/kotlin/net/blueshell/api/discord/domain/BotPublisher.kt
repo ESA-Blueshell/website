@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.WhenCredentialsSet
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.sync.api.CustomEmoji
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordImage
 import net.blueshell.api.sync.api.DiscordPost
@@ -309,6 +310,13 @@ class BotPublisher(
         return listing.copy(description = withoutEmoji(listing.description, keeping = usable))
     }
 
+    override fun customEmoji(): List<CustomEmoji> {
+        val uploaded =
+            emoji.uploaded(ASKED_AGAIN_AFTER)
+                ?: throw ExplainedJobFailure("The server's emoji could not be read from Discord, so the shortcodes wait until they can.")
+        return uploaded.sortedBy { it.kind != DiscordEmojiKind.SERVER }.map { CustomEmoji(it.name, writtenOf(it)) }
+    }
+
     /*
      * Every application emoji passes: the bot may use those anywhere. An emoji the kept lists lack
      * may have been uploaded since, so they are asked again once a minute old. Without the server's
@@ -540,3 +548,5 @@ private fun gone(call: () -> Unit) {
         if (refused.statusCode.value() != HttpStatus.NOT_FOUND.value()) throw refused
     }
 }
+
+private fun writtenOf(emoji: DiscordEmoji) = "<${if (emoji.animated) "a" else ""}:${emoji.name}:${emoji.id}>"

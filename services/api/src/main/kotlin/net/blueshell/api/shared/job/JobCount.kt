@@ -9,12 +9,18 @@ enum class JobTally {
     MESSAGES_READ,
     EMOJI_SEEN,
     PLACES_LEFT,
+    SHORTCODES_RESOLVED,
+    SHORTCODES_LEFT,
 }
 
-/** One count in what a run reports about its work; [channels] are the Discord channels it names, by id. */
+/**
+ * One count in what a run reports about its work: [channels] are the Discord channels it names,
+ * by id, and [names] the other things it names, as they are written.
+ */
 @Schema(name = "JobCount")
 data class JobCount(
     val tally: JobTally,
     val count: Long,
     val channels: List<String> = emptyList(),
+    val names: List<String> = emptyList(),
 )

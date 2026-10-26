@@ -60,8 +60,9 @@ abstract class AbstractJsonJobHandler<T : Any>(
         tally: JobTally,
         count: Long,
         channels: List<String> = emptyList(),
+        names: List<String> = emptyList(),
     ) {
-        run.get()?.counts?.add(JobCount(tally, count, channels))
+        run.get()?.counts?.add(JobCount(tally, count, channels, names))
     }
 
     @Transactional

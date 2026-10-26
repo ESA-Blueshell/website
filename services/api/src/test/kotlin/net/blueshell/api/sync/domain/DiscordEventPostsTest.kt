@@ -4,6 +4,7 @@ import net.blueshell.api.event.api.EventBannerImage
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.sync.api.CustomEmoji
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
@@ -97,6 +98,8 @@ class DiscordEventPostsTest {
 
         /** What Discord would not take in a Discord event's description at the moment. */
         var leftOut: String? = null
+
+        override fun customEmoji() = emptyList<CustomEmoji>()
 
         override fun listedAs(listing: DiscordEventListing) =
             leftOut?.let { listing.copy(description = listing.description.replace(it, "")) } ?: listing

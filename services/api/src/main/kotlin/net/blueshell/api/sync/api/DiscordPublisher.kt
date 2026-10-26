@@ -45,6 +45,12 @@ data class DiscordEventListing(
     val cover: String?,
 )
 
+/** A custom emoji a description may name: [written] is how it is written, `<:name:id>` or `<a:name:id>`. */
+data class CustomEmoji(
+    val name: String,
+    val written: String,
+)
+
 /**
  * What the bot can put in the association's Discord server, in this module's terms (ADR-019): the
  * discord module, which holds the bot, implements it. A message is named by the reference [post]
@@ -103,6 +109,12 @@ interface DiscordPublisher {
      * without the custom emoji the bot may not use at the moment.
      */
     fun listedAs(listing: DiscordEventListing): DiscordEventListing
+
+    /**
+     * The server's own custom emoji, then the application's, as just read: a shortcode names the
+     * first of them with its name. Throws where the server's own cannot be read.
+     */
+    fun customEmoji(): List<CustomEmoji>
 
     /** Answers the Discord event's ID. */
     fun createDiscordEvent(listing: DiscordEventListing): String

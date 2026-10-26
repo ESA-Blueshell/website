@@ -1,0 +1,76 @@
+package net.blueshell.api.sync.domain
+
+import net.blueshell.api.event.api.EventService
+import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.shared.job.JobDefinition
+import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobTally
+import net.blueshell.api.shared.text.Shortcodes
+import net.blueshell.api.shared.text.ShortcodesResolved
+import net.blueshell.api.sync.api.DiscordPublisher
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
+import tools.jackson.databind.ObjectMapper
+
+object EventTextJobs {
+    /** Writes the shortcodes left in one event's description as the emoji they name. */
+    object ResolveEmojiShortcodes : JobDefinition<EventShortcodesPayload> {
+        override val type: String = "event.resolve-emoji-shortcodes"
+        override val payloadType: Class<EventShortcodesPayload> = EventShortcodesPayload::class.java
+    }
+
+    data class EventShortcodesPayload(
+        val eventId: Long,
+    )
+}
+
+/**
+ * The `:name:` shortcodes in an event's description, written as the emoji they name: the server's
+ * own, then the application's, then the standard ones, a name matching in any case once no emoji
+ * has it in exactly that case.
+ */
+@Service
+class EventShortcodes(
+    private val events: EventService,
+    private val publisher: ObjectProvider<DiscordPublisher>,
+) {
+    private val standard by lazy { Shortcodes.names() }
+
+    /** What each name stands for, as the server has its emoji now; null where there is no bot to ask. */
+    fun lookup(): ((String) -> String?)? {
+        val custom = publisher.ifAvailable?.customEmoji() ?: return null
+        // Reversed, so the first emoji with a name is the one a map keeps.
+        val exact = custom.asReversed().associate { it.name to it.written }
+        val anyCase = custom.asReversed().associate { it.name.lowercase() to it.written }
+        return { name -> exact[name] ?: anyCase[name.lowercase()] ?: standard[name.lowercase()] }
+    }
+
+    /** Rewrites the event's description where a shortcode names an emoji; null where the event is gone. */
+    fun resolve(
+        eventId: Long,
+        emojiOf: (String) -> String?,
+    ): ShortcodesResolved? {
+        val event = events.findByIdIncludingDeletedOrNull(eventId)?.takeUnless { it.isSoftDeleted } ?: return null
+        val resolved = Shortcodes.resolve(event.description.orEmpty(), emojiOf)
+        if (resolved.resolved.isNotEmpty()) {
+            event.description = resolved.text
+            events.update(event)
+        }
+        return resolved
+    }
+}
+
+@Component
+class ResolveEmojiShortcodesJob(
+    objectMapper: ObjectMapper,
+    private val shortcodes: EventShortcodes,
+) : AbstractJsonJobHandler<EventTextJobs.EventShortcodesPayload>(objectMapper, EventTextJobs.ResolveEmojiShortcodes) {
+    override fun handlePayload(payload: EventTextJobs.EventShortcodesPayload) {
+        val emojiOf = shortcodes.lookup() ?: return skip("The Discord bot is not set up")
+        val resolved = shortcodes.resolve(payload.eventId, emojiOf) ?: return skip("The event is gone")
+        counted(JobTally.SHORTCODES_RESOLVED, resolved.resolved.size.toLong(), names = resolved.resolved.distinct())
+        counted(JobTally.SHORTCODES_LEFT, resolved.left.size.toLong(), names = resolved.left.distinct())
+        did(if (resolved.resolved.isEmpty()) JobEffect.UNCHANGED else JobEffect.EDITED, null)
+    }
+}

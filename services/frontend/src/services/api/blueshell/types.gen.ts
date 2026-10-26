@@ -1818,6 +1818,7 @@ export type InboundReconcileRow = {
 export type JobCount = {
     channels: Array<string>;
     count: number;
+    names: Array<string>;
     tally: JobTally;
 };
 
@@ -1930,7 +1931,9 @@ export enum JobTally {
     PLACES_READ = 'PLACES_READ',
     MESSAGES_READ = 'MESSAGES_READ',
     EMOJI_SEEN = 'EMOJI_SEEN',
-    PLACES_LEFT = 'PLACES_LEFT'
+    PLACES_LEFT = 'PLACES_LEFT',
+    SHORTCODES_RESOLVED = 'SHORTCODES_RESOLVED',
+    SHORTCODES_LEFT = 'SHORTCODES_LEFT'
 }
 
 export enum JobTrigger {

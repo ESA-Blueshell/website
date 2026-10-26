@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.26.0](https://github.com/ESA-Blueshell/website/compare/v1.25.0...v1.26.0) (2026-10-26)
+
+
+### Features
+
+* **discord:** seen emoji backfill job over the server's history ([#2562](https://github.com/ESA-Blueshell/website/issues/2562)) ([#2571](https://github.com/ESA-Blueshell/website/issues/2571)) ([acb81b8](https://github.com/ESA-Blueshell/website/commit/acb81b8f1c6146901019601db9d854964f3df695))
+* **discord:** seen emoji, indexing the emoji used in the Discord server ([#2561](https://github.com/ESA-Blueshell/website/issues/2561)) ([#2570](https://github.com/ESA-Blueshell/website/issues/2570)) ([b52930c](https://github.com/ESA-Blueshell/website/commit/b52930cee91079316203e6864d13c637d4d9b8d9))
+* **discord:** the editor suggests the bot's application emoji ([#2560](https://github.com/ESA-Blueshell/website/issues/2560)) ([#2569](https://github.com/ESA-Blueshell/website/issues/2569)) ([aee984c](https://github.com/ESA-Blueshell/website/commit/aee984c8c0a9141622e1cea29fe74ffba55f25e5))
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.github.classgraph:classgraph to v4.8.199 ([#2587](https://github.com/ESA-Blueshell/website/issues/2587)) ([0f17d1a](https://github.com/ESA-Blueshell/website/commit/0f17d1ae506b6dbf9d6ba51c5b150ea763074173))
+* **deps:** update dependency org.commonmark:commonmark to v0.30.1 ([#2588](https://github.com/ESA-Blueshell/website/issues/2588)) ([bba6502](https://github.com/ESA-Blueshell/website/commit/bba65027935e0e891e2b769dc1d21fecd1e0fa4a))
+* **deps:** update dependency org.commonmark:commonmark-ext-gfm-strikethrough to v0.30.1 ([#2589](https://github.com/ESA-Blueshell/website/issues/2589)) ([e6c0fa3](https://github.com/ESA-Blueshell/website/commit/e6c0fa391b7fb21cec09fc314b681255f605561b))
+* **deps:** update jackson monorepo ([#2591](https://github.com/ESA-Blueshell/website/issues/2591)) ([3212792](https://github.com/ESA-Blueshell/website/commit/321279243bf715b65dd1e83ed0cd5c9b8eca7a79))
+* **discord:** Discord answers with new enum values keep reading ([#2559](https://github.com/ESA-Blueshell/website/issues/2559)) ([#2572](https://github.com/ESA-Blueshell/website/issues/2572)) ([99dbcf2](https://github.com/ESA-Blueshell/website/commit/99dbcf2de7bbd7dff40b0339c0aeb442bb9a57e5))
+* **discord:** Discord events keep every emoji they may hold, and get them back ([#2573](https://github.com/ESA-Blueshell/website/issues/2573)) ([#2578](https://github.com/ESA-Blueshell/website/issues/2578)) ([c6e6ba9](https://github.com/ESA-Blueshell/website/commit/c6e6ba94eebe473a0442756ef6ab0e0485638e1b))
+* **discord:** Discord events leave out emoji the bot may not use ([#2556](https://github.com/ESA-Blueshell/website/issues/2556)) ([#2568](https://github.com/ESA-Blueshell/website/issues/2568)) ([def7b5c](https://github.com/ESA-Blueshell/website/commit/def7b5cad66bc138f19791a25be71a6a7a3b3ff3))
+* **discord:** recording seen emoji never holds up the Discord gateway ([#2575](https://github.com/ESA-Blueshell/website/issues/2575)) ([#2580](https://github.com/ESA-Blueshell/website/issues/2580)) ([1157afc](https://github.com/ESA-Blueshell/website/commit/1157afc51d5698def2f63b4f93eee40c64719c68))
+* **discord:** server emoji show in the editor's suggestions again ([#2558](https://github.com/ESA-Blueshell/website/issues/2558)) ([#2566](https://github.com/ESA-Blueshell/website/issues/2566)) ([1dea4bc](https://github.com/ESA-Blueshell/website/commit/1dea4bcd7858d30ba439b987c84e7b3190683fd8))
+* **discord:** the seen emoji backfill reads every channel and needs Message Content ([#2574](https://github.com/ESA-Blueshell/website/issues/2574)) ([#2579](https://github.com/ESA-Blueshell/website/issues/2579)) ([5b497b9](https://github.com/ESA-Blueshell/website/commit/5b497b9f1fd9890775c14932907c5cb62f0afff1))
+* **frontend:** near the cap, a picked emoji or mention goes in whole or not at all ([#2576](https://github.com/ESA-Blueshell/website/issues/2576)) ([#2581](https://github.com/ESA-Blueshell/website/issues/2581)) ([a724ca4](https://github.com/ESA-Blueshell/website/commit/a724ca404579749cf3048ad1f2f6d6476ffd189b))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2564](https://github.com/ESA-Blueshell/website/issues/2564)) ([02f6962](https://github.com/ESA-Blueshell/website/commit/02f69629c50e30eb1804d881e8ddecc08b905074))
+
 ## [1.25.0](https://github.com/ESA-Blueshell/website/compare/v1.24.1...v1.25.0) (2026-10-23)
 
 

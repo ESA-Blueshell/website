@@ -192,8 +192,8 @@ class SignupWriteUseCasesTest {
             assertThat(user.email).isEqualTo("corrected@example.com")
             verify(users).update(user)
             verify(jobs).runAsync(
-                AuthJobs.Recovery,
-                AuthJobs.RecoveryPayload(APPLICANT_ID, "new.token", TokenPurpose.USER_ACTIVATION),
+                AuthJobs.AccountActivation,
+                AuthJobs.RecoveryPayload(APPLICANT_ID, "new.token"),
                 JobTrigger.SITE_ACTION,
             )
         }

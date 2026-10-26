@@ -41,7 +41,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         listener.onUserCreated(event)
 
         // Then: User activation email job is scheduled
-        val jobs = findJobsByType(AuthJobs.Recovery.type)
+        val jobs = findJobsByType(AuthJobs.AccountActivation.type)
         assertThat(jobs)
             .describedAs("Should schedule one recovery email job")
             .hasSize(1)
@@ -50,7 +50,6 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
             .contains("\"userId\":${user.id}")
-            .contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
     }
 
     @Test
@@ -63,7 +62,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         listener.onUserCreated(event)
 
         // Then: Member activation email job is scheduled
-        val jobs = findJobsByType(AuthJobs.Recovery.type)
+        val jobs = findJobsByType(AuthJobs.MemberActivation.type)
         assertThat(jobs)
             .describedAs("Should schedule one recovery email job")
             .hasSize(1)
@@ -72,7 +71,6 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
         assertThat(jobPayload)
             .describedAs("Job payload should contain userId")
             .contains("\"userId\":${user.id}")
-            .contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
     }
 
     // The account is already committed when this runs, so a throw here answered the
@@ -106,7 +104,7 @@ class RecoveryEventListenerTest : ServiceTestSupport() {
 
         failing.onUserCreated(UserCreated(user.id!!, createdByBoard = false))
 
-        assertThat(findJobsByType(AuthJobs.Recovery.type)).isEmpty()
+        assertThat(AuthJobs.recoveryEmails.flatMap { findJobsByType(it.type) }).isEmpty()
     }
 
     private fun createAndSaveUser(

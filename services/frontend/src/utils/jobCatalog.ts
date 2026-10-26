@@ -24,11 +24,35 @@ export type JobCatalogEntry = {
 }
 
 export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
-  "email.recovery": {
-    title: "Send recovery email",
+  "email.account-activation": {
+    title: "Send account activation email",
     description:
-      "Emails an account-recovery link to one user, carrying the supplied token. " +
-      "Used by both the forgotten-password and member-activation flows.",
+      "Emails the link that activates a new account to the member, carrying the supplied token. " +
+      "Queued when somebody signs up or asks for the link again.",
+  },
+  "email.member-activation": {
+    title: "Send member activation email",
+    description:
+      "Emails the link that activates an account the board made for a member, carrying the " +
+      "supplied token. Queued when the board adds a member or sends the link again.",
+  },
+  "email.password-reset": {
+    title: "Send password reset email",
+    description:
+      "Emails the link that sets a new password to the member who asked for it, carrying the " +
+      "supplied token.",
+  },
+  "email.email-change": {
+    title: "Send email change confirmation",
+    description:
+      "Emails the link that confirms a new address to that address, carrying the supplied " +
+      "token. The address changes once the link is opened.",
+  },
+  "email.two-factor-reenrolment": {
+    title: "Send two-factor re-enrolment email",
+    description:
+      "Emails the link that sets up two-factor sign-in again to the member, carrying the " +
+      "supplied token, and names who to contact if they did not expect it.",
   },
   "email.event-signup": {
     title: "Send event sign-up email",

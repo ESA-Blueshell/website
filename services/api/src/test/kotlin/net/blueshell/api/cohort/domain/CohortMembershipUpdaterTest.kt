@@ -46,13 +46,13 @@ class CohortMembershipUpdaterTest {
 
         verify {
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(7L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(7L, 99L),
                 JobTrigger.MEMBERSHIP_CHANGED,
             )
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(7L, 99L, SyncCohortMembershipIntent.REMOVE),
+                CohortJobs.RemoveMember,
+                CohortJobs.CohortMemberPayload(7L, 99L),
                 JobTrigger.MEMBERSHIP_CHANGED,
             )
         }

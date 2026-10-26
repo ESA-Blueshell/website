@@ -128,8 +128,8 @@ class CohortRemediationServiceTest {
         verify { members.delete(staleStranger) }
         verify {
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(2L, 99L),
                 JobTrigger.ANOTHER_JOB,
             )
             jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L), JobTrigger.ANOTHER_JOB)
@@ -236,20 +236,20 @@ class CohortRemediationServiceTest {
         assertThat(result.enqueuedAdds).isEqualTo(2)
         verify {
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(1L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(1L, 99L),
                 JobTrigger.SITE_ACTION,
             )
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(2L, 99L),
                 JobTrigger.SITE_ACTION,
             )
         }
         verify(exactly = 0) {
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(3L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(3L, 99L),
                 JobTrigger.SITE_ACTION,
             )
         }

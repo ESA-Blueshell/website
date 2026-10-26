@@ -116,7 +116,7 @@ dependencies {
     // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.4")
 
     // Generated clients, published from ESA-Blueshell/{brevo,discord}-client.
     // They were generated in-repo under libs/clients until their specs, their

@@ -6,10 +6,10 @@ import io.mockk.verify
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.NonRetryableJobException
-import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -21,13 +21,15 @@ import tools.jackson.databind.json.JsonMapper
  * [NonRetryableJobException] and be marked DEAD on the first attempt rather than
  * retried.
  */
-class RecoveryEmailJobTest {
+class RecoveryEmailHandlerTest {
     private val objectMapper = JsonMapper()
     private val users: UserService = mockk()
     private val emails: EmailSenderService = mockk(relaxed = true)
-    private val job =
-        RecoveryEmailJob(
+
+    private fun job(email: AuthJobs.RecoveryEmail) =
+        RecoveryEmailHandler(
             objectMapper,
+            email,
             users,
             emails,
             "http://localhost:3000",
@@ -37,8 +39,8 @@ class RecoveryEmailJobTest {
     private fun run(
         userId: Long,
         token: String = "token",
-        purpose: TokenPurpose = TokenPurpose.PASSWORD_RESET,
-    ) = job.runJob(objectMapper.writeValueAsString(AuthJobs.RecoveryPayload(userId, token, purpose)))
+        email: AuthJobs.RecoveryEmail = AuthJobs.PasswordReset,
+    ) = job(email).runJob(objectMapper.writeValueAsString(AuthJobs.RecoveryPayload(userId, token)))
 
     @Test
     fun `a missing user is permanent, not retryable`() {
@@ -62,7 +64,7 @@ class RecoveryEmailJobTest {
         every { users.findById(7L) } returns
             User(username = "alice", email = "alice@example.com", password = "h", initials = "A", firstName = "Alice", lastName = "Doe")
 
-        run(7L, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT)
+        run(7L, "sel.ver", AuthJobs.TwoFactorReenrolment)
 
         verify {
             emails.send(
@@ -74,11 +76,34 @@ class RecoveryEmailJobTest {
     }
 
     @Test
-    fun `a signup continuation token is never emailed`() {
-        every { users.findById(7L) } returns Entities.user()
-
-        assertThatThrownBy { run(7L, "selector.verifier", TokenPurpose.SIGNUP_CONTINUATION) }
+    fun `a purpose that is never mailed has no email`() {
+        assertThatThrownBy { AuthJobs.recoveryEmailFor(TokenPurpose.SIGNUP_CONTINUATION) }
             .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessageContaining("must never be emailed")
+            .hasMessageContaining("never emailed")
+        assertThatThrownBy { AuthJobs.recoveryEmailFor(TokenPurpose.ACCOUNT_LOCK) }.isInstanceOf(IllegalArgumentException::class.java)
+    }
+
+    @Test
+    fun `every mailed purpose has its own email job`() {
+        val mailed = TokenPurpose.entries.filter { it.isMailable }
+
+        assertThat(mailed.map { AuthJobs.recoveryEmailFor(it).purpose }).isEqualTo(mailed)
+        assertThat(AuthJobs.recoveryEmails.map { it.type }).doesNotHaveDuplicates()
+    }
+
+    @Test
+    fun `registers one handler for each email a link goes out in`() {
+        val handlers = RecoveryEmailHandlers(objectMapper, users, emails, "http://localhost:3000", mockk())
+
+        val registered =
+            listOf(
+                handlers.accountActivationEmailJob(),
+                handlers.memberActivationEmailJob(),
+                handlers.passwordResetEmailJob(),
+                handlers.emailChangeEmailJob(),
+                handlers.twoFactorReenrolmentEmailJob(),
+            )
+
+        assertThat(registered.map { it.jobType }).containsExactlyElementsOf(AuthJobs.recoveryEmails.map { it.type })
     }
 }

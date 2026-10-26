@@ -48,8 +48,8 @@ open class ActivationEmailDispatcher(
     open fun dispatchFor(event: UserCreated) {
         val dispatch = activationService.issueActivationForNewUser(event.userId, event.createdByBoard == true)
         jobs.runAsyncFromActor(
-            AuthJobs.Recovery,
-            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.recoveryEmailFor(dispatch.type),
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken),
             JobTrigger.SITE_ACTION,
             event,
         )

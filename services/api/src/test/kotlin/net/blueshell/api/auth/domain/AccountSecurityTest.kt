@@ -207,7 +207,7 @@ class AccountSecurityTest {
             verify(tokenFactory).issue(user, TokenPurpose.EMAIL_CHANGE, AccountSecurity.EMAIL_CHANGE_TTL)
             verify(
                 jobs,
-            ).runAsync(AuthJobs.Recovery, AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
+            ).runAsync(AuthJobs.EmailChange, AuthJobs.RecoveryPayload(7, "sel.ver"), JobTrigger.SITE_ACTION)
             recorded(SecurityEventKind.EMAIL_CHANGE_REQUESTED)
         }
 
@@ -331,8 +331,8 @@ class AccountSecurityTest {
             verify(
                 jobs,
             ).runAsync(
-                AuthJobs.Recovery,
-                AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.TWO_FACTOR_REENROLMENT),
+                AuthJobs.TwoFactorReenrolment,
+                AuthJobs.RecoveryPayload(7, "sel.ver"),
                 JobTrigger.SITE_ACTION,
             )
             recorded(SecurityEventKind.TWO_FACTOR_RESET)

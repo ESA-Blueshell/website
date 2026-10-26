@@ -118,8 +118,8 @@ class SignupUseCases(
                 "Expected an activation dispatch for the unconfirmed account ${account.id}"
             }
         jobs.runAsync(
-            AuthJobs.Recovery,
-            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.recoveryEmailFor(dispatch.type),
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken),
             JobTrigger.SITE_ACTION,
         )
     }

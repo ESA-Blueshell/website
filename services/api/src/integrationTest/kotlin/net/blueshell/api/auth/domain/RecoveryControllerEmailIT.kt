@@ -43,7 +43,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.PasswordReset.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -52,7 +52,6 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and reset type")
                 .contains("\"userId\":${user.id}")
-                .contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
         }
 
         @Test
@@ -63,7 +62,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: No jobs scheduled (but attacker doesn't know)
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = AuthJobs.recoveryEmails.flatMap { findJobsByType(it.type) }
             assertThat(jobs)
                 .describedAs("Should not schedule jobs for non-existent users")
                 .isEmpty()
@@ -83,7 +82,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.AccountActivation.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -92,7 +91,6 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and activation reset type")
                 .contains("\"userId\":${user.id}")
-                .contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
         }
 
         @Test
@@ -106,7 +104,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent) // Success response
 
             // Then: No email job scheduled (already enabled)
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = AuthJobs.recoveryEmails.flatMap { findJobsByType(it.type) }
             assertThat(jobs)
                 .describedAs("Should not schedule jobs for already enabled users")
                 .isEmpty()
@@ -132,7 +130,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 ).andExpect(status().isNoContent)
 
             // Then: Email job is scheduled
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.MemberActivation.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -141,7 +139,6 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job should contain user ID and member activation reset type")
                 .contains("\"userId\":${disabledUser.id}")
-                .contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
         }
 
         @Test
@@ -158,7 +155,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 ).andExpect(status().isForbidden)
 
             // Then: No email job scheduled
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = AuthJobs.recoveryEmails.flatMap { findJobsByType(it.type) }
             assertThat(jobs)
                 .describedAs("Should not allow non-board users to trigger member activation")
                 .isEmpty()
@@ -178,7 +175,7 @@ class RecoveryControllerEmailIT : UserTestSupport() {
                 .andExpect(status().isNoContent)
 
             // Then: Email job is scheduled with correct information
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.PasswordReset.type)
             assertThat(jobs)
                 .describedAs("Should schedule recovery email job")
                 .hasSize(1)
@@ -187,7 +184,6 @@ class RecoveryControllerEmailIT : UserTestSupport() {
             assertThat(jobPayload)
                 .describedAs("Job payload should contain user ID")
                 .contains("\"userId\":${user.id}")
-                .contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
                 .contains("\"token\"")
         }
     }

@@ -63,8 +63,8 @@ class RecoveryUseCases(
     private fun enqueueRecoveryEmail(dispatch: RecoveryDispatch?) {
         if (dispatch == null) return
         jobs.runAsync(
-            AuthJobs.Recovery,
-            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken, dispatch.type),
+            AuthJobs.recoveryEmailFor(dispatch.type),
+            AuthJobs.RecoveryPayload(dispatch.userId, dispatch.rawToken),
             JobTrigger.SITE_ACTION,
         )
     }

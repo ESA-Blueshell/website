@@ -1321,7 +1321,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "jobTypes", [
         {type: "contact.sync-all", payloadFields: []},
         {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", kind: "PRIMITIVE", required: true}]},
-        {type: "email.recovery", payloadFields: [
+        {type: "email.password-reset", payloadFields: [
           {name: "userId", type: "Long", kind: "PRIMITIVE", required: true},
           {name: "token", type: "String", kind: "PRIMITIVE", required: false},
         ]},

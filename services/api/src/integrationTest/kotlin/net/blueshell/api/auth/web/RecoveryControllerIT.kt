@@ -39,12 +39,11 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(post("/recovery/password/reset/{username}", user.username))
                 .andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.PasswordReset.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"tokenPurpose\":\"PASSWORD_RESET\"")
                 }
         }
 
@@ -185,12 +184,11 @@ class RecoveryControllerIT : UserTestSupport() {
                 .perform(post("/recovery/user/activate/resend/{username}", user.username))
                 .andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.AccountActivation.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"tokenPurpose\":\"USER_ACTIVATION\"")
                 }
         }
     }
@@ -238,7 +236,7 @@ class RecoveryControllerIT : UserTestSupport() {
                         .with(signedIn(board)),
                 ).andExpect(status().isBadRequest)
 
-            assertThat(findJobsByType(AuthJobs.Recovery.type)).isEmpty()
+            assertThat(AuthJobs.recoveryEmails.flatMap { findJobsByType(it.type) }).isEmpty()
         }
 
         @Test
@@ -253,12 +251,11 @@ class RecoveryControllerIT : UserTestSupport() {
                         .with(signedIn(board)),
                 ).andExpect(status().isNoContent)
 
-            val jobs = findJobsByType(AuthJobs.Recovery.type)
+            val jobs = findJobsByType(AuthJobs.MemberActivation.type)
             assertThat(jobs)
                 .hasSize(1)
                 .anySatisfy {
                     assertThat(it.payload).contains("\"userId\":${user.id}")
-                    assertThat(it.payload).contains("\"tokenPurpose\":\"MEMBER_ACTIVATION\"")
                 }
         }
     }

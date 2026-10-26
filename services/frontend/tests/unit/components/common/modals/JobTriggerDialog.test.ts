@@ -21,10 +21,11 @@ vi.mock("@/plugins/handleNetworkError", () => ({
 const descriptors = [
   {type: "contact.sync", payloadFields: [{name: "userId", type: "Long", required: true}]},
   {type: "contact.sync-all", payloadFields: []},
+  {type: "discord.backfill-seen-emoji", payloadFields: [{name: "restart", type: "Boolean", kind: "PRIMITIVE", required: true}]},
 ]
 
-const openDialog = async () => {
-  const wrapper = shallowMount(JobTriggerDialog, {props: {modelValue: false}})
+const openDialog = async (renderStubDefaultSlot = false) => {
+  const wrapper = shallowMount(JobTriggerDialog, {props: {modelValue: false}, global: {renderStubDefaultSlot}})
   await wrapper.setProps({modelValue: true})
   await settle()
   return wrapper
@@ -44,6 +45,7 @@ describe("JobTriggerDialog", () => {
     expect((wrapper.vm as any).typeOptions).toEqual([
       {title: "Sync contact", value: "contact.sync"},
       {title: "Sync all contacts", value: "contact.sync-all"},
+      {title: "Find emoji used in the Discord server", value: "discord.backfill-seen-emoji"},
     ])
   })
 
@@ -70,6 +72,32 @@ describe("JobTriggerDialog", () => {
     expect((wrapper.vm as any).requiredMissing).toBe(true)
     await (wrapper.vm as any).submit()
     expect(mockEnqueueJob).not.toHaveBeenCalled()
+  })
+
+  it("shows a yes/no field as a switch that sends false until it is turned on", async () => {
+    const wrapper = await openDialog(true)
+
+    ;(wrapper.vm as any).selectedType = "discord.backfill-seen-emoji"
+    await settle()
+
+    const toggle = wrapper.findComponent({name: "VSwitch"})
+    expect(toggle.attributes("data-testid")).toBe("job-trigger-field-restart")
+    expect((wrapper.vm as any).requiredMissing).toBe(false)
+
+    await (wrapper.vm as any).submit()
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("discord.backfill-seen-emoji", {restart: false})
+  })
+
+  it("sends true for a yes/no field once its switch is on", async () => {
+    const wrapper = await openDialog(true)
+
+    ;(wrapper.vm as any).selectedType = "discord.backfill-seen-emoji"
+    await settle()
+    wrapper.findComponent({name: "VSwitch"}).vm.$emit("update:modelValue", true)
+    await settle()
+
+    await (wrapper.vm as any).submit()
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("discord.backfill-seen-emoji", {restart: true})
   })
 
   it("surfaces an error when the enqueue fails", async () => {

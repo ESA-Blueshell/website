@@ -51,6 +51,7 @@ const selectedDescription = computed<string>(() =>
 const NUMERIC_TYPES = new Set(["Long", "Int", "Integer", "Short", "Double", "Float", "BigDecimal", "BigInteger"])
 const isNumeric = (field: JobPayloadField): boolean => NUMERIC_TYPES.has(field.type)
 const isEnum = (field: JobPayloadField): boolean => field.kind === "ENUM"
+const isBoolean = (field: JobPayloadField): boolean => field.type === "Boolean"
 
 const numberValue = (name: string): number | undefined => {
   const v = fieldValues.value[name]
@@ -85,7 +86,7 @@ const pickerForField = (field: JobPayloadField): PickerKind => {
 
 const requiredMissing = computed<boolean>(() =>
   (selectedDescriptor.value?.payloadFields ?? []).some((field) => {
-    if (!field.required) return false
+    if (!field.required || isBoolean(field)) return false
     const value = fieldValues.value[field.name]
     if (value == null) return true
     if (typeof value === "string") return value.trim() === ""
@@ -127,12 +128,15 @@ const buildPayload = (): Record<string, unknown> => {
   const payload: Record<string, unknown> = {}
   for (const field of selectedDescriptor.value?.payloadFields ?? []) {
     const value = fieldValues.value[field.name]
+    if (isBoolean(field)) {
+      payload[field.name] = value === true
+      continue
+    }
     if (value == null) continue
     if (typeof value === "string") {
       const trimmed = value.trim()
       if (trimmed === "") continue
-      if (field.type === "Boolean") payload[field.name] = trimmed.toLowerCase() === "true"
-      else if (isNumeric(field)) payload[field.name] = Number(trimmed)
+      if (isNumeric(field)) payload[field.name] = Number(trimmed)
       else payload[field.name] = trimmed
     } else {
       payload[field.name] = value
@@ -249,6 +253,13 @@ const submit = async () => {
               :required="field.required"
               :values="field.enumValues ?? []"
               @update:model-value="fieldValues[field.name] = $event"
+            />
+            <v-switch
+              v-else-if="isBoolean(field)"
+              :data-testid="`job-trigger-field-${field.name}`"
+              :label="humanize(field.name)"
+              :model-value="fieldValues[field.name] === true"
+              @update:model-value="fieldValues[field.name] = $event === true"
             />
             <v-text-field
               v-else

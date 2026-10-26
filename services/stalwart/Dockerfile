@@ -13,7 +13,7 @@ RUN apk add --no-cache curl tar xz \
     | tar -xJ -C /tmp \
  && find /tmp -type f -name stalwart-cli -exec mv {} /usr/local/bin/stalwart-cli \;
 
-FROM stalwartlabs/stalwart:v0.16.26
+FROM stalwartlabs/stalwart:v0.16.27
 
 COPY --from=cli /usr/local/bin/stalwart-cli /usr/local/bin/stalwart-cli
 COPY config.json /etc/stalwart/config.json

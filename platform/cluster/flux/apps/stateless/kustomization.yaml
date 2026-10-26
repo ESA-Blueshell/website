@@ -20,8 +20,8 @@ images:
     newTag: v1.27.0 # {"$imagepolicy": "flux-system:api:tag"}
     digest: sha256:45abfdd59ac50f408c6c7bbe8dd5b4e2a1d3a3f3ac9931d73cd5f1754ab6073f # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.26.1 # {"$imagepolicy": "flux-system:frontend:tag"}
-    digest: sha256:db5a8262b8b2f5854bdc2b38907792492e513addeb80798c96441fb6f2737089 # {"$imagepolicy": "flux-system:frontend:digest"}
+    newTag: v1.27.0 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:bdbe28678f91989f57c2a6abdda3476d29fb7ac9715e31c69529f18204a46374 # {"$imagepolicy": "flux-system:frontend:digest"}
   # A placeholder until the first release publishes it; the scan rewrites both lines.
   - name: ghcr.io/esa-blueshell/imaging
     newTag: v1.27.0 # {"$imagepolicy": "flux-system:imaging:tag"}

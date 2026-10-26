@@ -3,6 +3,7 @@ package net.blueshell.api.discord.domain
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -38,7 +39,12 @@ class BackfillSeenEmojiJob(
             return skip("Message Content is off for the bot in the Discord Developer Portal, so Discord sends no message text to read")
         }
         if (payload.restart) backfill.startPass()
-        if (backfill.readSome(PAGES_PER_RUN)) {
+        val slice = backfill.readSome(PAGES_PER_RUN)
+        counted(JobTally.PLACES_READ, slice.places.size.toLong(), slice.places)
+        counted(JobTally.MESSAGES_READ, slice.messages)
+        counted(JobTally.EMOJI_SEEN, slice.sightings)
+        counted(JobTally.PLACES_LEFT, slice.left)
+        if (slice.left > 0) {
             jobs.runAsync(DiscordJobs.BackfillSeenEmoji, DiscordJobs.BackfillSeenEmojiPayload(restart = false), JobTrigger.ANOTHER_JOB)
         }
     }

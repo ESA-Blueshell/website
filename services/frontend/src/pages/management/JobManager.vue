@@ -3,8 +3,9 @@ import {computed, onMounted, ref, watch} from "vue"
 import {useRoute, useRouter} from "vue-router"
 import TopBanner from "@/components/common/banners/TopBanner.vue"
 import JobTriggerDialog from "@/components/common/modals/JobTriggerDialog.vue"
+import JobReportChannels from "@/components/common/panels/JobReportChannels.vue"
 import {loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, actorDisplay, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewActorDisplay, previewTitle, relatedEntityLabel, relatedEntityTypeLabel, reportChannels, reportLabel, retryLabel, rowStatusClass, stackTrace, statusColor, statusCounts as countsOf, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -527,6 +528,10 @@ onMounted(async () => {
                     </div>
 
                     <div class="job-meta-inline">
+                      <template v-if="reportLabel(execution)">
+                        <span :data-testid="`job-row-report-${execution.id}`">{{ reportLabel(execution) }}</span>
+                        <span class="job-meta-sep">·</span>
+                      </template>
                       <template v-if="execution.effect">
                         <span :data-testid="`job-row-effect-${execution.id}`">{{ effectLabel(execution) }}</span>
                         <span class="job-meta-sep">·</span>
@@ -688,6 +693,30 @@ onMounted(async () => {
                       class="text-body-2 text-medium-emphasis mb-0"
                     >
                       No related entities.
+                    </p>
+                  </v-sheet>
+
+                  <v-sheet
+                    v-if="reportLabel(execution)"
+                    class="detail-panel mt-3"
+                    rounded="md"
+                    variant="tonal"
+                  >
+                    <p class="text-caption text-medium-emphasis mb-2">
+                      What it did
+                    </p>
+                    <p
+                      :data-testid="`job-report-${execution.id}`"
+                      class="text-body-2 mb-0"
+                    >
+                      {{ reportLabel(execution) }}
+                    </p>
+                    <p
+                      v-if="reportChannels(execution).length"
+                      class="text-body-2 mt-1 mb-0"
+                    >
+                      Channels read:
+                      <JobReportChannels :channels="reportChannels(execution)" />
                     </p>
                   </v-sheet>
 

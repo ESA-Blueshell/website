@@ -12,6 +12,7 @@ import jakarta.persistence.Transient
 import net.blueshell.api.shared.enums.ActionActorType
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.job.QueuedJob
@@ -79,6 +80,10 @@ class JobExecution(
     var effect: JobEffect? = null,
     @Column(name = "effect_link", length = 512)
     var effectLink: String? = null,
+    /** What a successful run counted about its work. */
+    @Convert(converter = JobCountsConverter::class)
+    @Column(name = "report", columnDefinition = "LONGTEXT")
+    var report: List<JobCount> = emptyList(),
     @Convert(converter = FoldedTriggersConverter::class)
     @Column(name = "folded_triggers", columnDefinition = "LONGTEXT")
     var foldedTriggers: List<FoldedTrigger> = emptyList(),

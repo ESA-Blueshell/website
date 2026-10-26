@@ -20,6 +20,8 @@ interface SeenEmojiBackfillPlaceRepository : Repository<SeenEmojiBackfillPlace, 
 
     fun findFirstByDoneFalseOrderByIdAsc(): SeenEmojiBackfillPlace?
 
+    fun countByDoneFalse(): Long
+
     // Cleared after, so the next lookup reads the place as it now is rather than as first loaded.
     @Modifying(clearAutomatically = true)
     @Query(

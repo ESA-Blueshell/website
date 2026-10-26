@@ -4,8 +4,8 @@
  * Knowledge about jobs rather than about a page, so it sits in the domain and can be checked
  * without mounting anything.
  */
-import type {Job, JobFoldedTrigger, JobRelatedEntity, JobStats} from "./adapters/jobs"
-import {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "./adapters/jobs"
+import type {Job, JobCount, JobFoldedTrigger, JobRelatedEntity, JobStats} from "./adapters/jobs"
+import {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTally, JobTrigger} from "./adapters/jobs"
 import {jobCatalogEntry} from "@/utils/jobCatalog"
 
 /** `contact.sync_user` reads as `Contact Sync User`. */
@@ -75,6 +75,30 @@ export function effectLabel(job: Job): string {
     case JobEffect.UNCHANGED: return `Found ${thing} up to date`
     case JobEffect.REMOVED: return `Took down ${thing}`
   }
+}
+
+const counting = new Intl.NumberFormat("en-GB")
+
+const COUNTED: Record<JobTally, (count: string, one: boolean) => string> = {
+  [JobTally.PLACES_READ]: (count, one) => `Read ${count} ${one ? "channel" : "channels"}`,
+  [JobTally.MESSAGES_READ]: (count, one) => `${count} ${one ? "message" : "messages"}`,
+  [JobTally.EMOJI_SEEN]: (count) => `${count} emoji found`,
+  [JobTally.PLACES_LEFT]: (count, one) => `${count} ${one ? "channel" : "channels"} left`,
+}
+
+/** One count a run reported, in words. */
+export function countLabel(counted: JobCount): string {
+  return COUNTED[counted.tally](counting.format(counted.count), counted.count === 1)
+}
+
+/** What a successful run reported about its work, in one line; empty where it reported nothing. */
+export function reportLabel(job: Job): string {
+  return (job.report ?? []).map(countLabel).join(" · ")
+}
+
+/** The Discord channels a run's report names, by id, each once. */
+export function reportChannels(job: Job): string[] {
+  return [...new Set((job.report ?? []).flatMap(counted => counted.channels))]
 }
 
 export function errorSummary(job: Job): string {

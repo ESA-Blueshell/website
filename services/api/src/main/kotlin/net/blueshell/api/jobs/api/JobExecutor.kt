@@ -61,7 +61,7 @@ class JobExecutor(
         try {
             when (val outcome = handler.handle(current.payload, current.id, current.forced)) {
                 is JobOutcome.Done -> {
-                    jobExecutionService.markSuccess(current, outcome.effect, outcome.link)
+                    jobExecutionService.markSuccess(current, outcome.effect, outcome.link, outcome.counts)
                     sample.stop(meterRegistry.timer("job.execution.duration", "job_type", current.jobType, "outcome", "success"))
                 }
                 is JobOutcome.Skipped -> {

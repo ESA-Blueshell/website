@@ -77,8 +77,8 @@ class RestDiscordHistoryTest {
         discord.expect(requestTo("https://discord.test/channels/12/messages?limit=100")).andRespond(withServerError())
 
         val first = history.page("10", null)!!
-        assertThat(listOf(first.sightings.size, first.oldestMessageId, first.last)).containsExactly(100, "101", false)
-        assertThat(history.page("10", "101")).isEqualTo(HistoryPage(emptyList(), "1", true))
+        assertThat(listOf(first.sightings.size, first.oldestMessageId, first.last, first.messages)).containsExactly(100, "101", false, 100)
+        assertThat(history.page("10", "101")).isEqualTo(HistoryPage(emptyList(), "1", true, messages = 1))
         assertThat(history.page("10", "1")).isEqualTo(HistoryPage(emptyList(), "1", true))
         assertThat(history.page("11", null)).isNull()
         assertThatThrownBy { history.page("12", null) }.isInstanceOf(HttpServerErrorException::class.java)

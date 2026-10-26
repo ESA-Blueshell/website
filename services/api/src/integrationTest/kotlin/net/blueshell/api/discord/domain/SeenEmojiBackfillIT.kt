@@ -53,9 +53,9 @@ class SeenEmojiBackfillIT : ServiceTestSupport() {
     fun `moves through a place page by page within one run, and a new pass reads it again counting nothing twice`() {
         transactionTemplate.executeWithoutResult {
             backfill().startPass()
-            assertThat(backfill().readSome(2)).isTrue()
+            assertThat(backfill().readSome(2).left).isEqualTo(1)
         }
-        transactionTemplate.executeWithoutResult { assertThat(backfill().readSome(5)).isFalse() }
+        transactionTemplate.executeWithoutResult { assertThat(backfill().readSome(5).left).isZero() }
         assertThat(history.asked).containsExactly(null, "300", "200")
 
         transactionTemplate.executeWithoutResult {

@@ -14,6 +14,7 @@ import {
   JobExecutionCategory,
   JobExecutionStatus,
   JobEffect,
+  JobTally,
   JobTrigger,
 } from "@/services/api"
 import type {PageOf, PageQuery} from "@/composables/usePagedTable"
@@ -28,7 +29,8 @@ export type Job = JobExecution
 export type JobStats = JobStatsDto
 export type JobRelatedEntity = NonNullable<Job["relatedEntities"]>[number]
 export type JobFoldedTrigger = Job["foldedTriggers"][number]
-export {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger}
+export type JobCount = Job["report"][number]
+export {JobEffect, JobExecutionCategory, JobExecutionStatus, JobTally, JobTrigger}
 
 /**
  * The api declares no refusal codes for this module, so a refused job write reads as whatever

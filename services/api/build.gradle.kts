@@ -136,7 +136,7 @@ dependencies {
 
     implementation("org.commonmark:commonmark:0.30.0")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.30.0")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.30.1")
     implementation(files("libs/snakeyaml-2.5.jar"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

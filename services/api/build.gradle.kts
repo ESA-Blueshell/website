@@ -213,6 +213,10 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("boot
                 listOf(
                     "-XX:MaxRAM=2g",
                     "-XX:+UseG1GC",
+                    // Cached adapters are machine code for the build runner's CPU; on a host
+                    // without its instructions every start dies with SIGILL (#2594).
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:-AOTAdapterCaching",
                     "-Dspring.context.exit=onRefresh",
                     "-Dspring.profiles.active=training",
                     "-Dstorage.location=/tmp/training-storage",

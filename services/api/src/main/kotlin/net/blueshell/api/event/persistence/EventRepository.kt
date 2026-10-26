@@ -48,6 +48,10 @@ interface EventRepository : BaseRepository<Event, Long> {
         @Param("from") from: Instant,
     ): List<Long>
 
+    /** The live events whose description has two colons, which a `:name:` shortcode needs. */
+    @Query("select e.id as id, e.description as description from Event e where e.description like '%:%:%'")
+    fun findDescriptionsWithColons(): List<EventDescription>
+
     fun existsByTitle(title: String): Boolean
 
     @Query("select count(e) from Event e where e.committee.id = :committeeId")
@@ -67,4 +71,10 @@ interface EventRepository : BaseRepository<Event, Long> {
     fun countNamingGame(
         @Param("code") code: String,
     ): Long
+}
+
+/** An event's description, read without the rest of the event. */
+interface EventDescription {
+    val id: Long
+    val description: String
 }

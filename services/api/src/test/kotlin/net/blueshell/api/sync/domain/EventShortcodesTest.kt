@@ -2,9 +2,15 @@ package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventService
 import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.platform.config.JacksonConfig
 import net.blueshell.api.shared.job.JobCount
+import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTally
+import net.blueshell.api.shared.job.JobTrigger
+import net.blueshell.api.shared.job.QueuedJob
+import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.sync.api.CustomEmoji
 import net.blueshell.api.sync.api.DiscordPublisher
 import net.blueshell.api.testsupport.Entities
@@ -17,11 +23,10 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.ObjectProvider
-import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 
 class EventShortcodesTest {
-    private val mapper = JsonMapper.builder().build()
+    private val mapper = JacksonConfig().jsonMapper(null)
     private val events: EventService = mock()
     private val custom =
         listOf(
@@ -91,5 +96,34 @@ class EventShortcodesTest {
         assertThat((job().run() as JobOutcome.Skipped).reason).isEqualTo("The event is gone")
         assertThat((job().run(8) as JobOutcome.Skipped).reason).isEqualTo("The event is gone")
         assertThat((job(null).run() as JobOutcome.Skipped).reason).isEqualTo("The Discord bot is not set up")
+    }
+
+    @Test
+    fun `queues a resolve for every event with a shortcode to write, past and upcoming alike, and none for the rest`() {
+        whenever(events.descriptionsWithColons()).thenReturn(
+            mapOf(9L to "Doors at 12:30:45, :nope:", 4L to "Carve :fire:", 2L to "`:fire:` and :smile:"),
+        )
+        val queued = mutableListOf<Long>()
+        val jobs =
+            object : JobQueue {
+                override fun <T : Any> runAsync(
+                    job: JobDefinition<T>,
+                    payload: T,
+                    trigger: JobTrigger,
+                    actor: Actor?,
+                ): QueuedJob? {
+                    assertThat(job).isEqualTo(EventTextJobs.ResolveEmojiShortcodes)
+                    queued += (payload as EventTextJobs.EventShortcodesPayload).eventId
+                    return null
+                }
+            }
+        val all = ResolveAllEmojiShortcodesJob(mapper, shortcodes(), jobs)
+
+        val outcome = all.handle("{}", 1, forced = false) as JobOutcome.Done
+
+        assertThat(queued).containsExactly(2L, 4L)
+        assertThat(outcome.counts).containsExactly(JobCount(JobTally.EVENTS_QUEUED, 2))
+        assertThat((ResolveAllEmojiShortcodesJob(mapper, shortcodes(null), jobs).handle("{}", 1, false) as JobOutcome.Skipped).reason)
+            .isEqualTo("The Discord bot is not set up")
     }
 }

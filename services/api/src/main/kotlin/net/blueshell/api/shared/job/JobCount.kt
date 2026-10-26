@@ -11,6 +11,7 @@ enum class JobTally {
     PLACES_LEFT,
     SHORTCODES_RESOLVED,
     SHORTCODES_LEFT,
+    EVENTS_QUEUED,
 }
 
 /**

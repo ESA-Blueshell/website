@@ -173,6 +173,15 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Safe to re-run: a second run finds nothing to write.",
   },
 
+  "event.resolve-all-emoji-shortcodes": {
+    title: "Write every event's emoji shortcodes as emoji",
+    description:
+      "Looks through the description of every event, past and upcoming, and queues a run of " +
+      "\"Write an event's emoji shortcodes as emoji\" for each one with a :name: shortcode that " +
+      "names an emoji. Events with nothing to write are left alone. Safe to re-run: once they " +
+      "have run, a second sweep queues nothing.",
+  },
+
   "calendar.sync-event": {
     title: "Sync calendar event",
     description:

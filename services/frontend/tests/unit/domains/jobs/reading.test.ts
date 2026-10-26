@@ -73,6 +73,8 @@ describe("job reading", () => {
     expect(countLabel({tally: JobTally.SHORTCODES_RESOLVED, count: 2, channels: [], names: []})).toBe("Wrote 2 shortcodes as emoji")
     expect(countLabel({tally: JobTally.SHORTCODES_LEFT, count: 1, channels: [], names: []})).toBe("1 shortcode left as text")
     expect(countLabel({tally: JobTally.SHORTCODES_LEFT, count: 4, channels: [], names: []})).toBe("4 shortcodes left as text")
+    expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 1, channels: [], names: []})).toBe("Queued 1 event")
+    expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 12, channels: [], names: []})).toBe("Queued 12 events")
   })
 
   it("lists the names a report holds as shortcodes, under the count that names them", () => {

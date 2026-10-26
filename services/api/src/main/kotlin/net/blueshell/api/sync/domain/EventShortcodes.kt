@@ -4,7 +4,9 @@ import net.blueshell.api.event.api.EventService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTally
+import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.text.Shortcodes
 import net.blueshell.api.shared.text.ShortcodesResolved
 import net.blueshell.api.sync.api.DiscordPublisher
@@ -20,8 +22,18 @@ object EventTextJobs {
         override val payloadType: Class<EventShortcodesPayload> = EventShortcodesPayload::class.java
     }
 
+    /** Queues [ResolveEmojiShortcodes] for every event whose description has a shortcode to write. */
+    object ResolveAllEmojiShortcodes : JobDefinition<AllEventsPayload> {
+        override val type: String = "event.resolve-all-emoji-shortcodes"
+        override val payloadType: Class<AllEventsPayload> = AllEventsPayload::class.java
+    }
+
     data class EventShortcodesPayload(
         val eventId: Long,
+    )
+
+    data class AllEventsPayload(
+        val unused: Unit = Unit,
     )
 }
 
@@ -45,6 +57,14 @@ class EventShortcodes(
         val anyCase = custom.asReversed().associate { it.name.lowercase() to it.written }
         return { name -> exact[name] ?: anyCase[name.lowercase()] ?: standard[name.lowercase()] }
     }
+
+    /** The live events whose description has a shortcode [emojiOf] answers, past and upcoming alike. */
+    fun eventsToResolve(emojiOf: (String) -> String?): List<Long> =
+        events
+            .descriptionsWithColons()
+            .filterValues { Shortcodes.resolve(it, emojiOf).resolved.isNotEmpty() }
+            .keys
+            .sorted()
 
     /** Rewrites the event's description where a shortcode names an emoji; null where the event is gone. */
     fun resolve(
@@ -72,5 +92,21 @@ class ResolveEmojiShortcodesJob(
         counted(JobTally.SHORTCODES_RESOLVED, resolved.resolved.size.toLong(), names = resolved.resolved.distinct())
         counted(JobTally.SHORTCODES_LEFT, resolved.left.size.toLong(), names = resolved.left.distinct())
         did(if (resolved.resolved.isEmpty()) JobEffect.UNCHANGED else JobEffect.EDITED, null)
+    }
+}
+
+@Component
+class ResolveAllEmojiShortcodesJob(
+    objectMapper: ObjectMapper,
+    private val shortcodes: EventShortcodes,
+    private val jobs: JobQueue,
+) : AbstractJsonJobHandler<EventTextJobs.AllEventsPayload>(objectMapper, EventTextJobs.ResolveAllEmojiShortcodes) {
+    override fun handlePayload(payload: EventTextJobs.AllEventsPayload) {
+        val emojiOf = shortcodes.lookup() ?: return skip("The Discord bot is not set up")
+        val queued = shortcodes.eventsToResolve(emojiOf)
+        queued.forEach {
+            jobs.runAsync(EventTextJobs.ResolveEmojiShortcodes, EventTextJobs.EventShortcodesPayload(it), JobTrigger.ANOTHER_JOB)
+        }
+        counted(JobTally.EVENTS_QUEUED, queued.size.toLong())
     }
 }

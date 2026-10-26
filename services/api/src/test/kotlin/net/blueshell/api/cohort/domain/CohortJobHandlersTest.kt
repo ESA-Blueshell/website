@@ -2,6 +2,7 @@ package net.blueshell.api.cohort.domain
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verifyOrder
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.platform.config.JacksonConfig
 import net.blueshell.api.shared.job.JobCount
@@ -64,7 +65,7 @@ class CohortJobHandlersTest {
     }
 
     @Test
-    fun `a membership sync that pushes nothing is skipped with its reason, and other jobs end done`() {
+    fun `a membership change that pushes nothing is skipped with its reason, and other jobs end done`() {
         val membership = mockk<CohortMembershipSyncService>()
         every { membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE) } returns "The cohort has no BREVO list linked."
         val bound =
@@ -77,7 +78,7 @@ class CohortJobHandlersTest {
                 inbound = mockk(relaxed = true),
             )
 
-        assertThat(bound.syncCohortMembershipHandler().runJob("""{"userId":1,"cohortId":10,"intent":"REMOVE"}"""))
+        assertThat(bound.removeMemberHandler().runJob("""{"userId":1,"cohortId":10}"""))
             .isEqualTo(JobOutcome.Skipped("The cohort has no BREVO list linked."))
         assertThat(bound.evaluateUserCohortsHandler().runJob("""{"userId":1}""")).isEqualTo(JobOutcome.Done())
     }
@@ -101,5 +102,29 @@ class CohortJobHandlersTest {
             .containsExactly(JobCount(JobTally.USERS_QUEUED, 40))
         assertThat((bound.reconcileAllContributionPeriodCohortsHandler().runJob("{}") as JobOutcome.Done).counts)
             .containsExactly(JobCount(JobTally.COHORTS_RECOMPUTED, 5), JobCount(JobTally.COHORTS_FAILED, 1))
+    }
+
+    @Test
+    fun `adding and removing a member are each their own job, with the verb in the job type`() {
+        val membership = mockk<CohortMembershipSyncService>()
+        every { membership.sync(1L, 10L, SyncCohortMembershipIntent.ADD) } returns null
+        every { membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE) } returns null
+        val bound =
+            CohortJobHandlers(
+                objectMapper,
+                reconciliation = mockk(relaxed = true),
+                membership = membership,
+                targeting = mockk(relaxed = true),
+                remediation = mockk(relaxed = true),
+                inbound = mockk(relaxed = true),
+            )
+
+        bound.addMemberHandler().runJob("""{"userId":1,"cohortId":10}""")
+        bound.removeMemberHandler().runJob("""{"userId":1,"cohortId":10}""")
+
+        verifyOrder {
+            membership.sync(1L, 10L, SyncCohortMembershipIntent.ADD)
+            membership.sync(1L, 10L, SyncCohortMembershipIntent.REMOVE)
+        }
     }
 }

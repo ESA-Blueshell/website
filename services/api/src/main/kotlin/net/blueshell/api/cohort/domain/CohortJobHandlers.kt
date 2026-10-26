@@ -26,9 +26,15 @@ class CohortJobHandlers(
     private val inbound: InboundReconcile,
 ) {
     @Bean
-    fun syncCohortMembershipHandler() =
-        bindSkipping(CohortJobs.SyncCohortMembership) {
-            membership.sync(it.userId, it.cohortId, it.intent)
+    fun addMemberHandler() =
+        bindSkipping(CohortJobs.AddMember) {
+            membership.sync(it.userId, it.cohortId, SyncCohortMembershipIntent.ADD)
+        }
+
+    @Bean
+    fun removeMemberHandler() =
+        bindSkipping(CohortJobs.RemoveMember) {
+            membership.sync(it.userId, it.cohortId, SyncCohortMembershipIntent.REMOVE)
         }
 
     @Bean

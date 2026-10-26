@@ -1,0 +1,20 @@
+# cohort.membership-sync added or removed a member depending on its payload's intent (#2601). Each
+# is now its own job, and the rows move to the one they were, so a queued change runs after the
+# deploy and the history keeps its meaning. The intent left in a payload is read past.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-26-cohort-member-jobs.yaml
+      id: cohort-member-jobs
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'cohort.add-member'
+              WHERE job_type = 'cohort.membership-sync' AND payload LIKE '%"intent":"ADD"%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'cohort.remove-member'
+              WHERE job_type = 'cohort.membership-sync' AND payload LIKE '%"intent":"REMOVE"%'
+      rollback:
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'cohort.membership-sync' WHERE job_type IN ('cohort.add-member', 'cohort.remove-member')

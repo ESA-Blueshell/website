@@ -221,12 +221,19 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "calendar; safe to re-run manually.",
   },
 
-  "cohort.membership-sync": {
-    title: "Sync cohort membership",
+  "cohort.add-member": {
+    title: "Add a member to a cohort's list",
     description:
-      "Pushes one (user, cohort) pair to the cohort's external system — Brevo list, " +
-      "Discord role, Google group, etc. The `intent` field decides whether the user is " +
-      "added or removed there. Idempotent and runs against a single external system.",
+      "Adds one member to the cohort's external system, such as its Brevo list, Discord role " +
+      "or Google group. Queued when the member joins the cohort; safe to re-run, as one " +
+      "already there stays there.",
+  },
+  "cohort.remove-member": {
+    title: "Remove a member from a cohort's list",
+    description:
+      "Removes one member from the cohort's external system, such as its Brevo list, Discord " +
+      "role or Google group. Queued when the member leaves the cohort; safe to re-run, as one " +
+      "already gone stays gone.",
   },
   "cohort.reconcile-contribution-periods": {
     title: "Reconcile contribution-period cohorts",
@@ -241,15 +248,15 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     description:
       "Fans out one Re-evaluate-user-cohorts job per active user. Each child job " +
       "recomputes that user's cohort memberships from current facts (role, committee " +
-      "membership, contribution payments, newsletter opt-in) and enqueues a per-member " +
-      "membership-sync job for any cohort the user joins or leaves.",
+      "membership, contribution payments, newsletter opt-in) and enqueues an add or remove " +
+      "job for any cohort the user joins or leaves.",
   },
   "cohort.evaluate-user": {
     title: "Re-evaluate one user's cohorts",
     description:
-      "Recomputes one user's desired cohort memberships locally, then enqueues a " +
-      "per-member membership-sync job (add or remove) for each cohort the user joins " +
-      "or leaves. Does not call external systems directly.",
+      "Recomputes one user's desired cohort memberships locally, then enqueues an add or " +
+      "remove job for each cohort the user joins or leaves. Does not call external systems " +
+      "directly.",
   },
   "cohort.remove-external-member": {
     title: "Remove from external list",

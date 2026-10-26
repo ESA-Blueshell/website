@@ -3,17 +3,21 @@ package net.blueshell.api.cohort.domain
 import net.blueshell.api.shared.job.JobDefinition
 
 /**
- * Per-target cohort membership sync jobs: one execution pushes one `(user, cohort)` pair to one
- * external system, idempotently, with the payload's [SyncCohortMembershipIntent] as the verb.
+ * Per-target cohort membership jobs: one execution adds one member to, or removes one from, one
+ * cohort's external system, idempotently, a job type each so the job list says which.
  *
  * Fanned out per pair rather than per user, so one failure is isolated to its own JobExecution
  * row with its own retry budget.
  */
 object CohortJobs {
-    object SyncCohortMembership : JobDefinition<SyncCohortMembershipPayload> {
-        override val type: String = "cohort.membership-sync"
-        override val payloadType: Class<SyncCohortMembershipPayload> =
-            SyncCohortMembershipPayload::class.java
+    object AddMember : JobDefinition<CohortMemberPayload> {
+        override val type: String = "cohort.add-member"
+        override val payloadType: Class<CohortMemberPayload> = CohortMemberPayload::class.java
+    }
+
+    object RemoveMember : JobDefinition<CohortMemberPayload> {
+        override val type: String = "cohort.remove-member"
+        override val payloadType: Class<CohortMemberPayload> = CohortMemberPayload::class.java
     }
 
     /**
@@ -46,7 +50,7 @@ object CohortJobs {
     /**
      * Re-evaluates one user's cohort membership against the current
      * rules. Local desired-row writes happen here, and the evaluator
-     * enqueues one per-member [SyncCohortMembership] ADD/REMOVE job for
+     * enqueues one per-member [AddMember] or [RemoveMember] job for
      * each cohort the user joins or leaves. [ReconcileList] is the
      * separate periodic verifier, not this job's convergence path.
      */
@@ -111,10 +115,9 @@ object CohortJobs {
         override fun dedupKey(payload: MaterializeCohortTargetPayload): String = "cohort=${payload.cohortId}"
     }
 
-    data class SyncCohortMembershipPayload(
+    data class CohortMemberPayload(
         val userId: Long,
         val cohortId: Long,
-        val intent: SyncCohortMembershipIntent,
     )
 
     data class ReconcileAllContributionPeriodCohortsPayload(

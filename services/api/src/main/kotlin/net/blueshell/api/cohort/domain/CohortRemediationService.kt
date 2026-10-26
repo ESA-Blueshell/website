@@ -107,8 +107,8 @@ class CohortRemediationService(
                     .filter { it.syncedAt == null }
             rows.forEach { row ->
                 jobs.runAsync(
-                    CohortJobs.SyncCohortMembership,
-                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, cohortId, SyncCohortMembershipIntent.ADD),
+                    CohortJobs.AddMember,
+                    CohortJobs.CohortMemberPayload(row.userId!!, cohortId),
                     JobTrigger.SITE_ACTION,
                 )
             }
@@ -224,8 +224,8 @@ class CohortRemediationService(
                 jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(row.userId!!), JobTrigger.ANOTHER_JOB)
             } else if (extId !in remoteExtIds) {
                 jobs.runAsync(
-                    CohortJobs.SyncCohortMembership,
-                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, plan.cohortId, SyncCohortMembershipIntent.ADD),
+                    CohortJobs.AddMember,
+                    CohortJobs.CohortMemberPayload(row.userId!!, plan.cohortId),
                     JobTrigger.ANOTHER_JOB,
                 )
             }

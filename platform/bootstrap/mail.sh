@@ -40,6 +40,7 @@ txt() { q TXT "$1" | sed 's/" "//g; s/^"//; s/"$//'; }
 with_timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
 CLUSTER=""
+HAVE_CONTEXT=""
 sc_query() { # sc_query ARGS...: stalwart-cli in the apply sidecar, which carries the admin login
   k -n mail-system exec deploy/stalwart -c stalwart-apply -- sh -c 'HOME=/tmp exec stalwart-cli "$@"' sh "$@" 2>/dev/null
 }
@@ -54,6 +55,7 @@ stage_cluster() {
   fi
   if [[ -n "$EMBEDDED" ]]; then export _BLUESHELL_CLUSTER_CONFIRMED=yes; fi
   require_cluster
+  HAVE_CONTEXT=yes
   if sc_query query Domain --json >/dev/null; then
     CLUSTER=yes
     ok "stalwart-cli answers in the apply sidecar"
@@ -126,12 +128,93 @@ stage_dns() {
   note "usually means the Cloudflare token in secret/platform/edge stopped working."
 }
 
+# authoritative HOST prints HOST's first A record from the zone's own name
+# server, which a public resolver may still have cached as missing.
+authoritative() {
+  local ns
+  ns=$(dig +short NS "$DOMAIN" | head -n 1)
+  dig +short +time=3 +tries=2 "@${ns:-$RESOLVER}" "$1" A 2>/dev/null | grep -E '^[0-9.]+$' | head -n 1
+}
+
+# fetch_policy pins the request to the address the zone gives, so a resolver
+# that cached the name as missing cannot hide a record made seconds ago.
+fetch_policy() {
+  local host="mta-sts.$DOMAIN" ip
+  ip=$(authoritative "$host")
+  [[ -n "$ip" ]] || return 0
+  curl -s --max-time 10 --resolve "$host:443:$ip" "https://$host/.well-known/mta-sts.txt" || true
+}
+
+# mta_sts_repair walks the chain from repository to sender: the IngressRoute
+# Flux applies, the DNS record external-dns makes from it, and the file
+# Stalwart serves behind it. It fixes the first broken link it can, and
+# succeeds once a fetch could work.
+mta_sts_repair() {
+  local host="mta-sts.$DOMAIN" logs served image _
+  if [[ -z "$HAVE_CONTEXT" ]]; then
+    note "without the cluster the cause cannot be looked into"
+    return 1
+  fi
+  if k -n edge-system get ingressroute mta-sts >/dev/null 2>&1; then
+    ok "the IngressRoute edge-system/mta-sts exists"
+  else
+    warn "the IngressRoute edge-system/mta-sts does not exist"
+    confirm "Ask Flux to apply apps-edge from main now?" || return 1
+    flux --context "$CONTEXT" -n flux-system reconcile kustomization apps-edge --with-source --timeout=3m >/dev/null 2>&1 \
+      || { warn "Flux could not apply apps-edge: flux --context $CONTEXT get kustomizations"; return 1; }
+    k -n edge-system get ingressroute mta-sts >/dev/null 2>&1 \
+      || { warn "apps-edge applied without making it: is platform/cluster/flux/apps/edge/ingressroutes/mta-sts.yaml on main?"; return 1; }
+    ok "Flux made edge-system/mta-sts"
+  fi
+
+  if [[ -n "$(authoritative "$host")" ]]; then
+    ok "$host has a DNS record"
+  else
+    warn "$host has no DNS record, though its IngressRoute exists"
+    image=$(k -n external-dns get deploy external-dns -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+    say "external-dns makes the record from the IngressRoute; it runs ${image:-an unknown image}."
+    if [[ "$image" =~ :v0\.2[2-4]\. ]]; then
+      warn "external-dns v0.22 to v0.24 make no record for any IngressRoute (#2635): older records stay, new ones never come"
+      say "Pin external-dns to v0.21.0 in platform/cluster/flux/apps/core/external-dns/release.yaml, then run this again."
+      return 1
+    fi
+    logs=$(k -n external-dns logs deploy/external-dns --since=1h 2>/dev/null | grep -iE "level=(error|warn)|$host" | tail -n 3 || true)
+    [[ -z "$logs" ]] || cut -c1-200 <<<"$logs" | sed 's/^/    /'
+    confirm "Restart external-dns, so it lists every route again?" || return 1
+    k -n external-dns rollout restart deploy/external-dns >/dev/null
+    k -n external-dns rollout status deploy/external-dns --timeout=180s >/dev/null \
+      || { warn "external-dns did not come back: kubectl --context $CONTEXT -n external-dns get pods"; return 1; }
+    for _ in $(seq 1 18); do
+      [[ -n "$(authoritative "$host")" ]] && break
+      sleep 10
+    done
+    if [[ -z "$(authoritative "$host")" ]]; then
+      warn "still no record three minutes after the restart; its log:"
+      k -n external-dns logs deploy/external-dns --since=5m 2>/dev/null | tail -n 5 | cut -c1-200 | sed 's/^/    /'
+      return 1
+    fi
+    ok "external-dns made the record for $host"
+  fi
+
+  served=$(k -n mail-system exec deploy/stalwart -c stalwart-apply -- \
+    curl -fsS --max-time 10 http://127.0.0.1:8080/.well-known/mta-sts.txt 2>/dev/null || true)
+  if [[ "$served" != *"version: STSv1"* ]]; then
+    warn "Stalwart itself serves no policy at /.well-known/mta-sts.txt: check its MtaSts settings in the admin UI"
+    return 1
+  fi
+  ok "Stalwart serves the policy"
+}
+
 stage_mta_sts() {
   local policy
   stage "MTA-STS: the policy file senders fetch"
-  policy=$(curl -s --max-time 10 "https://mta-sts.$DOMAIN/.well-known/mta-sts.txt" || true)
+  policy=$(fetch_policy)
   if [[ "$policy" != *"version: STSv1"* ]]; then
-    problem "https://mta-sts.$DOMAIN/.well-known/mta-sts.txt serves no policy (the mta-sts IngressRoute, #2627)"
+    warn "https://mta-sts.$DOMAIN/.well-known/mta-sts.txt serves no policy; looking for why"
+    mta_sts_repair && policy=$(fetch_policy)
+  fi
+  if [[ "$policy" != *"version: STSv1"* ]]; then
+    problem "https://mta-sts.$DOMAIN/.well-known/mta-sts.txt serves no policy"
     return 0
   fi
   ok "the policy is served: $(tr '\r\n' '  ' <<<"$policy" | tr -s ' ')"
@@ -162,10 +245,11 @@ stage_rdns() {
       return 0
     fi
     say "Contabo sets the reverse DNS of its addresses in the customer panel:"
-    step "Log in, open Reverse DNS Management, and find each address below."
+    step "Log in, then Network Services, DNS Management, and its reverse DNS section."
     for ip in "${bad[@]}"; do step "$ip: set the PTR to $MAIL_HOST"; done
+    step "An IPv6 address needs \"Add a PTR record for an IPv6 address\" first."
     step "Save. The change shows within minutes, sometimes hours."
-    open_url "https://my.contabo.com/rdns"
+    open_url "https://my.contabo.com/"
     confirm "Done? Check again now?" || { problem "reverse DNS is wrong for ${bad[*]}"; return 0; }
   done
 }
@@ -218,10 +302,10 @@ stage_addresses() {
   stage "Addresses: postmaster, abuse and the catch-all"
   if [[ -z "$CLUSTER" ]]; then note "skipped without Stalwart"; return 0; fi
   accounts=$(sc_query query Account --json | jq -rs 'map(.emailAddress // empty) | join(" ")')
-  for addr in "postmaster@$DOMAIN" "${RUA:-}"; do
-    [[ -n "$addr" ]] || continue
+  # The DMARC report address is usually postmaster@ itself: check each once.
+  while IFS= read -r addr; do
     if [[ " $accounts " == *" $addr "* ]]; then ok "$addr is a mailbox"; else problem "$addr is not a mailbox (reports to it bounce)"; fi
-  done
+  done < <(printf '%s\n' "postmaster@$DOMAIN" "${RUA:-}" | awk 'NF && !seen[$0]++')
   if grep -q '"abuse"' "$REPO_ROOT/infra/stalwart/accounts.json"; then
     ok "abuse@$DOMAIN is declared in infra/stalwart/accounts.json"
   else

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.27.1](https://github.com/ESA-Blueshell/website/compare/v1.27.0...v1.27.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **frontend:** an @ mention keeps matching a name past a space ([#2625](https://github.com/ESA-Blueshell/website/issues/2625)) ([#2626](https://github.com/ESA-Blueshell/website/issues/2626)) ([a0e8c2f](https://github.com/ESA-Blueshell/website/commit/a0e8c2f51f69759730e127e3c0d5abff9e1d77d2))
+* **frontend:** the editor's cursor lands after a mention or emoji, and a picked mention can be mended ([#2623](https://github.com/ESA-Blueshell/website/issues/2623)) ([#2624](https://github.com/ESA-Blueshell/website/issues/2624)) ([9280427](https://github.com/ESA-Blueshell/website/commit/928042729fdedbf6a747e2f700b7b8d85ae08625))
+* **platform:** the api and frontend canaries wait for each other's release image ([#2620](https://github.com/ESA-Blueshell/website/issues/2620)) ([#2621](https://github.com/ESA-Blueshell/website/issues/2621)) ([1dd2a12](https://github.com/ESA-Blueshell/website/commit/1dd2a12ff60176b474dc7d6f43db17eb5ef7b886))
+
 ## [1.27.0](https://github.com/ESA-Blueshell/website/compare/v1.26.1...v1.27.0) (2026-10-26)
 
 

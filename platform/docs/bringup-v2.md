@@ -116,13 +116,20 @@ kubectl get nodes
 Merge `/tmp/k3s.yaml` into `~/.kube/config` under a named context
 (`blueshell-fra`) once you're confident.
 
-## 5. Bootstrap Flux
+## 5. Bootstrap Flux, Vault and the secrets
+
+```bash
+platform/bootstrap/cluster.sh
+```
+
+It installs Flux with a read-only deploy key, initialises and unseals Vault, runs
+the bootstrap Job, seeds every secret through `secrets.sh`, checks the VSO sync,
+revokes the root token and ends with `mail.sh`. Steps 5 and 6 below are what it
+does, for reference. [`platform/bootstrap/README.md`](../bootstrap/README.md) has
+what it needs.
 
 ```bash
 kubectl apply -k platform/cluster/flux/clusters/production/flux-system
-```
-```bash
-kubectl -n flux-system create secret generic flux-system --from-literal=username=flux --from-literal=password="$(gh auth token)"
 ```
 ```bash
 flux get kustomizations --watch

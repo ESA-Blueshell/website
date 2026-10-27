@@ -474,7 +474,7 @@ JSON
   unset OIDC_CLIENT_SECRET
 else
   echo "secret/api:auth.clients.vault.secret not seeded yet; skipping OIDC auth method."
-  echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
+  echo "Seed it with platform/bootstrap/secrets.sh --only api, which runs this Job again."
 fi
 
 if [ "$signed_in" = true ]; then

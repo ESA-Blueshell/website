@@ -1,8 +1,12 @@
 # Vault bootstrap
 
-One-time steps after a fresh cluster. Run these in order; the `apps-data`
-Kustomization converges without them but Vault starts sealed and most
-secrets remain unsynced until you complete the sequence.
+One-time steps after a fresh cluster. `platform/bootstrap/cluster.sh` runs all of
+them in order, checks each first and skips what is done, and
+`platform/bootstrap/secrets.sh` is §4 on its own (see
+[`platform/bootstrap/README.md`](../bootstrap/README.md)). This page says what
+each step does, and holds the rotations. The `apps-data` Kustomization converges
+without these steps, but Vault starts sealed and most secrets stay unsynced
+until they are done.
 
 ## 1. Initialize and unseal Vault
 
@@ -24,9 +28,9 @@ done
 Single-replica Raft, so the three unseal operations complete on the one
 pod. Vault seals again whenever its pod restarts, for example on a node
 reboot, and needs three of the five shares each time. Run
-`scripts/unseal-vault.sh` from a terminal: it confirms the kubectl context,
-port-forwards to `vault-v2-0` and asks for shares on a hidden prompt until
-Vault opens.
+`platform/bootstrap/cluster.sh --unseal` from a terminal: it confirms the kubectl
+context, port-forwards to `vault-v2-0` and asks for shares on a hidden prompt
+until Vault opens.
 
 ## 2. Bootstrap once with the root token
 
@@ -42,10 +46,12 @@ the root token first. The token goes in on stdin, never as an argument:
 
 ## 3. Run the bootstrap Job
 
-From then on the Job runs on every Flux apply that changes it. If it has
-not run yet, trigger it manually:
+From then on the Job runs whenever `bootstrap-auth.sh` changes, since its
+ConfigMap hash changes the Job's spec. A finished Job with an unchanged spec stays
+finished on a reconcile, so running it again means deleting it first:
 
 ```bash
+kubectl -n data-system delete job vault-bootstrap-auth
 flux reconcile kustomization apps-data --timeout=5m
 ```
 
@@ -66,9 +72,9 @@ Each item below maps to one or more keys in §4.x — gather them once, in
 one local working directory, before starting the seed flow. Missing any
 of them blocks at least one downstream Secret.
 
-- **`.env` files** (operator-controlled, never committed). The
-  repo's `scripts/seed-vault-from-env.sh` reads dotenv-style files named
-  like the repo's examples:
+- **`.env` files** (operator-controlled, never committed), optional.
+  `platform/bootstrap/secrets.sh --from-env <file>` takes missing values from
+  dotenv-style files named like the repo's examples, and asks for the rest:
   - `services/api/.api.env`: `JWT_SECRET` (Base64, ≥64 bytes),
     `TWO_FACTOR_ENCRYPTION_KEY`, the Brevo, Google Calendar and Discord keys
     and `VAULT_OIDC_CLIENT_SECRET`.
@@ -91,18 +97,9 @@ of them blocks at least one downstream Secret.
   - `JWT_SECRET`: `openssl rand -base64 64`.
   - `VAULT_OIDC_CLIENT_SECRET`: `openssl rand -hex 32`.
 
-Sanity-check the env files locally with a dry run *before* unsealing:
-
-```bash
-scripts/seed-vault-from-env.sh \
-  services/api/.db.env \
-  services/api/.api.env \
-  /path/to/extra-tokens.env
-```
-
-The dry run prints every Vault path/field it would write. If a path
-shows up empty or with fewer fields than §4.x lists below, top up the
-env files and re-run the dry run.
+`secrets.sh` asks before every write and names where each value came from, so a
+run you answer no to is a preview. `BLUESHELL_VAULT_ADDR` runs it against a local
+`vault server -dev` instead (the README has the commands).
 
 ### Seed Vault
 
@@ -121,18 +118,9 @@ unsealed and the bootstrap Job has wired up the kubernetes auth role
 for VSO, both Secrets materialise in-place and the charts upgrade on
 their own. No manual `kubectl create secret` pre-seed is needed.
 
-If you have dotenv files named like the repo-local examples, the repo can
-translate them into the Vault paths below:
-
-```bash
-scripts/seed-vault-from-env.sh \
-  services/api/.db.env \
-  services/api/.api.env
-```
-
-Preview is the default. Re-run with `--apply` once the mapping looks
-correct. Add `--sync-api` to restart the api once `secret/api` is written,
-since it reads the path at start.
+`platform/bootstrap/secrets.sh` writes every path below, one section each, and
+checks each value it can against its service (Cloudflare, ghcr.io, Brevo,
+Discord). The commands below are what it does, for reference.
 
 ### Cloudflare DNS token (cert-manager + external-dns)
 
@@ -162,13 +150,19 @@ prints a reminder.
 
 ### Stalwart mail server
 
+`account.admin` is the recovery admin Stalwart seeds at start, which the apply
+sidecar signs in as. Every mailbox in `infra/stalwart/accounts.json` has its
+password under its `vaultKey`, `account.<localpart>`; the sidecar skips a mailbox
+whose key is missing.
+
 ```bash
-vault kv put secret/platform/mail \
-  admin-user=admin \
-  admin-password=<stalwart-admin-password> \
-  bounce-mailbox-user=bounce@esa-blueshell.nl \
-  bounce-mailbox-password=<bounce-mailbox-password>
+vault kv patch secret/platform/mail \
+  account.admin=<password> \
+  account.board=<password>   # one per accounts.json entry
 ```
+
+`secrets.sh --only mail` generates every missing one and restarts Stalwart so the
+sidecar creates the mailboxes.
 
 ### API secrets
 
@@ -237,10 +231,11 @@ commands for either.
 
 The OIDC step short-circuits when `secret/api:auth.clients.vault.secret`
 is missing, so on a fresh cluster the Job runs once before the seed
-script and again after it. After running `seed-vault-from-env.sh
---apply`, trigger the Job to re-run:
+script and again after it. `cluster.sh` runs it the second time; on its own,
+delete the finished Job and reconcile:
 
 ```bash
+kubectl -n data-system delete job vault-bootstrap-auth
 flux reconcile kustomization apps-data
 ```
 
@@ -319,8 +314,7 @@ vault login -method=oidc
 ```
 
 An `Unable to authorize role "" with redirect_uri` error means the
-role is missing the localhost entry: re-run the bootstrap Job with
-`flux reconcile kustomization apps-data`.
+role is missing the localhost entry: run the bootstrap Job again (§3).
 
 ### GHCR pull credential (Deployments + registry scanning)
 
@@ -470,8 +464,7 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
   bootstrap Job, which writes the new secret into `auth/oidc/config`.
 
   ```bash
-  vault kv patch secret/api auth.clients.vault.secret="$(openssl rand -hex 32)"
-  flux -n flux-system reconcile kustomization apps-data
+  platform/bootstrap/secrets.sh --only api --rotate   # answer yes for auth.clients.vault.secret only
   ```
 
 ### MariaDB logins (api, migrate Job and Bitnami chart)
@@ -505,7 +498,7 @@ next refresh (within 1 h, or trigger immediately with the
 
 Rotating `admin-user` / `admin-password`, the login Vault creates the leased
 users with, needs the bootstrap Job to run again so `database/config/mariadb`
-takes it: `flux reconcile kustomization apps-data`.
+takes it (§3).
 
 ### Other Vault paths
 
@@ -519,5 +512,6 @@ Same shape, narrower blast radius:
 | `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |
 
 For the api's third-party tokens (Brevo, Google Calendar, Discord),
-`scripts/seed-vault-from-env.sh --apply --sync-api` writes Vault and
-restarts the api in one step.
+`platform/bootstrap/secrets.sh --only api --rotate` checks each new value against
+its service before writing it, and restarts the api when an integration gets its
+first key.

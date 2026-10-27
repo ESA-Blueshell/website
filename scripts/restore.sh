@@ -18,7 +18,7 @@
 #            downloads and checks the backup and prints every step it would take.
 #
 # It signs in to the live Vault through the site for the Kopia credentials, as
-# seed-backup-credentials.sh does. Shares are typed once and held in this process only; no secret
+# platform/bootstrap/secrets.sh does. Shares are typed once and held in this process only; no secret
 # reaches a command line or a file. Everything downloaded is deleted on exit, pass or fail.
 # platform/docs/backup.md describes what each mode does to each store.
 set -euo pipefail

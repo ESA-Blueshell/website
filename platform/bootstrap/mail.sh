@@ -173,8 +173,8 @@ mta_sts_repair() {
     warn "$host has no DNS record, though its IngressRoute exists"
     image=$(k -n external-dns get deploy external-dns -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
     say "external-dns makes the record from the IngressRoute; it runs ${image:-an unknown image}."
-    if [[ "$image" == *:v0.22.0* ]]; then
-      warn "external-dns v0.22.0 makes no record for any IngressRoute (#2635): older records stay, new ones never come"
+    if [[ "$image" =~ :v0\.2[2-4]\. ]]; then
+      warn "external-dns v0.22 to v0.24 make no record for any IngressRoute (#2635): older records stay, new ones never come"
       say "Pin external-dns to v0.21.0 in platform/cluster/flux/apps/core/external-dns/release.yaml, then run this again."
       return 1
     fi

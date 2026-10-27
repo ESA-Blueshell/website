@@ -11,22 +11,8 @@
   {
     "localPart": "board",
     "vaultKey": "account.board",
-    "aliases": ["bestuur"]
-  },
-  {
-    "localPart": "secretary",
-    "vaultKey": "account.secretary",
-    "aliases": ["secretaris"]
-  },
-  {
-    "localPart": "treasurer",
-    "vaultKey": "account.treasurer",
-    "aliases": ["penningmeester"]
-  },
-  {
-    "localPart": "events",
-    "vaultKey": "account.events",
-    "aliases": ["evenementen"]
+    "aliases": ["bestuur", "secretary", "secretaris", "treasurer", "penningmeester", "events", "evenementen"],
+    "forwardTo": "board@blueshell.utwente.nl"
   },
   {
     "localPart": "postmaster",
@@ -35,6 +21,7 @@
   {
     "localPart": "sitecie",
     "vaultKey": "account.sitecie",
-    "aliases": ["abuse"]
+    "aliases": ["abuse"],
+    "forwardTo": "sitecie@blueshell.utwente.nl"
   }
 ]

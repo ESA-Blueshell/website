@@ -151,10 +151,12 @@ reconcile() {
 
   # 5. Reconcile Vault-managed accounts (passwords, aliases, group
   #    memberships) from accounts.json. Existing accounts get update-
-  #    only — never delete and never recreate — so the mailbox an
-  #    account links to is never disturbed. Only list accounts whose
+  #    only, never recreate, so the mailbox an account links to is never
+  #    disturbed. The one deletion is an empty account whose address
+  #    accounts.json now lists as an alias (retire_claimed_accounts). Only list accounts whose
   #    password lives in Vault here; user-managed mailboxes must NOT
   #    appear, or webadmin changes would be overwritten every boot.
+  retire_claimed_accounts
   reconcile_accounts "$dom"
 
   # 6. Unknown addresses go to the catch-all. Set after the accounts so
@@ -220,9 +222,10 @@ reconcile_accounts() {
     fields="$(jq -nc --arg pw "$pw" '{credentials:{"0":{"@type":"Password",secret:$pw}}}')"
 
     if printf '%s' "$entry" | jq -e 'has("aliases")' >/dev/null; then
-      aliases="$(printf '%s' "$entry" | jq -c --arg dom "$dom" \
-        '.aliases | to_entries
-          | map({(.key|tostring): {name:(.value|split("@")[0]), domainId:$dom, enabled:true}})
+      aliases="$(printf '%s' "$entry" | jq -c --arg dom "$dom" --arg held "$HELD" \
+        '.aliases | map(split("@")[0]) | map(select(. as $a | ($held | split(" ") | index($a)) | not))
+          | to_entries
+          | map({(.key|tostring): {name:.value, domainId:$dom, enabled:true}})
           | add // {}')"
       fields="$(printf '%s' "$fields" | jq -c --argjson a "$aliases" '. + {aliases:$a}')"
     fi
@@ -248,7 +251,102 @@ reconcile_accounts() {
         '{"@type":"update","object":"Account",id:$id,value:$f}' \
         | sc apply --file /dev/stdin
     fi
+
+    reconcile_forward "${lp}@${STALWART_DOMAIN}" "$pw" "$(printf '%s' "$entry" | jq -r '.forwardTo // empty')"
   done
+}
+
+# An address accounts.json lists as an alias can still be an account of its
+# own from before it was folded into another. That account is deleted only
+# when its mailbox is empty; one holding mail stays, and its address is kept
+# out of the aliases (HELD) until the mail is moved. Aliases accounts.json
+# gives to another account are taken off any account it does not manage.
+HELD=""
+retire_claimed_accounts() {
+  managed="$(jq -r '.[].localPart' "$ACCOUNTS_FILE")"
+  claimed="$(jq -r '.[] | .aliases[]? | split("@")[0]' "$ACCOUNTS_FILE")"
+  for id in $(sc query Account --json 2>/dev/null | jq -r '.id'); do
+    acct="$(sc get Account "$id" --json 2>/dev/null)" || continue
+    email="$(printf '%s' "$acct" | jq -r '.emailAddress // empty')"
+    [ "${email#*@}" = "$STALWART_DOMAIN" ] || continue
+    lp="${email%@*}"
+    printf '%s\n' "$managed" | grep -qx "$lp" && continue
+
+    if printf '%s\n' "$claimed" | grep -qx "$lp"; then
+      used="$(printf '%s' "$acct" | jq -r '.usedDiskQuota // 0')"
+      if [ "$used" = "0" ]; then
+        echo "apply: deleting account $email: its mailbox is empty and accounts.json makes it an alias"
+        sc delete Account --ids "$id" >/dev/null
+        continue
+      fi
+      echo "apply: keeping account $email: its mailbox holds $used bytes; move or delete that mail and the next start makes it an alias" >&2
+      HELD="$HELD $lp"
+    fi
+
+    kept="$(printf '%s' "$acct" | jq -c --arg c "$claimed $managed" \
+      '[.aliases // {} | to_entries[] | .value | select(.name as $n | ($c | split("\n") | join(" ") | split(" ") | index($n)) | not)]')"
+    if [ "$(printf '%s' "$kept" | jq 'length')" != "$(printf '%s' "$acct" | jq '.aliases // {} | length')" ]; then
+      echo "apply: taking the aliases accounts.json gives elsewhere off $email"
+      printf '%s' "$kept" | jq -c --arg id "$id" \
+        '{"@type":"update","object":"Account",id:$id,value:{aliases:(to_entries | map({(.key|tostring): .value}) | add // {})}}' \
+        | sc apply --file /dev/stdin
+    fi
+  done
+}
+
+# jmap_as ADDRESS PASSWORD posts the JMAP request on stdin as that account.
+jmap_as() {
+  curl -fsS -u "$1:$2" -H 'Content-Type: application/json' --data-binary @- "${STALWART_URL}/jmap/"
+}
+
+# The account's one managed Sieve script, named forward-<hash of its text>,
+# redirects a copy of every message not marked as spam to FORWARD; the mail
+# stays in the account too. Stalwart sends the copy with the account as
+# envelope sender, so SPF passes for our domain. Spam is not forwarded: the
+# catch-all feeds board@, and spam sent on to another provider costs our
+# reputation. The X-Spam-Status header is written after user scripts run,
+# so the script asks the filter through spamtest instead. Activating the script deactivates any other on the account.
+# Without FORWARD the managed script is removed. Failures are logged, never
+# fatal: mail still arrives without the forward.
+reconcile_forward() {
+  addr="$1" pw="$2" target="$3"
+  session="$(curl -fsS -u "$addr:$pw" "${STALWART_URL}/jmap/session" 2>/dev/null)" \
+    || { echo "apply: cannot sign in as $addr to manage its forward" >&2; return 0; }
+  acc="$(printf '%s' "$session" | jq -r '.primaryAccounts["urn:ietf:params:jmap:sieve"] // empty')"
+  [ -n "$acc" ] || { echo "apply: $addr has no Sieve account" >&2; return 0; }
+  using='["urn:ietf:params:jmap:core","urn:ietf:params:jmap:sieve"]'
+  scripts="$(jq -nc --argjson u "$using" --arg a "$acc" '{using:$u,methodCalls:[["SieveScript/get",{accountId:$a},"0"]]}' \
+    | jmap_as "$addr" "$pw" | jq -c '.methodResponses[0][1].list // []')" \
+    || { echo "apply: cannot read the Sieve scripts of $addr" >&2; return 0; }
+
+  name=""
+  if [ -n "$target" ]; then
+    text="$(printf 'require ["copy", "spamtest", "relational", "comparator-i;ascii-numeric"];\n# Managed by the stalwart-apply sidecar from infra/stalwart/accounts.json.\nif spamtest :value "ge" :comparator "i;ascii-numeric" "5" {\n  stop;\n}\nredirect :copy "%s";\n' "$target")"
+    name="forward-$(printf '%s' "$text" | sha256sum | cut -c1-8)"
+    if [ "$(printf '%s' "$scripts" | jq --arg n "$name" 'map(select(.name == $n and .isActive)) | length')" = "0" ]; then
+      blob="$(printf '%s' "$text" | curl -fsS -u "$addr:$pw" -H 'Content-Type: application/sieve' --data-binary @- \
+        "${STALWART_URL}/jmap/upload/${acc}/" | jq -r '.blobId // empty')"
+      [ -n "$blob" ] || { echo "apply: could not upload the forward script for $addr" >&2; return 0; }
+      created="$(jq -nc --argjson u "$using" --arg a "$acc" --arg n "$name" --arg b "$blob" \
+        '{using:$u,methodCalls:[["SieveScript/set",{accountId:$a,create:{"f":{name:$n,blobId:$b}},onSuccessActivateScript:"#f"},"0"]]}' \
+        | jmap_as "$addr" "$pw" | jq -r '.methodResponses[0][1].created.f.id // empty')"
+      [ -n "$created" ] || { echo "apply: Stalwart refused the forward script for $addr" >&2; return 0; }
+      echo "apply: $addr forwards to $target"
+    fi
+  fi
+
+  old="$(printf '%s' "$scripts" | jq -c --arg n "$name" '[.[] | select((.name | startswith("forward-")) and .name != $n) | .id]')"
+  [ "$old" = "[]" ] && return 0
+  # An active script cannot be destroyed, so with no forward left it is
+  # deactivated in a request of its own first.
+  if [ -z "$target" ]; then
+    jq -nc --argjson u "$using" --arg a "$acc" '{using:$u,methodCalls:[["SieveScript/set",{accountId:$a,onSuccessDeactivateScript:true},"0"]]}' \
+      | jmap_as "$addr" "$pw" >/dev/null || { echo "apply: could not deactivate the forward script of $addr" >&2; return 0; }
+  fi
+  jq -nc --argjson u "$using" --arg a "$acc" --argjson ids "$old" \
+    '{using:$u,methodCalls:[["SieveScript/set",{accountId:$a,destroy:$ids},"0"]]}' \
+    | jmap_as "$addr" "$pw" >/dev/null || { echo "apply: could not remove the old forward script of $addr" >&2; return 0; }
+  [ -n "$target" ] || echo "apply: $addr no longer forwards"
 }
 
 wait_ready

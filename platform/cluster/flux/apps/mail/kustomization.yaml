@@ -17,5 +17,5 @@ resources:
 # it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/stalwart-tools
-    newTag: v1.27.0 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}
-    digest: sha256:12527d0070278de3edc23f89cf7cef228124540f27a4ab972339b3eec36a0782 # {"$imagepolicy": "flux-system:stalwart-tools:digest"}
+    newTag: v1.27.1 # {"$imagepolicy": "flux-system:stalwart-tools:tag"}
+    digest: sha256:3d6c4c95f9e596d748d25d0942a5a29841901ba8aa1e3f182c59c31f4b52eab5 # {"$imagepolicy": "flux-system:stalwart-tools:digest"}

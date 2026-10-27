@@ -22,7 +22,8 @@ set -eu
 : "${STALWART_DOMAIN:?}"
 : "${STALWART_HOSTNAME:?}"
 : "${CF_DNS_API_TOKEN:?}"
-: "${STALWART_CATCHALL:=board@${STALWART_DOMAIN}}"
+# Where unknown addresses go, one address or several separated by spaces.
+: "${STALWART_CATCHALL:=board@${STALWART_DOMAIN} sitecie@${STALWART_DOMAIN}}"
 : "${PLAN_TEMPLATE:=/opt/stalwart-tools/plan.ndjson.tmpl}"
 : "${ACCOUNTS_FILE:=/opt/stalwart-tools/accounts.json}"
 # Directory containing one file per Vault key, mounted from the
@@ -160,13 +161,38 @@ reconcile() {
   reconcile_accounts "$dom"
 
   # 6. Unknown addresses go to the catch-all. Set after the accounts so
-  #    the target exists.
-  printf '{"@type":"update","object":"Domain","id":"%s","value":{"catchAllAddress":"%s"}}\n' \
-    "$dom" "$STALWART_CATCHALL" | sc apply --file /dev/stdin
+  #    the targets exist.
+  reconcile_catchall "$dom"
 
   reconcile_stdout_tracer
 
   echo "apply: reconcile complete"
+}
+
+# The domain takes one catch-all address. One target is set directly;
+# several go through the mailing list catchall@, so each member gets its
+# own copy and its own forward runs on it.
+reconcile_catchall() {
+  dom="$1"
+  # shellcheck disable=SC2086 # split the addresses on purpose
+  set -- $STALWART_CATCHALL
+  target="$1"
+  if [ "$#" -gt 1 ]; then
+    target="catchall@${STALWART_DOMAIN}"
+    recipients="$(printf '%s\n' "$@" | jq -Rsc 'split("\n") | map(select(length > 0)) | map({(.): true}) | add')"
+    list="$(sc query MailingList --json 2>/dev/null | jq -rs --arg e "$target" 'map(select(.emailAddress == $e))[0].id // empty')"
+    if [ -z "$list" ]; then
+      echo "apply: creating the mailing list $target for unknown addresses"
+      jq -nc --arg dom "$dom" --argjson r "$recipients" \
+        '{"@type":"create","object":"MailingList","value":{"catchall":{name:"catchall",domainId:$dom,recipients:$r}}}' \
+        | sc apply --file /dev/stdin
+    else
+      jq -nc --arg id "$list" --argjson r "$recipients" \
+        '{"@type":"update","object":"MailingList",id:$id,value:{recipients:$r}}' | sc apply --file /dev/stdin
+    fi
+  fi
+  printf '{"@type":"update","object":"Domain","id":"%s","value":{"catchAllAddress":"%s"}}\n' \
+    "$dom" "$target" | sc apply --file /dev/stdin
 }
 
 # Stalwart's only default tracer writes to a file inside the container,

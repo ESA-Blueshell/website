@@ -150,7 +150,7 @@ fetch_policy() {
 # Stalwart serves behind it. It fixes the first broken link it can, and
 # succeeds once a fetch could work.
 mta_sts_repair() {
-  local host="mta-sts.$DOMAIN" logs served _
+  local host="mta-sts.$DOMAIN" logs served image _
   if [[ -z "$HAVE_CONTEXT" ]]; then
     note "without the cluster the cause cannot be looked into"
     return 1
@@ -171,11 +171,16 @@ mta_sts_repair() {
     ok "$host has a DNS record"
   else
     warn "$host has no DNS record, though its IngressRoute exists"
-    say "external-dns makes the record from the IngressRoute. One that has run since before the"
-    say "route was made can miss it, and a restart makes it read every route again."
+    image=$(k -n external-dns get deploy external-dns -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || true)
+    say "external-dns makes the record from the IngressRoute; it runs ${image:-an unknown image}."
+    if [[ "$image" == *:v0.22.0* ]]; then
+      warn "external-dns v0.22.0 makes no record for any IngressRoute (#2635): older records stay, new ones never come"
+      say "Pin external-dns to v0.21.0 in platform/cluster/flux/apps/core/external-dns/release.yaml, then run this again."
+      return 1
+    fi
     logs=$(k -n external-dns logs deploy/external-dns --since=1h 2>/dev/null | grep -iE "level=(error|warn)|$host" | tail -n 3 || true)
     [[ -z "$logs" ]] || cut -c1-200 <<<"$logs" | sed 's/^/    /'
-    confirm "Restart external-dns?" || return 1
+    confirm "Restart external-dns, so it lists every route again?" || return 1
     k -n external-dns rollout restart deploy/external-dns >/dev/null
     k -n external-dns rollout status deploy/external-dns --timeout=180s >/dev/null \
       || { warn "external-dns did not come back: kubectl --context $CONTEXT -n external-dns get pods"; return 1; }

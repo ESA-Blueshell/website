@@ -6,7 +6,7 @@ metadata:
   annotations:
     # Main site, one label deep — CF Universal SSL + our Let's
     # Encrypt wildcard both cover it, CF proxy stays on.
-    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:

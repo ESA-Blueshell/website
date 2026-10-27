@@ -4,7 +4,7 @@ metadata:
   name: mta-sts
   namespace: edge-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: 157.173.115.164,2a02:c207:2316:2642::1
+    external-dns.alpha.kubernetes.io/target: 157.173.115.164
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'true'
     kubernetes.io/ingress.class: traefik-public
 spec:

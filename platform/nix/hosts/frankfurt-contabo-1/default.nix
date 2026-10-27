@@ -40,8 +40,10 @@
     #   prefix  /20     (netmask 255.255.240.0, NOT /24)
     #   gw4     157.173.112.1  (in-subnet on /20; NOT .115.1)
     #   v6      2a02:c207:2316:2642::1/64
-    #   gw6     fe80::1  (link-local — Contabo does not answer ND for
-    #                     it, so the route MUST be `onlink`).
+    #   gw6     fe80::2dc:ff:fe00:2, the router's link-local address
+    #           (MAC 00:dc:00:00:00:02). Nothing answers on fe80::1 here,
+    #           whatever Contabo's guides say: a route via it leaves the
+    #           host with no IPv6 at all (#2638).
     useDHCP = lib.mkForce false;
     interfaces.ens18 = {
       useDHCP = false;
@@ -57,15 +59,13 @@
           prefixLength = 64;
         }
       ];
-      # `networking.defaultGateway6` doesn't expose `onlink`. Without
-      # onlink, the kernel tries ND for fe80::1, which times out
-      # (Contabo's router doesn't advertise on that address) and the
-      # default v6 route becomes unusable. Drive the route directly.
+      # `networking.defaultGateway6` doesn't expose `onlink`, so the
+      # route is driven directly.
       ipv6.routes = [
         {
           address = "::";
           prefixLength = 0;
-          via = "fe80::1";
+          via = "fe80::2dc:ff:fe00:2";
           options = { onlink = ""; };
         }
       ];

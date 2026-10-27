@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.28.0](https://github.com/ESA-Blueshell/website/compare/v1.27.1...v1.28.0) (2026-10-27)
+
+
+### Features
+
+* **platform:** bootstrap scripts walk a full cluster setup, check each step and fix what is missing ([#2629](https://github.com/ESA-Blueshell/website/issues/2629)) ([#2630](https://github.com/ESA-Blueshell/website/issues/2630)) ([8e9a4cb](https://github.com/ESA-Blueshell/website/commit/8e9a4cbeb076826edf1136de6e2b11dcd1e09b6d))
+
+
+### Bug Fixes
+
+* **platform:** external-dns goes back to 0.21.0, which publishes IngressRoutes ([#2636](https://github.com/ESA-Blueshell/website/issues/2636)) ([6ff4b03](https://github.com/ESA-Blueshell/website/commit/6ff4b03919cae1b13b0e0ca705af6629d3c35a79))
+* **platform:** mail has postmaster, abuse and catch-all addresses, Stalwart logs to stdout and serves its MTA-STS policy ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2628](https://github.com/ESA-Blueshell/website/issues/2628)) ([b0e66c4](https://github.com/ESA-Blueshell/website/commit/b0e66c4268a402edca08144dc5bfa6b4ce9c02f5))
+* **platform:** mail.sh finds why the MTA-STS policy is not served and fixes it ([#2634](https://github.com/ESA-Blueshell/website/issues/2634)) ([b4addf1](https://github.com/ESA-Blueshell/website/commit/b4addf1ee22539ac68db39c7f302c10092cdb035))
+* **platform:** mail.sh says the flux CLI is missing instead of reporting a Flux failure ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2637](https://github.com/ESA-Blueshell/website/issues/2637)) ([8736daf](https://github.com/ESA-Blueshell/website/commit/8736daf94d3b7bdcaf0320d7190b13eab653592f))
+* **platform:** role addresses deliver to board@, and board@ and sitecie@ forward to blueshell.utwente.nl ([#2633](https://github.com/ESA-Blueshell/website/issues/2633)) ([77d4acd](https://github.com/ESA-Blueshell/website/commit/77d4acd1da31db9a2810c2d1d6f95962b5aa8f60))
+
 ## [1.27.1](https://github.com/ESA-Blueshell/website/compare/v1.27.0...v1.27.1) (2026-10-27)
 
 

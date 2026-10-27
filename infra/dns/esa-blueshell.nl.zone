@@ -51,41 +51,17 @@ vault.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 ftp.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:false
 www.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:true
 
-;; MX Records
-;; The MX target must NOT be Cloudflare-proxied (mail is raw TCP, not
-;; HTTP) — point it at mail.esa-blueshell.nl, whose A record is
-;; explicitly cf-proxied:false. Mail flowing to *@esa-blueshell.nl
-;; therefore reaches the Stalwart pod directly on the VPS public IP.
-esa-blueshell.nl.	1	IN	MX	10 mail.esa-blueshell.nl.
+;; Mail Records
+;; Stalwart publishes MX, SPF, DMARC and DKIM itself through the
+;; Cloudflare API (the Domain has dnsManagement and dkimManagement set
+;; to Automatic, see infra/stalwart/apply.sh) and overwrites any value
+;; imported from here, so none of them belong in this file. Live values
+;; on 2026-10-27:
+;;   MX     10 _dc-mx.3f8a0de564d4.esa-blueshell.nl (A 157.173.115.164)
+;;   SPF    v=spf1 mx -all
+;;   DMARC  v=DMARC1; p=reject; rua=mailto:postmaster@esa-blueshell.nl
+;; mail.esa-blueshell.nl above must stay unproxied: mail is raw TCP.
 
-;; TXT Records
-;; SPF — authorise the MX hosts (i.e. mail.esa-blueshell.nl) to send
-;; mail for the domain. `~all` is soft-fail; tighten to `-all` after
-;; a few weeks of DMARC reports confirm no legitimate sender was
-;; missed.
-esa-blueshell.nl.	1	IN	TXT	"v=spf1 mx ~all" ; cf_tags=cf-proxied:false
-
-;; DMARC — start in monitor-only (`p=none`) so misconfigurations don't
-;; drop legitimate mail. Aggregate reports go to postmaster@.
-;; Promote to `p=quarantine` once the rua reports show 100% SPF/DKIM
-;; alignment on outbound mail.
-_dmarc.esa-blueshell.nl.	1	IN	TXT	"v=DMARC1; p=none; rua=mailto:postmaster@esa-blueshell.nl; adkim=r; aspf=r" ; cf_tags=cf-proxied:false
-
-;; DKIM is owned by Stalwart. The Domain object has
-;; dkimManagement=Automatic, so Stalwart generates Dkim1RsaSha256 +
-;; Dkim1Ed25519Sha256 keys at first boot, rotates them on a
-;; schedule, and publishes the matching <selector>._domainkey TXT
-;; records through the same Cloudflare DnsServer that handles ACME.
-;; No DKIM records belong in this zone file.
-
-aaaa-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
-aaaa-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
-aaaa-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
-aaaa-stalwart.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/stalwart-admin"
-aaaa-status.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/status"
-aaaa-traefik.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/traefik-dashboard"
-aaaa-vault.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/vault"
-aaaa-www.v2.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/frontend"
 a-auth.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/auth"
 a-headlamp.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"
 a-kube.esa-blueshell.nl.	1	IN	TXT	"heritage=external-dns,external-dns/owner=blueshell-website-production,external-dns/resource=ingressroute/edge-system/headlamp"

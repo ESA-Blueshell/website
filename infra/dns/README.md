@@ -27,45 +27,27 @@ After import, toggle the orange cloud per record:
 | `@`, `www`                      | on    | Public HTTP(S) behind Cloudflare.                                            |
 | `stalwart`                      | on    | Webadmin only — pure HTTP, proxy gives cache + DDoS shielding.               |
 | `mail`                          | off   | SMTP/IMAP/POP3 are raw TCP. Cloudflare proxy is HTTP(S)-only.                |
-| `@` (MX target = `mail`)        | off   | Inherits from the `mail` A record above.                                     |
-| `_dmarc`, `default._domainkey`  | off   | TXT records — proxy status is irrelevant but Cloudflare convention is "off". |
 | `minecraft`                     | off   | Game traffic — Cloudflare proxy is HTTP(S) only.                             |
 | `ftp`                           | off   | Non-HTTP protocol.                                                           |
 
 ## Mail records
 
-Outbound mail signing + inbound delivery for `esa-blueshell.nl` use
-five records, all in this zone file:
+`mail` A is in the zone file: non-proxied, pointing at the Frankfurt
+VPS public IP, where Stalwart binds the mail ports (25/465/587/993)
+through `hostPort`.
 
-- **`mail`** A — non-proxied, pointing at the Frankfurt VPS public
-  IP. Stalwart binds the mail ports (25/465/587/993) on the host via
-  `hostPort` on this address.
-- **`@` MX → `mail`** — RFC-mandated indirection; the MX target's
-  A record must be non-proxied so SMTP delivery reaches the pod
-  directly.
-- **`@` SPF** (`v=spf1 mx ~all`) — authorises the MX hosts to send.
-  Soft-fail (`~all`) for the initial rollout; flip to `-all` once
-  DMARC aggregate reports confirm no legitimate sender is being
-  caught by the `mx` mechanism.
-- **`_dmarc` DMARC** (`v=DMARC1; p=none; rua=mailto:postmaster@…`) —
-  monitor-only at first. Promote to `p=quarantine` once outbound
-  mail is fully aligned on both SPF and DKIM.
-- **`default._domainkey` DKIM** — the public key matching the
-  `DkimSignature` Stalwart manages with `default` as the selector.
-  The zone file ships a placeholder (`p=REPLACE_AFTER_FIRST_BOOT`)
-  because the actual public key is derived from the private key in
-  Vault and only becomes visible after the apply sidecar creates the
-  `DkimSignature` object. To populate it:
+Stalwart owns every other mail record. Its Domain has
+`dnsManagement` and `dkimManagement` set to Automatic (see
+`infra/stalwart/apply.sh`), so it writes MX, SPF, DMARC and the DKIM
+`_domainkey` keys to Cloudflare itself and overwrites anything imported
+from the zone file. The zone file lists their live values as a comment
+only. Read them from DNS, not from this repo:
 
-  ```sh
-  kubectl -n mail-system exec deploy/stalwart -c stalwart-apply -- \
-    stalwart-cli query DkimSignature --fields selector publicKey
-  ```
-
-  Paste the `publicKey` value (without `-----BEGIN PUBLIC KEY-----`
-  markers, on one line) into the `p=` field of the TXT record in
-  Cloudflare. Selector + algorithm are already correct in the
-  zone file.
+```sh
+dig +short esa-blueshell.nl MX
+dig +short esa-blueshell.nl TXT
+dig +short _dmarc.esa-blueshell.nl TXT
+```
 
 ## ACME / Let's Encrypt
 

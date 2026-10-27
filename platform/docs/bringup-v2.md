@@ -70,7 +70,8 @@ git commit -am "authorized-keys: rotate bs-deploy" && git push
 The flake at `platform/nix/hosts/frankfurt-contabo-1/default.nix`
 carries the full production addressing baked in: IPv4
 `157.173.115.164/24` gateway `157.173.115.1`, IPv6
-`2a02:c207:2316:2642::1/64` gateway `fe80::1` (link-local). No further
+`2a02:c207:2316:2642::1/64` (not configured until #2640: Contabo does
+not route it yet). No further
 nix edits are needed before install.
 
 ```bash
@@ -249,7 +250,7 @@ S3/B2 bucket: dump → upload → `kubectl cp` from workstation → restore.
 Cloudflare zone `esa-blueshell.nl`:
 
 - `esa-blueshell.nl` A → `157.173.115.164`, AAAA →
-  `2a02:c207:2316:2642::1`, both proxied (orange cloud).
+  `2a02:c207:2316:2642::1` once #2640 serves IPv6, both proxied (orange cloud).
 - `*.esa-blueshell.nl` — external-dns auto-materialises records
   from every IngressRoute; no manual action needed.
 - `stalwart.esa-blueshell.nl` A → `157.173.115.164`, **grey cloud**

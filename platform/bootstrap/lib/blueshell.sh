@@ -14,7 +14,8 @@ CONTEXT=${KUBE_CONTEXT:-blueshell}
 DOMAIN=esa-blueshell.nl
 MAIL_HOST=mail.esa-blueshell.nl
 SERVER_V4=157.173.115.164
-SERVER_V6=2a02:c207:2316:2642::1
+# Empty while the server does not serve IPv6 (#2640); mail.sh then checks IPv4 only.
+SERVER_V6=""
 
 VAULT_NS=data-system
 VAULT_POD=vault-v2-0

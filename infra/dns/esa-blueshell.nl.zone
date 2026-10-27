@@ -45,16 +45,7 @@ v2.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 vault.esa-blueshell.nl.	1	IN	A	157.173.115.164 ; cf_tags=cf-proxied:true
 
 ;; AAAA Records
-auth.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-headlamp.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-kube.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-mail.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:false
-stalwart.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-status.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-traefik.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-v2.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
-vault.esa-blueshell.nl.	1	IN	AAAA	2a02:c207:2316:2642::1 ; cf_tags=cf-proxied:true
+;; None: the server cannot serve IPv6 yet (#2640).
 
 ;; CNAME Records
 ftp.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:false
@@ -62,7 +53,7 @@ www.esa-blueshell.nl.	1	IN	CNAME	esa-blueshell.nl. ; cf_tags=cf-proxied:true
 
 ;; MX Records
 ;; The MX target must NOT be Cloudflare-proxied (mail is raw TCP, not
-;; HTTP) — point it at mail.esa-blueshell.nl, whose A/AAAA are
+;; HTTP) — point it at mail.esa-blueshell.nl, whose A record is
 ;; explicitly cf-proxied:false. Mail flowing to *@esa-blueshell.nl
 ;; therefore reaches the Stalwart pod directly on the VPS public IP.
 esa-blueshell.nl.	1	IN	MX	10 mail.esa-blueshell.nl.

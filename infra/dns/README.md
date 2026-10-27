@@ -8,7 +8,8 @@ Authoritative zone files, one per domain. Imported into Cloudflare via
 - Zone: [`esa-blueshell.nl.zone`](./esa-blueshell.nl.zone)
 - Migrated off TransIP on 2026-04-21.
 - Apex `esa-blueshell.nl` serves the NixOS + k3s stack at
-  `157.173.115.164` / `2a02:c207:2316:2642::1`. Every service hostname
+  `157.173.115.164`; its IPv6 address is not published until the server
+  can serve it (#2640). Every service hostname
   the platform advertises (`api` lives at apex `/api`, plus admin hosts
   `kube`, `vault`, `stalwart`, `status`, `traefik`) resolves through
   that node — admin records are external-dns managed off each
@@ -26,7 +27,7 @@ After import, toggle the orange cloud per record:
 | `@`, `www`                      | on    | Public HTTP(S) behind Cloudflare.                                            |
 | `stalwart`                      | on    | Webadmin only — pure HTTP, proxy gives cache + DDoS shielding.               |
 | `mail`                          | off   | SMTP/IMAP/POP3 are raw TCP. Cloudflare proxy is HTTP(S)-only.                |
-| `@` (MX target = `mail`)        | off   | Inherits from the `mail` A/AAAA above.                                       |
+| `@` (MX target = `mail`)        | off   | Inherits from the `mail` A record above.                                     |
 | `_dmarc`, `default._domainkey`  | off   | TXT records — proxy status is irrelevant but Cloudflare convention is "off". |
 | `minecraft`                     | off   | Game traffic — Cloudflare proxy is HTTP(S) only.                             |
 | `ftp`                           | off   | Non-HTTP protocol.                                                           |
@@ -36,11 +37,11 @@ After import, toggle the orange cloud per record:
 Outbound mail signing + inbound delivery for `esa-blueshell.nl` use
 five records, all in this zone file:
 
-- **`mail`** A/AAAA — non-proxied, pointing at the Frankfurt VPS public
+- **`mail`** A — non-proxied, pointing at the Frankfurt VPS public
   IP. Stalwart binds the mail ports (25/465/587/993) on the host via
   `hostPort` on this address.
 - **`@` MX → `mail`** — RFC-mandated indirection; the MX target's
-  A/AAAA must be non-proxied so SMTP delivery reaches the pod
+  A record must be non-proxied so SMTP delivery reaches the pod
   directly.
 - **`@` SPF** (`v=spf1 mx ~all`) — authorises the MX hosts to send.
   Soft-fail (`~all`) for the initial rollout; flip to `-all` once

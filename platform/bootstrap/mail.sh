@@ -64,6 +64,19 @@ stage_cluster() {
   fi
 }
 
+# server_addresses prints the addresses the server serves on, one a line.
+server_addresses() { printf '%s\n' "$SERVER_V4"; [[ -z "$SERVER_V6" ]] || printf '%s\n' "$SERVER_V6"; }
+expected_addresses() { server_addresses | paste -sd ' ' - | sed 's/ / and /'; }
+
+# serves_expected "IPS": the addresses DNS gives are exactly the server's,
+# so an IPv6 address published while SERVER_V6 is empty counts as wrong.
+serves_expected() {
+  local got want
+  got=$(tr ' ' '\n' <<<"$1" | grep -v '^$' | sort | tr '\n' ' ')
+  want=$(server_addresses | sort | tr '\n' ' ')
+  [[ "$got" == "$want" ]]
+}
+
 stage_dns() {
   local mx ips spf dmarc rua sel type rec sts tlsrpt
   stage "DNS: MX, SPF, DKIM, DMARC, MTA-STS and TLS-RPT (resolver $RESOLVER)"
@@ -71,17 +84,17 @@ stage_dns() {
   [[ -n "$mx" ]] || { problem "$DOMAIN has no MX record"; }
   if [[ -n "$mx" ]]; then
     ips="$(q A "$mx") $(q AAAA "$mx")"
-    if [[ " $ips " == *" $SERVER_V4 "* && " $ips " == *" $SERVER_V6 "* ]]; then
-      ok "MX $mx reaches $SERVER_V4 and $SERVER_V6"
+    if serves_expected "$ips"; then
+      ok "MX $mx reaches $(expected_addresses)"
     else
-      problem "MX $mx resolves to $ips, not $SERVER_V4 and $SERVER_V6"
+      problem "MX $mx resolves to $ips, not $(expected_addresses)"
     fi
   fi
   ips="$(q A "$MAIL_HOST") $(q AAAA "$MAIL_HOST")"
-  if [[ " $ips " == *" $SERVER_V4 "* && " $ips " == *" $SERVER_V6 "* ]]; then
-    ok "$MAIL_HOST is $SERVER_V4 and $SERVER_V6"
+  if serves_expected "$ips"; then
+    ok "$MAIL_HOST is $(expected_addresses)"
   else
-    problem "$MAIL_HOST resolves to $ips (proxied through Cloudflare? mail needs it DNS-only)"
+    problem "$MAIL_HOST resolves to $ips, not $(expected_addresses) (a Cloudflare address means it is proxied; mail needs it DNS-only)"
   fi
 
   spf=$(txt "$DOMAIN" | grep '^v=spf1' || true)
@@ -236,9 +249,9 @@ stage_rdns() {
   say "Outlook.com and Gmail distrust a server whose address does not name the host it greets as."
   while true; do
     bad=()
-    for ip in "$SERVER_V4" "$SERVER_V6"; do
+    while IFS= read -r ip; do
       if got=$(check_ptr "$ip"); then ok "$ip → $MAIL_HOST → $ip"; else warn "$ip → $got"; bad+=("$ip"); fi
-    done
+    done < <(server_addresses)
     (( ${#bad[@]} == 0 )) && return 0
     tries=$((tries + 1))
     if (( tries > 2 )); then

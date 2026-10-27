@@ -6,7 +6,8 @@
 # DKIM against the selectors Stalwart signs with, DMARC, MTA-STS, TLS-RPT), the
 # MTA-STS policy, reverse DNS, the SMTP greeting and certificate, blocklists,
 # the postmaster, abuse and catch-all addresses, recent Outlook.com rejections,
-# and Microsoft's sender programs. It reads only, except for the steps you do in
+# Microsoft's sender programs and the Brevo relay for Microsoft's addresses. It
+# reads only, except for the steps you do in
 # a browser, which it remembers once you confirm them. Safe to re-run.
 #
 #   platform/bootstrap/mail.sh
@@ -387,9 +388,52 @@ stage_microsoft() {
   fi
 }
 
+# brevo_dns: Brevo's verification code and DKIM keys for $DOMAIN are in DNS.
+brevo_dns() {
+  txt "$DOMAIN" | grep -q '^brevo-code:' || return 1
+  [[ -n "$(q CNAME "brevo1._domainkey.$DOMAIN")" && -n "$(q CNAME "brevo2._domainkey.$DOMAIN")" ]] \
+    || txt "mail._domainkey.$DOMAIN" | grep -q 'p='
+}
+
+stage_relay() {
+  local relay=""
+  stage "Brevo relay for Outlook.com, Hotmail, Live and MSN"
+  say "While Microsoft blocks $SERVER_V4, Stalwart sends mail for their addresses through Brevo (#2645)."
+  if [[ -n "$CLUSTER" ]]; then
+    relay=$(sc_query query MtaRoute --json | jq -rs 'map(select(.name == "relay"))[0].id // empty')
+    if [[ -n "$relay" ]]; then
+      ok "Stalwart sends Microsoft's mail through Brevo"
+    else
+      note "Stalwart sends Microsoft's mail directly; platform/bootstrap/secrets.sh --only mail turns the relay on"
+    fi
+  fi
+  # Until Brevo has authenticated the domain it signs as itself, and our
+  # DMARC policy (p=reject) then rejects the relayed mail.
+  if brevo_dns; then
+    ok "Brevo's verification code and DKIM keys for $DOMAIN are in DNS"
+    return 0
+  fi
+  if [[ -n "$relay" ]]; then
+    problem "Brevo has not authenticated $DOMAIN, so relayed mail fails DMARC"
+  else
+    note "authenticate $DOMAIN in Brevo before turning the relay on"
+  fi
+  step "Brevo: Senders, Domains & Dedicated IPs, then Domains, Add a domain: $DOMAIN."
+  step "Choose to authenticate it yourself. Brevo lists a brevo-code TXT, DKIM records and a DMARC record."
+  step "In Cloudflare DNS add the brevo-code TXT on $DOMAIN and the DKIM records, proxy off."
+  step "Skip Brevo's DMARC record: Stalwart publishes ours, and Brevo accepts it."
+  step "Back in Brevo, press Authenticate this email domain."
+  open_url "https://app.brevo.com/senders/domain/list"
+  if confirm "Records added and the domain authenticated?"; then
+    if brevo_dns; then ok "Brevo's records for $DOMAIN are in DNS"; else later "Brevo's records for $DOMAIN do not resolve yet; re-run once DNS has caught up"; fi
+  else
+    later "authenticate $DOMAIN in Brevo"
+  fi
+}
+
 # ── run ───────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=9
+TOTAL_STAGES=10
 [[ -n "$EMBEDDED" ]] || banner "Blueshell: mail deliverability"
 stage_cluster
 stage_dns
@@ -400,6 +444,7 @@ stage_blocklists
 stage_addresses
 stage_rejections
 stage_microsoft
+stage_relay
 
 printf '\n'
 if (( PROBLEMS == 0 )); then

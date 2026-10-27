@@ -30,6 +30,10 @@ set -eu
 # stalwart-secrets Secret. accounts.json's `vaultKey` field names the
 # file to read (e.g. `account.api`).
 : "${ACCOUNT_PASSWORDS_DIR:=/etc/stalwart-accounts}"
+# The relay for Microsoft's consumer addresses, used while `relay.login` and
+# `relay.key` are in that directory. Port 465 is implicit TLS.
+: "${STALWART_RELAY_HOST:=smtp-relay.brevo.com}"
+: "${STALWART_RELAY_PORT:=465}"
 
 export STALWART_URL STALWART_USER STALWART_PASSWORD
 
@@ -166,6 +170,8 @@ reconcile() {
 
   reconcile_stdout_tracer
 
+  reconcile_relay
+
   echo "apply: reconcile complete"
 }
 
@@ -214,6 +220,48 @@ reconcile_stdout_tracer() {
   printf '{"@type":"create","object":"Action","value":{"reload":{"@type":"ReloadSettings"}}}\n' \
     | sc apply --file /dev/stdin \
     || echo "apply: settings reload failed; the stdout tracer starts on the next pod start" >&2
+}
+
+# Outlook.com, Hotmail, Live and MSN refuse this server's IP (S3150, #2645),
+# so mail for any domain whose MX is theirs goes through the relay while its
+# login is in Vault. Without it the rule and the route are removed.
+reconcile_relay() {
+  login="$(cat "${ACCOUNT_PASSWORDS_DIR}/relay.login" 2>/dev/null || true)"
+  key="$(cat "${ACCOUNT_PASSWORDS_DIR}/relay.key" 2>/dev/null || true)"
+  on=""
+  [ -n "$login" ] && [ -n "$key" ] && on=yes
+  route="$(id_by_name MtaRoute relay)"
+  if [ -n "$on" ]; then
+    fields="$(jq -nc --arg h "$STALWART_RELAY_HOST" --argjson p "$STALWART_RELAY_PORT" --arg u "$login" --arg k "$key" \
+      '{description:"Relay for Microsoft consumer mail",address:$h,port:$p,protocol:"smtp",implicitTls:true,allowInvalidCerts:false,authUsername:$u,authSecret:{"@type":"Value",secret:$k}}')"
+    if [ -n "$route" ]; then
+      jq -nc --arg id "$route" --argjson f "$fields" '{"@type":"update","object":"MtaRoute",id:$id,value:$f}' | sc apply --file /dev/stdin
+    else
+      jq -nc --argjson f "$fields" '{"@type":"create","object":"MtaRoute","value":{"route-relay":({"@type":"Relay",name:"relay"}+$f)}}' \
+        | sc apply --file /dev/stdin
+    fi
+  fi
+  # Expressions quote strings with single quotes, so jq gets one as $q.
+  want="$(jq -nc --arg q "'" --arg on "$on" '
+    {match: ({"0": {if: "is_local_domain(rcpt_domain)", then: ($q + "local" + $q)}}
+      + if $on == "" then {} else
+          {"1": {if: ("ends_with(dns_query(rcpt_domain, " + $q + "mx" + $q + "), " + $q + ".olc.protection.outlook.com" + $q + ")"),
+                 then: ($q + "relay" + $q)}}
+        end),
+     else: ($q + "mx" + $q)}')"
+  if [ "$(sc get MtaOutboundStrategy singleton --json 2>/dev/null | jq -c --argjson w "$want" '.route == $w')" != "true" ]; then
+    jq -nc --argjson w "$want" '{"@type":"update","object":"MtaOutboundStrategy",id:"singleton",value:{route:$w}}' \
+      | sc apply --file /dev/stdin
+    printf '{"@type":"create","object":"Action","value":{"reload":{"@type":"ReloadSettings"}}}\n' \
+      | sc apply --file /dev/stdin \
+      || echo "apply: settings reload failed; the routing change applies on the next pod start" >&2
+  fi
+  if [ -n "$on" ]; then
+    echo "apply: mail for Microsoft's addresses goes through ${STALWART_RELAY_HOST}"
+  elif [ -n "$route" ]; then
+    sc delete MtaRoute --ids "$route" >/dev/null
+    echo "apply: mail for Microsoft's addresses goes direct again"
+  fi
 }
 
 # objectList/set values are encoded by the apply API as index-keyed maps,

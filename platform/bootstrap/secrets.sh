@@ -391,9 +391,29 @@ section_mariadb() {
 
 # ── mail ──────────────────────────────────────────────────────────────────
 
+help_brevo_smtp() {
+  say "Brevo's SMTP login and an SMTP key, both on Brevo's SMTP tab."
+  step "SMTP & API, then the SMTP tab: the Login is the address shown there."
+  step "Generate a new SMTP key, name it stalwart-relay, and copy it."
+  open_url https://app.brevo.com/settings/keys/smtp
+}
+
+verify_brevo_smtp() {
+  live || return 0
+  local login
+  login=$(kv_field "$(kv_load platform/mail)" relay.login)
+  [[ -n "$login" ]] || return 1
+  printf '%s\n%s' "$login" "$1" | python3 -I -c '
+import smtplib, sys
+login, key = sys.stdin.read().split("\n", 1)
+s = smtplib.SMTP_SSL("smtp-relay.brevo.com", 465, timeout=15)
+s.login(login, key)
+s.quit()' >/dev/null 2>&1
+}
+
 section_mail() {
   local doc lp key legacy changed=() logs
-  require_tools jq
+  require_tools jq python3
   [[ -f "$ACCOUNTS_FILE" ]] || die "no $ACCOUNTS_FILE"
   doc=$(kv_load platform/mail)
   # Before account.<localpart>, the api and bounce passwords lived under these.
@@ -421,6 +441,13 @@ section_mail() {
     [[ -n "$WROTE" ]] && changed+=("$key")
   done 3< <(jq -r '.[].localPart' "$ACCOUNTS_FILE")
   note "read a mailbox password with: vault kv get -field=account.<localpart> secret/platform/mail"
+
+  say "relay: mail for Outlook.com, Hotmail, Live and MSN goes through Brevo while Microsoft blocks $SERVER_V4 (#2645)."
+  ensure platform/mail relay.login optional-plain BREVO_SMTP_LOGIN "" "Brevo SMTP login" help_brevo_smtp
+  [[ -n "$WROTE" ]] && changed+=(relay.login)
+  ensure platform/mail relay.key optional-secret BREVO_SMTP_KEY verify_brevo_smtp "Brevo SMTP key"
+  [[ -n "$WROTE" ]] && changed+=(relay.key)
+  note "remove both keys to send to Microsoft directly again; mail.sh says whether the block is gone"
 
   if live; then
     if (( ${#changed[@]} )); then

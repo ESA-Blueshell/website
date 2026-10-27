@@ -49,6 +49,12 @@ dig +short esa-blueshell.nl TXT
 dig +short _dmarc.esa-blueshell.nl TXT
 ```
 
+Brevo's records are the exception: the `brevo-code` TXT on the apex and
+its DKIM records are added by hand in Cloudflare, so Brevo can sign the
+mail it relays for Microsoft's addresses as `esa-blueshell.nl` (#2645).
+`platform/bootstrap/mail.sh` checks they resolve and walks through adding
+them.
+
 ## ACME / Let's Encrypt
 
 Wildcard `*.esa-blueshell.nl` is issued via DNS-01. cert-manager writes

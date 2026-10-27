@@ -20,6 +20,8 @@ export const forgetMentionLists = (): void => {
 
 /* Discord searches members from two letters on. */
 const SEARCHED_FROM = 2
+// The longest nickname Discord allows.
+const NAME_MAX = 32
 
 /** A row of the `@` list: a member with their avatar, or a role with its colour. */
 interface MentionOption extends Completion {
@@ -29,16 +31,23 @@ interface MentionOption extends Completion {
 
 const hex = (colour: number): string => `#${colour.toString(16).padStart(6, "0")}`
 
+/*
+ * A name runs on past a space, as `@The Old Man` does, for as long as a member or a role still
+ * answers to it: a few words at most, the most a nickname holds, so a sentence after a stray `@`
+ * asks nothing once nobody matches.
+ */
+const TYPED_NAME = /(?<=^|\s)@(?:[\w.-]+(?: [\w.-]*){0,5}|[\w.-]*)/
+
 /**
  * `@` and a name: the members the server finds by it, then the roles whose name holds it. The
  * server matches usernames and nicknames the row does not show, so the editor's own filter is off
  * and each letter typed asks again.
  */
 export const mentionCompletion = async (context: CompletionContext): Promise<CompletionResult | null> => {
-  const started = context.matchBefore(/(?<=^|\s)@[\w.-]*/)
+  const started = context.matchBefore(TYPED_NAME)
   if (!started) return null
   const asked = started.text.slice(1).toLowerCase()
-  if (asked === "" && !context.explicit) return null
+  if ((asked === "" && !context.explicit) || asked.length > NAME_MAX) return null
 
   const [people, ranks] = await Promise.all([
     asked.length >= SEARCHED_FROM ? searchServerMembers(asked) : Promise.resolve([]),

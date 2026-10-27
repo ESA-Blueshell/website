@@ -38,6 +38,32 @@ describe("a mention being typed", () => {
     expect(searchServerMembers).toHaveBeenCalledWith("ex")
   })
 
+  it("keeps matching a name past a space, for as long as somebody answers to it", async () => {
+    vi.mocked(searchServerMembers).mockResolvedValue([{id: "12", name: "The Old Man - Joris", username: "extratoast", avatar: ""}])
+    const found = await mentionCompletion(asking("ask @The Old Ma"))
+
+    expect(found?.from).toBe("ask ".length)
+    expect(found?.options.map(one => one.label)).toEqual(["The Old Man - Joris"])
+    expect(searchServerMembers).toHaveBeenLastCalledWith("the old ma")
+  })
+
+  it("lets a sentence after a name go once nobody answers to it, and asks nothing past a nickname's length", async () => {
+    vi.mocked(searchServerMembers).mockResolvedValue([])
+    expect(await mentionCompletion(asking("ask @Anna said hi"))).toBeNull()
+    expect(searchServerMembers).toHaveBeenLastCalledWith("anna said hi")
+
+    vi.mocked(searchServerMembers).mockClear()
+    expect(await mentionCompletion(asking("@abcdefghij klmnopqrst uvwxyzabcd efgh"))).toBeNull()
+    expect(searchServerMembers).not.toHaveBeenCalled()
+  })
+
+  it("offers a role whose name has a space in it", async () => {
+    vi.mocked(listServerRoles).mockResolvedValue([{id: "903", name: "Events Gamenights!"}])
+    vi.mocked(searchServerMembers).mockResolvedValue([])
+
+    expect((await mentionCompletion(asking("for @events game")))?.options.map(one => one.apply)).toEqual(["<@&903>"])
+  })
+
   it("offers roles alone before two letters, and asks the server for no members", async () => {
     const found = await mentionCompletion(asking("hey @g"))
 

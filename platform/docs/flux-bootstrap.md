@@ -9,9 +9,12 @@ from `main` continuously after that.
 - `kubectl` pointed at the cluster (`~/.kube/config` from the k3s node).
 - `flux` CLI locally, matching the controller version in
   `flux-system/gotk-components.yaml`.
-- A GitHub personal access token with `repo:read` on `ESA-Blueshell/website`.
+- `gh` signed in as an admin of `ESA-Blueshell/website`, which may add deploy keys.
 
 ## Steps
+
+`platform/bootstrap/cluster.sh` does these, checks each first and goes on to Vault.
+By hand:
 
 ```bash
 # 1. Apply the controllers and the root sync manifests. This creates
@@ -19,16 +22,22 @@ from `main` continuously after that.
 #    + Kustomization that pull the tree going forward.
 kubectl apply -k platform/cluster/flux/clusters/production/flux-system
 
-# 2. Inject the GitHub token secret so the source-controller can
-#    authenticate to the repo. Flux expects it in the flux-system
-#    namespace under the name `flux-system` (matches gotk-sync.yaml).
+# 2. Give source-controller a read-only deploy key. gotk-sync.yaml reads
+#    the repository over SSH with the Secret flux-system/flux-system.
+ssh-keygen -t ed25519 -N '' -C flux-system -f flux
+gh api -X POST repos/ESA-Blueshell/website/keys -f title="flux-system (read)" \
+  -f key="$(cat flux.pub)" -F read_only=true
+gh api meta --jq '.ssh_keys[] | "github.com " + .' > known_hosts
 kubectl -n flux-system create secret generic flux-system \
-  --from-literal=username=flux \
-  --from-literal=password=$(gh auth token)
+  --from-file=identity=flux --from-file=identity.pub=flux.pub --from-file=known_hosts
+rm flux flux.pub
 
 # 3. Watch reconciliation progress.
 flux get kustomizations --watch
 ```
+
+Image automation pushes with a second, writable key from Vault
+(`secret/platform/flux-git`), which `secrets.sh --only flux-git` makes.
 
 Expected order (each step waits for the previous):
 

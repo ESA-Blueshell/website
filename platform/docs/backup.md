@@ -40,7 +40,7 @@ not reported for 26 hours, alerts Discord; the others still run and report.
 
 ## Seeding the credentials
 
-`scripts/seed-backup-credentials.sh` does it, run by an owner on their own machine. It makes the
+The `backup` section of `platform/bootstrap/secrets.sh` does it, run by an owner on their own machine. It makes the
 Kopia password and a `backup-writer` key itself and hands them straight to Vault and Secret
 Manager, so neither appears on screen, in a file or on a command line. No agent runs it.
 
@@ -49,11 +49,11 @@ Secret Manager disagree about the password, and never replaces a password the re
 opens with.
 
 **You need** `kubectl` with the cluster's kubeconfig, `vault`, `jq` and `openssl`
-(`brew install hashicorp/tap/vault jq`), your own Scaleway API key (the one OpenTofu uses), the
+(`brew install hashicorp/tap/vault jq`), bash 4 or newer (`brew install bash`), your own Scaleway API key (the one OpenTofu uses), the
 organization ID and an admin login to the site. Then:
 
 ```bash
-scripts/seed-backup-credentials.sh
+platform/bootstrap/secrets.sh --only backup
 ```
 
 It asks for your Scaleway secret key without showing it, and for the organization ID. It shows
@@ -71,7 +71,7 @@ writer key, delete that one in the console.
 The report tokens in `secret/platform/backup-report` are seeded on their own, by `bootstrap-auth.sh`.
 
 **Replacing the writer key** by hand, say after a suspected leak: run
-`scripts/seed-backup-credentials.sh --new-writer-key`. It makes a new key, puts it in Vault and
+`platform/bootstrap/secrets.sh --only backup --new-writer-key`. It makes a new key, puts it in Vault and
 deletes the old one. The rotation job (#2099) will do this every 30 days on its own.
 
 ## The first night

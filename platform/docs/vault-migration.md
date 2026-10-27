@@ -27,7 +27,7 @@ a password manager open:
 scripts/migrate-vault.sh
 ```
 
-It signs you in to the old Vault through the site, as `seed-backup-credentials.sh` does, then:
+It signs you in to the old Vault through the site, as `platform/bootstrap/secrets.sh` does, then:
 
 1. **Takes stock of the old Vault.** It stops before writing anything if the old Vault has a
    mount, auth method or role that `bootstrap-auth.sh` does not make, since that would be lost.

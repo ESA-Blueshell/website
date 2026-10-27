@@ -120,8 +120,7 @@ FIXTURES = [
     ("platform/docs/runbook.md", {"ignore"}),
     ("scripts/check-flux-manifests.sh", {"platform"}),
     ("scripts/regenerate-flux-components.sh", {"platform"}),
-    ("scripts/seed-vault-from-env.sh", {"platform"}),
-    ("scripts/seed-backup-credentials.sh", {"platform"}),
+    ("platform/bootstrap/secrets.sh", {"platform"}),
     # validate.yml, the actions it runs and this file change how every suite runs,
     # so they sit in no bucket, which runs everything.
     (".github/workflows/validate.yml", set()),
@@ -162,7 +161,6 @@ FIXTURES = [
     ("services/vault/docker-compose.yml", {"ignore"}),
     (".env", {"ignore"}),
     ("dev-setup.sh", {"ignore"}),
-    ("scripts/seed-stalwart-accounts.sh", {"ignore"}),
     ("docs/agents/ci.md", {"ignore"}),
     ("gameart/cs2-1.webp", {"ignore"}),
     ("infra/dns/esa-blueshell.nl.zone", {"ignore"}),

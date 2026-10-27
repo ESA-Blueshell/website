@@ -325,12 +325,17 @@ stage_addresses() {
   else
     problem "abuse@$DOMAIN is not declared in infra/stalwart/accounts.json"
   fi
-  catchall=$(sc_query query Domain --json | jq -rs --arg d "$DOMAIN" 'map(select(.name == $d))[0].catchAllAddress // empty')
+  # The Domain listing leaves catchAllAddress out; only a full read has it.
+  catchall=$(sc_query get Domain "$(sc_query query Domain --json | jq -rs --arg d "$DOMAIN" 'map(select(.name == $d))[0].id // empty')" --json \
+    | jq -r '.catchAllAddress // empty')
   if [[ -n "$catchall" ]]; then ok "unknown addresses go to $catchall"; else problem "$DOMAIN has no catch-all: unknown addresses bounce"; fi
 }
 
 stage_rejections() {
   local lines
+  # Microsoft's own rejections are what a delisting asks to lift, so they do
+  # not count against the request.
+  PROBLEMS_BEFORE_REJECTIONS=$PROBLEMS
   stage "Recent rejections from Outlook.com and Hotmail"
   if [[ -z "$CLUSTER" ]]; then note "skipped without Stalwart"; return 0; fi
   lines=$(k -n mail-system logs deploy/stalwart -c stalwart --since=72h 2>/dev/null \
@@ -373,7 +378,8 @@ stage_microsoft() {
     step "Fill in the Sender Information for Outlook.com Delivery form:"
     step "the IP $SERVER_V4, the domain $DOMAIN, and one full bounce message."
     step "Microsoft answers by mail within a day; a refusal can be escalated by replying to it."
-    (( PROBLEMS == 0 )) || warn "$PROBLEMS check(s) above still fail: fix those first, or the request is refused"
+    (( ${PROBLEMS_BEFORE_REJECTIONS:-$PROBLEMS} == 0 )) \
+      || warn "${PROBLEMS_BEFORE_REJECTIONS:-$PROBLEMS} check(s) above still fail: fix those first, or the request is refused"
     open_url "https://olcsupport.office.com/"
     if confirm "Request sent?"; then write_env MAIL_DELIST_ASKED "$(date +%F)"; else later "ask Microsoft to lift the block on $SERVER_V4"; fi
   elif ms_done MAIL_DELIST_ASKED; then

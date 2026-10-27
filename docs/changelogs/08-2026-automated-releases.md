@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.28.1](https://github.com/ESA-Blueshell/website/compare/v1.28.0...v1.28.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **platform:** DNS zone stops carrying the mail records Stalwart publishes ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2644](https://github.com/ESA-Blueshell/website/issues/2644)) ([bf3dbdd](https://github.com/ESA-Blueshell/website/commit/bf3dbddb0eb5fbe6b31d937a2a7985ab2d209c7c))
+* **platform:** mail.sh reads the catch-all from the full Domain and lets Microsoft's block through to the delisting ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2643](https://github.com/ESA-Blueshell/website/issues/2643)) ([4752598](https://github.com/ESA-Blueshell/website/commit/4752598cc91af3bbdd66497161140e19cf4dc50a))
+* **platform:** stop advertising IPv6 until the server can serve it ([#2638](https://github.com/ESA-Blueshell/website/issues/2638)) ([#2641](https://github.com/ESA-Blueshell/website/issues/2641)) ([846267b](https://github.com/ESA-Blueshell/website/commit/846267bb73c049dd24ec7ba47aee9fe2276c930a))
+
 ## [1.28.0](https://github.com/ESA-Blueshell/website/compare/v1.27.1...v1.28.0) (2026-10-27)
 
 

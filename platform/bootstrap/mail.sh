@@ -159,6 +159,7 @@ mta_sts_repair() {
     ok "the IngressRoute edge-system/mta-sts exists"
   else
     warn "the IngressRoute edge-system/mta-sts does not exist"
+    command -v flux >/dev/null 2>&1 || { warn "the flux CLI is not on PATH, so Flux cannot be asked to apply apps-edge"; return 1; }
     confirm "Ask Flux to apply apps-edge from main now?" || return 1
     flux --context "$CONTEXT" -n flux-system reconcile kustomization apps-edge --with-source --timeout=3m >/dev/null 2>&1 \
       || { warn "Flux could not apply apps-edge: flux --context $CONTEXT get kustomizations"; return 1; }

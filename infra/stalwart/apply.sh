@@ -22,6 +22,7 @@ set -eu
 : "${STALWART_DOMAIN:?}"
 : "${STALWART_HOSTNAME:?}"
 : "${CF_DNS_API_TOKEN:?}"
+: "${STALWART_CATCHALL:=board@${STALWART_DOMAIN}}"
 : "${PLAN_TEMPLATE:=/opt/stalwart-tools/plan.ndjson.tmpl}"
 : "${ACCOUNTS_FILE:=/opt/stalwart-tools/accounts.json}"
 # Directory containing one file per Vault key, mounted from the
@@ -156,7 +157,35 @@ reconcile() {
   #    appear, or webadmin changes would be overwritten every boot.
   reconcile_accounts "$dom"
 
+  # 6. Unknown addresses go to the catch-all. Set after the accounts so
+  #    the target exists.
+  printf '{"@type":"update","object":"Domain","id":"%s","value":{"catchAllAddress":"%s"}}\n' \
+    "$dom" "$STALWART_CATCHALL" | sc apply --file /dev/stdin
+
+  reconcile_stdout_tracer
+
   echo "apply: reconcile complete"
+}
+
+# Stalwart's only default tracer writes to a file inside the container,
+# so pod logs stay empty without this one.
+reconcile_stdout_tracer() {
+  tracer="$(sc query Tracer --json 2>/dev/null | jq -rs 'map(select(."@type"=="Stdout"))[0].id // empty')"
+  fields='{"enable":true,"level":"info","ansi":false,"multiline":false,"buffered":false,"lossy":false,"events":{},"eventsPolicy":"exclude"}'
+  if [ -n "$tracer" ]; then
+    jq -nc --arg id "$tracer" --argjson f "$fields" \
+      '{"@type":"update","object":"Tracer",id:$id,value:$f}' | sc apply --file /dev/stdin
+    return 0
+  fi
+  echo "apply: creating the stdout tracer"
+  jq -nc --argjson f "$fields" \
+    '{"@type":"create","object":"Tracer","value":{"trc-stdout":({"@type":"Stdout"}+$f)}}' \
+    | sc apply --file /dev/stdin
+  # Stalwart is already running, so a new tracer needs a reload. A failed
+  # reload is not fatal: the next pod start picks the tracer up.
+  printf '{"@type":"create","object":"Action","value":{"reload":{"@type":"ReloadSettings"}}}\n' \
+    | sc apply --file /dev/stdin \
+    || echo "apply: settings reload failed; the stdout tracer starts on the next pod start" >&2
 }
 
 # objectList/set values are encoded by the apply API as index-keyed maps,

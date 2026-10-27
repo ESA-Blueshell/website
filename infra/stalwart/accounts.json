@@ -26,6 +26,15 @@
   {
     "localPart": "events",
     "vaultKey": "account.events",
-    "aliases": ["sitecie", "evenementen"]
+    "aliases": ["evenementen"]
+  },
+  {
+    "localPart": "postmaster",
+    "vaultKey": "account.postmaster"
+  },
+  {
+    "localPart": "sitecie",
+    "vaultKey": "account.sitecie",
+    "aliases": ["abuse"]
   }
 ]

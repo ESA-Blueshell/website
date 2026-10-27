@@ -9,6 +9,7 @@ import {type EditorView, keymap} from "@codemirror/view"
 import {tags} from "@lezer/highlight"
 import {discordDialect, spoilerTag, subtextTag, underlineTag} from "@/components/island/markdownDialect"
 import {emojiOnClose, emojiOnPaste} from "@/components/island/markdownEmoji"
+import {reopenMention} from "@/components/island/markdownMentions"
 import {CODE_FONT, emojiLive, markdownLive, wrapWith} from "@/components/island/markdownLive"
 
 /* What markdown looks like once it is being read rather than typed: as the Discord client draws
@@ -49,6 +50,7 @@ export const markdownEditing: Extension[] = [
   history(),
   // Tab first, and only while the list is open, or it would stop leaving the editor.
   keymap.of([{key: "Tab", run: acceptCompletion}]),
+  keymap.of([{key: "Backspace", run: reopenMention}]),
   marks,
   lists,
   keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap]),

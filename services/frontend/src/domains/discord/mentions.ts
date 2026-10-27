@@ -64,5 +64,8 @@ export async function fillMentions(root: HTMLElement): Promise<void> {
   }
 }
 
+/** What a mention reads as, where its name has been read already. */
+export const mentionNamed = (kind: MentionKind, id: string): string | undefined => named.get(keyOf(kind, id))?.said
+
 /** Forgets every name read, for a test that reads them again. */
 export const forgetMentionNames = (): void => named.clear()

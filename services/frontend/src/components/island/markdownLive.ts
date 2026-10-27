@@ -93,6 +93,15 @@ class Character extends WidgetType {
   }
 }
 
+/*
+ * The editor redraws its cursor only on a change to the text or the selection, not when a widget
+ * grows on its line, so a pill whose name or picture arrives late would keep the cursor where the
+ * placeholder ended. Setting the selection to itself redraws it.
+ */
+const redrawCursor = (view: EditorView): void => {
+  if (view.dom.isConnected) view.dispatch({selection: view.state.selection})
+}
+
 /**
  * An emoji drawn as the page draws it, or as what it says, the character or a server emoji's
  * `:name:`, where its picture will not load.
@@ -106,13 +115,22 @@ class EmojiArt extends WidgetType {
     return other.src === this.src && other.says === this.says
   }
 
-  toDOM(): HTMLElement {
+  // The picture sits in a span of its own: replacing the widget's own element on a failed load
+  // would read to the editor as text typed in its place.
+  toDOM(view: EditorView): HTMLElement {
+    const held = document.createElement("span")
+    held.className = "cm-emoji-art"
     const drawn = document.createElement("img")
     drawn.className = "cm-emoji"
     drawn.src = this.src
     drawn.alt = this.says
-    drawn.addEventListener("error", () => drawn.replaceWith(document.createTextNode(this.says)))
-    return drawn
+    drawn.addEventListener("load", () => redrawCursor(view))
+    drawn.addEventListener("error", () => {
+      drawn.replaceWith(document.createTextNode(this.says))
+      redrawCursor(view)
+    })
+    held.append(drawn)
+    return held
   }
 
   ignoreEvent(): boolean {
@@ -138,7 +156,7 @@ class MentionPill extends WidgetType {
     return other.kind === this.kind && other.id === this.id
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const drawn = document.createElement("span")
     drawn.className = "cm-mention"
     drawn.textContent = this.kind === "channel" ? "#…" : "@…"
@@ -148,6 +166,7 @@ class MentionPill extends WidgetType {
       const {said, colour} = nameOf(this.kind, this.id)
       drawn.textContent = said
       if (colour) drawn.style.setProperty("--mention", colour)
+      redrawCursor(view)
     })
     return drawn
   }
@@ -178,30 +197,25 @@ class TimePill extends WidgetType {
   }
 }
 
-const MENTION = /<(@!?|@&|#)(\d{15,21})>/g
-const KINDS: Record<string, MentionKind> = {"@": "user", "@!": "user", "@&": "role", "#": "channel"}
+export const MENTION = /<(@!?|@&|#)(\d{15,21})>/g
+export const KINDS: Record<string, MentionKind> = {"@": "user", "@!": "user", "@&": "role", "#": "channel"}
 
 /* Shown as written while the cursor touches one, like a mark, so it can be read and mended. */
-const mentionsIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
+const timesIn = (view: EditorView, ranges: readonly SelectionRange[]): Range<Decoration>[] => {
   const drawn: Range<Decoration>[] = []
   for (const {from, to} of view.visibleRanges) {
-    const text = view.state.sliceDoc(from, to)
-    const found = [
-      ...[...text.matchAll(MENTION)].map(one => ({one, widget: new MentionPill(KINDS[one[1] as string] as MentionKind, one[2] as string)})),
-      ...[...text.matchAll(TIMESTAMP)].map(one => ({one, widget: new TimePill(Number(one[1]), (one[2] ?? "f") as TimeStyle)})),
-    ]
-    for (const {one, widget} of found) {
+    for (const one of view.state.sliceDoc(from, to).matchAll(TIMESTAMP)) {
       const at = from + one.index
       const end = at + one[0].length
       if (touches(ranges, at, end) || literalAt(view.state, at)) continue
-      drawn.push(Decoration.replace({widget}).range(at, end))
+      drawn.push(Decoration.replace({widget: new TimePill(Number(one[1]), (one[2] ?? "f") as TimeStyle)}).range(at, end))
     }
   }
   return drawn
 }
 
-/* Like a mark, `<:name:id>` shows while the cursor touches it, so it can be read and mended. */
-/* Always drawn, cursor or not, as Discord draws them: an emoji is one thing, never its code to edit. */
+/* Always drawn, cursor or not, as Discord draws them: an emoji or a mention is one thing, never
+   its code to edit. */
 const emojiIn = (view: EditorView): DecorationSet => {
   const drawn: Range<Decoration>[] = []
   for (const {from, to} of view.visibleRanges) {
@@ -217,6 +231,12 @@ const emojiIn = (view: EditorView): DecorationSet => {
       if (literalAt(view.state, at)) continue
       const art = new EmojiArt(serverEmojiSrc(found[3] as string, found[1] === "a"), `:${found[2] as string}:`)
       drawn.push(Decoration.replace({widget: art}).range(at, at + found[0].length))
+    }
+    for (const found of text.matchAll(MENTION)) {
+      const at = from + found.index
+      if (literalAt(view.state, at)) continue
+      const pill = new MentionPill(KINDS[found[1] as string] as MentionKind, found[2] as string)
+      drawn.push(Decoration.replace({widget: pill}).range(at, at + found[0].length))
     }
   }
   return Decoration.set(drawn, true)
@@ -286,7 +306,7 @@ const decorate = (view: EditorView): DecorationSet => {
     })
   }
   return Decoration.set(
-    [...marks, ...[...quoted].map(at => quoteLine.range(at)), ...mentionsIn(view, ranges)],
+    [...marks, ...[...quoted].map(at => quoteLine.range(at)), ...timesIn(view, ranges)],
     true)
 }
 
@@ -320,7 +340,7 @@ class EmojiPictures {
   }
 }
 
-/** Draws every emoji as its picture, which the cursor steps over and a delete takes whole. */
+/** Draws every emoji as its picture and every mention as its pill, which the cursor steps over. */
 export const emojiLive = ViewPlugin.fromClass(EmojiPictures, {
   decorations: plugin => plugin.emoji,
   // Installed with the facet that reads it, so the plugin is there whenever the facet is asked.

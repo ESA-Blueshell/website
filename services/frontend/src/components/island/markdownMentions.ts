@@ -1,6 +1,8 @@
-import type {Completion, CompletionContext, CompletionResult} from "@codemirror/autocomplete"
-import {type DiscordMentionChannelResponse, type DiscordRoleResponse, listServerChannels, listServerRoles, searchServerMembers}
-  from "@/domains/discord"
+import {type Completion, type CompletionContext, type CompletionResult, startCompletion} from "@codemirror/autocomplete"
+import type {EditorView} from "@codemirror/view"
+import {KINDS, literalAt} from "@/components/island/markdownLive"
+import {type DiscordMentionChannelResponse, type DiscordRoleResponse, listServerChannels, listServerRoles, type MentionKind,
+  mentionNamed, searchServerMembers} from "@/domains/discord"
 
 /* A description holds a mention as Discord writes it: `<@id>`, `<@&id>` or `<#id>`. */
 
@@ -99,4 +101,25 @@ export const channelCompletion = async (context: CompletionContext): Promise<Com
     .map(one => ({label: `#${one.name}`, apply: `<#${one.id}>`, type: "channel", ...(one.category ? {detail: one.category} : {})}))
   if (options.length === 0) return null
   return {from: started.from, options, validFor: /^#[\w-]*$/}
+}
+
+const MENTION_BEFORE = /<(@!?|@&|#)(\d{15,21})>$/
+
+/**
+ * Backspace just after a mention turns it back into what was typed, less its last letter, and
+ * asks again, so a mention picked by mistake is mended by typing rather than deleted and redone.
+ */
+export const reopenMention = (view: EditorView): boolean => {
+  const {state} = view
+  const range = state.selection.main
+  if (state.selection.ranges.length > 1 || !range.empty || literalAt(state, range.head, -1)) return false
+  const line = state.doc.lineAt(range.head)
+  const found = MENTION_BEFORE.exec(line.text.slice(0, range.head - line.from))
+  const said = found && mentionNamed(KINDS[found[1] as string] as MentionKind, found[2] as string)
+  if (!found || !said) return false
+  const from = range.head - found[0].length
+  const typed = said.slice(0, -1)
+  view.dispatch({changes: {from, to: range.head, insert: typed}, selection: {anchor: from + typed.length}, userEvent: "delete.backward"})
+  startCompletion(view)
+  return true
 }

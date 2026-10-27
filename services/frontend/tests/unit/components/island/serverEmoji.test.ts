@@ -149,13 +149,31 @@ describe("the server's own emoji", () => {
     expect(open(doc, 0).contentDOM.querySelector("img.cm-emoji")).toBeNull()
   })
 
-  it("say their name where the picture will not load", () => {
-    const view = open("we <a:party:123456789012345678> won", 0)
+  it("say their name where the picture will not load, leaving the text as written", () => {
+    const doc = "we <a:party:123456789012345678> won"
+    const view = open(doc, 0)
+    const redrawn = vi.spyOn(view, "dispatch")
     const drawn = view.contentDOM.querySelector<HTMLImageElement>("img.cm-emoji")
 
     expect(drawn?.getAttribute("src")).toBe("https://cdn.discordapp.com/emojis/123456789012345678.gif?size=48")
     drawn?.dispatchEvent(new Event("error"))
     expect(view.contentDOM.textContent).toBe("we :party: won")
+    expect(view.state.doc.toString()).toBe(doc)
+    expect(redrawn).toHaveBeenCalledWith({selection: view.state.selection})
+  })
+
+  it("redraw the cursor once their picture loads, and not after the editor is gone", () => {
+    const view = open("we <:POGGERS:657733730491826186> won", 0)
+    const redrawn = vi.spyOn(view, "dispatch")
+    const drawn = view.contentDOM.querySelector("img.cm-emoji")
+
+    drawn?.dispatchEvent(new Event("load"))
+    expect(redrawn).toHaveBeenCalledWith({selection: view.state.selection})
+
+    redrawn.mockClear()
+    view.dom.remove()
+    drawn?.dispatchEvent(new Event("load"))
+    expect(redrawn).not.toHaveBeenCalled()
   })
 
   it("leave the editor with the standard emoji alone where the api cannot ask", async () => {

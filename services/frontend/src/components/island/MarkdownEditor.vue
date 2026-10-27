@@ -164,13 +164,14 @@ const dress = EditorView.theme({
     borderRadius: "3px",
     backgroundColor: "color-mix(in oklab, var(--color-chalk) 10%, transparent)",
   },
-  // Drawn at the size the page draws an emoji in a line of text.
+  // Drawn at the size the page draws an emoji in a line of text, a wide one kept to its shape.
   ".cm-emoji": {
     display: "inline-block",
     width: "1.375em",
     height: "1.375em",
     margin: "0 0.05em",
     verticalAlign: "-0.3em",
+    objectFit: "contain",
   },
   ".cm-quote": {
     borderLeft: "4px solid color-mix(in oklab, var(--color-chalk) 30%, transparent)",
@@ -516,6 +517,7 @@ onBeforeUnmount(() => {
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-emoji) {
   width: 1.3rem;
   height: 1.3rem;
+  object-fit: contain;
 }
 
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-avatar) {

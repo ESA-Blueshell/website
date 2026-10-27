@@ -58,7 +58,12 @@ spec:
             phase=$(kubectl -n default get canary api -o jsonpath='{.status.phase}');
             want=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}');
             have=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}');
-            echo "api=$phase canary=$want primary=$have";
+            mine=$(kubectl -n default get deploy frontend -o jsonpath='{.spec.template.spec.containers[0].image}');
+            tag() { echo "${1%%@*}" | sed 's/.*://'; };
+            theirs=$(tag "$want"); ours=$(tag "$mine");
+            echo "api=$phase canary=$want primary=$have frontend=$ours";
+            if [ "$theirs" != "$ours" ] && [ "$(printf '%s\n%s\n' "$theirs" "$ours" | sort -V | head -1)" = "$theirs" ]; then
+            echo "api is still on $theirs, older than $ours: waiting for its image"; exit 1; fi;
             case "$phase" in
             Waiting|Progressing|Failed) exit 1;;
             WaitingPromotion|Promoting|Finalising) exit 0;;

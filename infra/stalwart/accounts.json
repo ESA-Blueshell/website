@@ -6,7 +6,8 @@
   },
   {
     "localPart": "bounce",
-    "vaultKey": "account.bounce"
+    "vaultKey": "account.bounce",
+    "forwardTo": "sitecie@esa-blueshell.nl"
   },
   {
     "localPart": "board",

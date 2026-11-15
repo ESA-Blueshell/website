@@ -92,6 +92,7 @@ const COUNTED: Record<JobTally, (count: string, one: boolean) => string> = {
   [JobTally.COHORTS_FAILED]: (count) => `${count} could not be recomputed`,
   [JobTally.VALUES_SEALED]: (count, one) => `Sealed ${count} ${one ? "address" : "addresses"}`,
   [JobTally.VALUES_REWRAPPED]: (count, one) => `Moved ${count} sealed ${one ? "value" : "values"} to the newest key`,
+  [JobTally.VOTES_REVEALED]: (count, one) => `Revealed ${count} ${one ? "vote" : "votes"}`,
 }
 
 /** One count a run reported, in words. */

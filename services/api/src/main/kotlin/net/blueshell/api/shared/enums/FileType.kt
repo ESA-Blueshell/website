@@ -44,6 +44,9 @@ private val PLAYER_ICON_WIDTHS = listOf(128, 256)
  */
 private val PORTRAIT_WIDTHS = listOf(160, 320, 640)
 
+// A cover or a thumbnail is drawn small, beside a name, on every annual vote page.
+private val VOTE_PICTURE_WIDTHS = listOf(160, 320)
+
 /**
  * What an uploaded file is, which decides where it is stored and who may read it back.
  *
@@ -222,6 +225,31 @@ enum class FileType(
         maxImageEdge = 960,
         webpQuality = 85,
         renditionWidths = PORTRAIT_WIDTHS,
+    ),
+
+    /**
+     * A game's cover in an annual vote, copied from IGDB when the game is first picked, so no
+     * visitor's browser asks IGDB for it and the vote keeps it should IGDB drop it.
+     */
+    VOTE_COVER(
+        "vote-covers",
+        publiclyReadable = true,
+        maxBytes = 5 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 600,
+        webpQuality = 85,
+        renditionWidths = VOTE_PICTURE_WIDTHS,
+    ),
+
+    /** A track's thumbnail in an annual vote, copied from YouTube or Spotify for the same reasons. */
+    VOTE_THUMBNAIL(
+        "vote-thumbnails",
+        publiclyReadable = true,
+        maxBytes = 5 * MB,
+        allowedMediaTypes = IMAGE,
+        maxImageEdge = 640,
+        webpQuality = 85,
+        renditionWidths = VOTE_PICTURE_WIDTHS,
     ),
     ;
 

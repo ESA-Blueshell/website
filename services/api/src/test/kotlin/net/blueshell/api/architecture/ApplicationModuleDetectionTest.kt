@@ -33,6 +33,7 @@ class ApplicationModuleDetectionTest {
                 "blog",
                 "telemetry",
                 "sponsor",
+                "vote",
                 "cohort",
                 "jobs",
                 "contact",

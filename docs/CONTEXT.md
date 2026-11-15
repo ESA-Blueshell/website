@@ -846,3 +846,59 @@ Blueshell won three years in a row.
 
 Neither name is a synonym for the other, and neither is "the league". The site
 says nothing about whether either competition is still running.
+
+## Annual votes
+
+### Annual vote
+
+A vote members cast once a year, usually in December, of a given **kind**: the
+**OST Top 50** or **Game of the Year**. A kind has at most one vote a year, and the
+code calls the module `vote`. A vote runs on three dates the board sets: it
+**opens**, it **closes**, and its results are **revealed**. Nobody presses
+anything on the day.
+
+### OST Top 50
+
+The fifty game soundtracks members love most in a year, each shown with one
+track. "Of 2026" means voted in 2026, not released in it: any game can be on it.
+
+### Game of the Year
+
+The games members love most among those first released in the vote's year. A
+pick names a game alone, without a track.
+
+### Ballot
+
+One member's ranked picks in one vote, best first, each position worth the points
+its kind gives it. Only members cast one, and a member has one per vote, which
+they change until voting closes. Revealing the results deletes every ballot, so
+how anybody voted is never kept past the count.
+
+### Pick
+
+One place on a ballot: a game, together with one of its tracks where the kind
+picks tracks. A ballot names a game once; picking another track for a game
+already on it replaces that pick.
+
+### Track
+
+A YouTube video or a Spotify track picked for a game, identified by its link, so
+two members who paste the same link pick the same track. A track belongs to one
+game.
+
+### Merged track
+
+A track the board has said is the same song as another track of the same game,
+such as one on YouTube and one on Spotify. A merged track's points count toward
+the track it was merged into.
+
+### Representative track
+
+The track shown for a game in the OST Top 50: the one of its tracks that earned
+the most points. A game's place counts every pick of it, whichever track the pick
+named, so a vote split across a game's tracks still counts in full for the game.
+
+### Reveal
+
+The moment a vote's results are counted, stored for good and made public, and
+its ballots deleted. It happens on its own shortly after the reveal date.

@@ -132,7 +132,7 @@ class VoteCandidateUseCasesTest {
             val kept = track(11, celeste)
             whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(12, celeste, mergedInto = kept))
 
-            assertThat(service.addTrack(100, link, 7).id).isEqualTo(11)
+            assertThat(service.addTrack(100, link).id).isEqualTo(11)
             verify(previews, never()).of(any())
         }
 
@@ -140,7 +140,7 @@ class VoteCandidateUseCasesTest {
         fun `a link already added for another game is refused`() {
             whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))
 
-            assertThatThrownBy { service.addTrack(100, link, 7) }.isInstanceOf(TrackOfAnotherGame::class.java)
+            assertThatThrownBy { service.addTrack(100, link) }.isInstanceOf(TrackOfAnotherGame::class.java)
         }
 
         @Test
@@ -154,13 +154,12 @@ class VoteCandidateUseCasesTest {
                 sitePictures.store(any(), eq("youtube-dQw4w9WgXcQ.jpg"), any(), eq(FileType.VOTE_THUMBNAIL)),
             ).thenReturn(stored("vote-thumbnails/t.webp"))
 
-            val added = service.addTrack(100, link, 7)
+            val added = service.addTrack(100, link)
 
             assertThat(added.title).isEqualTo("Resurrections")
             assertThat(added.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/t.webp")
             val saved = argumentCaptor<CandidateTrack>()
             verify(tracks).saveAndFlush(saved.capture())
-            assertThat(saved.firstValue.addedById).isEqualTo(7)
             assertThat(saved.firstValue.addedAt).isEqualTo(NOW)
         }
 
@@ -169,7 +168,7 @@ class VoteCandidateUseCasesTest {
             whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
             whenever(previews.of(any())).thenReturn(TrackPreview("x".repeat(300), null))
 
-            val added = service.addTrack(26226, link, 7)
+            val added = service.addTrack(26226, link)
 
             assertThat(added.candidate.id).isEqualTo(9)
             assertThat(added.title).hasSize(255)
@@ -179,9 +178,9 @@ class VoteCandidateUseCasesTest {
         @Test
         fun `a link its service does not describe is refused, and anything else before a lookup`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
-            assertThatThrownBy { service.addTrack(100, link, 7) }.isInstanceOf(TrackLinkUnreadable::class.java)
+            assertThatThrownBy { service.addTrack(100, link) }.isInstanceOf(TrackLinkUnreadable::class.java)
 
-            assertThatThrownBy { service.addTrack(100, "https://example.com", 7) }.isInstanceOf(UnsupportedTrackLink::class.java)
+            assertThatThrownBy { service.addTrack(100, "https://example.com") }.isInstanceOf(UnsupportedTrackLink::class.java)
             verify(tracks).findBySourceAndExternalId(any(), any())
         }
     }

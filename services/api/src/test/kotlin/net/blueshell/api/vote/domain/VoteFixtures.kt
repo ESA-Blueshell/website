@@ -40,7 +40,6 @@ internal object VoteFixtures {
         source = TrackSource.YOUTUBE,
         externalId = "video${id.toString().padStart(6, '0')}",
         title = "Track $id",
-        addedById = 7,
         addedAt = OPENS,
         thumbnail = thumbnail,
     ).also {

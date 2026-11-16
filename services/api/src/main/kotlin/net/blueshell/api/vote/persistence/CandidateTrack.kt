@@ -36,8 +36,6 @@ class CandidateTrack(
     val externalId: String,
     @Column(name = "title", nullable = false)
     var title: String,
-    @Column(name = "added_by_id")
-    val addedById: Long?,
     @Column(name = "added_at", nullable = false)
     val addedAt: Instant,
     @ManyToOne(fetch = FetchType.LAZY)

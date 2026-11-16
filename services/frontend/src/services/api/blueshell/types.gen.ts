@@ -116,6 +116,7 @@ export type AnnualVoteResponse = {
     results: Array<VotePlacingResponse>;
     revealAt: string;
     state: 'UPCOMING' | 'VOTING' | 'COUNTING' | 'PUBLISHED';
+    version: number;
     year: number;
 };
 
@@ -2543,6 +2544,7 @@ export type ScheduleAnnualVoteRequest = {
     closesAt: string;
     opensAt: string;
     revealAt: string;
+    version: number;
 };
 
 /**

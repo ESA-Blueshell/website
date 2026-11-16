@@ -31,6 +31,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.orm.ObjectOptimisticLockingFailureException
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.SimpleTransactionStatus
@@ -90,7 +91,8 @@ class VoteUseCasesTest {
 
             val summary = service.current(VoteKind.OST_TOP_50)
 
-            assertThat(summary).isEqualTo(VoteSummary(VoteKind.OST_TOP_50, 2026, VoteState.VOTING, OPENS, CLOSES, REVEAL, 4, emptyList()))
+            assertThat(summary)
+                .isEqualTo(VoteSummary(VoteKind.OST_TOP_50, 2026, 0, VoteState.VOTING, OPENS, CLOSES, REVEAL, 4, emptyList()))
             verify(placings, never()).findAllByVoteIdOrderByPlaceAscCandidateNameAsc(any())
         }
 
@@ -187,7 +189,7 @@ class VoteUseCasesTest {
             whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(held)
             val later = CLOSES.plusSeconds(3600)
 
-            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, later, later.plusSeconds(60))
+            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, later, later.plusSeconds(60), held.version)
 
             assertThat(held.closesAt).isEqualTo(later)
             assertThat(held.revealAt).isEqualTo(later.plusSeconds(60))
@@ -204,10 +206,23 @@ class VoteUseCasesTest {
                     OPENS,
                     CLOSES,
                     REVEAL,
+                    0,
                 )
             }.isInstanceOf(WrongVoteState::class.java)
-            assertThatThrownBy { service.reschedule(VoteKind.OST_TOP_50, 2030, OPENS, CLOSES, REVEAL) }
+            assertThatThrownBy { service.reschedule(VoteKind.OST_TOP_50, 2030, OPENS, CLOSES, REVEAL, 0) }
                 .isInstanceOf(AnnualVoteNotFound::class.java)
+        }
+
+        @Test
+        fun `refuses dates saved over a version somebody else changed since`() {
+            val held = vote().apply { version = 4 }
+            whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(held)
+
+            val later = CLOSES.plusSeconds(3600)
+
+            assertThatThrownBy { service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, later, later.plusSeconds(60), 3) }
+                .isInstanceOf(OptimisticLockingFailureException::class.java)
+            assertThat(held.closesAt).isEqualTo(CLOSES)
         }
     }
 

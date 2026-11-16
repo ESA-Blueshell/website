@@ -102,8 +102,8 @@ describe("the vote adapter", () => {
     expect(api.createAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50"}, body: {year: 2026, ...dates}})
 
     vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(answer(api.scheduleAnnualVote, aVote("VOTING")))
-    await scheduleVote("OST_TOP_50", 2026, dates)
-    expect(api.scheduleAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}, body: dates})
+    await scheduleVote("OST_TOP_50", 2026, dates, 2)
+    expect(api.scheduleAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}, body: {...dates, version: 2}})
 
     vi.mocked(api.mergeVoteTrack).mockResolvedValueOnce(answer(api.mergeVoteTrack, track))
     expect(await mergeTrack(2, 1)).toEqual({ok: true, saved: track})

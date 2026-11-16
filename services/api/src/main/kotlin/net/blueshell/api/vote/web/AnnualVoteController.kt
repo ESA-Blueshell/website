@@ -45,7 +45,7 @@ class AnnualVoteController(
         @PathVariable kind: VoteKind,
         @PathVariable year: Int,
         @Valid @RequestBody request: ScheduleAnnualVoteRequest,
-    ): AnnualVoteResponse = votes.reschedule(kind, year, request.opensAt, request.closesAt, request.revealAt).asResponse()
+    ): AnnualVoteResponse = votes.reschedule(kind, year, request.opensAt, request.closesAt, request.revealAt, request.version).asResponse()
 
     @BoardOnly
     @GetMapping("/{year}/standings")

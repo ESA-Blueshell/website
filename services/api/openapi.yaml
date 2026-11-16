@@ -253,6 +253,9 @@ components:
           - COUNTING
           - PUBLISHED
           type: string
+        version:
+          format: int64
+          type: integer
         year:
           format: int32
           type: integer
@@ -267,6 +270,7 @@ components:
       - results
       - revealAt
       - state
+      - version
       - year
       type: object
     AnswerRequest:
@@ -4974,10 +4978,14 @@ components:
         revealAt:
           format: date-time
           type: string
+        version:
+          format: int64
+          type: integer
       required:
       - closesAt
       - opensAt
       - revealAt
+      - version
       type: object
     SeasonContentsResponse:
       description: What a season holds, for a removal to say before it happens

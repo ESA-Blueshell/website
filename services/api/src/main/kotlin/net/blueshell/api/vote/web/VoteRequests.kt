@@ -31,6 +31,8 @@ data class ScheduleAnnualVoteRequest(
     val opensAt: Instant,
     val closesAt: Instant,
     val revealAt: Instant,
+    /** The vote's version as the form read it. */
+    val version: Long,
 )
 
 /** A pick by our game id, with one of its tracks where the vote's kind picks one. */

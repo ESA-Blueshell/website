@@ -259,7 +259,7 @@ class VoteUseCasesTest {
             assertThat(saved.firstValue.map { it.candidate.name to it.voters }).containsExactly("Hades" to 2, "Celeste" to 1)
             assertThat(due.ballotCount).isEqualTo(2)
             assertThat(due.publishedAt).isEqualTo(NOW)
-            verify(ballots).deleteAll(cast)
+            verify(ballots).deleteAllOfVote(1)
         }
 
         @Test

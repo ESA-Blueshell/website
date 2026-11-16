@@ -137,7 +137,7 @@ class VoteUseCases(
         )
         vote.ballotCount = cast.size
         vote.publishedAt = now
-        ballots.deleteAll(cast)
+        ballots.deleteAllOfVote(vote.id!!)
         votes.saveAndFlush(vote)
     }
 

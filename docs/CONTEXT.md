@@ -890,9 +890,10 @@ it. The code calls it `VoteCandidate`, and the page still says "game" to members
 
 ### Track
 
-A YouTube video or a Spotify track picked for a game, identified by its link, so
-two members who paste the same link pick the same track. A track belongs to one
-game. The code calls it `CandidateTrack`.
+A YouTube video or a Spotify track picked for a game, identified by its link
+within that game, so two members who paste the same link for a game pick the same
+track. A track belongs to one game; the same link picked for another game is that
+game's own track. The code calls it `CandidateTrack`.
 
 ### Merged track
 

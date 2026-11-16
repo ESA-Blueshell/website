@@ -79,8 +79,8 @@ class VoteCandidateUseCases(
 
     /**
      * The track [pasted] links to, as a track of the game [igdbId], while the [kind] vote of [year]
-     * is open. A link somebody already added answers with that track, so a ballot never holds two
-     * rows for one link.
+     * is open. A link somebody already added for that game answers with that track, so a ballot
+     * never holds two rows for one link.
      */
     fun addTrack(
         igdbId: Long,
@@ -90,8 +90,8 @@ class VoteCandidateUseCases(
     ): TrackSummary {
         requireVoting(kind, year)
         val link = TrackLink.parse(pasted)
-        existingTrack(link, igdbId)?.let { return it }
         val candidate = storedCandidate(igdbId)
+        existingTrack(link, candidate)?.let { return it }
         val preview = previews.of(link) ?: throw TrackLinkUnreadable()
         val thumbnailName = "${link.source.name.lowercase()}-${link.externalId}.jpg"
         val thumbnail = preview.thumbnailUrl?.let { copy(it, thumbnailName, FileType.VOTE_THUMBNAIL) }
@@ -108,7 +108,7 @@ class VoteCandidateUseCases(
             written { tracks.saveAndFlush(track).summary() }
         } catch (e: DataIntegrityViolationException) {
             // Somebody added the same link while its preview was fetched.
-            existingTrack(link, igdbId) ?: throw e
+            existingTrack(link, candidate) ?: throw e
         }
     }
 
@@ -141,16 +141,13 @@ class VoteCandidateUseCases(
         if (state != VoteState.VOTING) throw WrongVoteState(state)
     }
 
-    // The link's track as a track of [igdbId], where somebody already added it.
+    // The link's track for [candidate], as the track it was merged into, where somebody already added it.
     private fun existingTrack(
         link: TrackLink,
-        igdbId: Long,
+        candidate: VoteCandidate,
     ): TrackSummary? =
         written {
-            tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
-                if (existing.candidate.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.candidate.name)
-                existing.summary()
-            }
+            tracks.findByCandidateIdAndSourceAndExternalId(candidate.id!!, link.source, link.externalId)?.canonical()?.summary()
         }
 
     // The stored game, copied from the catalogue with our copy of its cover the first time it is asked for.

@@ -29,6 +29,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   TrackMergeInvalid: () => "A track can only be merged into another track of the same game.",
   GameSearchUnavailable: () => "Game search is unavailable right now. Try again in a moment.",
   AnnualVoteExists: () => "That year already has this vote.",
+  VoteKindNotOffered: () => "That vote is not running yet.",
   VoteDatesOutOfOrder: () => "A vote opens before it closes, and its results are revealed after it closes.",
 }
 

@@ -28,5 +28,6 @@ describe("vote refusals", () => {
     expect(sentence({code: "GameSearchUnavailable"})).toContain("unavailable")
     expect(sentence({code: "AnnualVoteExists"})).toBe("That year already has this vote.")
     expect(sentence({code: "VoteDatesOutOfOrder"})).toContain("opens before it closes")
+    expect(sentence({code: "VoteKindNotOffered"})).toBe("That vote is not running yet.")
   })
 })

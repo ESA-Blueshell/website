@@ -13,6 +13,7 @@ import net.blueshell.api.vote.domain.Placing
 import net.blueshell.api.vote.domain.TrackSummary
 import net.blueshell.api.vote.domain.VoteBallotUseCases
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
+import net.blueshell.api.vote.domain.VoteKindNotOffered
 import net.blueshell.api.vote.domain.VoteState
 import net.blueshell.api.vote.domain.VoteSummary
 import net.blueshell.api.vote.domain.VoteUseCases
@@ -22,6 +23,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.http.MediaType
 import org.springframework.web.server.ResponseStatusException
@@ -123,6 +125,22 @@ class VoteControllersTest {
             gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x")),
         ).isEqualTo(resurrectionsResponse)
         assertThat(gameController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
+    }
+
+    @Test
+    fun `a kind the api does not offer yet is refused before any use case runs`() {
+        val goty = VoteKind.GAME_OF_THE_YEAR
+
+        listOf<() -> Any>(
+            { voteController.currentAnnualVote(goty) },
+            { voteController.createAnnualVote(goty, CreateAnnualVoteRequest(2026, opens, closes, reveal)) },
+            { voteController.scheduleAnnualVote(goty, 2026, ScheduleAnnualVoteRequest(opens, closes, reveal, 0)) },
+            { voteController.annualVoteStandings(goty, 2026) },
+            { ballotController.myVoteBallot(goty, 2026) },
+            { ballotController.castVoteBallot(goty, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1)), null)) },
+            { gameController.searchVoteCandidates("cel", goty, 2026) },
+        ).forEach { call -> assertThatThrownBy { call() }.isInstanceOf(VoteKindNotOffered::class.java) }
+        verifyNoInteractions(votes, ballots, games)
     }
 
     @Test

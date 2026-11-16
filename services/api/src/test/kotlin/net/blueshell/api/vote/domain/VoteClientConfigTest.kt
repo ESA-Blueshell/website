@@ -17,7 +17,7 @@ class VoteClientConfigTest {
 
     @Test
     fun `IGDB is used once both credentials are set`() {
-        assertThat(config.gameCatalogue("id", "secret", json, clock, environment("prod"))).isInstanceOf(IgdbGameCatalogue::class.java)
+        assertThat(config.gameCatalogue("id", "secret", json, clock, environment("prod"))).isInstanceOf(ThrottledGameCatalogue::class.java)
     }
 
     @Test

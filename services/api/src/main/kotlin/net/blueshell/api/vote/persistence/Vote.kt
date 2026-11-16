@@ -18,9 +18,9 @@ import java.time.Instant
  */
 @Entity
 @Table(
-    name = "annual_votes",
+    name = "votes",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_annual_votes_kind_year_deleted_at", columnNames = ["kind", "year", "deleted_at"]),
+        UniqueConstraint(name = "uk_votes_kind_year_deleted_at", columnNames = ["kind", "year", "deleted_at"]),
     ],
 )
 @SQLRestriction(SoftDelete.ACTIVE)

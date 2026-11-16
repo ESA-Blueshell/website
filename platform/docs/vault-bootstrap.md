@@ -183,6 +183,8 @@ vault kv put secret/api \
   google.calendar.serviceAccountJson=<raw-single-line-service-account-json> \
   discord.botToken=<discord-bot-token> \
   discord.guildId=<discord-guild-id> \
+  app.vote.igdb.client-id=<twitch-app-client-id> \
+  app.vote.igdb.client-secret=<twitch-app-client-secret> \
   auth.clients.vault.secret=$(openssl rand -hex 32)
 ```
 

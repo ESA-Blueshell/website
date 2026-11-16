@@ -475,6 +475,18 @@ verify_brevo() {
   [[ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 -H @<(printf 'api-key: %s\n' "$1") https://api.brevo.com/v3/account)" == 200 ]]
 }
 
+# Checked with the client id this run wrote just before it, against Twitch's token endpoint; the
+# secret reaches curl on stdin.
+verify_igdb() {
+  live || return 0
+  local id
+  id=$(kv_field "$(kv_load api)" app.vote.igdb.client-id)
+  [[ -n "$id" ]] || return 1
+  printf '%s' "$1" | curl -s --max-time 10 -X POST https://id.twitch.tv/oauth2/token \
+    --data-urlencode "client_id=$id" --data-urlencode "client_secret@-" --data-urlencode "grant_type=client_credentials" |
+    jq -e '.access_token | length > 0' >/dev/null
+}
+
 verify_discord_bot() {
   live || return 0
   curl -s --max-time 10 -H @<(printf 'Authorization: Bot %s\n' "$1") https://discord.com/api/v10/users/@me | jq -e '.bot == true' >/dev/null
@@ -496,7 +508,9 @@ section_api() {
     "google.calendar.id|optional-plain|GOOGLE_CALENDAR_ID||Google Calendar id" \
     "google.calendar.serviceAccountJson|optional-file|GOOGLE_CALENDAR_SA_JSON|verify_sa_json|the Google service account key (.json)" \
     "discord.botToken|optional-secret|DISCORD_BOT_TOKEN|verify_discord_bot|Discord bot token" \
-    "discord.guildId|optional-plain|DISCORD_GUILD_ID||Discord server id"; do
+    "discord.guildId|optional-plain|DISCORD_GUILD_ID||Discord server id" \
+    "app.vote.igdb.client-id|optional-plain|IGDB_CLIENT_ID||IGDB client id (the Twitch app the annual votes search games with)" \
+    "app.vote.igdb.client-secret|optional-secret|IGDB_CLIENT_SECRET|verify_igdb|IGDB client secret (that Twitch app's)"; do
     IFS='|' read -r key mode envname verify prompt <<<"$spec"
     had=$(kv_field "$(kv_load api)" "$key")
     ensure api "$key" "$mode" "$envname" "$verify" "$prompt"

@@ -10,6 +10,8 @@ import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
+import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
@@ -18,8 +20,6 @@ import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteResult
 import net.blueshell.api.vote.persistence.VoteResultRepository
-import net.blueshell.api.vote.persistence.VoteTrack
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -37,7 +37,7 @@ class AnnualVotesTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteCandidateRepository>()
-    private val tracks = mock<VoteTrackRepository>()
+    private val tracks = mock<CandidateTrackRepository>()
     private val results = mock<VoteResultRepository>()
     private val service = AnnualVotes(votes, ballots, games, tracks, results, Clock.fixed(NOW, ZoneOffset.UTC))
 
@@ -55,7 +55,7 @@ class AnnualVotesTest {
     }
 
     private fun stubFind(
-        trackRows: List<VoteTrack>,
+        trackRows: List<CandidateTrack>,
         gameRows: List<VoteCandidate>,
     ) {
         val tracksById = trackRows.associateBy { it.id!! }
@@ -210,7 +210,7 @@ class AnnualVotesTest {
         val gone = track(99, hades)
         whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote())
         whenever(ballots.findAllByVoteId(1)).thenReturn(listOf(ballot(1, 100, picking(gone))))
-        whenever(tracks.findAllById(any<Iterable<Long>>())).thenReturn(emptyList<VoteTrack>()).thenReturn(listOf(gone))
+        whenever(tracks.findAllById(any<Iterable<Long>>())).thenReturn(emptyList<CandidateTrack>()).thenReturn(listOf(gone))
 
         assertThat(
             service

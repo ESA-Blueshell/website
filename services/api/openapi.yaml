@@ -951,6 +951,36 @@ components:
       - failed
       - moved
       type: object
+    CandidateTrackResponse:
+      properties:
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
+        externalId:
+          type: string
+        id:
+          format: int64
+          type: integer
+        source:
+          enum:
+          - YOUTUBE
+          - SPOTIFY
+          type: string
+        thumbnailPath:
+          type:
+          - string
+          - 'null'
+        title:
+          type: string
+        url:
+          type: string
+      required:
+      - candidate
+      - externalId
+      - id
+      - source
+      - title
+      - url
+      type: object
     CastVoteBallotRequest:
       properties:
         picks:
@@ -6634,7 +6664,7 @@ components:
           $ref: '#/components/schemas/VoteCandidateResponse'
         track:
           oneOf:
-          - $ref: '#/components/schemas/VoteTrackResponse'
+          - $ref: '#/components/schemas/CandidateTrackResponse'
           - type: 'null'
       required:
       - candidate
@@ -6651,7 +6681,7 @@ components:
           type: integer
         track:
           oneOf:
-          - $ref: '#/components/schemas/VoteTrackResponse'
+          - $ref: '#/components/schemas/CandidateTrackResponse'
           - type: 'null'
         voters:
           format: int32
@@ -6661,36 +6691,6 @@ components:
       - place
       - points
       - voters
-      type: object
-    VoteTrackResponse:
-      properties:
-        candidate:
-          $ref: '#/components/schemas/VoteCandidateResponse'
-        externalId:
-          type: string
-        id:
-          format: int64
-          type: integer
-        source:
-          enum:
-          - YOUTUBE
-          - SPOTIFY
-          type: string
-        thumbnailPath:
-          type:
-          - string
-          - 'null'
-        title:
-          type: string
-        url:
-          type: string
-      required:
-      - candidate
-      - externalId
-      - id
-      - source
-      - title
-      - url
       type: object
 info:
   title: OpenAPI definition
@@ -32452,7 +32452,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/VoteTrackResponse'
+                  $ref: '#/components/schemas/CandidateTrackResponse'
                 type: array
           description: OK
         '400':
@@ -32560,7 +32560,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoteTrackResponse'
+                $ref: '#/components/schemas/CandidateTrackResponse'
           description: Created
         '400':
           content:
@@ -32675,7 +32675,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoteTrackResponse'
+                $ref: '#/components/schemas/CandidateTrackResponse'
           description: OK
         '400':
           content:

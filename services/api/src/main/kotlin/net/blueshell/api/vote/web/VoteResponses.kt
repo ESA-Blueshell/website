@@ -25,8 +25,8 @@ data class VoteCandidateResponse(
     val coverPath: String?,
 )
 
-@Schema(name = "VoteTrackResponse")
-data class VoteTrackResponse(
+@Schema(name = "CandidateTrackResponse")
+data class CandidateTrackResponse(
     val id: Long,
     val candidate: VoteCandidateResponse,
     val source: TrackSource,
@@ -39,14 +39,14 @@ data class VoteTrackResponse(
 @Schema(name = "VotePickResponse")
 data class VotePickResponse(
     val candidate: VoteCandidateResponse,
-    val track: VoteTrackResponse?,
+    val track: CandidateTrackResponse?,
 )
 
 @Schema(name = "VotePlacingResponse")
 data class VotePlacingResponse(
     val place: Int,
     val candidate: VoteCandidateResponse,
-    val track: VoteTrackResponse?,
+    val track: CandidateTrackResponse?,
     val points: Int,
     val voters: Int,
 )

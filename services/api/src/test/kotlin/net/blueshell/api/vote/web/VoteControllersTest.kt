@@ -50,7 +50,7 @@ class VoteControllersTest {
         TrackSummary(11, celeste, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
     private val celesteResponse = VoteCandidateResponse(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
     private val resurrectionsResponse =
-        VoteTrackResponse(11, celesteResponse, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
+        CandidateTrackResponse(11, celesteResponse, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
 
     @Test
     fun `a vote reads, opens on its dates, moves them and counts through its use cases`() {

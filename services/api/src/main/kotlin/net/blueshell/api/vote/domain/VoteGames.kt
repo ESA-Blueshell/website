@@ -2,11 +2,11 @@ package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.SitePictures
 import net.blueshell.api.shared.enums.FileType
+import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
-import net.blueshell.api.vote.persistence.VoteTrack
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -29,7 +29,7 @@ class VoteGames(
     private val pictures: RemotePictures,
     private val stored: SitePictures,
     private val candidates: VoteCandidateRepository,
-    private val tracks: VoteTrackRepository,
+    private val tracks: CandidateTrackRepository,
     private val clock: Clock,
 ) {
     /** Games matching [query]; for a kind of the year's games, only those first released in [year]. */
@@ -75,7 +75,7 @@ class VoteGames(
         val candidate = candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)
         val preview = previews.of(link) ?: throw TrackLinkUnreadable()
         val track =
-            VoteTrack(
+            CandidateTrack(
                 candidate = candidate,
                 source = link.source,
                 externalId = link.externalId,

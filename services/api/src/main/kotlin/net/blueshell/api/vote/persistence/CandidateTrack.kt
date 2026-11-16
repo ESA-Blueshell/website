@@ -20,12 +20,12 @@ import java.time.Instant
  */
 @Entity
 @Table(
-    name = "vote_tracks",
+    name = "vote_candidate_tracks",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_vote_tracks_source_external_id", columnNames = ["source", "external_id"]),
+        UniqueConstraint(name = "uk_vote_candidate_tracks_source_external_id", columnNames = ["source", "external_id"]),
     ],
 )
-class VoteTrack(
+class CandidateTrack(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "candidate_id", nullable = false)
     val candidate: VoteCandidate,
@@ -46,5 +46,5 @@ class VoteTrack(
 ) : AutoIdEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merged_into_id")
-    var mergedInto: VoteTrack? = null
+    var mergedInto: CandidateTrack? = null
 }

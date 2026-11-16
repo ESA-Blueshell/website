@@ -1,11 +1,11 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
-import net.blueshell.api.vote.persistence.VoteTrack
 import java.time.Instant
 
 /** A game as a page draws it. [coverPath] is our stored copy's address, never IGDB's. */
@@ -72,7 +72,7 @@ data class PickChoice(
 
 internal fun VoteCandidate.summary() = CandidateSummary(id!!, igdbId, name, firstReleaseYear, cover?.let(PublicFileUrls::of))
 
-internal fun VoteTrack.summary() =
+internal fun CandidateTrack.summary() =
     TrackSummary(
         id = id!!,
         candidate = candidate.summary(),
@@ -84,7 +84,7 @@ internal fun VoteTrack.summary() =
     )
 
 /** The track a merged duplicate counts as; merging keeps one hop, so this never chains. */
-internal fun VoteTrack.canonical(): VoteTrack = mergedInto ?: this
+internal fun CandidateTrack.canonical(): CandidateTrack = mergedInto ?: this
 
 /** Opens, then closes, then the reveal no earlier than the close. */
 internal fun requireInOrder(

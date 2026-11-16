@@ -6,12 +6,12 @@ import net.blueshell.api.vote.domain.VoteFixtures.NOW
 import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
+import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
-import net.blueshell.api.vote.persistence.VoteTrack
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -33,7 +33,7 @@ class VoteGamesTest {
     private val pictures = mock<RemotePictures>()
     private val sitePictures = mock<SitePictures>()
     private val games = mock<VoteCandidateRepository>()
-    private val tracks = mock<VoteTrackRepository>()
+    private val tracks = mock<CandidateTrackRepository>()
     private val service = VoteGames(catalogue, previews, pictures, sitePictures, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, "Celeste")
@@ -42,7 +42,7 @@ class VoteGamesTest {
     private val picture = RemotePicture(byteArrayOf(1, 2, 3), "image/jpeg")
 
     init {
-        whenever(tracks.saveAndFlush(any<VoteTrack>())).thenAnswer { call -> call.getArgument<VoteTrack>(0).also { it.id = 50 } }
+        whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenAnswer { call -> call.getArgument<CandidateTrack>(0).also { it.id = 50 } }
         whenever(games.saveAndFlush(any<VoteCandidate>())).thenAnswer { call -> call.getArgument<VoteCandidate>(0).also { it.id = 9 } }
     }
 
@@ -155,7 +155,7 @@ class VoteGamesTest {
 
             assertThat(added.title).isEqualTo("Resurrections")
             assertThat(added.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/t.webp")
-            val saved = argumentCaptor<VoteTrack>()
+            val saved = argumentCaptor<CandidateTrack>()
             verify(tracks).saveAndFlush(saved.capture())
             assertThat(saved.firstValue.addedById).isEqualTo(7)
             assertThat(saved.firstValue.addedAt).isEqualTo(NOW)

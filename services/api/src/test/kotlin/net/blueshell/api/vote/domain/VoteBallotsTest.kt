@@ -8,12 +8,12 @@ import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -29,7 +29,7 @@ class VoteBallotsTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteCandidateRepository>()
-    private val tracks = mock<VoteTrackRepository>()
+    private val tracks = mock<CandidateTrackRepository>()
     private val service = VoteBallots(votes, ballots, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, year = 2018)

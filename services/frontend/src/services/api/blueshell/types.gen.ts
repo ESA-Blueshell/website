@@ -491,6 +491,16 @@ export type BulkTargetMoveResult = {
     moved: Array<ExternalTarget>;
 };
 
+export type CandidateTrackResponse = {
+    candidate: VoteCandidateResponse;
+    externalId: string;
+    id: number;
+    source: 'YOUTUBE' | 'SPOTIFY';
+    thumbnailPath?: string | null;
+    title: string;
+    url: string;
+};
+
 export type CastVoteBallotRequest = {
     picks: Array<VotePickRequest>;
     version?: number | null;
@@ -3273,25 +3283,15 @@ export type VotePickRequest = {
 
 export type VotePickResponse = {
     candidate: VoteCandidateResponse;
-    track?: VoteTrackResponse | null;
+    track?: CandidateTrackResponse | null;
 };
 
 export type VotePlacingResponse = {
     candidate: VoteCandidateResponse;
     place: number;
     points: number;
-    track?: VoteTrackResponse | null;
+    track?: CandidateTrackResponse | null;
     voters: number;
-};
-
-export type VoteTrackResponse = {
-    candidate: VoteCandidateResponse;
-    externalId: string;
-    id: number;
-    source: 'YOUTUBE' | 'SPOTIFY';
-    thumbnailPath?: string | null;
-    title: string;
-    url: string;
 };
 
 export type FindAllAddressesData = {
@@ -13455,7 +13455,7 @@ export type VoteCandidateTracksResponses = {
     /**
      * OK
      */
-    200: Array<VoteTrackResponse>;
+    200: Array<CandidateTrackResponse>;
 };
 
 export type VoteCandidateTracksResponse = VoteCandidateTracksResponses[keyof VoteCandidateTracksResponses];
@@ -13496,7 +13496,7 @@ export type AddVoteTrackResponses = {
     /**
      * Created
      */
-    201: VoteTrackResponse;
+    201: CandidateTrackResponse;
 };
 
 export type AddVoteTrackResponse = AddVoteTrackResponses[keyof AddVoteTrackResponses];
@@ -13539,7 +13539,7 @@ export type MergeVoteTrackResponses = {
     /**
      * OK
      */
-    200: VoteTrackResponse;
+    200: CandidateTrackResponse;
 };
 
 export type MergeVoteTrackResponse = MergeVoteTrackResponses[keyof MergeVoteTrackResponses];

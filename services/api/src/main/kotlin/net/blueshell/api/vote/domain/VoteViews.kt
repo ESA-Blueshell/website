@@ -1,6 +1,7 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.file.api.PublicFileUrls
+import net.blueshell.api.file.api.Image
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.Vote
@@ -8,16 +9,16 @@ import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
 import java.time.Instant
 
-/** A game as a page draws it. [coverPath] is our stored copy's address, never IGDB's. */
+/** A game as a page draws it. [cover] is our stored copy, never IGDB's. */
 data class CandidateSummary(
     val id: Long,
     val igdbId: Long,
     val name: String,
     val firstReleaseYear: Int?,
-    val coverPath: String?,
+    val cover: Image?,
 )
 
-/** A track as a page draws it. [thumbnailPath] is our stored copy's address, never theirs. */
+/** A track as a page draws it. [thumbnail] is our stored copy, never theirs. */
 data class TrackSummary(
     val id: Long,
     val candidate: CandidateSummary,
@@ -25,7 +26,7 @@ data class TrackSummary(
     val externalId: String,
     val url: String,
     val title: String,
-    val thumbnailPath: String?,
+    val thumbnail: Image?,
 )
 
 /** One pick on a ballot: the game, and its track where the kind picks one. */
@@ -71,7 +72,7 @@ data class PickChoice(
     val trackId: Long? = null,
 )
 
-internal fun VoteCandidate.summary() = CandidateSummary(id!!, igdbId, name, firstReleaseYear, cover?.let(PublicFileUrls::of))
+internal fun VoteCandidate.summary() = CandidateSummary(id!!, igdbId, name, firstReleaseYear, cover?.asImage())
 
 internal fun CandidateTrack.summary() =
     TrackSummary(
@@ -81,7 +82,7 @@ internal fun CandidateTrack.summary() =
         externalId = externalId,
         url = TrackLink(source, externalId).url,
         title = title,
-        thumbnailPath = thumbnail?.let(PublicFileUrls::of),
+        thumbnail = thumbnail?.asImage(),
     )
 
 internal fun Vote.summaryWith(

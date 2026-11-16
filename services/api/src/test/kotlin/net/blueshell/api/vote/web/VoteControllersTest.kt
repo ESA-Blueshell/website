@@ -1,5 +1,6 @@
 package net.blueshell.api.vote.web
 
+import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.RemotePicture
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
@@ -47,10 +48,11 @@ class VoteControllersTest {
     private val opens = Instant.parse("2026-12-01T00:00:00Z")
     private val closes = Instant.parse("2026-12-21T23:00:00Z")
     private val reveal = Instant.parse("2026-12-28T19:00:00Z")
-    private val celeste = CandidateSummary(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
+    private val cover = Image(url = "/files/public/vote-covers/c.webp", path = "vote-covers/c.webp", width = 264, height = 352)
+    private val celeste = CandidateSummary(1, 26226, "Celeste", 2018, cover)
     private val resurrections =
         TrackSummary(11, celeste, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
-    private val celesteResponse = VoteCandidateResponse(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
+    private val celesteResponse = VoteCandidateResponse(1, 26226, "Celeste", 2018, cover)
     private val resurrectionsResponse =
         CandidateTrackResponse(11, celesteResponse, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
 

@@ -10,9 +10,9 @@ import net.blueshell.api.vote.domain.VoteSummary
 
 fun CatalogueGame.asResponse() = CatalogueGameResponse(igdbId, name, firstReleaseYear, coverImageId)
 
-fun CandidateSummary.asResponse() = VoteCandidateResponse(id, igdbId, name, firstReleaseYear, coverPath)
+fun CandidateSummary.asResponse() = VoteCandidateResponse(id, igdbId, name, firstReleaseYear, cover)
 
-fun TrackSummary.asResponse() = CandidateTrackResponse(id, candidate.asResponse(), source, externalId, url, title, thumbnailPath)
+fun TrackSummary.asResponse() = CandidateTrackResponse(id, candidate.asResponse(), source, externalId, url, title, thumbnail)
 
 fun PickSummary.asResponse() = VotePickResponse(candidate.asResponse(), track?.asResponse())
 

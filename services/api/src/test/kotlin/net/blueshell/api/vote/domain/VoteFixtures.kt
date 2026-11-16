@@ -1,6 +1,7 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.persistence.File
+import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.vote.persistence.BallotPick
 import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.TrackSource
@@ -17,11 +18,7 @@ internal object VoteFixtures {
     val CLOSES: Instant = Instant.parse("2026-12-21T23:00:00Z")
     val REVEAL: Instant = Instant.parse("2026-12-28T19:00:00Z")
 
-    fun stored(path: String) =
-        File::class.java
-            .getDeclaredConstructor()
-            .newInstance()
-            .also { it.path = path }
+    fun stored(path: String) = Entities.file(path = path)
 
     fun game(
         id: Long,

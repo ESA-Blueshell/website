@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface VoteCandidateRepository : BaseRepository<VoteCandidate, Long> {
-    // The cover comes with it, so the candidate can be drawn after the transaction that read it ends.
-    @EntityGraph(attributePaths = ["cover"])
+    // The cover and its widths come with it, so the candidate can be drawn after the transaction that read it ends.
+    @EntityGraph(attributePaths = ["cover", "cover._renditions"])
     fun findByIgdbId(igdbId: Long): VoteCandidate?
 }

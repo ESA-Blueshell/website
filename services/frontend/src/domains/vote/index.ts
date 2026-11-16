@@ -15,7 +15,7 @@ export {
   loadVote,
   mergeTrack,
   scheduleVote,
-  storedUrl,
+  imageAttrs,
   storeGame,
   tracksOf,
 } from "./adapters/vote"

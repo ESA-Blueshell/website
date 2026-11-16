@@ -103,8 +103,8 @@ class VoteCandidateUseCases(
         trackId: Long,
         intoId: Long,
     ): TrackSummary {
-        val track = tracks.findById(trackId).orElseThrow { TrackNotFound(trackId) }
-        val into = tracks.findById(intoId).orElseThrow { TrackNotFound(intoId) }
+        val track = tracks.findForMerge(trackId) ?: throw TrackNotFound(trackId)
+        val into = tracks.findForMerge(intoId) ?: throw TrackNotFound(intoId)
         val valid = trackId != intoId && track.mergedInto == null && into.mergedInto == null && track.candidate.id == into.candidate.id
         if (!valid) throw TrackMergeInvalid(trackId, intoId)
         track.mergedInto = into

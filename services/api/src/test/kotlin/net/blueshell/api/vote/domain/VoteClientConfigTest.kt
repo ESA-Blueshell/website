@@ -7,8 +7,8 @@ import org.springframework.mock.env.MockEnvironment
 import tools.jackson.databind.json.JsonMapper
 import java.time.Clock
 
-class VoteLookupConfigTest {
-    private val config = VoteLookupConfig()
+class VoteClientConfigTest {
+    private val config = VoteClientConfig()
     private val json = JsonMapper.builder().build()
     private val clock = Clock.systemUTC()
 

@@ -16,7 +16,7 @@ import java.time.Duration
  * search rather than offering a made-up catalogue.
  */
 @Configuration
-class VoteLookupConfig {
+class VoteClientConfig {
     private val http: HttpClient =
         HttpClient
             .newBuilder()

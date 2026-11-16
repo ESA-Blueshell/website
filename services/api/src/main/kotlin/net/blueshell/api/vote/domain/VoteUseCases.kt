@@ -126,6 +126,7 @@ class VoteUseCases(
         return true
     }
 
+    // Keeps every place up to the kind's top size, so candidates tied at the last place all stay.
     private fun reveal(
         vote: Vote,
         now: Instant,

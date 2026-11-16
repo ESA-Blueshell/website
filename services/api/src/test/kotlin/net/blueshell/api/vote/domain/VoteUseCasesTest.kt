@@ -323,5 +323,23 @@ class VoteUseCasesTest {
             assertThat(saved.firstValue).hasSize(VoteKind.GAME_OF_THE_YEAR.topSize)
             assertThat(saved.firstValue.map { it.candidate.id }).doesNotContain(101L)
         }
+
+        @Test
+        fun `keeps every candidate tied at the last place, even past the kind's top size`() {
+            // Every game is named first on one ballot, so all eleven share first place.
+            val many = (1L..11L).map { k -> game(100 + k, year = 2026) }
+            stubFind(emptyList(), many)
+            val cast = many.mapIndexed { index, game -> ballot(index.toLong(), index.toLong(), game to null) }
+            val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
+            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
+            whenever(votes.findById(1)).thenReturn(Optional.of(due))
+            whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
+            val saved = argumentCaptor<List<VotePlacing>>()
+
+            service.revealDue()
+
+            verify(placings).saveAll(saved.capture())
+            assertThat(saved.firstValue).hasSize(VoteKind.GAME_OF_THE_YEAR.topSize + 1).allMatch { it.place == 1 }
+        }
     }
 }

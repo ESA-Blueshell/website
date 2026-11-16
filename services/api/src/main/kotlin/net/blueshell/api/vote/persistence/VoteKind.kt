@@ -7,7 +7,9 @@ private val FIVE_RANKED = listOf(12, 10, 8, 6, 4)
  * What an annual vote asks for and how it counts. Each kind runs at most one vote a year.
  *
  * [points] holds what a pick at each position is worth, so its size is how many picks a ballot
- * holds. [picksTrack] is whether a pick names one of the game's tracks as well as the game.
+ * holds. [topSize] is the last place the results keep: candidates tied at it are all kept, so the
+ * results can run a row or two longer, rather than one being dropped by a rule nobody voted on.
+ * [picksTrack] is whether a pick names one of the game's tracks as well as the game.
  * [releasedInYear] limits the games to those first released in the vote's year.
  */
 enum class VoteKind(

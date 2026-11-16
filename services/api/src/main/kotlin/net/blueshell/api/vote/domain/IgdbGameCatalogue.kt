@@ -18,7 +18,7 @@ import java.time.ZoneOffset
 /**
  * Looks games up in IGDB with a Twitch app token from the client-credentials flow. The token is
  * kept until shortly before it expires and fetched again once IGDB turns it away. IGDB allows four
- * requests a second per client, which a member typing behind the page's debounce stays under.
+ * requests a second per client; [ThrottledGameCatalogue] keeps the whole site under that.
  */
 class IgdbGameCatalogue(
     private val clientId: String,

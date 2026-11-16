@@ -34,7 +34,8 @@ class VoteClientConfig {
         environment: Environment,
     ): GameCatalogue =
         when {
-            clientId.isNotBlank() && clientSecret.isNotBlank() -> IgdbGameCatalogue(clientId, clientSecret, http, json, clock)
+            clientId.isNotBlank() && clientSecret.isNotBlank() ->
+                ThrottledGameCatalogue(IgdbGameCatalogue(clientId, clientSecret, http, json, clock), clock)
             environment.acceptsProfiles(Profiles.of("dev", "test")) -> OfflineGameCatalogue()
             else -> UnavailableGameCatalogue
         }

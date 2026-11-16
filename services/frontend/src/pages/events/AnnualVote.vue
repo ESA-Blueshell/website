@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref} from "vue"
+import {computed, ref, watch} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
@@ -114,11 +114,19 @@ async function save() {
   vote.value = (await loadVote(props.page.kind)) ?? vote.value
 }
 
-onMounted(async () => {
-  vote.value = await loadVote(props.page.kind)
+// Both kinds share this component and the router reuses it between them, so the vote is read
+// again for each kind rather than once on mount.
+watch(() => props.page.kind, async kind => {
+  loaded.value = false
+  ballot.value = null
+  picks.value = []
+  saved.value = false
+  problem.value = ""
+  vote.value = await loadVote(kind)
+  if (kind !== props.page.kind) return
   loaded.value = true
   await readBallot()
-})
+}, {immediate: true})
 </script>
 
 <template>

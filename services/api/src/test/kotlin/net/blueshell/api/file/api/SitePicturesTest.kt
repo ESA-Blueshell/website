@@ -10,6 +10,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
@@ -20,7 +21,7 @@ class SitePicturesTest {
     private val files = mock<FileService>()
     private val users = mock<UserService>()
     private val manager = mock<PlatformTransactionManager>()
-    private val pictures = SitePictures(files, users, TransactionTemplate(manager))
+    private val pictures = SitePictures(files, SiteAccount(users), TransactionTemplate(manager))
     private val site = Entities.user(id = 1, username = "system")
 
     init {
@@ -47,5 +48,13 @@ class SitePicturesTest {
         whenever(files.store(any(), any(), any(), any(), any())).thenThrow(IllegalStateException("refused"))
 
         assertThat(pictures.store(byteArrayOf(1), "cover.jpg", "image/jpeg", FileType.VOTE_COVER)).isNull()
+    }
+
+    @Test
+    fun `stores nothing where there is no site account to credit it to`() {
+        val nobody = SitePictures(files, SiteAccount(mock()), TransactionTemplate(manager))
+
+        assertThat(nobody.store(byteArrayOf(1), "cover.jpg", "image/jpeg", FileType.VOTE_COVER)).isNull()
+        verifyNoInteractions(files)
     }
 }

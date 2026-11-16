@@ -10,8 +10,10 @@ import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 
 /** The shortest query worth sending to the catalogue. */
@@ -24,6 +26,10 @@ const val GAME_SEARCH_LIMIT = 10
  * Finding games and the tracks already picked for one, storing a game or a track the first time
  * somebody picks it, merging duplicate tracks, and fetching a search result's cover on a visitor's
  * behalf. Every picture a page shows comes from here or from our own storage.
+ *
+ * Storing asks IGDB, YouTube or Spotify and fetches a picture before it writes, each call taking up
+ * to seconds, so those calls run outside any transaction and only the reads and the write hold a
+ * connection.
  */
 @Service
 class VoteCandidateUseCases(
@@ -34,6 +40,7 @@ class VoteCandidateUseCases(
     private val votes: VoteRepository,
     private val candidates: VoteCandidateRepository,
     private val tracks: CandidateTrackRepository,
+    private val transactions: TransactionTemplate,
     private val clock: Clock,
 ) {
     /** Games matching [query]; for a kind of the year's games, only those first released in [year]. */
@@ -54,14 +61,13 @@ class VoteCandidateUseCases(
      * The game with that IGDB id, stored with a copy of its cover the first time anybody picks it,
      * while the [kind] vote of [year] is open.
      */
-    @Transactional
     fun candidate(
         igdbId: Long,
         kind: VoteKind,
         year: Int,
     ): CandidateSummary {
         requireVoting(kind, year)
-        return (candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)).summary()
+        return storedCandidate(igdbId).summary()
     }
 
     /** The tracks already picked for a game, first added first; none for a game nobody picked. */
@@ -76,7 +82,6 @@ class VoteCandidateUseCases(
      * is open. A link somebody already added answers with that track, so a ballot never holds two
      * rows for one link.
      */
-    @Transactional
     fun addTrack(
         igdbId: Long,
         pasted: String,
@@ -85,12 +90,11 @@ class VoteCandidateUseCases(
     ): TrackSummary {
         requireVoting(kind, year)
         val link = TrackLink.parse(pasted)
-        tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
-            if (existing.candidate.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.candidate.name)
-            return existing.summary()
-        }
-        val candidate = candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)
+        existingTrack(link, igdbId)?.let { return it }
+        val candidate = storedCandidate(igdbId)
         val preview = previews.of(link) ?: throw TrackLinkUnreadable()
+        val thumbnailName = "${link.source.name.lowercase()}-${link.externalId}.jpg"
+        val thumbnail = preview.thumbnailUrl?.let { copy(it, thumbnailName, FileType.VOTE_THUMBNAIL) }
         val track =
             CandidateTrack(
                 candidate = candidate,
@@ -98,16 +102,14 @@ class VoteCandidateUseCases(
                 externalId = link.externalId,
                 title = preview.title.take(TITLE_MAX),
                 addedAt = clock.instant(),
-                thumbnail =
-                    preview.thumbnailUrl?.let {
-                        copy(
-                            it,
-                            "${link.source.name.lowercase()}-${link.externalId}.jpg",
-                            FileType.VOTE_THUMBNAIL,
-                        )
-                    },
+                thumbnail = thumbnail,
             )
-        return tracks.saveAndFlush(track).summary()
+        return try {
+            written { tracks.saveAndFlush(track).summary() }
+        } catch (e: DataIntegrityViolationException) {
+            // Somebody added the same link while its preview was fetched.
+            existingTrack(link, igdbId) ?: throw e
+        }
     }
 
     /**
@@ -139,19 +141,46 @@ class VoteCandidateUseCases(
         if (state != VoteState.VOTING) throw WrongVoteState(state)
     }
 
-    private fun candidateFromCatalogue(igdbId: Long): VoteCandidate {
+    // The link's track as a track of [igdbId], where somebody already added it.
+    private fun existingTrack(
+        link: TrackLink,
+        igdbId: Long,
+    ): TrackSummary? =
+        written {
+            tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
+                if (existing.candidate.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.candidate.name)
+                existing.summary()
+            }
+        }
+
+    // The stored game, copied from the catalogue with our copy of its cover the first time it is asked for.
+    private fun storedCandidate(igdbId: Long): VoteCandidate {
+        candidates.findByIgdbId(igdbId)?.let { return it }
         val found = catalogue.byId(igdbId) ?: throw VoteCandidateNotFound(igdbId)
-        return candidates.saveAndFlush(
+        val cover =
+            found.coverImageId
+                ?.let { igdbCoverUrl(it, "t_cover_big") }
+                ?.let { copy(it, "igdb-${found.igdbId}.jpg", FileType.VOTE_COVER) }
+        val candidate =
             VoteCandidate(
                 igdbId = found.igdbId,
                 name = found.name.take(TITLE_MAX),
                 firstReleaseYear = found.firstReleaseYear,
-                cover =
-                    found.coverImageId
-                        ?.let { igdbCoverUrl(it, "t_cover_big") }
-                        ?.let { copy(it, "igdb-${found.igdbId}.jpg", FileType.VOTE_COVER) },
-            ),
-        )
+                cover = cover,
+            )
+        return try {
+            written { candidates.saveAndFlush(candidate) }
+        } catch (e: DataIntegrityViolationException) {
+            // Somebody stored the same game while it was fetched.
+            candidates.findByIgdbId(igdbId) ?: throw e
+        }
+    }
+
+    // [work] in a transaction of its own; what it throws rolls the transaction back and reaches the caller.
+    private fun <T> written(work: () -> T): T {
+        val answer = mutableListOf<T>()
+        transactions.executeWithoutResult { answer += work() }
+        return answer.single()
     }
 
     // Our own copy of a picture, or none where it cannot be fetched or stored.

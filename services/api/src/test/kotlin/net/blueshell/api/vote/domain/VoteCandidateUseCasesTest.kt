@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -29,6 +31,10 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.SimpleTransactionStatus
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.ZoneOffset
 
@@ -40,8 +46,27 @@ class VoteCandidateUseCasesTest {
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
     private val votes = mock<VoteRepository> { on { findByKindAndYear(VoteKind.OST_TOP_50, 2026) } doReturn vote() }
+
+    // Counts the transactions open, so a test can tell whether a network call ran inside one.
+    private var open = 0
+    private val manager =
+        mock<PlatformTransactionManager> {
+            on { getTransaction(any()) } doAnswer { SimpleTransactionStatus().also { open++ } }
+            on { commit(any()) } doAnswer { open -= 1 }
+            on { rollback(any()) } doAnswer { open -= 1 }
+        }
     private val service =
-        VoteCandidateUseCases(catalogue, previews, pictures, sitePictures, votes, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
+        VoteCandidateUseCases(
+            catalogue,
+            previews,
+            pictures,
+            sitePictures,
+            votes,
+            games,
+            tracks,
+            TransactionTemplate(manager),
+            Clock.fixed(NOW, ZoneOffset.UTC),
+        )
     private val ost = VoteKind.OST_TOP_50
 
     private val celeste = game(1, "Celeste")
@@ -235,5 +260,46 @@ class VoteCandidateUseCasesTest {
         assertThatThrownBy { service.addTrack(100, link, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
         assertThatThrownBy { service.candidate(100, ost, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
         verifyNoInteractions(catalogue, previews, pictures)
+    }
+
+    @Test
+    fun `asks the catalogue, the track's service and the picture hosts outside any transaction`() {
+        val seen = mutableListOf<Int>()
+        whenever(catalogue.byId(26226)).thenAnswer { CatalogueGame(26226, "Celeste", "co1abc", 2018).also { seen += open } }
+        whenever(previews.of(any())).thenAnswer { TrackPreview("Resurrections", "https://i.ytimg.com/x.jpg").also { seen += open } }
+        whenever(pictures.fetch(any())).thenAnswer { picture.also { seen += open } }
+
+        service.addTrack(26226, link, ost, 2026)
+
+        assertThat(seen).hasSize(4).containsOnly(0)
+        verify(manager, atLeastOnce()).commit(any())
+    }
+
+    @Test
+    fun `answers the game or the track somebody else stored while it was being fetched`() {
+        whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
+        whenever(games.findByIgdbId(26226)).thenReturn(null, celeste)
+        whenever(games.saveAndFlush(any<VoteCandidate>())).thenThrow(DataIntegrityViolationException("uk_vote_candidates_igdb_id"))
+        assertThat(service.candidate(26226, ost, 2026).name).isEqualTo("Celeste")
+
+        whenever(games.findByIgdbId(100)).thenReturn(celeste)
+        whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
+        val theirs = track(11, celeste)
+        whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(null, theirs)
+        whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenThrow(DataIntegrityViolationException("uk_vote_candidate_tracks"))
+        assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
+    }
+
+    @Test
+    fun `a failed write that nobody else made is not hidden`() {
+        whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
+        whenever(games.saveAndFlush(any<VoteCandidate>())).thenThrow(DataIntegrityViolationException("too long"))
+        assertThatThrownBy { service.candidate(26226, ost, 2026) }.isInstanceOf(DataIntegrityViolationException::class.java)
+
+        whenever(games.findByIgdbId(100)).thenReturn(celeste)
+        whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
+        whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenThrow(DataIntegrityViolationException("too long"))
+        assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(DataIntegrityViolationException::class.java)
+        verify(manager, atLeastOnce()).rollback(any())
     }
 }

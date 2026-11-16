@@ -33,13 +33,13 @@ import org.mockito.kotlin.whenever
 import java.time.Clock
 import java.time.ZoneOffset
 
-class AnnualVotesTest {
+class VoteUseCasesTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
     private val placings = mock<VotePlacingRepository>()
-    private val service = AnnualVotes(votes, ballots, games, tracks, placings, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val service = VoteUseCases(votes, ballots, games, tracks, placings, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, "Celeste", cover = stored("vote-covers/celeste.webp"))
     private val hades = game(2, "Hades")

@@ -3,7 +3,6 @@ package net.blueshell.api.vote.web
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.vote.domain.AnnualVotes
 import net.blueshell.api.vote.domain.BallotSummary
 import net.blueshell.api.vote.domain.CandidateSummary
 import net.blueshell.api.vote.domain.CatalogueGame
@@ -12,10 +11,11 @@ import net.blueshell.api.vote.domain.PickSummary
 import net.blueshell.api.vote.domain.Placing
 import net.blueshell.api.vote.domain.RemotePicture
 import net.blueshell.api.vote.domain.TrackSummary
-import net.blueshell.api.vote.domain.VoteBallots
-import net.blueshell.api.vote.domain.VoteGames
+import net.blueshell.api.vote.domain.VoteBallotUseCases
+import net.blueshell.api.vote.domain.VoteCandidateUseCases
 import net.blueshell.api.vote.domain.VoteState
 import net.blueshell.api.vote.domain.VoteSummary
+import net.blueshell.api.vote.domain.VoteUseCases
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteKind
 import org.assertj.core.api.Assertions.assertThat
@@ -28,9 +28,9 @@ import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
 class VoteControllersTest {
-    private val votes = mock<AnnualVotes>()
-    private val ballots = mock<VoteBallots>()
-    private val games = mock<VoteGames>()
+    private val votes = mock<VoteUseCases>()
+    private val ballots = mock<VoteBallotUseCases>()
+    private val games = mock<VoteCandidateUseCases>()
     private var signedIn: CurrentUser? = CurrentUser(7, setOf(Role.MEMBER), null)
     private val currentUser =
         object : CurrentUserProvider {

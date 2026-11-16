@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.security.MemberOnly
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.vote.domain.VoteBallots
+import net.blueshell.api.vote.domain.VoteBallotUseCases
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException
 @Tag(name = "Annual vote")
 @MemberOnly
 class VoteBallotController(
-    private val ballots: VoteBallots,
+    private val ballots: VoteBallotUseCases,
     private val currentUser: CurrentUserProvider,
 ) {
     @GetMapping

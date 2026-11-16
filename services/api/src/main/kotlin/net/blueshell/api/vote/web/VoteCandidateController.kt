@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.MemberOnly
 import net.blueshell.api.shared.security.CurrentUserProvider
-import net.blueshell.api.vote.domain.VoteGames
+import net.blueshell.api.vote.domain.VoteCandidateUseCases
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
@@ -35,7 +35,7 @@ private val COVER_CACHE: CacheControl = CacheControl.maxAge(Duration.ofDays(7)).
 @Tag(name = "Annual vote")
 @MemberOnly
 class VoteCandidateController(
-    private val games: VoteGames,
+    private val candidates: VoteCandidateUseCases,
     private val currentUser: CurrentUserProvider,
 ) {
     @GetMapping("/vote-candidates")
@@ -43,14 +43,14 @@ class VoteCandidateController(
         @RequestParam @Size(max = QUERY_MAX) query: String,
         @RequestParam kind: VoteKind,
         @RequestParam year: Int,
-    ): List<CatalogueGameResponse> = games.search(query, kind, year).map { it.asResponse() }
+    ): List<CatalogueGameResponse> = candidates.search(query, kind, year).map { it.asResponse() }
 
     /** A search result's cover, fetched by the api so the browser never asks IGDB. */
     @GetMapping("/vote-candidates/covers/{imageId}", produces = [MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp"])
     fun voteCandidateCover(
         @PathVariable imageId: String,
     ): ResponseEntity<ByteArray> {
-        val cover = games.coverPreview(imageId)
+        val cover = candidates.coverPreview(imageId)
         return ResponseEntity
             .ok()
             .cacheControl(COVER_CACHE)
@@ -61,12 +61,12 @@ class VoteCandidateController(
     @PostMapping("/vote-candidates")
     fun storeVoteCandidate(
         @Valid @RequestBody request: StoreVoteCandidateRequest,
-    ): VoteCandidateResponse = games.candidate(request.igdbId).asResponse()
+    ): VoteCandidateResponse = candidates.candidate(request.igdbId).asResponse()
 
     @GetMapping("/vote-candidates/{igdbId}/tracks")
     fun voteCandidateTracks(
         @PathVariable @Positive igdbId: Long,
-    ): List<CandidateTrackResponse> = games.tracksOf(igdbId).map { it.asResponse() }
+    ): List<CandidateTrackResponse> = candidates.tracksOf(igdbId).map { it.asResponse() }
 
     @PostMapping("/vote-tracks")
     @ResponseStatus(HttpStatus.CREATED)
@@ -74,7 +74,7 @@ class VoteCandidateController(
         @Valid @RequestBody request: AddVoteTrackRequest,
     ): CandidateTrackResponse {
         val adder = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-        return games.addTrack(request.igdbId, request.url, adder).asResponse()
+        return candidates.addTrack(request.igdbId, request.url, adder).asResponse()
     }
 
     @BoardOnly
@@ -82,5 +82,5 @@ class VoteCandidateController(
     fun mergeVoteTrack(
         @PathVariable @Positive id: Long,
         @Valid @RequestBody request: MergeVoteTrackRequest,
-    ): CandidateTrackResponse = games.merge(id, request.intoId).asResponse()
+    ): CandidateTrackResponse = candidates.merge(id, request.intoId).asResponse()
 }

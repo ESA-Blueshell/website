@@ -23,7 +23,7 @@ const val GAME_SEARCH_LIMIT = 10
  * behalf. Every picture a page shows comes from here or from our own storage.
  */
 @Service
-class VoteGames(
+class VoteCandidateUseCases(
     private val catalogue: GameCatalogue,
     private val previews: TrackPreviews,
     private val pictures: RemotePictures,

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.security.BoardOnly
-import net.blueshell.api.vote.domain.AnnualVotes
+import net.blueshell.api.vote.domain.VoteUseCases
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/annual-votes/{kind}")
 @Tag(name = "Annual vote")
 class AnnualVoteController(
-    private val votes: AnnualVotes,
+    private val votes: VoteUseCases,
 ) {
     @PermitAll
     @GetMapping("/current")

@@ -15,7 +15,7 @@ import tools.jackson.databind.json.JsonMapper
 class RevealDueVotesJobTest {
     @Test
     fun `reveals what is due and counts it, and skips a run with nothing due`() {
-        val votes = mock<AnnualVotes>()
+        val votes = mock<VoteUseCases>()
         whenever(votes.revealDue()).thenReturn(2, 0)
         val mapper = JsonMapper.builder().build()
         val job = RevealDueVotesJob(mapper, votes)

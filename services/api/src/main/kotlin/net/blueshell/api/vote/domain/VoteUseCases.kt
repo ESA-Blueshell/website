@@ -22,7 +22,7 @@ import java.time.Instant
  * the ballots.
  */
 @Service
-class AnnualVotes(
+class VoteUseCases(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val candidates: VoteCandidateRepository,

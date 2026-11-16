@@ -9,7 +9,7 @@ import tools.jackson.databind.ObjectMapper
 @Component
 class RevealDueVotesJob(
     objectMapper: ObjectMapper,
-    private val votes: AnnualVotes,
+    private val votes: VoteUseCases,
 ) : AbstractJsonJobHandler<VoteJobs.RevealDuePayload>(objectMapper, VoteJobs.RevealDue) {
     override fun handlePayload(payload: VoteJobs.RevealDuePayload) {
         val revealed = votes.revealDue()

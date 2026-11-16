@@ -3,7 +3,7 @@
  * member ranking, saving and changing their ballot, for both kinds.
  */
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
-import {defineComponent, h} from "vue"
+import {defineComponent, h, ref} from "vue"
 import type {VueWrapper} from "@vue/test-utils"
 import * as api from "@/services/api"
 import type {StoredLogin} from "@/plugins/store"
@@ -181,6 +181,24 @@ describe("annual vote page", () => {
     expect(wrapper.text()).toContain("Rank your top 3")
     expect(wrapper.text()).toContain("Your first pick is worth 3 points, then 2 and 1. A game can be on your ballot once.")
     expect(wrapper.get("[data-testid=vote-ballot-full]").text()).toBe("Your ballot is full. Take a game off to add another.")
+  })
+
+  it("reads the other kind's vote when the router reuses the page for it", async () => {
+    voteIs(aVote("VOTING"))
+    const shown = ref<VoteKindPage>(OST_TOP_50)
+    const Page = defineComponent({render: () => h(AnnualVote, {page: shown.value})})
+    const wrapper = await mountPage(Page, {path: OST_TOP_50.path, login: member})
+    wrappers.push(wrapper)
+    await settle()
+    expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(2)
+
+    vi.mocked(api.currentAnnualVote).mockResolvedValue(answer(api.currentAnnualVote, aGamesVote("UPCOMING")))
+    shown.value = GAME_OF_THE_YEAR
+    await settle()
+
+    expect(api.currentAnnualVote).toHaveBeenLastCalledWith({path: {kind: "GAME_OF_THE_YEAR"}})
+    expect(wrapper.text()).toContain("Game of the Year · 2026")
+    expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(0)
   })
 
   it("says the votes are being counted, and when they are revealed", async () => {

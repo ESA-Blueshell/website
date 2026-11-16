@@ -85,8 +85,17 @@ class VoteUseCasesTest {
         }
 
         @Test
+        fun `before any vote of a kind opens, shows the one that opens first`() {
+            val day = 86_400L
+            val upcoming = vote(opensAt = NOW.plusSeconds(day), closesAt = NOW.plusSeconds(2 * day), revealAt = NOW.plusSeconds(3 * day))
+            whenever(votes.findFirstByKindOrderByOpensAtAsc(VoteKind.OST_TOP_50)).thenReturn(upcoming)
+
+            assertThat(service.current(VoteKind.OST_TOP_50).state).isEqualTo(VoteState.UPCOMING)
+        }
+
+        @Test
         fun `an open vote shows its state, dates and live ballot count, and no results`() {
-            whenever(votes.findFirstByKindOrderByYearDesc(VoteKind.OST_TOP_50)).thenReturn(vote())
+            whenever(votes.findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(VoteKind.OST_TOP_50, NOW)).thenReturn(vote())
             whenever(ballots.countByVoteId(1)).thenReturn(4L)
 
             val summary = service.current(VoteKind.OST_TOP_50)
@@ -99,7 +108,7 @@ class VoteUseCasesTest {
         @Test
         fun `a published vote shows its stored count and results, with our own pictures`() {
             val published = vote().apply { publishedAt = REVEAL }
-            whenever(votes.findFirstByKindOrderByYearDesc(VoteKind.OST_TOP_50)).thenReturn(published)
+            whenever(votes.findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(VoteKind.OST_TOP_50, NOW)).thenReturn(published)
             whenever(placings.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(1)).thenReturn(
                 listOf(VotePlacing(1, 1, celeste, resurrections, 40, 4), VotePlacing(1, 2, hades, null, 12, 1)),
             )

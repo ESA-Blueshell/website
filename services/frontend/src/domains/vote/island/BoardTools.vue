@@ -118,7 +118,7 @@ watch(() => props.vote, refresh)
       @submit.prevent="save"
     >
       <p class="tools__said">
-        {{ starting ? `Start the ${year} vote. It runs on these dates by itself: nobody has to press anything on the day.` : "The vote runs on these dates. You can move them until the results are revealed." }}
+        {{ starting ? `Start the ${year} vote. It runs on these dates, in Amsterdam time, by itself: nobody has to press anything on the day.` : "The vote runs on these dates, in Amsterdam time. You can move them until the results are revealed." }}
       </p>
       <div class="tools__fields">
         <form-field

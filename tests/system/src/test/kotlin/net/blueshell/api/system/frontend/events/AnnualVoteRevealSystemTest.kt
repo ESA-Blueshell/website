@@ -50,12 +50,13 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
         assertThat(TestHelper.voteRows("vote_ballots", voteId)).isZero()
         assertThat(TestHelper.voteRows("vote_placings", voteId)).isEqualTo(2)
 
+        // The band draws its words in capitals, which innerText reads as drawn.
         page.navigate("$frontendUrl/events/ost-top-50")
         page.locator("[data-testid='vote-results-head']").first().waitFor()
-        assertThat(page.locator("[data-testid='vote-results-head']").first().innerText()).contains("From 2 ballots")
+        assertThat(page.locator("[data-testid='vote-results-head']").first().innerText()).containsIgnoringCase("From 2 ballots")
         assertThat(page.locator("[data-testid='vote-result']").allInnerTexts()).satisfiesExactly(
-            { assertThat(it).contains(first) },
-            { assertThat(it).contains(second) },
+            { assertThat(it).containsIgnoringCase(first) },
+            { assertThat(it).containsIgnoringCase(second) },
         )
     }
 }

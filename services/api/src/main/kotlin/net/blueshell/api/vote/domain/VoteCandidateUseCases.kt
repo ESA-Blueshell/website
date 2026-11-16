@@ -67,7 +67,6 @@ class VoteCandidateUseCases(
     fun addTrack(
         igdbId: Long,
         pasted: String,
-        userId: Long,
     ): TrackSummary {
         val link = TrackLink.parse(pasted)
         tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
@@ -82,7 +81,6 @@ class VoteCandidateUseCases(
                 source = link.source,
                 externalId = link.externalId,
                 title = preview.title.take(TITLE_MAX),
-                addedById = userId,
                 addedAt = clock.instant(),
                 thumbnail =
                     preview.thumbnailUrl?.let {

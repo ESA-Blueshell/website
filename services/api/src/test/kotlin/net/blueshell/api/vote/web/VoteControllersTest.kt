@@ -39,7 +39,7 @@ class VoteControllersTest {
 
     private val voteController = AnnualVoteController(votes)
     private val ballotController = VoteBallotController(ballots, currentUser)
-    private val gameController = VoteCandidateController(games, currentUser)
+    private val gameController = VoteCandidateController(games)
 
     private val ost = VoteKind.OST_TOP_50
     private val opens = Instant.parse("2026-12-01T00:00:00Z")
@@ -107,7 +107,7 @@ class VoteControllersTest {
         whenever(games.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
         whenever(games.candidate(26226)).thenReturn(celeste)
         whenever(games.tracksOf(26226)).thenReturn(listOf(resurrections))
-        whenever(games.addTrack(26226, "https://open.spotify.com/track/x", 7)).thenReturn(resurrections)
+        whenever(games.addTrack(26226, "https://open.spotify.com/track/x")).thenReturn(resurrections)
         whenever(games.merge(12, 11)).thenReturn(resurrections)
 
         assertThat(gameController.searchVoteCandidates("cel", ost, 2026))
@@ -129,9 +129,6 @@ class VoteControllersTest {
         signedIn = null
 
         assertThatThrownBy { ballotController.myVoteBallot(ost, 2026) }.isInstanceOf(ResponseStatusException::class.java)
-        assertThatThrownBy {
-            gameController.addVoteTrack(AddVoteTrackRequest(1, "https://youtu.be/x"))
-        }.isInstanceOf(ResponseStatusException::class.java)
     }
 
     @Test

@@ -77,7 +77,6 @@ databaseChangeLog:
               - column: {name: title, type: VARCHAR(255), constraints: {nullable: false}}
               - column: {name: thumbnail_file_id, type: BIGINT}
               - column: {name: merged_into_id, type: BIGINT}
-              - column: {name: added_by_id, type: BIGINT}
               - column: {name: added_at, type: DATETIME, constraints: {nullable: false}}
         - addUniqueConstraint:
             tableName: vote_candidate_tracks
@@ -102,13 +101,6 @@ databaseChangeLog:
             baseColumnNames: merged_into_id
             referencedTableName: vote_candidate_tracks
             referencedColumnNames: id
-        - addForeignKeyConstraint:
-            constraintName: fk_vote_candidate_tracks_added_by_id
-            baseTableName: vote_candidate_tracks
-            baseColumnNames: added_by_id
-            referencedTableName: users
-            referencedColumnNames: id
-            onDelete: SET NULL
 
         - createTable:
             tableName: vote_ballots

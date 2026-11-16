@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.MemberOnly
-import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.CacheControl
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 import java.time.Duration
 
 private const val QUERY_MAX = 100
@@ -36,7 +34,6 @@ private val COVER_CACHE: CacheControl = CacheControl.maxAge(Duration.ofDays(7)).
 @MemberOnly
 class VoteCandidateController(
     private val candidates: VoteCandidateUseCases,
-    private val currentUser: CurrentUserProvider,
 ) {
     @GetMapping("/vote-candidates")
     fun searchVoteCandidates(
@@ -72,10 +69,7 @@ class VoteCandidateController(
     @ResponseStatus(HttpStatus.CREATED)
     fun addVoteTrack(
         @Valid @RequestBody request: AddVoteTrackRequest,
-    ): CandidateTrackResponse {
-        val adder = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-        return candidates.addTrack(request.igdbId, request.url, adder).asResponse()
-    }
+    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url).asResponse()
 
     @BoardOnly
     @PostMapping("/vote-tracks/{id}/merge")

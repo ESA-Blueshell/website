@@ -1,4 +1,4 @@
-package net.blueshell.api.vote.domain
+package net.blueshell.api.file.api
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
@@ -12,7 +12,7 @@ import java.net.ServerSocket
 import java.net.URI
 import java.net.http.HttpClient
 
-class RemotePicturesTest {
+class HostBoundRemotePicturesTest {
     private val server: HttpServer = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).also { it.start() }
     private val base = "http://127.0.0.1:${server.address.port}"
     private var answer: (HttpExchange) -> Unit = { it.answer(200, "image/jpeg; charset=binary", byteArrayOf(1, 2, 3)) }
@@ -65,9 +65,9 @@ class RemotePicturesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["http://images.igdb.com/x.jpg", "https://example.com/x.jpg", "https:///x.jpg", "not a [uri"])
-    fun `fetches only over https, and only from the hosts pictures come from`(url: String) {
-        assertThat(HostBoundRemotePictures(HttpClient.newHttpClient()).fetch(url)).isNull()
+    @ValueSource(strings = ["http://images.example.org/x.jpg", "https://example.com/x.jpg", "https:///x.jpg", "not a [uri"])
+    fun `fetches only over https, and only from the hosts it was given`(url: String) {
+        assertThat(HostBoundRemotePictures(HttpClient.newHttpClient()) { it == "images.example.org" }.fetch(url)).isNull()
     }
 
     @Test
@@ -76,19 +76,6 @@ class RemotePicturesTest {
         val nothing = HostBoundRemotePictures(HttpClient.newHttpClient()) { true }
 
         assertThat(nothing.fetch("https://127.0.0.1:${ServerSocket(0).use { it.localPort }}/x.jpg")).isNull()
-    }
-
-    @Test
-    fun `the picture hosts are IGDB's, YouTube's and Spotify's`() {
-        assertThat(listOf("images.igdb.com", "i.ytimg.com", "i.scdn.co", "image-cdn-fa.spotifycdn.com").all(::pictureHost)).isTrue
-        assertThat(listOf("example.com", "spotifycdn.com.evil.net", "ytimg.com").none(::pictureHost)).isTrue
-    }
-
-    @Test
-    fun `an IGDB cover address is built only from an id IGDB would issue`() {
-        assertThat(igdbCoverUrl("co1abc", "t_cover_big")).isEqualTo("https://images.igdb.com/igdb/image/upload/t_cover_big/co1abc.jpg")
-        assertThat(igdbCoverUrl("../x", "t_cover_big")).isNull()
-        assertThat(igdbCoverUrl("", "t_cover_big")).isNull()
     }
 
     private fun HttpExchange.answer(

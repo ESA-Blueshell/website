@@ -1,4 +1,4 @@
-package net.blueshell.api.vote.domain
+package net.blueshell.api.file.api
 
 import java.io.IOException
 import java.net.URI
@@ -13,27 +13,19 @@ class RemotePicture(
     val mediaType: String,
 )
 
-/** Fetches a cover or a thumbnail on a visitor's behalf, so their browser never asks for it. */
+/** Fetches a picture another service hosts on a visitor's behalf, so their browser never asks for it. */
 interface RemotePictures {
     /** The picture at [url], or null where it cannot be fetched or is not a picture we take. */
     fun fetch(url: String): RemotePicture?
 }
 
-private val IGDB_IMAGE_ID = Regex("^[a-z0-9]{1,40}$")
-
-/** IGDB's address for the cover [imageId] at [size], or null for an id IGDB would never issue. */
-fun igdbCoverUrl(
-    imageId: String,
-    size: String,
-): String? = if (IGDB_IMAGE_ID.matches(imageId)) "https://images.igdb.com/igdb/image/upload/$size/$imageId.jpg" else null
-
 /**
- * Fetches only over https, only from the hosts the covers and thumbnails come from, and follows no
- * redirect, so an address a link or an oEmbed answer carries cannot point the api anywhere else.
+ * Fetches only over https, only from the hosts [allowed] names, and follows no redirect, so an
+ * address a link or another service's answer carries cannot point the api anywhere else.
  */
 class HostBoundRemotePictures(
     private val http: HttpClient,
-    private val allowed: (String) -> Boolean = ::pictureHost,
+    private val allowed: (String) -> Boolean,
 ) : RemotePictures {
     override fun fetch(url: String): RemotePicture? {
         val uri = runCatching { URI(url) }.getOrNull() ?: return null
@@ -75,6 +67,3 @@ class HostBoundRemotePictures(
         val TIMEOUT: Duration = Duration.ofSeconds(5)
     }
 }
-
-/** IGDB's image host, YouTube's thumbnail host and Spotify's image hosts. */
-fun pictureHost(host: String): Boolean = host in setOf("images.igdb.com", "i.ytimg.com", "i.scdn.co") || host.endsWith(".spotifycdn.com")

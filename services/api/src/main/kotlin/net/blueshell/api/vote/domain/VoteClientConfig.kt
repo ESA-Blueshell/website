@@ -1,5 +1,7 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.file.api.HostBoundRemotePictures
+import net.blueshell.api.file.api.RemotePictures
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -41,7 +43,7 @@ class VoteClientConfig {
     fun trackPreviews(json: ObjectMapper): TrackPreviews = OEmbedTrackPreviews(http, json)
 
     @Bean
-    fun remotePictures(): RemotePictures = HostBoundRemotePictures(http)
+    fun remotePictures(): RemotePictures = HostBoundRemotePictures(http, ::pictureHost)
 
     private companion object {
         const val CONNECT_TIMEOUT_SECONDS = 3L

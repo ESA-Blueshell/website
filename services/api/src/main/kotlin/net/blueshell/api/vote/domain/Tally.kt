@@ -1,5 +1,7 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.vote.persistence.CandidateTrack
+
 /** One pick as the count reads it. [position] is 1-based; [trackId] is the track as picked, if any. */
 data class CountedPick(
     val position: Int,
@@ -105,3 +107,6 @@ object Tally {
         }
     }
 }
+
+/** The track a merged duplicate counts as; merging keeps one hop, so this never chains. */
+internal fun CandidateTrack.canonical(): CandidateTrack = mergedInto ?: this

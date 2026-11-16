@@ -90,6 +90,15 @@ class VoteUseCases(
         }
     }
 
+    /** Opens, then closes, then the reveal no earlier than the close. */
+    private fun requireInOrder(
+        opensAt: Instant,
+        closesAt: Instant,
+        revealAt: Instant,
+    ) {
+        if (!opensAt.isBefore(closesAt) || revealAt.isBefore(closesAt)) throw VoteDatesOutOfOrder()
+    }
+
     private fun byYear(
         kind: VoteKind,
         year: Int,

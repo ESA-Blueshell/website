@@ -83,18 +83,6 @@ internal fun CandidateTrack.summary() =
         thumbnailPath = thumbnail?.let(PublicFileUrls::of),
     )
 
-/** The track a merged duplicate counts as; merging keeps one hop, so this never chains. */
-internal fun CandidateTrack.canonical(): CandidateTrack = mergedInto ?: this
-
-/** Opens, then closes, then the reveal no earlier than the close. */
-internal fun requireInOrder(
-    opensAt: Instant,
-    closesAt: Instant,
-    revealAt: Instant,
-) {
-    if (!opensAt.isBefore(closesAt) || revealAt.isBefore(closesAt)) throw VoteDatesOutOfOrder()
-}
-
 internal fun Vote.summaryWith(
     state: VoteState,
     ballots: Int,

@@ -15,7 +15,7 @@ class VoteEntitiesTest {
                 CandidateTrack::class.java,
                 VoteBallot::class.java,
                 BallotPick::class.java,
-                VoteResult::class.java,
+                VotePlacing::class.java,
             ).map { it.getDeclaredConstructor().newInstance() }
 
         assertThat(loaded).hasSize(6)
@@ -33,7 +33,7 @@ class VoteEntitiesTest {
     fun `a result names its vote`() {
         val game = VoteCandidate(igdbId = 1, name = "Celeste")
 
-        assertThat(VoteResult(voteId = 3, place = 1, candidate = game, track = null, points = 12, voters = 1).voteId).isEqualTo(3)
+        assertThat(VotePlacing(voteId = 3, place = 1, candidate = game, track = null, points = 12, voters = 1).voteId).isEqualTo(3)
     }
 
     @Test

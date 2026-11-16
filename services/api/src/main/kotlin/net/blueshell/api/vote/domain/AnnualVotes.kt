@@ -8,9 +8,9 @@ import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VotePlacing
+import net.blueshell.api.vote.persistence.VotePlacingRepository
 import net.blueshell.api.vote.persistence.VoteRepository
-import net.blueshell.api.vote.persistence.VoteResult
-import net.blueshell.api.vote.persistence.VoteResultRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -27,7 +27,7 @@ class AnnualVotes(
     private val ballots: VoteBallotRepository,
     private val candidates: VoteCandidateRepository,
     private val tracks: CandidateTrackRepository,
-    private val results: VoteResultRepository,
+    private val placings: VotePlacingRepository,
     private val clock: Clock,
 ) {
     /** The latest year's vote of [kind], as the public page shows it. */
@@ -101,8 +101,8 @@ class AnnualVotes(
     ) {
         val cast = ballots.findAllByVoteId(vote.id!!)
         val top = count(vote, cast).filter { it.standing.place <= vote.kind.topSize }
-        results.saveAll(
-            top.map { VoteResult(vote.id!!, it.standing.place, it.candidate, it.track, it.standing.points, it.standing.voters) },
+        placings.saveAll(
+            top.map { VotePlacing(vote.id!!, it.standing.place, it.candidate, it.track, it.standing.points, it.standing.voters) },
         )
         vote.ballotCount = cast.size
         vote.publishedAt = now
@@ -138,7 +138,7 @@ class AnnualVotes(
         val state = vote.stateAt(clock.instant())
         if (state != VoteState.PUBLISHED) return vote.summaryWith(state, ballots.countByVoteId(vote.id!!).toInt(), emptyList())
         val placings =
-            results.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(vote.id!!).map {
+            placings.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(vote.id!!).map {
                 Placing(it.place, it.candidate.summary(), it.track?.summary(), it.points, it.voters)
             }
         return vote.summaryWith(state, vote.ballotCount ?: 0, placings)

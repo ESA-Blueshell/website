@@ -6,11 +6,12 @@ describe("a vote's dates", () => {
     expect(decemberDates(2027)).toEqual({opensAt: "2027-12-01T00:00", closesAt: "2027-12-21T23:59", revealAt: "2027-12-28T20:00"})
   })
 
-  it("go from the form to the api and back unchanged", () => {
+  it("go from the form to the api and back unchanged, read as Amsterdam time wherever the reader is", () => {
     const iso = isoOf("2026-12-21T23:59")!
 
-    expect(iso).toMatch(/^2026-12-2\dT\d\d:59:00Z$/)
+    expect(iso).toBe("2026-12-21T22:59:00Z")
     expect(localOf(iso)).toBe("2026-12-21T23:59")
+    expect(localOf("2026-07-01T10:00:00Z")).toBe("2026-07-01T12:00")
   })
 
   it("are none where the form holds none", () => {

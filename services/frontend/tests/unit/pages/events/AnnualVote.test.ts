@@ -2,7 +2,7 @@
  * The annual vote page: what a visitor, a member and the board see in each state of a vote, and a
  * member ranking, saving and changing their ballot, for both kinds.
  */
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
+import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest"
 import {defineComponent, h} from "vue"
 import type {VueWrapper} from "@vue/test-utils"
 import * as api from "@/services/api"
@@ -59,6 +59,14 @@ describe("annual vote page", () => {
   })
 
   afterEach(() => unmountAll(wrappers, "AnnualVote"))
+
+  // The page says its dates in the reader's own time; pinning it keeps "21 December" true east of UTC+1.
+  beforeAll(() => {
+    vi.stubEnv("TZ", "Europe/Amsterdam")
+  })
+  afterAll(() => {
+    vi.unstubAllEnvs()
+  })
 
   it("says there is no vote yet, without the board's tools for a member", async () => {
     voteIs(null)

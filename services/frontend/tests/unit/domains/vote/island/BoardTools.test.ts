@@ -59,7 +59,7 @@ describe("the board's vote tools", () => {
     expect((await tools(aVote("PUBLISHED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
   })
 
-  it("moves an unrevealed vote's dates at the version it read, shown in the reader's own time", async () => {
+  it("moves an unrevealed vote's dates at the version it read, shown in Amsterdam time", async () => {
     const vote = aVote("VOTING")
     vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(answer(api.scheduleAnnualVote, vote))
     const wrapper = await tools(vote)

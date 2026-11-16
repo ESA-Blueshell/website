@@ -16,7 +16,7 @@ import java.time.Clock
 
 /** A member's own ballot: reading it back, and casting or changing it while the vote is open. */
 @Service
-class VoteBallots(
+class VoteBallotUseCases(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val candidates: VoteCandidateRepository,

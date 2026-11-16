@@ -25,12 +25,12 @@ import org.springframework.dao.OptimisticLockingFailureException
 import java.time.Clock
 import java.time.ZoneOffset
 
-class VoteBallotsTest {
+class VoteBallotUseCasesTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
-    private val service = VoteBallots(votes, ballots, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val service = VoteBallotUseCases(votes, ballots, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, year = 2018)
     private val hades = game(2, year = 2026)

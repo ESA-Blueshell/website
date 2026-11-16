@@ -27,14 +27,15 @@ import java.time.Clock
 import java.time.ZoneOffset
 import java.util.Optional
 
-class VoteGamesTest {
+class VoteCandidateUseCasesTest {
     private val catalogue = mock<GameCatalogue>()
     private val previews = mock<TrackPreviews>()
     private val pictures = mock<RemotePictures>()
     private val sitePictures = mock<SitePictures>()
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
-    private val service = VoteGames(catalogue, previews, pictures, sitePictures, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val service =
+        VoteCandidateUseCases(catalogue, previews, pictures, sitePictures, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, "Celeste")
     private val hades = game(2, "Hades")

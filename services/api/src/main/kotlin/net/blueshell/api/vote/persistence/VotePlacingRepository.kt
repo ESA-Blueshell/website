@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface VotePlacingRepository : BaseRepository<VotePlacing, Long> {
-    @EntityGraph(attributePaths = ["candidate", "track"])
+    // The public page draws each placing's cover and thumbnail, so they come with it.
+    @EntityGraph(attributePaths = ["candidate", "candidate.cover", "track", "track.thumbnail"])
     fun findAllByVoteIdOrderByPlaceAscCandidateNameAsc(voteId: Long): List<VotePlacing>
 }

@@ -95,7 +95,7 @@ export const mergeTrack = (id: number, intoId: number): Promise<Saved<Track> | R
 
 /** Where a search result's cover is drawn from: the api, which fetches it from IGDB. */
 export const coverPreviewUrl = (imageId: string | null | undefined): string | null =>
-  imageId ? apiUrl(`/vote-games/covers/${encodeURIComponent(imageId)}`) : null
+  imageId ? apiUrl(`/vote-candidates/covers/${encodeURIComponent(imageId)}`) : null
 
 /** Where a stored copy of a cover or a thumbnail is drawn from: our own storage, through the api. */
 export const storedUrl = (path: string | null | undefined): string | null => (path ? apiUrl(path) : null)

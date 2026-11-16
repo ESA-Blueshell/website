@@ -111,7 +111,7 @@ describe("the vote adapter", () => {
   })
 
   it("draws a search result's cover through the api, and a stored picture from our storage", () => {
-    expect(coverPreviewUrl("co1abc")).toMatch(/\/api\/vote-games\/covers\/co1abc$/)
+    expect(coverPreviewUrl("co1abc")).toMatch(/\/api\/vote-candidates\/covers\/co1abc$/)
     expect(coverPreviewUrl(null)).toBeNull()
     expect(storedUrl("/files/public/vote-covers/c.webp")).toMatch(/\/api\/files\/public\/vote-covers\/c\.webp$/)
     expect(storedUrl(null)).toBeNull()

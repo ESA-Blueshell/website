@@ -49,7 +49,7 @@ describe("the vote pick finder", () => {
 
     expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "hol", kind: "OST_TOP_50", year: 2026}})
     expect(picker.props("options")).toEqual([
-      {key: "14593", label: "Hollow Knight", note: "2017", avatar: expect.stringMatching(/\/api\/vote-games\/covers\/co14593$/)},
+      {key: "14593", label: "Hollow Knight", note: "2017", avatar: expect.stringMatching(/\/api\/vote-candidates\/covers\/co14593$/)},
       {key: "72", label: "Portal 2", note: undefined, avatar: undefined},
     ])
     expect(picker.props("placeholder")).toBe("Search for a game")

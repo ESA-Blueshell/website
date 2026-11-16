@@ -63,9 +63,9 @@ export const castBallot = (kind: VoteKind, year: number, picks: BallotPick[], ve
     "Your ballot could not be saved.",
   )
 
-/** Games whose name matches [query] that a [kind] vote in [year] may take; none where the search is refused. */
-export const findGames = async (query: string, kind: VoteKind, year: number): Promise<CatalogueGame[]> =>
-  readOr(searchVoteCandidates({query: {query, kind, year}}), [])
+/** Games whose name matches [query] that a [kind] vote in [year] may take, or why the search was refused. */
+export const findGames = (query: string, kind: VoteKind, year: number): Promise<Saved<CatalogueGame[]> | Refused> =>
+  refusable(searchVoteCandidates({query: {query, kind, year}}), "Game search did not answer. Try again in a moment.")
 
 /** The game with that IGDB id as a pick names it, stored the first time anybody picks it. */
 export const storeGame = (igdbId: number, vote: AnnualVote): Promise<Saved<Candidate> | Refused> =>

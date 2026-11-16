@@ -77,6 +77,7 @@ databaseChangeLog:
               - column: {name: title, type: VARCHAR(255), constraints: {nullable: false}}
               - column: {name: thumbnail_file_id, type: BIGINT}
               - column: {name: merged_into_id, type: BIGINT}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
               - column: {name: added_at, type: DATETIME, constraints: {nullable: false}}
         - addUniqueConstraint:
             tableName: vote_candidate_tracks

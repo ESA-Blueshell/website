@@ -27,7 +27,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Clock
 import java.time.ZoneOffset
-import java.util.Optional
 
 class VoteCandidateUseCasesTest {
     private val catalogue = mock<GameCatalogue>()
@@ -192,7 +191,7 @@ class VoteCandidateUseCasesTest {
         private val earlier = track(13, celeste, mergedInto = duplicate)
 
         init {
-            listOf(kept, duplicate, earlier, track(21, hades)).forEach { whenever(tracks.findById(it.id!!)).thenReturn(Optional.of(it)) }
+            listOf(kept, duplicate, earlier, track(21, hades)).forEach { whenever(tracks.findForMerge(it.id!!)).thenReturn(it) }
         }
 
         @Test
@@ -215,7 +214,7 @@ class VoteCandidateUseCasesTest {
 
         @Test
         fun `refuses a track that does not exist, on either side`() {
-            whenever(tracks.findById(99)).thenReturn(Optional.empty())
+            whenever(tracks.findForMerge(99)).thenReturn(null)
 
             assertThatThrownBy { service.merge(99, 11) }.isInstanceOf(TrackNotFound::class.java)
             assertThatThrownBy { service.merge(11, 99) }.isInstanceOf(TrackNotFound::class.java)

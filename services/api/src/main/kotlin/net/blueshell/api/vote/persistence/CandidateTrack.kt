@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
+import jakarta.persistence.Version
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AutoIdEntity
 import java.time.Instant
@@ -45,4 +46,9 @@ class CandidateTrack(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merged_into_id")
     var mergedInto: CandidateTrack? = null
+
+    // Raised by every merge that reads the track, so two merges touching one track cannot both commit.
+    @Version
+    @Column(name = "version", nullable = false)
+    var version: Long = 0L
 }

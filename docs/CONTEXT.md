@@ -861,6 +861,8 @@ anything on the day.
 
 The fifty game soundtracks members love most in a year, each shown with one
 track. "Of 2026" means voted in 2026, not released in it: any game can be on it.
+Games still tied at fiftieth after every tie-break are all kept, so the list can
+run a game or two past fifty rather than drop one by a rule nobody voted on.
 
 ### Game of the Year
 

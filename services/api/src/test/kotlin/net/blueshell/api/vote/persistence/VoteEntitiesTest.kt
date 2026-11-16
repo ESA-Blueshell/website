@@ -12,7 +12,7 @@ class VoteEntitiesTest {
             listOf(
                 Vote::class.java,
                 VoteCandidate::class.java,
-                VoteTrack::class.java,
+                CandidateTrack::class.java,
                 VoteBallot::class.java,
                 BallotPick::class.java,
                 VoteResult::class.java,

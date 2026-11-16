@@ -20,7 +20,7 @@ import {
   type VoteBallotResponse,
   type VoteCandidateResponse,
   type VotePlacingResponse,
-  type VoteTrackResponse,
+  type CandidateTrackResponse,
 } from "@/services/api"
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
@@ -34,7 +34,7 @@ export type VoteState = AnnualVoteResponse["state"]
 export type Ballot = VoteBallotResponse
 export type CatalogueGame = CatalogueGameResponse
 export type Candidate = VoteCandidateResponse
-export type Track = VoteTrackResponse
+export type Track = CandidateTrackResponse
 export type Placing = VotePlacingResponse
 
 /** The dates a vote runs on, as the api takes them. */

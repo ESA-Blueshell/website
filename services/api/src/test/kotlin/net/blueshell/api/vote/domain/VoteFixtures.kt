@@ -2,12 +2,12 @@ package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.vote.persistence.BallotPick
+import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
-import net.blueshell.api.vote.persistence.VoteTrack
 import java.time.Instant
 
 /** Entities with the ids the database would have given them, for tests that never reach one. */
@@ -33,9 +33,9 @@ internal object VoteFixtures {
     fun track(
         id: Long,
         game: VoteCandidate,
-        mergedInto: VoteTrack? = null,
+        mergedInto: CandidateTrack? = null,
         thumbnail: File? = null,
-    ) = VoteTrack(
+    ) = CandidateTrack(
         candidate = game,
         source = TrackSource.YOUTUBE,
         externalId = "video${id.toString().padStart(6, '0')}",
@@ -61,12 +61,12 @@ internal object VoteFixtures {
     fun ballot(
         id: Long,
         userId: Long,
-        vararg picks: Pair<VoteCandidate, VoteTrack?>,
+        vararg picks: Pair<VoteCandidate, CandidateTrack?>,
         voteId: Long = 1,
     ) = VoteBallot(voteId = voteId, userId = userId, submittedAt = OPENS).also { ballot ->
         ballot.id = id
         picks.forEachIndexed { index, (game, track) -> ballot.picks += BallotPick(index + 1, game.id!!, track?.id) }
     }
 
-    fun picking(track: VoteTrack) = track.candidate to track
+    fun picking(track: CandidateTrack) = track.candidate to track
 }

@@ -1,5 +1,7 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
@@ -9,8 +11,6 @@ import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteResult
 import net.blueshell.api.vote.persistence.VoteResultRepository
-import net.blueshell.api.vote.persistence.VoteTrack
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -26,7 +26,7 @@ class AnnualVotes(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val candidates: VoteCandidateRepository,
-    private val tracks: VoteTrackRepository,
+    private val tracks: CandidateTrackRepository,
     private val results: VoteResultRepository,
     private val clock: Clock,
 ) {
@@ -113,7 +113,7 @@ class AnnualVotes(
     private class Counted(
         val standing: Standing,
         val candidate: VoteCandidate,
-        val track: VoteTrack?,
+        val track: CandidateTrack?,
     ) {
         fun placing() = Placing(standing.place, candidate.summary(), track?.summary(), standing.points, standing.voters)
     }

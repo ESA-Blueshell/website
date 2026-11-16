@@ -27,7 +27,7 @@ class VoteResult(
     val candidate: VoteCandidate,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "track_id")
-    val track: VoteTrack?,
+    val track: CandidateTrack?,
     @Column(name = "points", nullable = false)
     val points: Int,
     @Column(name = "voters", nullable = false)

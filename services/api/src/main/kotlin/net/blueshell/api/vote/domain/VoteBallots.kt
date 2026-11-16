@@ -1,6 +1,8 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.BallotPick
+import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
@@ -8,8 +10,6 @@ import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
-import net.blueshell.api.vote.persistence.VoteTrack
-import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -20,7 +20,7 @@ class VoteBallots(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val candidates: VoteCandidateRepository,
-    private val tracks: VoteTrackRepository,
+    private val tracks: CandidateTrackRepository,
     private val clock: Clock,
 ) {
     /** The member's ballot for the vote, or null when they have not voted. */
@@ -73,7 +73,7 @@ class VoteBallots(
     private fun resolve(
         vote: Vote,
         choices: List<PickChoice>,
-    ): List<Pair<VoteCandidate, VoteTrack?>> {
+    ): List<Pair<VoteCandidate, CandidateTrack?>> {
         val candidatesById = candidates.findAllById(choices.map { it.candidateId }.toSet()).associateBy { it.id!! }
         val tracksById = tracks.findAllById(choices.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
         return choices.map { choice ->

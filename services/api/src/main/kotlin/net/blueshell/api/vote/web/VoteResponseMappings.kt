@@ -12,7 +12,7 @@ fun CatalogueGame.asResponse() = CatalogueGameResponse(igdbId, name, firstReleas
 
 fun CandidateSummary.asResponse() = VoteCandidateResponse(id, igdbId, name, firstReleaseYear, coverPath)
 
-fun TrackSummary.asResponse() = VoteTrackResponse(id, candidate.asResponse(), source, externalId, url, title, thumbnailPath)
+fun TrackSummary.asResponse() = CandidateTrackResponse(id, candidate.asResponse(), source, externalId, url, title, thumbnailPath)
 
 fun PickSummary.asResponse() = VotePickResponse(candidate.asResponse(), track?.asResponse())
 

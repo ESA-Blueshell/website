@@ -66,13 +66,13 @@ class VoteCandidateController(
     @GetMapping("/vote-candidates/{igdbId}/tracks")
     fun voteCandidateTracks(
         @PathVariable @Positive igdbId: Long,
-    ): List<VoteTrackResponse> = games.tracksOf(igdbId).map { it.asResponse() }
+    ): List<CandidateTrackResponse> = games.tracksOf(igdbId).map { it.asResponse() }
 
     @PostMapping("/vote-tracks")
     @ResponseStatus(HttpStatus.CREATED)
     fun addVoteTrack(
         @Valid @RequestBody request: AddVoteTrackRequest,
-    ): VoteTrackResponse {
+    ): CandidateTrackResponse {
         val adder = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
         return games.addTrack(request.igdbId, request.url, adder).asResponse()
     }
@@ -82,5 +82,5 @@ class VoteCandidateController(
     fun mergeVoteTrack(
         @PathVariable @Positive id: Long,
         @Valid @RequestBody request: MergeVoteTrackRequest,
-    ): VoteTrackResponse = games.merge(id, request.intoId).asResponse()
+    ): CandidateTrackResponse = games.merge(id, request.intoId).asResponse()
 }

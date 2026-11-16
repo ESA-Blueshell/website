@@ -2,7 +2,7 @@
 #
 # votes is one row per kind and year, with the three dates the vote runs on by itself.
 # vote_candidates are the IGDB games somebody picked, each with our copy of its cover.
-# vote_tracks are the YouTube or Spotify links picked for a game; one link is one row, and a
+# vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link is one row, and a
 # duplicate the board merges points at the track it was merged into.
 # vote_ballots and vote_ballot_picks hold how each member voted until the results are revealed:
 # the reveal writes vote_results and deletes the ballots, so no vote outlives the count.
@@ -68,7 +68,7 @@ databaseChangeLog:
             onDelete: SET NULL
 
         - createTable:
-            tableName: vote_tracks
+            tableName: vote_candidate_tracks
             columns:
               - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
               - column: {name: candidate_id, type: BIGINT, constraints: {nullable: false}}
@@ -80,31 +80,31 @@ databaseChangeLog:
               - column: {name: added_by_id, type: BIGINT}
               - column: {name: added_at, type: DATETIME, constraints: {nullable: false}}
         - addUniqueConstraint:
-            tableName: vote_tracks
+            tableName: vote_candidate_tracks
             columnNames: source, external_id
-            constraintName: uk_vote_tracks_source_external_id
+            constraintName: uk_vote_candidate_tracks_source_external_id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_tracks_candidate_id
-            baseTableName: vote_tracks
+            constraintName: fk_vote_candidate_tracks_candidate_id
+            baseTableName: vote_candidate_tracks
             baseColumnNames: candidate_id
             referencedTableName: vote_candidates
             referencedColumnNames: id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_tracks_thumbnail_file_id
-            baseTableName: vote_tracks
+            constraintName: fk_vote_candidate_tracks_thumbnail_file_id
+            baseTableName: vote_candidate_tracks
             baseColumnNames: thumbnail_file_id
             referencedTableName: files
             referencedColumnNames: id
             onDelete: SET NULL
         - addForeignKeyConstraint:
-            constraintName: fk_vote_tracks_merged_into_id
-            baseTableName: vote_tracks
+            constraintName: fk_vote_candidate_tracks_merged_into_id
+            baseTableName: vote_candidate_tracks
             baseColumnNames: merged_into_id
-            referencedTableName: vote_tracks
+            referencedTableName: vote_candidate_tracks
             referencedColumnNames: id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_tracks_added_by_id
-            baseTableName: vote_tracks
+            constraintName: fk_vote_candidate_tracks_added_by_id
+            baseTableName: vote_candidate_tracks
             baseColumnNames: added_by_id
             referencedTableName: users
             referencedColumnNames: id
@@ -168,7 +168,7 @@ databaseChangeLog:
             constraintName: fk_vote_ballot_picks_track_id
             baseTableName: vote_ballot_picks
             baseColumnNames: track_id
-            referencedTableName: vote_tracks
+            referencedTableName: vote_candidate_tracks
             referencedColumnNames: id
 
         - createTable:
@@ -201,7 +201,7 @@ databaseChangeLog:
             constraintName: fk_vote_results_track_id
             baseTableName: vote_results
             baseColumnNames: track_id
-            referencedTableName: vote_tracks
+            referencedTableName: vote_candidate_tracks
             referencedColumnNames: id
       rollback:
         - dropTable:
@@ -211,7 +211,7 @@ databaseChangeLog:
         - dropTable:
             tableName: vote_ballots
         - dropTable:
-            tableName: vote_tracks
+            tableName: vote_candidate_tracks
         - dropTable:
             tableName: vote_candidates
         - dropTable:

@@ -5,14 +5,14 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.stereotype.Repository
 
 @Repository
-interface VoteTrackRepository : BaseRepository<VoteTrack, Long> {
+interface CandidateTrackRepository : BaseRepository<CandidateTrack, Long> {
     fun findBySourceAndExternalId(
         source: TrackSource,
         externalId: String,
-    ): VoteTrack?
+    ): CandidateTrack?
 
     @EntityGraph(attributePaths = ["candidate"])
-    fun findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(candidateId: Long): List<VoteTrack>
+    fun findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(candidateId: Long): List<CandidateTrack>
 
-    fun findAllByMergedIntoId(trackId: Long): List<VoteTrack>
+    fun findAllByMergedIntoId(trackId: Long): List<CandidateTrack>
 }

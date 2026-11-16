@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import net.blueshell.api.security.MemberOnly
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.vote.domain.VoteBallotUseCases
+import net.blueshell.api.vote.domain.offered
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -30,14 +31,14 @@ class VoteBallotController(
     fun myVoteBallot(
         @PathVariable kind: VoteKind,
         @PathVariable year: Int,
-    ): VoteBallotResponse = ballots.mine(kind, year, voter()).asResponse()
+    ): VoteBallotResponse = ballots.mine(kind.offered(), year, voter()).asResponse()
 
     @PutMapping
     fun castVoteBallot(
         @PathVariable kind: VoteKind,
         @PathVariable year: Int,
         @Valid @RequestBody request: CastVoteBallotRequest,
-    ): VoteBallotResponse = ballots.cast(kind, year, voter(), request.picks.map { it.choice() }, request.version).asResponse()
+    ): VoteBallotResponse = ballots.cast(kind.offered(), year, voter(), request.picks.map { it.choice() }, request.version).asResponse()
 
     private fun voter(): Long = currentUser.currentUser()?.id ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
 }

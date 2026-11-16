@@ -12,6 +12,13 @@ sealed class VoteRefusal(
     facts: Map<String, Any> = emptyMap(),
 ) : Refusal(status, code, summary, facts)
 
+class VoteKindNotOffered(
+    kind: VoteKind,
+) : VoteRefusal(HttpStatus.NOT_FOUND, "VoteKindNotOffered", "That kind of vote is not running yet.", mapOf("kind" to kind.name))
+
+/** [this], or refused where the kind is not offered yet. */
+fun VoteKind.offered(): VoteKind = if (offered) this else throw VoteKindNotOffered(this)
+
 class NoAnnualVote(
     kind: VoteKind,
 ) : VoteRefusal(HttpStatus.NOT_FOUND, "NoAnnualVote", "There is no vote of that kind yet.", mapOf("kind" to kind.name))

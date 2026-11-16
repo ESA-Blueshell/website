@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.MemberOnly
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
+import net.blueshell.api.vote.domain.offered
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
@@ -40,7 +41,7 @@ class VoteCandidateController(
         @RequestParam @Size(max = QUERY_MAX) query: String,
         @RequestParam kind: VoteKind,
         @RequestParam year: Int,
-    ): List<CatalogueGameResponse> = candidates.search(query, kind, year).map { it.asResponse() }
+    ): List<CatalogueGameResponse> = candidates.search(query, kind.offered(), year).map { it.asResponse() }
 
     /** A search result's cover, fetched by the api so the browser never asks IGDB. */
     @GetMapping("/vote-candidates/covers/{imageId}", produces = [MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp"])

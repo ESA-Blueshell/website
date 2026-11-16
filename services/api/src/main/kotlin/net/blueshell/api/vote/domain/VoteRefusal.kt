@@ -26,9 +26,9 @@ class AnnualVoteExists(
     year: Int,
 ) : VoteRefusal(HttpStatus.CONFLICT, "AnnualVoteExists", "That year already has that vote.", mapOf("kind" to kind.name, "year" to year))
 
-/** The dates must run opens, then closes, then the reveal no earlier than the close. */
+/** The dates must run opens, then closes, then the reveal after the close. */
 class VoteDatesOutOfOrder :
-    VoteRefusal(HttpStatus.BAD_REQUEST, "VoteDatesOutOfOrder", "A vote opens before it closes, and is revealed no earlier than it closes.")
+    VoteRefusal(HttpStatus.BAD_REQUEST, "VoteDatesOutOfOrder", "A vote opens before it closes, and is revealed after it closes.")
 
 /** The vote is not in a state that allows this; [state] is where it stands. */
 class WrongVoteState(

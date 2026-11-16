@@ -152,13 +152,23 @@ components:
           exclusiveMinimum: 0
           format: int64
           type: integer
+        kind:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
         url:
           maxLength: 512
           minLength: 0
           type: string
+        year:
+          format: int32
+          type: integer
       required:
       - igdbId
+      - kind
       - url
+      - year
       type: object
     AddressResponse:
       properties:
@@ -5637,8 +5647,18 @@ components:
           exclusiveMinimum: 0
           format: int64
           type: integer
+        kind:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+        year:
+          format: int32
+          type: integer
       required:
       - igdbId
+      - kind
+      - year
       type: object
     SurveyRequest:
       properties:

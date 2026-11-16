@@ -8,22 +8,26 @@ import net.blueshell.api.vote.domain.VoteFixtures.NOW
 import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
+import net.blueshell.api.vote.domain.VoteFixtures.vote
 import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.time.Clock
 import java.time.ZoneOffset
@@ -35,8 +39,10 @@ class VoteCandidateUseCasesTest {
     private val sitePictures = mock<SitePictures>()
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
+    private val votes = mock<VoteRepository> { on { findByKindAndYear(VoteKind.OST_TOP_50, 2026) } doReturn vote() }
     private val service =
-        VoteCandidateUseCases(catalogue, previews, pictures, sitePictures, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
+        VoteCandidateUseCases(catalogue, previews, pictures, sitePictures, votes, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val ost = VoteKind.OST_TOP_50
 
     private val celeste = game(1, "Celeste")
     private val hades = game(2, "Hades")
@@ -82,7 +88,7 @@ class VoteCandidateUseCasesTest {
         fun `a game already stored is answered as it is`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
 
-            assertThat(service.candidate(100).name).isEqualTo("Celeste")
+            assertThat(service.candidate(100, ost, 2026).name).isEqualTo("Celeste")
             verify(catalogue, never()).byId(any())
         }
 
@@ -94,7 +100,7 @@ class VoteCandidateUseCasesTest {
                 sitePictures.store(picture.bytes, "igdb-26226.jpg", "image/jpeg", FileType.VOTE_COVER),
             ).thenReturn(stored("vote-covers/c.webp"))
 
-            val game = service.candidate(26226)
+            val game = service.candidate(26226, ost, 2026)
 
             assertThat(game).isEqualTo(CandidateSummary(9, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp"))
         }
@@ -102,16 +108,16 @@ class VoteCandidateUseCasesTest {
         @Test
         fun `a game is kept without a cover where it has none, or the copy fails`() {
             whenever(catalogue.byId(1)).thenReturn(CatalogueGame(1, "Bare", null, null))
-            assertThat(service.candidate(1).coverPath).isNull()
+            assertThat(service.candidate(1, ost, 2026).coverPath).isNull()
 
             whenever(catalogue.byId(2)).thenReturn(CatalogueGame(2, "Unfetched", "co2", 2020))
-            assertThat(service.candidate(2).coverPath).isNull()
+            assertThat(service.candidate(2, ost, 2026).coverPath).isNull()
             verify(sitePictures, never()).store(any(), any(), any(), any())
         }
 
         @Test
         fun `a game the catalogue does not know is refused`() {
-            assertThatThrownBy { service.candidate(26226) }.isInstanceOf(VoteCandidateNotFound::class.java)
+            assertThatThrownBy { service.candidate(26226, ost, 2026) }.isInstanceOf(VoteCandidateNotFound::class.java)
         }
     }
 
@@ -131,7 +137,7 @@ class VoteCandidateUseCasesTest {
             val kept = track(11, celeste)
             whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(12, celeste, mergedInto = kept))
 
-            assertThat(service.addTrack(100, link).id).isEqualTo(11)
+            assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
             verify(previews, never()).of(any())
         }
 
@@ -139,7 +145,7 @@ class VoteCandidateUseCasesTest {
         fun `a link already added for another game is refused`() {
             whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))
 
-            assertThatThrownBy { service.addTrack(100, link) }.isInstanceOf(TrackOfAnotherGame::class.java)
+            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(TrackOfAnotherGame::class.java)
         }
 
         @Test
@@ -153,7 +159,7 @@ class VoteCandidateUseCasesTest {
                 sitePictures.store(any(), eq("youtube-dQw4w9WgXcQ.jpg"), any(), eq(FileType.VOTE_THUMBNAIL)),
             ).thenReturn(stored("vote-thumbnails/t.webp"))
 
-            val added = service.addTrack(100, link)
+            val added = service.addTrack(100, link, ost, 2026)
 
             assertThat(added.title).isEqualTo("Resurrections")
             assertThat(added.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/t.webp")
@@ -167,7 +173,7 @@ class VoteCandidateUseCasesTest {
             whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
             whenever(previews.of(any())).thenReturn(TrackPreview("x".repeat(300), null))
 
-            val added = service.addTrack(26226, link)
+            val added = service.addTrack(26226, link, ost, 2026)
 
             assertThat(added.candidate.id).isEqualTo(9)
             assertThat(added.title).hasSize(255)
@@ -177,9 +183,9 @@ class VoteCandidateUseCasesTest {
         @Test
         fun `a link its service does not describe is refused, and anything else before a lookup`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
-            assertThatThrownBy { service.addTrack(100, link) }.isInstanceOf(TrackLinkUnreadable::class.java)
+            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(TrackLinkUnreadable::class.java)
 
-            assertThatThrownBy { service.addTrack(100, "https://example.com") }.isInstanceOf(UnsupportedTrackLink::class.java)
+            assertThatThrownBy { service.addTrack(100, "https://example.com", ost, 2026) }.isInstanceOf(UnsupportedTrackLink::class.java)
             verify(tracks).findBySourceAndExternalId(any(), any())
         }
     }
@@ -219,5 +225,15 @@ class VoteCandidateUseCasesTest {
             assertThatThrownBy { service.merge(99, 11) }.isInstanceOf(TrackNotFound::class.java)
             assertThatThrownBy { service.merge(11, 99) }.isInstanceOf(TrackNotFound::class.java)
         }
+    }
+
+    @Test
+    fun `stores no game and no track unless the vote they are picked for is open`() {
+        whenever(votes.findByKindAndYear(ost, 2025)).thenReturn(vote(year = 2025, closesAt = NOW.minusSeconds(60), revealAt = NOW))
+
+        assertThatThrownBy { service.candidate(100, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
+        assertThatThrownBy { service.addTrack(100, link, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
+        assertThatThrownBy { service.candidate(100, ost, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
+        verifyNoInteractions(catalogue, previews, pictures)
     }
 }

@@ -59,7 +59,7 @@ class VoteCandidateController(
     @PostMapping("/vote-candidates")
     fun storeVoteCandidate(
         @Valid @RequestBody request: StoreVoteCandidateRequest,
-    ): VoteCandidateResponse = candidates.candidate(request.igdbId).asResponse()
+    ): VoteCandidateResponse = candidates.candidate(request.igdbId, request.kind.offered(), request.year).asResponse()
 
     @GetMapping("/vote-candidates/{igdbId}/tracks")
     fun voteCandidateTracks(
@@ -70,7 +70,7 @@ class VoteCandidateController(
     @ResponseStatus(HttpStatus.CREATED)
     fun addVoteTrack(
         @Valid @RequestBody request: AddVoteTrackRequest,
-    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url).asResponse()
+    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url, request.kind.offered(), request.year).asResponse()
 
     @BoardOnly
     @PostMapping("/vote-tracks/{id}/merge")

@@ -80,7 +80,9 @@ export type AddRosterEntryRequest = {
 
 export type AddVoteTrackRequest = {
     igdbId: number;
+    kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
     url: string;
+    year: number;
 };
 
 export type AddressResponse = {
@@ -2876,6 +2878,8 @@ export type StepUpRequest = {
 
 export type StoreVoteCandidateRequest = {
     igdbId: number;
+    kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
+    year: number;
 };
 
 export type SurveyRequest = {

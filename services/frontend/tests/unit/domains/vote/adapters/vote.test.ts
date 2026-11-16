@@ -79,8 +79,8 @@ describe("the vote adapter", () => {
     expect(await findGames("hol", "OST_TOP_50", 2026)).toEqual([])
 
     vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(answer(api.storeVoteCandidate, aGame(3)))
-    expect(await storeGame(300)).toEqual({ok: true, saved: aGame(3)})
-    expect(api.storeVoteCandidate).toHaveBeenCalledWith({body: {igdbId: 300}})
+    expect(await storeGame(300, aVote("VOTING"))).toEqual({ok: true, saved: aGame(3)})
+    expect(api.storeVoteCandidate).toHaveBeenCalledWith({body: {igdbId: 300, kind: "OST_TOP_50", year: 2026}})
 
     vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [track]))
     expect(await tracksOf(10)).toEqual([track])
@@ -89,8 +89,8 @@ describe("the vote adapter", () => {
 
   it("adds a track by its link", async () => {
     vi.mocked(api.addVoteTrack).mockResolvedValueOnce(answer(api.addVoteTrack, track))
-    expect(await addTrack(10, "https://youtu.be/x")).toEqual({ok: true, saved: track})
-    expect(api.addVoteTrack).toHaveBeenCalledWith({body: {igdbId: 10, url: "https://youtu.be/x"}})
+    expect(await addTrack(10, "https://youtu.be/x", aVote("VOTING"))).toEqual({ok: true, saved: track})
+    expect(api.addVoteTrack).toHaveBeenCalledWith({body: {igdbId: 10, url: "https://youtu.be/x", kind: "OST_TOP_50", year: 2026}})
   })
 
   it("runs the board's writes and reads", async () => {

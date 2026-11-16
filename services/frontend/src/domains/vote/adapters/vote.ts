@@ -12,13 +12,13 @@ import {
   mergeVoteTrack,
   myVoteBallot,
   scheduleAnnualVote,
-  searchVoteGames,
-  storeVoteGame,
-  voteGameTracks,
+  searchVoteCandidates,
+  storeVoteCandidate,
+  voteCandidateTracks,
   type AnnualVoteResponse,
   type CatalogueGameResponse,
   type VoteBallotResponse,
-  type VoteGameResponse,
+  type VoteCandidateResponse,
   type VotePlacingResponse,
   type VoteTrackResponse,
 } from "@/services/api"
@@ -33,7 +33,7 @@ export type VoteKind = AnnualVoteResponse["kind"]
 export type VoteState = AnnualVoteResponse["state"]
 export type Ballot = VoteBallotResponse
 export type CatalogueGame = CatalogueGameResponse
-export type Game = VoteGameResponse
+export type Candidate = VoteCandidateResponse
 export type Track = VoteTrackResponse
 export type Placing = VotePlacingResponse
 
@@ -57,20 +57,20 @@ export const loadBallot = async (kind: VoteKind, year: number): Promise<Ballot> 
 /** Saves the member's picks, best first, at the [version] they last read. */
 export const castBallot = (kind: VoteKind, year: number, picks: BallotPick[], version: number | null): Promise<Saved<Ballot> | Refused> =>
   refusable(
-    castVoteBallot({path: {kind, year}, body: {picks: picks.map(pick => ({gameId: pick.game.id, trackId: pick.track?.id ?? null})), version}}),
+    castVoteBallot({path: {kind, year}, body: {picks: picks.map(pick => ({candidateId: pick.candidate.id, trackId: pick.track?.id ?? null})), version}}),
     "Your ballot could not be saved.",
   )
 
 /** Games whose name matches [query] that a [kind] vote in [year] may take; none where the search is refused. */
 export const findGames = async (query: string, kind: VoteKind, year: number): Promise<CatalogueGame[]> =>
-  readOr(searchVoteGames({query: {query, kind, year}}), [])
+  readOr(searchVoteCandidates({query: {query, kind, year}}), [])
 
 /** The game with that IGDB id as a pick names it, stored the first time anybody picks it. */
-export const storeGame = (igdbId: number): Promise<Saved<Game> | Refused> =>
-  refusable(storeVoteGame({body: {igdbId}}), "That game could not be picked.")
+export const storeGame = (igdbId: number): Promise<Saved<Candidate> | Refused> =>
+  refusable(storeVoteCandidate({body: {igdbId}}), "That game could not be picked.")
 
 /** The tracks members already picked for a game, first added first. */
-export const tracksOf = async (igdbId: number): Promise<Track[]> => readOr(voteGameTracks({path: {igdbId}}), [])
+export const tracksOf = async (igdbId: number): Promise<Track[]> => readOr(voteCandidateTracks({path: {igdbId}}), [])
 
 /** The track a pasted YouTube or Spotify link is, as a track of the game [igdbId]. */
 export const addTrack = (igdbId: number, url: string): Promise<Saved<Track> | Refused> =>

@@ -14,13 +14,13 @@ class TallyTest {
 
     private fun count(vararg ballots: List<CountedPick>) = Tally.count(ballots.toList(), points)
 
-    private fun places(standings: List<Standing>) = standings.map { it.gameId to it.place }
+    private fun places(standings: List<Standing>) = standings.map { it.candidateId to it.place }
 
     @Test
     fun `a game's points are every pick of it, at what each position is worth`() {
         val standings = count(listOf(pick(1, 1), pick(2, 2)), listOf(pick(5, 1)))
 
-        assertThat(standings.map { it.gameId to it.points }).containsExactly(1L to 16, 2L to 10)
+        assertThat(standings.map { it.candidateId to it.points }).containsExactly(1L to 16, 2L to 10)
         assertThat(standings.first().voters).isEqualTo(2)
         assertThat(standings.first().byPosition).containsExactly(1, 0, 0, 0, 1)
     }
@@ -38,7 +38,7 @@ class TallyTest {
         val standings =
             count(listOf(pick(1, 1, track = 11)), listOf(pick(2, 1, track = 12)), listOf(pick(3, 1, track = 12)), listOf(pick(1, 2)))
 
-        assertThat(standings.first().gameId).isEqualTo(1)
+        assertThat(standings.first().candidateId).isEqualTo(1)
         assertThat(standings.first().points).isEqualTo(30)
         assertThat(standings.first().trackId).isEqualTo(12)
     }

@@ -29,9 +29,9 @@ vi.mock("@/services/api", async importOriginal => ({
   mergeVoteTrack: vi.fn(),
   myVoteBallot: vi.fn(),
   scheduleAnnualVote: vi.fn(),
-  searchVoteGames: vi.fn(),
-  storeVoteGame: vi.fn(),
-  voteGameTracks: vi.fn(),
+  searchVoteCandidates: vi.fn(),
+  storeVoteCandidate: vi.fn(),
+  voteCandidateTracks: vi.fn(),
 }))
 
 describe("the vote adapter", () => {
@@ -61,10 +61,10 @@ describe("the vote adapter", () => {
   it("casts the picks by game and track id at the version read, and says why a cast is refused", async () => {
     vi.mocked(api.castVoteBallot).mockResolvedValueOnce(answer(api.castVoteBallot, {version: 0, submittedAt: "2026-12-02T18:00:00Z", picks: []}))
     const game = aGame(5)
-    expect(await castBallot("OST_TOP_50", 2026, [aPick(track), {game, track: null}], null)).toMatchObject({ok: true})
+    expect(await castBallot("OST_TOP_50", 2026, [aPick(track), {candidate: game, track: null}], null)).toMatchObject({ok: true})
     expect(api.castVoteBallot).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50", year: 2026},
-      body: {picks: [{gameId: track.game.id, trackId: 1}, {gameId: 5, trackId: null}], version: null},
+      body: {picks: [{candidateId: track.candidate.id, trackId: 1}, {candidateId: 5, trackId: null}], version: null},
     })
 
     vi.mocked(api.castVoteBallot).mockResolvedValueOnce(refusal(api.castVoteBallot, {code: "GamePickedTwice"}))
@@ -72,19 +72,19 @@ describe("the vote adapter", () => {
   })
 
   it("finds games for a kind and year, stores one, and lists a game's tracks", async () => {
-    vi.mocked(api.searchVoteGames).mockResolvedValueOnce(answer(api.searchVoteGames, [aResult(1)]))
+    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(answer(api.searchVoteCandidates, [aResult(1)]))
     expect(await findGames("hol", "GAME_OF_THE_YEAR", 2026)).toHaveLength(1)
-    expect(api.searchVoteGames).toHaveBeenCalledWith({query: {query: "hol", kind: "GAME_OF_THE_YEAR", year: 2026}})
-    vi.mocked(api.searchVoteGames).mockResolvedValueOnce(refusal(api.searchVoteGames, {code: "GameSearchUnavailable"}, 503))
+    expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "hol", kind: "GAME_OF_THE_YEAR", year: 2026}})
+    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(refusal(api.searchVoteCandidates, {code: "GameSearchUnavailable"}, 503))
     expect(await findGames("hol", "OST_TOP_50", 2026)).toEqual([])
 
-    vi.mocked(api.storeVoteGame).mockResolvedValueOnce(answer(api.storeVoteGame, aGame(3)))
+    vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(answer(api.storeVoteCandidate, aGame(3)))
     expect(await storeGame(300)).toEqual({ok: true, saved: aGame(3)})
-    expect(api.storeVoteGame).toHaveBeenCalledWith({body: {igdbId: 300}})
+    expect(api.storeVoteCandidate).toHaveBeenCalledWith({body: {igdbId: 300}})
 
-    vi.mocked(api.voteGameTracks).mockResolvedValueOnce(answer(api.voteGameTracks, [track]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [track]))
     expect(await tracksOf(10)).toEqual([track])
-    expect(api.voteGameTracks).toHaveBeenCalledWith({path: {igdbId: 10}})
+    expect(api.voteCandidateTracks).toHaveBeenCalledWith({path: {igdbId: 10}})
   })
 
   it("adds a track by its link", async () => {
@@ -94,7 +94,7 @@ describe("the vote adapter", () => {
   })
 
   it("runs the board's writes and reads", async () => {
-    vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(answer(api.annualVoteStandings, [aPlacing(1, track.game, track)]))
+    vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(answer(api.annualVoteStandings, [aPlacing(1, track.candidate, track)]))
     expect(await loadStandings("OST_TOP_50", 2026)).toHaveLength(1)
 
     vi.mocked(api.createAnnualVote).mockResolvedValueOnce(answer(api.createAnnualVote, aVote("UPCOMING")))

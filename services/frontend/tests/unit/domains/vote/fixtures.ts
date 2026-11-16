@@ -1,14 +1,14 @@
-import type {AnnualVote, BallotPick, CatalogueGame, Game, Placing, Track} from "@/domains/vote"
+import type {AnnualVote, BallotPick, CatalogueGame, Candidate, Placing, Track} from "@/domains/vote"
 
-export const aGame = (id: number, name = `Game ${id}`, coverPath: string | null = `/files/public/vote-covers/${id}.webp`): Game =>
+export const aGame = (id: number, name = `Game ${id}`, coverPath: string | null = `/files/public/vote-covers/${id}.webp`): Candidate =>
   ({id, igdbId: id * 100, name, firstReleaseYear: 2017, coverPath})
 
 export const aResult = (igdbId: number, name = `Game ${igdbId}`, coverImageId: string | null = `co${igdbId}`): CatalogueGame =>
   ({igdbId, name, firstReleaseYear: 2017, coverImageId})
 
-export const aTrack = (id: number, game: Game = aGame(id * 10), source: Track["source"] = "YOUTUBE"): Track => ({
+export const aTrack = (id: number, game: Candidate = aGame(id * 10), source: Track["source"] = "YOUTUBE"): Track => ({
   id,
-  game,
+  candidate: game,
   source,
   externalId: `video${id}`,
   url: `https://www.youtube.com/watch?v=video${id}`,
@@ -16,10 +16,10 @@ export const aTrack = (id: number, game: Game = aGame(id * 10), source: Track["s
   thumbnailPath: `/files/public/vote-thumbnails/${id}.webp`,
 })
 
-export const aPick = (track: Track): BallotPick => ({game: track.game, track})
+export const aPick = (track: Track): BallotPick => ({candidate: track.candidate, track})
 
-export const aPlacing = (place: number, game: Game, track: Track | null, points = 12, voters = 1): Placing =>
-  ({place, game, track, points, voters})
+export const aPlacing = (place: number, game: Candidate, track: Track | null, points = 12, voters = 1): Placing =>
+  ({place, candidate: game, track, points, voters})
 
 export const aVote = (state: AnnualVote["state"], overrides: Partial<AnnualVote> = {}): AnnualVote => ({
   kind: "OST_TOP_50",

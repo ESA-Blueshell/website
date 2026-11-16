@@ -880,6 +880,12 @@ One place on a ballot: a game, together with one of its tracks where the kind
 picks tracks. A ballot names a game once; picking another track for a game
 already on it replaces that pick.
 
+### Candidate
+
+A game somebody picked in a vote, copied from IGDB with our own copy of its cover.
+It is not a **Game**: the association need not play it, and the board does not edit
+it. The code calls it `VoteCandidate`, and the page still says "game" to members.
+
 ### Track
 
 A YouTube video or a Spotify track picked for a game, identified by its link, so

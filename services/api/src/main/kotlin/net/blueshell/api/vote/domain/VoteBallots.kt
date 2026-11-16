@@ -1,13 +1,13 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.vote.persistence.Vote
-import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.BallotPick
+import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
-import net.blueshell.api.vote.persistence.VoteGame
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteTrack
 import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.springframework.stereotype.Service
@@ -19,7 +19,7 @@ import java.time.Clock
 class VoteBallots(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
-    private val games: VoteGameRepository,
+    private val candidates: VoteCandidateRepository,
     private val tracks: VoteTrackRepository,
     private val clock: Clock,
 ) {
@@ -65,7 +65,7 @@ class VoteBallots(
                 submittedAt = now
             } ?: VoteBallot(voteId = vote.id!!, userId = userId, submittedAt = now)
         ballot.picks.clear()
-        picks.forEachIndexed { index, (game, track) -> ballot.picks += BallotPick(index + 1, game.id!!, track?.id) }
+        picks.forEachIndexed { index, (candidate, track) -> ballot.picks += BallotPick(index + 1, candidate.id!!, track?.id) }
         return summaryOf(ballots.saveAndFlush(ballot))
     }
 
@@ -73,23 +73,23 @@ class VoteBallots(
     private fun resolve(
         vote: Vote,
         choices: List<PickChoice>,
-    ): List<Pair<VoteGame, VoteTrack?>> {
-        val gamesById = games.findAllById(choices.map { it.gameId }.toSet()).associateBy { it.id!! }
+    ): List<Pair<VoteCandidate, VoteTrack?>> {
+        val candidatesById = candidates.findAllById(choices.map { it.candidateId }.toSet()).associateBy { it.id!! }
         val tracksById = tracks.findAllById(choices.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
         return choices.map { choice ->
-            val game = gamesById[choice.gameId] ?: throw VoteGameNotFound(choice.gameId)
-            if (vote.kind.releasedInYear && game.firstReleaseYear != vote.year) throw GameNotEligible(game.id!!, vote.year)
+            val candidate = candidatesById[choice.candidateId] ?: throw VoteCandidateNotFound(choice.candidateId)
+            if (vote.kind.releasedInYear && candidate.firstReleaseYear != vote.year) throw GameNotEligible(candidate.id!!, vote.year)
             val track = choice.trackId?.let { id -> (tracksById[id] ?: throw TrackNotFound(id)).canonical() }
             when {
-                !vote.kind.picksTrack && track != null -> throw PickTakesNoTrack(game.id!!)
-                vote.kind.picksTrack && track?.game?.id != game.id -> throw PickNeedsTrack(game.id!!)
+                !vote.kind.picksTrack && track != null -> throw PickTakesNoTrack(candidate.id!!)
+                vote.kind.picksTrack && track?.candidate?.id != candidate.id -> throw PickNeedsTrack(candidate.id!!)
             }
-            game to track
+            candidate to track
         }
     }
 
     private fun summaryOf(ballot: VoteBallot): BallotSummary {
-        val gamesById = games.findAllById(ballot.picks.map { it.gameId }.toSet()).associateBy { it.id!! }
+        val candidatesById = candidates.findAllById(ballot.picks.map { it.candidateId }.toSet()).associateBy { it.id!! }
         val tracksById = tracks.findAllById(ballot.picks.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
         return BallotSummary(
             version = ballot.version,
@@ -97,7 +97,7 @@ class VoteBallots(
             picks =
                 ballot.picks.map { pick ->
                     PickSummary(
-                        gamesById.getValue(pick.gameId).summary(),
+                        candidatesById.getValue(pick.candidateId).summary(),
                         pick.trackId?.let { tracksById.getValue(it).canonical().summary() },
                     )
                 },

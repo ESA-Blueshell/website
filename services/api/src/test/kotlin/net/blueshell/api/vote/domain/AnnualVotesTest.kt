@@ -11,11 +11,11 @@ import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
 import net.blueshell.api.vote.persistence.Vote
-import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallotRepository
-import net.blueshell.api.vote.persistence.VoteGame
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteResult
 import net.blueshell.api.vote.persistence.VoteResultRepository
 import net.blueshell.api.vote.persistence.VoteTrack
@@ -36,7 +36,7 @@ import java.time.ZoneOffset
 class AnnualVotesTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
-    private val games = mock<VoteGameRepository>()
+    private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<VoteTrackRepository>()
     private val results = mock<VoteResultRepository>()
     private val service = AnnualVotes(votes, ballots, games, tracks, results, Clock.fixed(NOW, ZoneOffset.UTC))
@@ -56,15 +56,15 @@ class AnnualVotesTest {
 
     private fun stubFind(
         trackRows: List<VoteTrack>,
-        gameRows: List<VoteGame>,
+        gameRows: List<VoteCandidate>,
     ) {
         val tracksById = trackRows.associateBy { it.id!! }
-        val gamesById = gameRows.associateBy { it.id!! }
+        val candidatesById = gameRows.associateBy { it.id!! }
         whenever(tracks.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
             call.getArgument<Iterable<Long>>(0).mapNotNull { tracksById[it] }
         }
         whenever(games.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
-            call.getArgument<Iterable<Long>>(0).mapNotNull { gamesById[it] }
+            call.getArgument<Iterable<Long>>(0).mapNotNull { candidatesById[it] }
         }
     }
 
@@ -83,14 +83,14 @@ class AnnualVotesTest {
             val summary = service.current(VoteKind.OST_TOP_50)
 
             assertThat(summary).isEqualTo(VoteSummary(VoteKind.OST_TOP_50, 2026, VoteState.VOTING, OPENS, CLOSES, REVEAL, 4, emptyList()))
-            verify(results, never()).findAllByVoteIdOrderByPlaceAscGameNameAsc(any())
+            verify(results, never()).findAllByVoteIdOrderByPlaceAscCandidateNameAsc(any())
         }
 
         @Test
         fun `a published vote shows its stored count and results, with our own pictures`() {
             val published = vote().apply { publishedAt = REVEAL }
             whenever(votes.findFirstByKindOrderByYearDesc(VoteKind.OST_TOP_50)).thenReturn(published)
-            whenever(results.findAllByVoteIdOrderByPlaceAscGameNameAsc(1)).thenReturn(
+            whenever(results.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(1)).thenReturn(
                 listOf(VoteResult(1, 1, celeste, resurrections, 40, 4), VoteResult(1, 2, hades, null, 12, 1)),
             )
 
@@ -98,7 +98,7 @@ class AnnualVotesTest {
 
             assertThat(summary.ballots).isZero()
             assertThat(summary.results.map { it.place }).containsExactly(1, 2)
-            assertThat(summary.results[0].game.coverPath).isEqualTo("/files/public/vote-covers/celeste.webp")
+            assertThat(summary.results[0].candidate.coverPath).isEqualTo("/files/public/vote-covers/celeste.webp")
             assertThat(summary.results[0].track!!.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/r.webp")
             assertThat(summary.results[1].track).isNull()
             verify(ballots, never()).countByVoteId(any())
@@ -247,7 +247,7 @@ class AnnualVotesTest {
             assertThat(
                 saved.firstValue.map { Triple(it.place, it.track?.id, it.points) },
             ).containsExactly(Triple(1, 21L, 22), Triple(2, 11L, 12))
-            assertThat(saved.firstValue.map { it.game.name to it.voters }).containsExactly("Hades" to 2, "Celeste" to 1)
+            assertThat(saved.firstValue.map { it.candidate.name to it.voters }).containsExactly("Hades" to 2, "Celeste" to 1)
             assertThat(due.ballotCount).isEqualTo(2)
             assertThat(due.publishedAt).isEqualTo(NOW)
             verify(ballots).deleteAll(cast)
@@ -282,7 +282,7 @@ class AnnualVotesTest {
 
             verify(results).saveAll(saved.capture())
             assertThat(saved.firstValue).hasSize(VoteKind.GAME_OF_THE_YEAR.topSize)
-            assertThat(saved.firstValue.map { it.game.id }).doesNotContain(101L)
+            assertThat(saved.firstValue.map { it.candidate.id }).doesNotContain(101L)
         }
     }
 }

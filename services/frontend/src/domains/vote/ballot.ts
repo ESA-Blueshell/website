@@ -11,7 +11,7 @@ export const pointsAt = (points: number[], index: number): number => points[inde
  * or at the end. A ballot already holding [max] picks takes no new game.
  */
 export function withPick(picks: BallotPick[], pick: BallotPick, max: number): BallotPick[] {
-  const same = picks.findIndex(one => one.game.id === pick.game.id)
+  const same = picks.findIndex(one => one.candidate.id === pick.candidate.id)
   if (same >= 0) return picks.map((one, index) => (index === same ? pick : one))
   return picks.length >= max ? picks : [...picks, pick]
 }
@@ -31,7 +31,7 @@ export const without = (picks: BallotPick[], index: number): BallotPick[] => pic
 
 /** Whether two ballots name the same games and tracks in the same order. */
 export const samePicks = (a: BallotPick[], b: BallotPick[]): boolean =>
-  a.length === b.length && a.every((pick, index) => pick.game.id === b[index]!.game.id && pick.track?.id === b[index]!.track?.id)
+  a.length === b.length && a.every((pick, index) => pick.candidate.id === b[index]!.candidate.id && pick.track?.id === b[index]!.track?.id)
 
 /** The address a track plays from inside the page: YouTube's privacy-enhanced player, or Spotify's. */
 export function embedUrl(track: Pick<VoteTrackResponse, "source" | "externalId">): string {

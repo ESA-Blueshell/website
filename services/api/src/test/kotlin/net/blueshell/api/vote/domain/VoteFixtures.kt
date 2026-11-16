@@ -1,11 +1,11 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.BallotPick
 import net.blueshell.api.vote.persistence.TrackSource
+import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
-import net.blueshell.api.vote.persistence.VoteGame
+import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteTrack
 import java.time.Instant
@@ -28,15 +28,15 @@ internal object VoteFixtures {
         name: String = "Game $id",
         year: Int? = 2000 + id.toInt(),
         cover: File? = null,
-    ) = VoteGame(igdbId = id * 100, name = name, firstReleaseYear = year, cover = cover).also { it.id = id }
+    ) = VoteCandidate(igdbId = id * 100, name = name, firstReleaseYear = year, cover = cover).also { it.id = id }
 
     fun track(
         id: Long,
-        game: VoteGame,
+        game: VoteCandidate,
         mergedInto: VoteTrack? = null,
         thumbnail: File? = null,
     ) = VoteTrack(
-        game = game,
+        candidate = game,
         source = TrackSource.YOUTUBE,
         externalId = "video${id.toString().padStart(6, '0')}",
         title = "Track $id",
@@ -61,12 +61,12 @@ internal object VoteFixtures {
     fun ballot(
         id: Long,
         userId: Long,
-        vararg picks: Pair<VoteGame, VoteTrack?>,
+        vararg picks: Pair<VoteCandidate, VoteTrack?>,
         voteId: Long = 1,
     ) = VoteBallot(voteId = voteId, userId = userId, submittedAt = OPENS).also { ballot ->
         ballot.id = id
         picks.forEachIndexed { index, (game, track) -> ballot.picks += BallotPick(index + 1, game.id!!, track?.id) }
     }
 
-    fun picking(track: VoteTrack) = track.game to track
+    fun picking(track: VoteTrack) = track.candidate to track
 }

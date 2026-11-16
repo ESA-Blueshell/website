@@ -1,15 +1,15 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.PublicFileUrls
-import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.TrackSource
-import net.blueshell.api.vote.persistence.VoteGame
+import net.blueshell.api.vote.persistence.Vote
+import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteTrack
 import java.time.Instant
 
 /** A game as a page draws it. [coverPath] is our stored copy's address, never IGDB's. */
-data class GameSummary(
+data class CandidateSummary(
     val id: Long,
     val igdbId: Long,
     val name: String,
@@ -20,7 +20,7 @@ data class GameSummary(
 /** A track as a page draws it. [thumbnailPath] is our stored copy's address, never theirs. */
 data class TrackSummary(
     val id: Long,
-    val game: GameSummary,
+    val candidate: CandidateSummary,
     val source: TrackSource,
     val externalId: String,
     val url: String,
@@ -30,14 +30,14 @@ data class TrackSummary(
 
 /** One pick on a ballot: the game, and its track where the kind picks one. */
 data class PickSummary(
-    val game: GameSummary,
+    val candidate: CandidateSummary,
     val track: TrackSummary?,
 )
 
 /** A game's place, the track that represents it where the kind picks tracks, and what put it there. */
 data class Placing(
     val place: Int,
-    val game: GameSummary,
+    val candidate: CandidateSummary,
     val track: TrackSummary?,
     val points: Int,
     val voters: Int,
@@ -66,16 +66,16 @@ data class VoteSummary(
 
 /** What a pick asks for: a game by our id, and one of its tracks where the kind picks one. */
 data class PickChoice(
-    val gameId: Long,
+    val candidateId: Long,
     val trackId: Long? = null,
 )
 
-internal fun VoteGame.summary() = GameSummary(id!!, igdbId, name, firstReleaseYear, cover?.let(PublicFileUrls::of))
+internal fun VoteCandidate.summary() = CandidateSummary(id!!, igdbId, name, firstReleaseYear, cover?.let(PublicFileUrls::of))
 
 internal fun VoteTrack.summary() =
     TrackSummary(
         id = id!!,
-        game = game.summary(),
+        candidate = candidate.summary(),
         source = source,
         externalId = externalId,
         url = TrackLink(source, externalId).url,

@@ -2,8 +2,8 @@ package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.SitePictures
 import net.blueshell.api.shared.enums.FileType
-import net.blueshell.api.vote.persistence.VoteGame
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteTrack
 import net.blueshell.api.vote.persistence.VoteTrackRepository
@@ -28,7 +28,7 @@ class VoteGames(
     private val previews: TrackPreviews,
     private val pictures: RemotePictures,
     private val stored: SitePictures,
-    private val games: VoteGameRepository,
+    private val candidates: VoteCandidateRepository,
     private val tracks: VoteTrackRepository,
     private val clock: Clock,
 ) {
@@ -48,13 +48,13 @@ class VoteGames(
 
     /** The game with that IGDB id, stored with a copy of its cover the first time anybody picks it. */
     @Transactional
-    fun game(igdbId: Long): GameSummary = (games.findByIgdbId(igdbId) ?: gameFromCatalogue(igdbId)).summary()
+    fun candidate(igdbId: Long): CandidateSummary = (candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)).summary()
 
     /** The tracks already picked for a game, first added first; none for a game nobody picked. */
     @Transactional(readOnly = true)
     fun tracksOf(igdbId: Long): List<TrackSummary> {
-        val game = games.findByIgdbId(igdbId) ?: return emptyList()
-        return tracks.findAllByGameIdAndMergedIntoIsNullOrderByAddedAt(game.id!!).map { it.summary() }
+        val candidate = candidates.findByIgdbId(igdbId) ?: return emptyList()
+        return tracks.findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(candidate.id!!).map { it.summary() }
     }
 
     /**
@@ -69,14 +69,14 @@ class VoteGames(
     ): TrackSummary {
         val link = TrackLink.parse(pasted)
         tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
-            if (existing.game.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.game.name)
+            if (existing.candidate.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.candidate.name)
             return existing.summary()
         }
-        val game = games.findByIgdbId(igdbId) ?: gameFromCatalogue(igdbId)
+        val candidate = candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)
         val preview = previews.of(link) ?: throw TrackLinkUnreadable()
         val track =
             VoteTrack(
-                game = game,
+                candidate = candidate,
                 source = link.source,
                 externalId = link.externalId,
                 title = preview.title.take(TITLE_MAX),
@@ -105,7 +105,7 @@ class VoteGames(
     ): TrackSummary {
         val track = tracks.findById(trackId).orElseThrow { TrackNotFound(trackId) }
         val into = tracks.findById(intoId).orElseThrow { TrackNotFound(intoId) }
-        val valid = trackId != intoId && track.mergedInto == null && into.mergedInto == null && track.game.id == into.game.id
+        val valid = trackId != intoId && track.mergedInto == null && into.mergedInto == null && track.candidate.id == into.candidate.id
         if (!valid) throw TrackMergeInvalid(trackId, intoId)
         track.mergedInto = into
         tracks.findAllByMergedIntoId(trackId).forEach { it.mergedInto = into }
@@ -113,10 +113,10 @@ class VoteGames(
         return into.summary()
     }
 
-    private fun gameFromCatalogue(igdbId: Long): VoteGame {
-        val found = catalogue.byId(igdbId) ?: throw VoteGameNotFound(igdbId)
-        return games.saveAndFlush(
-            VoteGame(
+    private fun candidateFromCatalogue(igdbId: Long): VoteCandidate {
+        val found = catalogue.byId(igdbId) ?: throw VoteCandidateNotFound(igdbId)
+        return candidates.saveAndFlush(
+            VoteCandidate(
                 igdbId = found.igdbId,
                 name = found.name.take(TITLE_MAX),
                 firstReleaseYear = found.firstReleaseYear,

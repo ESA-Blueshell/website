@@ -4,6 +4,6 @@ import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface VoteGameRepository : BaseRepository<VoteGame, Long> {
-    fun findByIgdbId(igdbId: Long): VoteGame?
+interface VoteCandidateRepository : BaseRepository<VoteCandidate, Long> {
+    fun findByIgdbId(igdbId: Long): VoteCandidate?
 }

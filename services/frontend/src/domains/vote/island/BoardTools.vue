@@ -94,7 +94,7 @@ async function merge(track: Track, into: Track) {
     problem.value = merged.reason
     return
   }
-  openedTracks.value = await tracksOf(into.game.igdbId)
+  openedTracks.value = await tracksOf(into.candidate.igdbId)
   standings.value = await loadStandings(props.vote!.kind, props.vote!.year)
 }
 
@@ -174,24 +174,24 @@ watch(() => props.vote, refresh)
       <ol v-else>
         <li
           v-for="placing in standings"
-          :key="placing.game.id"
+          :key="placing.candidate.id"
           class="standing"
           data-testid="vote-standing"
         >
           <button
             class="standing__row"
-            :data-testid="`vote-standing-open-${placing.game.igdbId}`"
+            :data-testid="`vote-standing-open-${placing.candidate.igdbId}`"
             :disabled="!placing.track"
             type="button"
-            @click="showTracks(placing.game.igdbId)"
+            @click="showTracks(placing.candidate.igdbId)"
           >
             <span class="standing__place">{{ placing.place }}</span>
-            <span class="standing__game">{{ placing.game.name }}</span>
+            <span class="standing__game">{{ placing.candidate.name }}</span>
             <span class="standing__track">{{ placing.track?.title }}</span>
             <span class="standing__points">{{ placing.points }} pts · {{ countOf(placing.voters, "voter", "voters") }}</span>
           </button>
           <ul
-            v-if="placing.track && opened === placing.game.igdbId"
+            v-if="placing.track && opened === placing.candidate.igdbId"
             class="standing__tracks"
           >
             <li

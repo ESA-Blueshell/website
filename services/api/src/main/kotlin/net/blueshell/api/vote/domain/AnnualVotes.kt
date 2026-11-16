@@ -1,12 +1,12 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.Vote
-import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
-import net.blueshell.api.vote.persistence.VoteGame
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteResult
 import net.blueshell.api.vote.persistence.VoteResultRepository
 import net.blueshell.api.vote.persistence.VoteTrack
@@ -25,7 +25,7 @@ import java.time.Instant
 class AnnualVotes(
     private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
-    private val games: VoteGameRepository,
+    private val candidates: VoteCandidateRepository,
     private val tracks: VoteTrackRepository,
     private val results: VoteResultRepository,
     private val clock: Clock,
@@ -101,7 +101,9 @@ class AnnualVotes(
     ) {
         val cast = ballots.findAllByVoteId(vote.id!!)
         val top = count(vote, cast).filter { it.standing.place <= vote.kind.topSize }
-        results.saveAll(top.map { VoteResult(vote.id!!, it.standing.place, it.game, it.track, it.standing.points, it.standing.voters) })
+        results.saveAll(
+            top.map { VoteResult(vote.id!!, it.standing.place, it.candidate, it.track, it.standing.points, it.standing.voters) },
+        )
         vote.ballotCount = cast.size
         vote.publishedAt = now
         ballots.deleteAll(cast)
@@ -110,10 +112,10 @@ class AnnualVotes(
 
     private class Counted(
         val standing: Standing,
-        val game: VoteGame,
+        val candidate: VoteCandidate,
         val track: VoteTrack?,
     ) {
-        fun placing() = Placing(standing.place, game.summary(), track?.summary(), standing.points, standing.voters)
+        fun placing() = Placing(standing.place, candidate.summary(), track?.summary(), standing.points, standing.voters)
     }
 
     private fun count(
@@ -123,21 +125,21 @@ class AnnualVotes(
         val picked = tracks.findAllById(cast.flatMap { ballot -> ballot.picks.mapNotNull { it.trackId } }.toSet()).associateBy { it.id!! }
         val standings =
             Tally.count(
-                cast.map { ballot -> ballot.picks.map { CountedPick(it.position, it.gameId, it.trackId) } },
+                cast.map { ballot -> ballot.picks.map { CountedPick(it.position, it.candidateId, it.trackId) } },
                 vote.kind.points,
                 canonical = { id -> picked[id]?.canonical()?.id ?: id },
             )
-        val gamesById = games.findAllById(standings.map { it.gameId }.toSet()).associateBy { it.id!! }
+        val candidatesById = candidates.findAllById(standings.map { it.candidateId }.toSet()).associateBy { it.id!! }
         val tracksById = tracks.findAllById(standings.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
-        return standings.map { Counted(it, gamesById.getValue(it.gameId), it.trackId?.let(tracksById::getValue)) }
+        return standings.map { Counted(it, candidatesById.getValue(it.candidateId), it.trackId?.let(tracksById::getValue)) }
     }
 
     private fun summaryOf(vote: Vote): VoteSummary {
         val state = vote.stateAt(clock.instant())
         if (state != VoteState.PUBLISHED) return vote.summaryWith(state, ballots.countByVoteId(vote.id!!).toInt(), emptyList())
         val placings =
-            results.findAllByVoteIdOrderByPlaceAscGameNameAsc(vote.id!!).map {
-                Placing(it.place, it.game.summary(), it.track?.summary(), it.points, it.voters)
+            results.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(vote.id!!).map {
+                Placing(it.place, it.candidate.summary(), it.track?.summary(), it.points, it.voters)
             }
         return vote.summaryWith(state, vote.ballotCount ?: 0, placings)
     }

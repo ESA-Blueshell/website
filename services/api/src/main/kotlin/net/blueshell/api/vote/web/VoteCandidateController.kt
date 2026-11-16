@@ -34,20 +34,20 @@ private val COVER_CACHE: CacheControl = CacheControl.maxAge(Duration.ofDays(7)).
 @Validated
 @Tag(name = "Annual vote")
 @MemberOnly
-class VoteGameController(
+class VoteCandidateController(
     private val games: VoteGames,
     private val currentUser: CurrentUserProvider,
 ) {
-    @GetMapping("/vote-games")
-    fun searchVoteGames(
+    @GetMapping("/vote-candidates")
+    fun searchVoteCandidates(
         @RequestParam @Size(max = QUERY_MAX) query: String,
         @RequestParam kind: VoteKind,
         @RequestParam year: Int,
     ): List<CatalogueGameResponse> = games.search(query, kind, year).map { it.asResponse() }
 
     /** A search result's cover, fetched by the api so the browser never asks IGDB. */
-    @GetMapping("/vote-games/covers/{imageId}", produces = [MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp"])
-    fun voteGameCover(
+    @GetMapping("/vote-candidates/covers/{imageId}", produces = [MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp"])
+    fun voteCandidateCover(
         @PathVariable imageId: String,
     ): ResponseEntity<ByteArray> {
         val cover = games.coverPreview(imageId)
@@ -58,13 +58,13 @@ class VoteGameController(
             .body(cover.bytes)
     }
 
-    @PostMapping("/vote-games")
-    fun storeVoteGame(
-        @Valid @RequestBody request: StoreVoteGameRequest,
-    ): VoteGameResponse = games.game(request.igdbId).asResponse()
+    @PostMapping("/vote-candidates")
+    fun storeVoteCandidate(
+        @Valid @RequestBody request: StoreVoteCandidateRequest,
+    ): VoteCandidateResponse = games.candidate(request.igdbId).asResponse()
 
-    @GetMapping("/vote-games/{igdbId}/tracks")
-    fun voteGameTracks(
+    @GetMapping("/vote-candidates/{igdbId}/tracks")
+    fun voteCandidateTracks(
         @PathVariable @Positive igdbId: Long,
     ): List<VoteTrackResponse> = games.tracksOf(igdbId).map { it.asResponse() }
 

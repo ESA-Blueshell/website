@@ -81,7 +81,7 @@ async function pickGame() {
   busy.value = true
   const stored = await storeGame(game.value!.igdbId)
   busy.value = false
-  if (stored.ok) choose({game: stored.saved, track: null})
+  if (stored.ok) choose({candidate: stored.saved, track: null})
   else problem.value = stored.reason
 }
 
@@ -90,7 +90,7 @@ async function addLink() {
   busy.value = true
   const added = await addTrack(game.value!.igdbId, link.value.trim())
   busy.value = false
-  if (added.ok) choose({game: added.saved.game, track: added.saved})
+  if (added.ok) choose({candidate: added.saved.candidate, track: added.saved})
   else problem.value = added.reason
 }
 
@@ -171,7 +171,7 @@ onBeforeUnmount(() => clearTimeout(settling))
             small
             :testid="`vote-track-pick-${track.id}`"
             tone="quiet"
-            @click="choose({game: track.game, track})"
+            @click="choose({candidate: track.candidate, track})"
           >
             Pick
           </cut-button>

@@ -131,7 +131,7 @@ describe("annual vote page", () => {
 
     expect(api.castVoteBallot).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50", year: 2026},
-      body: {picks: [{gameId: 1, trackId: 1}, {gameId: 30, trackId: 3}], version: 1},
+      body: {picks: [{candidateId: 1, trackId: 1}, {candidateId: 30, trackId: 3}], version: 1},
     })
     expect(wrapper.get("[data-testid=vote-saved]").exists()).toBe(true)
     expect(wrapper.get("[data-testid=vote-ballot-head]").text()).toContain("4")
@@ -164,7 +164,7 @@ describe("annual vote page", () => {
   it("runs a games-only vote under its own name, without tracks in what it says", async () => {
     vi.mocked(api.currentAnnualVote).mockResolvedValue(answer(api.currentAnnualVote, aGamesVote("VOTING", {points: [3, 2, 1]})))
     vi.mocked(api.myVoteBallot).mockResolvedValue(
-      answer(api.myVoteBallot, {version: 1, submittedAt: "2026-12-02T18:00:00Z", picks: [{game: aGame(1)}, {game: aGame(2)}, {game: aGame(3)}]}),
+      answer(api.myVoteBallot, {version: 1, submittedAt: "2026-12-02T18:00:00Z", picks: [{candidate: aGame(1)}, {candidate: aGame(2)}, {candidate: aGame(3)}]}),
     )
     const wrapper = await mount(member, GAME_OF_THE_YEAR)
 
@@ -184,7 +184,7 @@ describe("annual vote page", () => {
   })
 
   it("shows the revealed top", async () => {
-    voteIs(aVote("PUBLISHED", {ballots: 30, results: [aPlacing(1, hollow.game, hollow, 120, 12), aPlacing(2, portal.game, portal, 90, 9)]}))
+    voteIs(aVote("PUBLISHED", {ballots: 30, results: [aPlacing(1, hollow.candidate, hollow, 120, 12), aPlacing(2, portal.candidate, portal, 90, 9)]}))
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("the results are in")

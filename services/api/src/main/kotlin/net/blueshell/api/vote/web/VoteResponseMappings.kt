@@ -1,8 +1,8 @@
 package net.blueshell.api.vote.web
 
 import net.blueshell.api.vote.domain.BallotSummary
+import net.blueshell.api.vote.domain.CandidateSummary
 import net.blueshell.api.vote.domain.CatalogueGame
-import net.blueshell.api.vote.domain.GameSummary
 import net.blueshell.api.vote.domain.PickSummary
 import net.blueshell.api.vote.domain.Placing
 import net.blueshell.api.vote.domain.TrackSummary
@@ -10,13 +10,13 @@ import net.blueshell.api.vote.domain.VoteSummary
 
 fun CatalogueGame.asResponse() = CatalogueGameResponse(igdbId, name, firstReleaseYear, coverImageId)
 
-fun GameSummary.asResponse() = VoteGameResponse(id, igdbId, name, firstReleaseYear, coverPath)
+fun CandidateSummary.asResponse() = VoteCandidateResponse(id, igdbId, name, firstReleaseYear, coverPath)
 
-fun TrackSummary.asResponse() = VoteTrackResponse(id, game.asResponse(), source, externalId, url, title, thumbnailPath)
+fun TrackSummary.asResponse() = VoteTrackResponse(id, candidate.asResponse(), source, externalId, url, title, thumbnailPath)
 
-fun PickSummary.asResponse() = VotePickResponse(game.asResponse(), track?.asResponse())
+fun PickSummary.asResponse() = VotePickResponse(candidate.asResponse(), track?.asResponse())
 
-fun Placing.asResponse() = VotePlacingResponse(place, game.asResponse(), track?.asResponse(), points, voters)
+fun Placing.asResponse() = VotePlacingResponse(place, candidate.asResponse(), track?.asResponse(), points, voters)
 
 fun VoteSummary.asResponse() =
     AnnualVoteResponse(

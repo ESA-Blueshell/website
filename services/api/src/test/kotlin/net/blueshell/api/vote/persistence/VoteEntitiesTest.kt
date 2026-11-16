@@ -11,7 +11,7 @@ class VoteEntitiesTest {
         val loaded =
             listOf(
                 Vote::class.java,
-                VoteGame::class.java,
+                VoteCandidate::class.java,
                 VoteTrack::class.java,
                 VoteBallot::class.java,
                 BallotPick::class.java,
@@ -31,9 +31,9 @@ class VoteEntitiesTest {
 
     @Test
     fun `a result names its vote`() {
-        val game = VoteGame(igdbId = 1, name = "Celeste")
+        val game = VoteCandidate(igdbId = 1, name = "Celeste")
 
-        assertThat(VoteResult(voteId = 3, place = 1, game = game, track = null, points = 12, voters = 1).voteId).isEqualTo(3)
+        assertThat(VoteResult(voteId = 3, place = 1, candidate = game, track = null, points = 12, voters = 1).voteId).isEqualTo(3)
     }
 
     @Test

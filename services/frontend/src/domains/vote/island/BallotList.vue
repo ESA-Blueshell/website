@@ -24,23 +24,23 @@ defineEmits<{
   >
     <li
       v-for="(pick, index) in picks"
-      :key="pick.game.id"
+      :key="pick.candidate.id"
       class="pick"
       data-testid="vote-pick"
     >
       <span class="pick__rank">{{ index + 1 }}</span>
       <img
-        v-if="storedUrl(pick.game.coverPath)"
+        v-if="storedUrl(pick.candidate.coverPath)"
         alt=""
         class="pick__cover"
-        :src="storedUrl(pick.game.coverPath)!"
+        :src="storedUrl(pick.candidate.coverPath)!"
       >
       <span
         v-else
         class="pick__cover pick__cover--none"
       />
       <span class="pick__words">
-        <span class="pick__game">{{ pick.game.name }}</span>
+        <span class="pick__game">{{ pick.candidate.name }}</span>
         <span
           v-if="pick.track"
           class="pick__track"
@@ -50,19 +50,19 @@ defineEmits<{
       <span class="pick__acts">
         <icon-button
           :disabled="index === 0"
-          :label="`Move ${pick.game.name} up`"
+          :label="`Move ${pick.candidate.name} up`"
           :testid="`vote-pick-up-${index}`"
           @click="$emit('move', index, -1)"
         >↑</icon-button>
         <icon-button
           :disabled="index === picks.length - 1"
-          :label="`Move ${pick.game.name} down`"
+          :label="`Move ${pick.candidate.name} down`"
           :testid="`vote-pick-down-${index}`"
           @click="$emit('move', index, 1)"
         >↓</icon-button>
         <icon-button
           danger
-          :label="`Take ${pick.game.name} off your ballot`"
+          :label="`Take ${pick.candidate.name} off your ballot`"
           :testid="`vote-pick-remove-${index}`"
           @click="$emit('remove', index)"
         >✕</icon-button>

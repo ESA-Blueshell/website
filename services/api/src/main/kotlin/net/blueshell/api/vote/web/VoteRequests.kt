@@ -37,11 +37,11 @@ data class ScheduleAnnualVoteRequest(
 @Schema(name = "VotePickRequest")
 data class VotePickRequest(
     @field:Positive
-    val gameId: Long,
+    val candidateId: Long,
     @field:Positive
     val trackId: Long? = null,
 ) {
-    fun choice() = PickChoice(gameId, trackId)
+    fun choice() = PickChoice(candidateId, trackId)
 }
 
 /** The picks best first; [version] is the ballot as last read, null for a first ballot. */
@@ -52,8 +52,8 @@ data class CastVoteBallotRequest(
     val version: Long? = null,
 )
 
-@Schema(name = "StoreVoteGameRequest")
-data class StoreVoteGameRequest(
+@Schema(name = "StoreVoteCandidateRequest")
+data class StoreVoteCandidateRequest(
     @field:Positive
     val igdbId: Long,
 )

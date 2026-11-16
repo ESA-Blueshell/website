@@ -5,8 +5,8 @@ import net.blueshell.api.shared.security.CurrentUser
 import net.blueshell.api.shared.security.CurrentUserProvider
 import net.blueshell.api.vote.domain.AnnualVotes
 import net.blueshell.api.vote.domain.BallotSummary
+import net.blueshell.api.vote.domain.CandidateSummary
 import net.blueshell.api.vote.domain.CatalogueGame
-import net.blueshell.api.vote.domain.GameSummary
 import net.blueshell.api.vote.domain.PickChoice
 import net.blueshell.api.vote.domain.PickSummary
 import net.blueshell.api.vote.domain.Placing
@@ -39,16 +39,16 @@ class VoteControllersTest {
 
     private val voteController = AnnualVoteController(votes)
     private val ballotController = VoteBallotController(ballots, currentUser)
-    private val gameController = VoteGameController(games, currentUser)
+    private val gameController = VoteCandidateController(games, currentUser)
 
     private val ost = VoteKind.OST_TOP_50
     private val opens = Instant.parse("2026-12-01T00:00:00Z")
     private val closes = Instant.parse("2026-12-21T23:00:00Z")
     private val reveal = Instant.parse("2026-12-28T19:00:00Z")
-    private val celeste = GameSummary(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
+    private val celeste = CandidateSummary(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
     private val resurrections =
         TrackSummary(11, celeste, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
-    private val celesteResponse = VoteGameResponse(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
+    private val celesteResponse = VoteCandidateResponse(1, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp")
     private val resurrectionsResponse =
         VoteTrackResponse(11, celesteResponse, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
 
@@ -105,18 +105,19 @@ class VoteControllersTest {
     fun `games, covers, tracks, adding and merging go through the game use cases`() {
         whenever(games.search("cel", ost, 2026)).thenReturn(listOf(CatalogueGame(26226, "Celeste", "co1", 2018)))
         whenever(games.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
-        whenever(games.game(26226)).thenReturn(celeste)
+        whenever(games.candidate(26226)).thenReturn(celeste)
         whenever(games.tracksOf(26226)).thenReturn(listOf(resurrections))
         whenever(games.addTrack(26226, "https://open.spotify.com/track/x", 7)).thenReturn(resurrections)
         whenever(games.merge(12, 11)).thenReturn(resurrections)
 
-        assertThat(gameController.searchVoteGames("cel", ost, 2026)).containsExactly(CatalogueGameResponse(26226, "Celeste", 2018, "co1"))
-        val cover = gameController.voteGameCover("co1")
+        assertThat(gameController.searchVoteCandidates("cel", ost, 2026))
+            .containsExactly(CatalogueGameResponse(26226, "Celeste", 2018, "co1"))
+        val cover = gameController.voteCandidateCover("co1")
         assertThat(cover.body).containsExactly(1, 2)
         assertThat(cover.headers.contentType).isEqualTo(MediaType.IMAGE_JPEG)
         assertThat(cover.headers.cacheControl).contains("max-age=604800")
-        assertThat(gameController.storeVoteGame(StoreVoteGameRequest(26226))).isEqualTo(celesteResponse)
-        assertThat(gameController.voteGameTracks(26226)).containsExactly(resurrectionsResponse)
+        assertThat(gameController.storeVoteCandidate(StoreVoteCandidateRequest(26226))).isEqualTo(celesteResponse)
+        assertThat(gameController.voteCandidateTracks(26226)).containsExactly(resurrectionsResponse)
         assertThat(
             gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x")),
         ).isEqualTo(resurrectionsResponse)
@@ -136,7 +137,7 @@ class VoteControllersTest {
     @Test
     fun `a pick's track and a ballot's version are optional`() {
         assertThat(VotePickRequest(3).choice()).isEqualTo(PickChoice(3, null))
-        assertThat(VotePickRequest(3).gameId).isEqualTo(3)
+        assertThat(VotePickRequest(3).candidateId).isEqualTo(3)
         assertThat(CastVoteBallotRequest(listOf(VotePickRequest(3))).version).isNull()
     }
 }

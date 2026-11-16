@@ -6,7 +6,7 @@ import {aGame, aPick, aPlacing, aTrack} from "../fixtures"
 
 describe("the ballot list", () => {
   const bare = aGame(20, "No cover", null)
-  const picks = [aPick(aTrack(1)), {game: bare, track: null}]
+  const picks = [aPick(aTrack(1)), {candidate: bare, track: null}]
 
   it("ranks the picks with what each is worth, a stored cover where the game has one, and a track where picked", () => {
     const wrapper = mount(BallotList, {props: {picks, points: [12, 10]}})
@@ -42,7 +42,7 @@ describe("the result list", () => {
   })
 
   it("lists each game's place, stored cover, track and points, the podium marked, and says players load on Play", () => {
-    const wrapper = mount(ResultList, {props: {placings: [aPlacing(1, youtube.game, youtube, 40, 4), aPlacing(4, spotify.game, spotify, 8, 1)]}})
+    const wrapper = mount(ResultList, {props: {placings: [aPlacing(1, youtube.candidate, youtube, 40, 4), aPlacing(4, spotify.candidate, spotify, 8, 1)]}})
 
     expect(wrapper.get("[data-testid=vote-results-players]").text()).toContain("until you press Play")
     const rows = wrapper.findAll("[data-testid=vote-result]")
@@ -63,7 +63,7 @@ describe("the result list", () => {
   })
 
   it("opens one player at a time, saying which service it plays from, and closes it again", async () => {
-    const wrapper = mount(ResultList, {props: {placings: [aPlacing(1, youtube.game, youtube), aPlacing(2, spotify.game, spotify)]}})
+    const wrapper = mount(ResultList, {props: {placings: [aPlacing(1, youtube.candidate, youtube), aPlacing(2, spotify.candidate, spotify)]}})
 
     expect(wrapper.get("[data-testid=vote-play-10]").text()).toBe("Play on YouTube")
     expect(wrapper.get("[data-testid=vote-play-20]").text()).toBe("Play on Spotify")

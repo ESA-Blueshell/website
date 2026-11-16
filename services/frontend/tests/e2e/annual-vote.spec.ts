@@ -111,8 +111,9 @@ test.describe("the annual vote", () => {
     await page.getByTestId("vote-save").click()
     await expect(page.getByTestId("vote-pick")).toHaveText([/Hollow Knight/, /Celeste/])
 
-    const casts = sent.filter(one => one.method === "PUT" && one.path.endsWith("/ballot")).map(one => one.body)
-    expect(casts).toEqual([
+    // The list moves at once; the save that follows is what the api must see.
+    const casts = () => sent.filter(one => one.method === "PUT" && one.path.endsWith("/ballot")).map(one => one.body)
+    await expect.poll(casts).toEqual([
       {picks: [{candidateId: 1, trackId: 11}, {candidateId: 2, trackId: 21}], version: null},
       {picks: [{candidateId: 2, trackId: 21}, {candidateId: 1, trackId: 11}], version: 1},
     ])

@@ -56,6 +56,23 @@ describe("the vote pick finder", () => {
     expect(wrapper.find("[data-testid=vote-tracks]").exists()).toBe(false)
   })
 
+  it("says why a search was refused, and forgets it once a search answers", async () => {
+    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(refusal(api.searchVoteCandidates, {code: "GameSearchUnavailable"}, 503))
+    const wrapper = mount(PickFinder, {props: {vote: aVote("VOTING")}})
+    const picker = wrapper.findComponent(SearchPicker)
+    picker.vm.$emit("search", "hol")
+    await vi.advanceTimersByTimeAsync(250)
+    await flushPromises()
+
+    expect(wrapper.get("[data-testid=vote-finder-problem]").text()).toContain("unavailable")
+    expect(picker.props("options")).toEqual([])
+
+    picker.vm.$emit("search", "hollow")
+    await vi.advanceTimersByTimeAsync(250)
+    await flushPromises()
+    expect(wrapper.find("[data-testid=vote-finder-problem]").exists()).toBe(false)
+  })
+
   it("keeps the newest search's answer when an older one comes back last", async () => {
     type Search = ReturnType<typeof api.searchVoteCandidates>
     let answerOld: (value: Awaited<Search>) => void = () => {}

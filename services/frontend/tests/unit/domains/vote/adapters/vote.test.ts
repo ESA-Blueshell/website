@@ -73,10 +73,10 @@ describe("the vote adapter", () => {
 
   it("finds games for a kind and year, stores one, and lists a game's tracks", async () => {
     vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(answer(api.searchVoteCandidates, [aResult(1)]))
-    expect(await findGames("hol", "GAME_OF_THE_YEAR", 2026)).toHaveLength(1)
+    expect(await findGames("hol", "GAME_OF_THE_YEAR", 2026)).toEqual({ok: true, saved: [aResult(1)]})
     expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "hol", kind: "GAME_OF_THE_YEAR", year: 2026}})
     vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(refusal(api.searchVoteCandidates, {code: "GameSearchUnavailable"}, 503))
-    expect(await findGames("hol", "OST_TOP_50", 2026)).toEqual([])
+    expect(await findGames("hol", "OST_TOP_50", 2026)).toEqual({ok: false, reason: "Game search is unavailable right now. Try again in a moment."})
 
     vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(answer(api.storeVoteCandidate, aGame(3)))
     expect(await storeGame(300, aVote("VOTING"))).toEqual({ok: true, saved: aGame(3)})

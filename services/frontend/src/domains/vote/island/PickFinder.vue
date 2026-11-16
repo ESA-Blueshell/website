@@ -50,7 +50,8 @@ async function ask(term: string) {
   const found = await findGames(term, props.vote.kind, props.vote.year)
   // A slower answer to an older term must not replace a newer one.
   if (mine !== asked) return
-  games.value = found
+  games.value = found.ok ? found.saved : []
+  problem.value = found.ok ? "" : found.reason
   searching.value = false
 }
 

@@ -12,7 +12,12 @@ interface VoteBallotRepository : BaseRepository<VoteBallot, Long> {
         userId: Long,
     ): VoteBallot?
 
-    fun findAllByVoteId(voteId: Long): List<VoteBallot>
+    /** Every pick cast in the vote, ballot by ballot and best first, without loading the ballots. */
+    @Query(
+        "select new net.blueshell.api.vote.persistence.CastPick(b.id, p.position, p.candidateId, p.trackId) " +
+            "from VoteBallot b join b.picks p where b.voteId = :voteId order by b.id, p.position",
+    )
+    fun picksOf(voteId: Long): List<CastPick>
 
     fun countByVoteId(voteId: Long): Long
 

@@ -4,6 +4,7 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.vote.persistence.BallotPick
 import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CastPick
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteBallot
@@ -63,6 +64,10 @@ internal object VoteFixtures {
         ballot.id = id
         picks.forEachIndexed { index, (game, track) -> ballot.picks += BallotPick(index + 1, game.id!!, track?.id) }
     }
+
+    /** The picks of [cast] as the count's query answers them. */
+    fun castOf(cast: List<VoteBallot>) =
+        cast.flatMap { ballot -> ballot.picks.map { CastPick(ballot.id!!, it.position, it.candidateId, it.trackId) } }
 
     fun picking(track: CandidateTrack) = track.candidate to track
 }

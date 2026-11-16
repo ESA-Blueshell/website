@@ -15,15 +15,16 @@ import net.blueshell.api.shared.model.AutoIdEntity
 import java.time.Instant
 
 /**
- * One link picked as a game's track. The same link is the same row, so two members who paste it
- * land on one track and their points add up. A duplicate the board merges keeps its row and points
- * at [mergedInto], which its points count toward.
+ * One link picked as a game's track. The same link for the same game is the same row, so two
+ * members who paste it land on one track and their points add up; the same link for another game
+ * is that game's own track, so a link first added under the wrong game blocks nobody. A duplicate
+ * the board merges keeps its row and points at [mergedInto], which its points count toward.
  */
 @Entity
 @Table(
     name = "vote_candidate_tracks",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_vote_candidate_tracks_source_external_id", columnNames = ["source", "external_id"]),
+        UniqueConstraint(name = "uk_vote_candidate_tracks_candidate_link", columnNames = ["candidate_id", "source", "external_id"]),
     ],
 )
 class CandidateTrack(

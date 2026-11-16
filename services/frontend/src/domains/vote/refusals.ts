@@ -5,7 +5,6 @@ import {refusalReader, type RefusalCode} from "@/utils/refusals"
 interface RefusalBody extends RefusalCode {
   state?: string
   max?: number
-  game?: string
   year?: number
 }
 
@@ -25,7 +24,6 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   GameNotEligible: r => `Only games first released in ${r.year ?? "the vote's year"} can be picked.`,
   UnsupportedTrackLink: () => "Paste a link to a YouTube video or a Spotify track.",
   TrackLinkUnreadable: () => "That link could not be read. It may be private or removed.",
-  TrackOfAnotherGame: r => `That link is already a track of ${r.game ?? "another game"}.`,
   TrackMergeInvalid: () => "A track can only be merged into another track of the same game.",
   GameSearchUnavailable: () => "Game search is unavailable right now. Try again in a moment.",
   AnnualVoteExists: () => "That year already has this vote.",

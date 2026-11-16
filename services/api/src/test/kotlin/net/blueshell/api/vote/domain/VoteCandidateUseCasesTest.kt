@@ -158,19 +158,27 @@ class VoteCandidateUseCasesTest {
         }
 
         @Test
-        fun `a link already added answers with its track, as the one it was merged into`() {
+        fun `a link already added for the game answers with its track, as the one it was merged into`() {
             val kept = track(11, celeste)
-            whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(12, celeste, mergedInto = kept))
+            whenever(games.findByIgdbId(100)).thenReturn(celeste)
+            whenever(
+                tracks.findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ"),
+            ).thenReturn(track(12, celeste, mergedInto = kept))
 
             assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
             verify(previews, never()).of(any())
         }
 
         @Test
-        fun `a link already added for another game is refused`() {
-            whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))
+        fun `a link already added for another game becomes this game's own track`() {
+            whenever(games.findByIgdbId(100)).thenReturn(celeste)
+            whenever(tracks.findByCandidateIdAndSourceAndExternalId(2, TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))
+            whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
 
-            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(TrackOfAnotherGame::class.java)
+            val added = service.addTrack(100, link, ost, 2026)
+
+            assertThat(added.candidate.id).isEqualTo(1)
+            verify(tracks).findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ")
         }
 
         @Test
@@ -211,7 +219,7 @@ class VoteCandidateUseCasesTest {
             assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(TrackLinkUnreadable::class.java)
 
             assertThatThrownBy { service.addTrack(100, "https://example.com", ost, 2026) }.isInstanceOf(UnsupportedTrackLink::class.java)
-            verify(tracks).findBySourceAndExternalId(any(), any())
+            verify(tracks).findByCandidateIdAndSourceAndExternalId(any(), any(), any())
         }
     }
 
@@ -285,7 +293,7 @@ class VoteCandidateUseCasesTest {
         whenever(games.findByIgdbId(100)).thenReturn(celeste)
         whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
         val theirs = track(11, celeste)
-        whenever(tracks.findBySourceAndExternalId(TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(null, theirs)
+        whenever(tracks.findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(null, theirs)
         whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenThrow(DataIntegrityViolationException("uk_vote_candidate_tracks"))
         assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
     }

@@ -88,17 +88,6 @@ class UnsupportedTrackLink :
 /** YouTube or Spotify did not describe the link: it is private, removed, or the service is down. */
 class TrackLinkUnreadable : VoteRefusal(HttpStatus.BAD_REQUEST, "TrackLinkUnreadable", "That link could not be read.")
 
-/** The link was already picked for another game, and a track belongs to one game. */
-class TrackOfAnotherGame(
-    trackId: Long,
-    gameName: String,
-) : VoteRefusal(
-        HttpStatus.CONFLICT,
-        "TrackOfAnotherGame",
-        "That link is already a track of another game.",
-        mapOf("trackId" to trackId, "game" to gameName),
-    )
-
 /** A track merges only into another live track of the same game. */
 class TrackMergeInvalid(
     trackId: Long,

@@ -9,7 +9,8 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CandidateTrackRepository : BaseRepository<CandidateTrack, Long> {
-    fun findBySourceAndExternalId(
+    fun findByCandidateIdAndSourceAndExternalId(
+        candidateId: Long,
         source: TrackSource,
         externalId: String,
     ): CandidateTrack?

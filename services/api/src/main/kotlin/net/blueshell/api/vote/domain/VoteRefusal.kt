@@ -42,33 +42,33 @@ class BallotSize(
 
 /** Two picks name one game, which a ballot may name only once. */
 class GamePickedTwice(
-    gameId: Long,
-) : VoteRefusal(HttpStatus.BAD_REQUEST, "GamePickedTwice", "A ballot names a game once.", mapOf("gameId" to gameId))
+    candidateId: Long,
+) : VoteRefusal(HttpStatus.BAD_REQUEST, "GamePickedTwice", "A ballot names a game once.", mapOf("candidateId" to candidateId))
 
 /** A pick in a vote whose kind picks tracks names none, or one of another game. */
 class PickNeedsTrack(
-    gameId: Long,
-) : VoteRefusal(HttpStatus.BAD_REQUEST, "PickNeedsTrack", "Each pick names one of its game's tracks.", mapOf("gameId" to gameId))
+    candidateId: Long,
+) : VoteRefusal(HttpStatus.BAD_REQUEST, "PickNeedsTrack", "Each pick names one of its game's tracks.", mapOf("candidateId" to candidateId))
 
 /** A pick in a vote whose kind picks games alone names a track. */
 class PickTakesNoTrack(
-    gameId: Long,
-) : VoteRefusal(HttpStatus.BAD_REQUEST, "PickTakesNoTrack", "This vote picks games, not tracks.", mapOf("gameId" to gameId))
+    candidateId: Long,
+) : VoteRefusal(HttpStatus.BAD_REQUEST, "PickTakesNoTrack", "This vote picks games, not tracks.", mapOf("candidateId" to candidateId))
 
 /** The game was not first released in the vote's year, which this kind requires. */
 class GameNotEligible(
-    gameId: Long,
+    candidateId: Long,
     year: Int,
 ) : VoteRefusal(
         HttpStatus.BAD_REQUEST,
         "GameNotEligible",
         "That game was not released that year.",
-        mapOf("gameId" to gameId, "year" to year),
+        mapOf("candidateId" to candidateId, "year" to year),
     )
 
-class VoteGameNotFound(
+class VoteCandidateNotFound(
     id: Long,
-) : VoteRefusal(HttpStatus.NOT_FOUND, "VoteGameNotFound", "That game does not exist.", mapOf("id" to id))
+) : VoteRefusal(HttpStatus.NOT_FOUND, "VoteCandidateNotFound", "That game does not exist.", mapOf("id" to id))
 
 class TrackNotFound(
     id: Long,

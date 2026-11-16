@@ -11,8 +11,8 @@ defineProps<{placings: Placing[]}>()
 /** The one row whose player is open; a second player would talk over the first. */
 const playing = ref<number | null>(null)
 
-const toggle = (gameId: number) => {
-  playing.value = playing.value === gameId ? null : gameId
+const toggle = (candidateId: number) => {
+  playing.value = playing.value === candidateId ? null : candidateId
 }
 
 const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
@@ -40,7 +40,7 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
     >
       <li
         v-for="placing in placings"
-        :key="placing.game.id"
+        :key="placing.candidate.id"
         class="result"
         :class="{'result--podium': placing.place <= 3}"
         data-testid="vote-result"
@@ -48,17 +48,17 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
         <div class="result__row">
           <span class="result__place">{{ placing.place }}</span>
           <img
-            v-if="storedUrl(placing.game.coverPath)"
+            v-if="storedUrl(placing.candidate.coverPath)"
             alt=""
             class="result__cover"
-            :src="storedUrl(placing.game.coverPath)!"
+            :src="storedUrl(placing.candidate.coverPath)!"
           >
           <span
             v-else
             class="result__cover result__cover--none"
           />
           <span class="result__words">
-            <span class="result__game">{{ placing.game.name }}</span>
+            <span class="result__game">{{ placing.candidate.name }}</span>
             <a
               v-if="placing.track"
               class="result__track"
@@ -71,22 +71,22 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
           <cut-button
             v-if="placing.track"
             small
-            :testid="`vote-play-${placing.game.id}`"
+            :testid="`vote-play-${placing.candidate.id}`"
             tone="quiet"
-            @click="toggle(placing.game.id)"
+            @click="toggle(placing.candidate.id)"
           >
-            {{ playing === placing.game.id ? "Close" : `Play on ${SERVICE[placing.track.source]}` }}
+            {{ playing === placing.candidate.id ? "Close" : `Play on ${SERVICE[placing.track.source]}` }}
           </cut-button>
         </div>
         <iframe
-          v-if="placing.track && playing === placing.game.id"
+          v-if="placing.track && playing === placing.candidate.id"
           allow="encrypted-media; picture-in-picture"
           class="result__player"
           :class="{'result__player--spotify': placing.track.source === 'SPOTIFY'}"
           data-testid="vote-player"
           loading="lazy"
           :src="embedUrl(placing.track)"
-          :title="`${placing.track.title}, from ${placing.game.name}`"
+          :title="`${placing.track.title}, from ${placing.candidate.name}`"
         />
       </li>
     </ol>

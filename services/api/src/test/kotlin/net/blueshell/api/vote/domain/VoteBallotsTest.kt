@@ -8,11 +8,11 @@ import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
-import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteTrackRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -28,7 +28,7 @@ import java.time.ZoneOffset
 class VoteBallotsTest {
     private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
-    private val games = mock<VoteGameRepository>()
+    private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<VoteTrackRepository>()
     private val service = VoteBallots(votes, ballots, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
@@ -43,12 +43,12 @@ class VoteBallotsTest {
 
     init {
         val tracksById = listOf(resurrections, firstSteps, godOfTheDead).associateBy { it.id!! }
-        val gamesById = listOf(celeste, hades).associateBy { it.id!! }
+        val candidatesById = listOf(celeste, hades).associateBy { it.id!! }
         whenever(tracks.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
             call.getArgument<Iterable<Long>>(0).mapNotNull { tracksById[it] }
         }
         whenever(games.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
-            call.getArgument<Iterable<Long>>(0).mapNotNull { gamesById[it] }
+            call.getArgument<Iterable<Long>>(0).mapNotNull { candidatesById[it] }
         }
         whenever(ballots.saveAndFlush(any<VoteBallot>())).thenAnswer { it.getArgument<VoteBallot>(0) }
         whenever(votes.findByKindAndYear(ost, 2026)).thenReturn(vote())
@@ -68,7 +68,7 @@ class VoteBallotsTest {
 
             val mine = service.mine(ost, 2026, 100)!!
 
-            assertThat(mine.picks.map { it.game.id to it.track?.id }).containsExactly(2L to 21L, 1L to 11L)
+            assertThat(mine.picks.map { it.candidate.id to it.track?.id }).containsExactly(2L to 21L, 1L to 11L)
             assertThat(mine.version).isZero()
             assertThat(mine.submittedAt).isEqualTo(OPENS)
         }
@@ -105,7 +105,7 @@ class VoteBallotsTest {
 
             service.cast(ost, 2026, 100, listOf(PickChoice(1, 11)), version = 3)
 
-            assertThat(existing.picks.map { Triple(it.position, it.gameId, it.trackId) }).containsExactly(Triple(1, 1L, 11L))
+            assertThat(existing.picks.map { Triple(it.position, it.candidateId, it.trackId) }).containsExactly(Triple(1, 1L, 11L))
             assertThat(existing.submittedAt).isEqualTo(NOW)
         }
 
@@ -138,7 +138,9 @@ class VoteBallotsTest {
 
         @Test
         fun `refuses a game or a track that does not exist`() {
-            assertThatThrownBy { service.cast(ost, 2026, 100, listOf(PickChoice(9, 11)), null) }.isInstanceOf(VoteGameNotFound::class.java)
+            assertThatThrownBy {
+                service.cast(ost, 2026, 100, listOf(PickChoice(9, 11)), null)
+            }.isInstanceOf(VoteCandidateNotFound::class.java)
             assertThatThrownBy { service.cast(ost, 2026, 100, listOf(PickChoice(1, 99)), null) }.isInstanceOf(TrackNotFound::class.java)
         }
 
@@ -161,7 +163,7 @@ class VoteBallotsTest {
                     .cast(goty, 2026, 100, listOf(PickChoice(2)), null)
                     .picks
                     .single()
-                    .game.id,
+                    .candidate.id,
             ).isEqualTo(2)
             assertThatThrownBy { service.cast(goty, 2026, 100, listOf(PickChoice(2, 21)), null) }.isInstanceOf(PickTakesNoTrack::class.java)
             assertThatThrownBy { service.cast(goty, 2026, 100, listOf(PickChoice(1)), null) }.isInstanceOf(GameNotEligible::class.java)

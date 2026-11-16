@@ -14,7 +14,7 @@ import net.blueshell.api.shared.model.AutoIdEntity
 @Table(
     name = "vote_results",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_vote_results_vote_id_game_id", columnNames = ["vote_id", "game_id"]),
+        UniqueConstraint(name = "uk_vote_results_vote_id_candidate_id", columnNames = ["vote_id", "candidate_id"]),
     ],
 )
 class VoteResult(
@@ -23,8 +23,8 @@ class VoteResult(
     @Column(name = "place", nullable = false)
     val place: Int,
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "game_id", nullable = false)
-    val game: VoteGame,
+    @JoinColumn(name = "candidate_id", nullable = false)
+    val candidate: VoteCandidate,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "track_id")
     val track: VoteTrack?,

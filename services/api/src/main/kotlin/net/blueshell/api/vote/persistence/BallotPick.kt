@@ -8,8 +8,8 @@ import jakarta.persistence.Embeddable
 class BallotPick(
     @Column(name = "position", nullable = false)
     val position: Int,
-    @Column(name = "game_id", nullable = false)
-    val gameId: Long,
+    @Column(name = "candidate_id", nullable = false)
+    val candidateId: Long,
     @Column(name = "track_id")
     val trackId: Long?,
 )

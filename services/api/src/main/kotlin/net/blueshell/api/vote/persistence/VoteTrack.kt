@@ -27,8 +27,8 @@ import java.time.Instant
 )
 class VoteTrack(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "game_id", nullable = false)
-    val game: VoteGame,
+    @JoinColumn(name = "candidate_id", nullable = false)
+    val candidate: VoteCandidate,
     @Enumerated(EnumType.STRING)
     @Column(name = "source", nullable = false, length = 16)
     val source: TrackSource,

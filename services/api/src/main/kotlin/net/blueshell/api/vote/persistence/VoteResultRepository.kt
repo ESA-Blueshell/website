@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface VoteResultRepository : BaseRepository<VoteResult, Long> {
-    @EntityGraph(attributePaths = ["game", "track"])
-    fun findAllByVoteIdOrderByPlaceAscGameNameAsc(voteId: Long): List<VoteResult>
+    @EntityGraph(attributePaths = ["candidate", "track"])
+    fun findAllByVoteIdOrderByPlaceAscCandidateNameAsc(voteId: Long): List<VoteResult>
 }

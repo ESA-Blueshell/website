@@ -41,7 +41,7 @@ describe("a vote ballot", () => {
     expect(samePicks([one, two], [two, one])).toBe(false)
     expect(samePicks([one], [one, two])).toBe(false)
     expect(samePicks([one], [aPick(aTrack(9, hollow))])).toBe(false)
-    expect(samePicks([{game: hollow, track: null}], [{game: hollow}])).toBe(true)
+    expect(samePicks([{candidate: hollow, track: null}], [{candidate: hollow}])).toBe(true)
   })
 
   it("plays a YouTube track in the privacy-enhanced player and a Spotify track in Spotify's", () => {

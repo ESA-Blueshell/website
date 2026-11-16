@@ -13,7 +13,7 @@ vi.mock("@/services/api", async importOriginal => ({
   createAnnualVote: vi.fn(),
   mergeVoteTrack: vi.fn(),
   scheduleAnnualVote: vi.fn(),
-  voteGameTracks: vi.fn(),
+  voteCandidateTracks: vi.fn(),
 }))
 
 describe("the board's vote tools", () => {
@@ -24,7 +24,7 @@ describe("the board's vote tools", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(api.annualVoteStandings).mockResolvedValue(answer(api.annualVoteStandings, [aPlacing(1, hollow, leading, 22, 2)]))
-    vi.mocked(api.voteGameTracks).mockResolvedValue(answer(api.voteGameTracks, [leading, duplicate]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValue(answer(api.voteCandidateTracks, [leading, duplicate]))
   })
 
   const tools = async (vote: AnnualVote | null, year = 2026) => {
@@ -125,7 +125,7 @@ describe("the board's vote tools", () => {
     expect(wrapper.get("[data-testid=vote-board-problem]").text()).toContain("same game")
 
     vi.mocked(api.mergeVoteTrack).mockResolvedValueOnce(answer(api.mergeVoteTrack, leading))
-    vi.mocked(api.voteGameTracks).mockResolvedValueOnce(answer(api.voteGameTracks, [leading]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [leading]))
     await wrapper.get("[data-testid=vote-merge-2]").trigger("click")
     await flushPromises()
     expect(api.mergeVoteTrack).toHaveBeenLastCalledWith({path: {id: 2}, body: {intoId: 1}})

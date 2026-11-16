@@ -2,7 +2,7 @@
  * The vote domain's public API: a page may only enter the domain through this file
  * (frontend ADR-001).
  */
-export type {AnnualVote, Ballot, CatalogueGame, Game, Placing, Track, VoteKind, VoteSchedule, VoteState} from "./adapters/vote"
+export type {AnnualVote, Ballot, CatalogueGame, Candidate, Placing, Track, VoteKind, VoteSchedule, VoteState} from "./adapters/vote"
 export {
   addTrack,
   castBallot,

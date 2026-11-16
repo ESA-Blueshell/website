@@ -2862,7 +2862,7 @@ export type StepUpRequest = {
     password?: string | null;
 };
 
-export type StoreVoteGameRequest = {
+export type StoreVoteCandidateRequest = {
     igdbId: number;
 };
 
@@ -3258,7 +3258,7 @@ export type VoteBallotResponse = {
     version?: number | null;
 };
 
-export type VoteGameResponse = {
+export type VoteCandidateResponse = {
     coverPath?: string | null;
     firstReleaseYear?: number | null;
     id: number;
@@ -3267,17 +3267,17 @@ export type VoteGameResponse = {
 };
 
 export type VotePickRequest = {
-    gameId: number;
+    candidateId: number;
     trackId?: number | null;
 };
 
 export type VotePickResponse = {
-    game: VoteGameResponse;
+    candidate: VoteCandidateResponse;
     track?: VoteTrackResponse | null;
 };
 
 export type VotePlacingResponse = {
-    game: VoteGameResponse;
+    candidate: VoteCandidateResponse;
     place: number;
     points: number;
     track?: VoteTrackResponse | null;
@@ -3285,8 +3285,8 @@ export type VotePlacingResponse = {
 };
 
 export type VoteTrackResponse = {
+    candidate: VoteCandidateResponse;
     externalId: string;
-    game: VoteGameResponse;
     id: number;
     source: 'YOUTUBE' | 'SPOTIFY';
     thumbnailPath?: string | null;
@@ -13288,7 +13288,7 @@ export type VersionResponses = {
 
 export type VersionResponse = VersionResponses[keyof VersionResponses];
 
-export type SearchVoteGamesData = {
+export type SearchVoteCandidatesData = {
     body?: never;
     path?: never;
     query: {
@@ -13296,10 +13296,10 @@ export type SearchVoteGamesData = {
         kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
         year: number;
     };
-    url: '/vote-games';
+    url: '/vote-candidates';
 };
 
-export type SearchVoteGamesErrors = {
+export type SearchVoteCandidatesErrors = {
     /**
      * Validation error
      */
@@ -13322,25 +13322,25 @@ export type SearchVoteGamesErrors = {
     500: ApiError;
 };
 
-export type SearchVoteGamesError = SearchVoteGamesErrors[keyof SearchVoteGamesErrors];
+export type SearchVoteCandidatesError = SearchVoteCandidatesErrors[keyof SearchVoteCandidatesErrors];
 
-export type SearchVoteGamesResponses = {
+export type SearchVoteCandidatesResponses = {
     /**
      * OK
      */
     200: Array<CatalogueGameResponse>;
 };
 
-export type SearchVoteGamesResponse = SearchVoteGamesResponses[keyof SearchVoteGamesResponses];
+export type SearchVoteCandidatesResponse = SearchVoteCandidatesResponses[keyof SearchVoteCandidatesResponses];
 
-export type StoreVoteGameData = {
-    body: StoreVoteGameRequest;
+export type StoreVoteCandidateData = {
+    body: StoreVoteCandidateRequest;
     path?: never;
     query?: never;
-    url: '/vote-games';
+    url: '/vote-candidates';
 };
 
-export type StoreVoteGameErrors = {
+export type StoreVoteCandidateErrors = {
     /**
      * Validation error
      */
@@ -13363,27 +13363,27 @@ export type StoreVoteGameErrors = {
     500: ApiError;
 };
 
-export type StoreVoteGameError = StoreVoteGameErrors[keyof StoreVoteGameErrors];
+export type StoreVoteCandidateError = StoreVoteCandidateErrors[keyof StoreVoteCandidateErrors];
 
-export type StoreVoteGameResponses = {
+export type StoreVoteCandidateResponses = {
     /**
      * OK
      */
-    200: VoteGameResponse;
+    200: VoteCandidateResponse;
 };
 
-export type StoreVoteGameResponse = StoreVoteGameResponses[keyof StoreVoteGameResponses];
+export type StoreVoteCandidateResponse = StoreVoteCandidateResponses[keyof StoreVoteCandidateResponses];
 
-export type VoteGameCoverData = {
+export type VoteCandidateCoverData = {
     body?: never;
     path: {
         imageId: string;
     };
     query?: never;
-    url: '/vote-games/covers/{imageId}';
+    url: '/vote-candidates/covers/{imageId}';
 };
 
-export type VoteGameCoverErrors = {
+export type VoteCandidateCoverErrors = {
     /**
      * Validation error
      */
@@ -13406,27 +13406,27 @@ export type VoteGameCoverErrors = {
     500: ApiError;
 };
 
-export type VoteGameCoverError = VoteGameCoverErrors[keyof VoteGameCoverErrors];
+export type VoteCandidateCoverError = VoteCandidateCoverErrors[keyof VoteCandidateCoverErrors];
 
-export type VoteGameCoverResponses = {
+export type VoteCandidateCoverResponses = {
     /**
      * OK
      */
     200: string;
 };
 
-export type VoteGameCoverResponse = VoteGameCoverResponses[keyof VoteGameCoverResponses];
+export type VoteCandidateCoverResponse = VoteCandidateCoverResponses[keyof VoteCandidateCoverResponses];
 
-export type VoteGameTracksData = {
+export type VoteCandidateTracksData = {
     body?: never;
     path: {
         igdbId: number;
     };
     query?: never;
-    url: '/vote-games/{igdbId}/tracks';
+    url: '/vote-candidates/{igdbId}/tracks';
 };
 
-export type VoteGameTracksErrors = {
+export type VoteCandidateTracksErrors = {
     /**
      * Validation error
      */
@@ -13449,16 +13449,16 @@ export type VoteGameTracksErrors = {
     500: ApiError;
 };
 
-export type VoteGameTracksError = VoteGameTracksErrors[keyof VoteGameTracksErrors];
+export type VoteCandidateTracksError = VoteCandidateTracksErrors[keyof VoteCandidateTracksErrors];
 
-export type VoteGameTracksResponses = {
+export type VoteCandidateTracksResponses = {
     /**
      * OK
      */
     200: Array<VoteTrackResponse>;
 };
 
-export type VoteGameTracksResponse = VoteGameTracksResponses[keyof VoteGameTracksResponses];
+export type VoteCandidateTracksResponse = VoteCandidateTracksResponses[keyof VoteCandidateTracksResponses];
 
 export type AddVoteTrackData = {
     body: AddVoteTrackRequest;

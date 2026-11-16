@@ -7,8 +7,8 @@ import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.persistence.TrackSource
-import net.blueshell.api.vote.persistence.VoteGame
-import net.blueshell.api.vote.persistence.VoteGameRepository
+import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteTrack
 import net.blueshell.api.vote.persistence.VoteTrackRepository
@@ -32,7 +32,7 @@ class VoteGamesTest {
     private val previews = mock<TrackPreviews>()
     private val pictures = mock<RemotePictures>()
     private val sitePictures = mock<SitePictures>()
-    private val games = mock<VoteGameRepository>()
+    private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<VoteTrackRepository>()
     private val service = VoteGames(catalogue, previews, pictures, sitePictures, games, tracks, Clock.fixed(NOW, ZoneOffset.UTC))
 
@@ -43,7 +43,7 @@ class VoteGamesTest {
 
     init {
         whenever(tracks.saveAndFlush(any<VoteTrack>())).thenAnswer { call -> call.getArgument<VoteTrack>(0).also { it.id = 50 } }
-        whenever(games.saveAndFlush(any<VoteGame>())).thenAnswer { call -> call.getArgument<VoteGame>(0).also { it.id = 9 } }
+        whenever(games.saveAndFlush(any<VoteCandidate>())).thenAnswer { call -> call.getArgument<VoteCandidate>(0).also { it.id = 9 } }
     }
 
     @Nested
@@ -80,7 +80,7 @@ class VoteGamesTest {
         fun `a game already stored is answered as it is`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
 
-            assertThat(service.game(100).name).isEqualTo("Celeste")
+            assertThat(service.candidate(100).name).isEqualTo("Celeste")
             verify(catalogue, never()).byId(any())
         }
 
@@ -92,24 +92,24 @@ class VoteGamesTest {
                 sitePictures.store(picture.bytes, "igdb-26226.jpg", "image/jpeg", FileType.VOTE_COVER),
             ).thenReturn(stored("vote-covers/c.webp"))
 
-            val game = service.game(26226)
+            val game = service.candidate(26226)
 
-            assertThat(game).isEqualTo(GameSummary(9, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp"))
+            assertThat(game).isEqualTo(CandidateSummary(9, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp"))
         }
 
         @Test
         fun `a game is kept without a cover where it has none, or the copy fails`() {
             whenever(catalogue.byId(1)).thenReturn(CatalogueGame(1, "Bare", null, null))
-            assertThat(service.game(1).coverPath).isNull()
+            assertThat(service.candidate(1).coverPath).isNull()
 
             whenever(catalogue.byId(2)).thenReturn(CatalogueGame(2, "Unfetched", "co2", 2020))
-            assertThat(service.game(2).coverPath).isNull()
+            assertThat(service.candidate(2).coverPath).isNull()
             verify(sitePictures, never()).store(any(), any(), any(), any())
         }
 
         @Test
         fun `a game the catalogue does not know is refused`() {
-            assertThatThrownBy { service.game(26226) }.isInstanceOf(VoteGameNotFound::class.java)
+            assertThatThrownBy { service.candidate(26226) }.isInstanceOf(VoteCandidateNotFound::class.java)
         }
     }
 
@@ -120,7 +120,7 @@ class VoteGamesTest {
             assertThat(service.tracksOf(4242)).isEmpty()
 
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
-            whenever(tracks.findAllByGameIdAndMergedIntoIsNullOrderByAddedAt(1)).thenReturn(listOf(track(11, celeste)))
+            whenever(tracks.findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(1)).thenReturn(listOf(track(11, celeste)))
             assertThat(service.tracksOf(100).map { it.title }).containsExactly("Track 11")
         }
 
@@ -168,7 +168,7 @@ class VoteGamesTest {
 
             val added = service.addTrack(26226, link, 7)
 
-            assertThat(added.game.id).isEqualTo(9)
+            assertThat(added.candidate.id).isEqualTo(9)
             assertThat(added.title).hasSize(255)
             assertThat(added.thumbnailPath).isNull()
         }

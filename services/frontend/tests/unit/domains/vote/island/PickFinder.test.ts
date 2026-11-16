@@ -9,9 +9,9 @@ import {aGame, aGamesVote, aResult, aTrack, aVote} from "../fixtures"
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   addVoteTrack: vi.fn(),
-  searchVoteGames: vi.fn(),
-  storeVoteGame: vi.fn(),
-  voteGameTracks: vi.fn(),
+  searchVoteCandidates: vi.fn(),
+  storeVoteCandidate: vi.fn(),
+  voteCandidateTracks: vi.fn(),
 }))
 
 describe("the vote pick finder", () => {
@@ -22,8 +22,8 @@ describe("the vote pick finder", () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    vi.mocked(api.searchVoteGames).mockResolvedValue(answer(api.searchVoteGames, [hollow, portal]))
-    vi.mocked(api.voteGameTracks).mockResolvedValue(answer(api.voteGameTracks, [known]))
+    vi.mocked(api.searchVoteCandidates).mockResolvedValue(answer(api.searchVoteCandidates, [hollow, portal]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValue(answer(api.voteCandidateTracks, [known]))
   })
 
   afterEach(() => vi.useRealTimers())
@@ -47,7 +47,7 @@ describe("the vote pick finder", () => {
   it("asks the catalogue for the vote's kind and year once typing settles, covers drawn through the api", async () => {
     const {wrapper, picker} = await searched(aVote("VOTING"), "hol")
 
-    expect(api.searchVoteGames).toHaveBeenCalledWith({query: {query: "hol", kind: "OST_TOP_50", year: 2026}})
+    expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "hol", kind: "OST_TOP_50", year: 2026}})
     expect(picker.props("options")).toEqual([
       {key: "14593", label: "Hollow Knight", note: "2017", avatar: expect.stringMatching(/\/api\/vote-games\/covers\/co14593$/)},
       {key: "72", label: "Portal 2", note: undefined, avatar: undefined},
@@ -57,11 +57,11 @@ describe("the vote pick finder", () => {
   })
 
   it("keeps the newest search's answer when an older one comes back last", async () => {
-    type Search = ReturnType<typeof api.searchVoteGames>
+    type Search = ReturnType<typeof api.searchVoteCandidates>
     let answerOld: (value: Awaited<Search>) => void = () => {}
-    vi.mocked(api.searchVoteGames)
+    vi.mocked(api.searchVoteCandidates)
       .mockImplementationOnce(() => new Promise<Awaited<Search>>(resolve => { answerOld = resolve }) as Search)
-      .mockResolvedValueOnce(answer(api.searchVoteGames, [portal]))
+      .mockResolvedValueOnce(answer(api.searchVoteCandidates, [portal]))
     const wrapper = mount(PickFinder, {props: {vote: aVote("VOTING")}})
     const picker = wrapper.findComponent(SearchPicker)
     picker.vm.$emit("search", "h")
@@ -69,7 +69,7 @@ describe("the vote pick finder", () => {
     picker.vm.$emit("search", "po")
     await vi.advanceTimersByTimeAsync(250)
     await flushPromises()
-    answerOld(answer(api.searchVoteGames, [hollow]))
+    answerOld(answer(api.searchVoteCandidates, [hollow]))
     await flushPromises()
 
     expect(picker.props("options").map((option: {label: string}) => option.label)).toEqual(["Portal 2"])
@@ -78,21 +78,21 @@ describe("the vote pick finder", () => {
   it("lists a picked game's tracks, and picking one hands the game and track up and starts over", async () => {
     const {wrapper} = await chosen()
 
-    expect(api.voteGameTracks).toHaveBeenCalledWith({path: {igdbId: 14593}})
+    expect(api.voteCandidateTracks).toHaveBeenCalledWith({path: {igdbId: 14593}})
     expect(wrapper.get("[data-testid=vote-tracks]").text()).toContain("Tracks members picked for Hollow Knight")
     expect(wrapper.get(".finder__thumb").attributes("src")).toMatch(/\/api\/files\/public\/vote-thumbnails\/1\.webp$/)
     await wrapper.get("[data-testid=vote-track-pick-1]").trigger("click")
 
-    expect(wrapper.emitted("pick")).toEqual([[{game: known.game, track: known}]])
+    expect(wrapper.emitted("pick")).toEqual([[{candidate: known.candidate, track: known}]])
     expect(wrapper.find("[data-testid=vote-tracks]").exists()).toBe(false)
   })
 
   it("says nobody picked a track yet, and draws a track without a stored thumbnail", async () => {
-    vi.mocked(api.voteGameTracks).mockResolvedValueOnce(answer(api.voteGameTracks, []))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, []))
     const {wrapper, picker} = await chosen(aVote("VOTING"), "72")
     expect(wrapper.text()).toContain("Nobody picked a track for Portal 2 yet.")
 
-    vi.mocked(api.voteGameTracks).mockResolvedValueOnce(answer(api.voteGameTracks, [{...known, thumbnailPath: null}]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [{...known, thumbnailPath: null}]))
     picker.vm.$emit("pick", "14593")
     await flushPromises()
     expect(wrapper.find(".finder__thumb--none").exists()).toBe(true)
@@ -127,7 +127,7 @@ describe("the vote pick finder", () => {
     await wrapper.get("input[data-testid=vote-link]").setValue("https://youtu.be/dQw4w9WgXcQ")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
-    expect(wrapper.emitted("pick")).toEqual([[{game: added.game, track: added}]])
+    expect(wrapper.emitted("pick")).toEqual([[{candidate: added.candidate, track: added}]])
   })
 
   it("in a games-only vote, offers the year's games and puts a game on the ballot without a track", async () => {
@@ -135,20 +135,20 @@ describe("the vote pick finder", () => {
     const {wrapper, picker} = await chosen(goty)
 
     expect(picker.props("placeholder")).toBe("Search for a game released in 2026")
-    expect(api.voteGameTracks).not.toHaveBeenCalled()
+    expect(api.voteCandidateTracks).not.toHaveBeenCalled()
     expect(wrapper.find("[data-testid=vote-tracks]").exists()).toBe(false)
 
-    vi.mocked(api.storeVoteGame).mockResolvedValueOnce(refusal(api.storeVoteGame, {code: "GameSearchUnavailable"}, 503))
+    vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(refusal(api.storeVoteCandidate, {code: "GameSearchUnavailable"}, 503))
     await wrapper.get("[data-testid=vote-game-pick]").trigger("click")
     await flushPromises()
     expect(wrapper.get("[data-testid=vote-finder-problem]").text()).toContain("unavailable")
 
     const stored = aGame(7, "Hollow Knight")
-    vi.mocked(api.storeVoteGame).mockResolvedValueOnce(answer(api.storeVoteGame, stored))
+    vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(answer(api.storeVoteCandidate, stored))
     await wrapper.get("[data-testid=vote-game-pick]").trigger("click")
     await flushPromises()
-    expect(api.storeVoteGame).toHaveBeenLastCalledWith({body: {igdbId: 14593}})
-    expect(wrapper.emitted("pick")).toEqual([[{game: stored, track: null}]])
+    expect(api.storeVoteCandidate).toHaveBeenLastCalledWith({body: {igdbId: 14593}})
+    expect(wrapper.emitted("pick")).toEqual([[{candidate: stored, track: null}]])
   })
 
   it("stops a pending search when it goes away", async () => {
@@ -157,6 +157,6 @@ describe("the vote pick finder", () => {
     wrapper.unmount()
     await vi.advanceTimersByTimeAsync(250)
 
-    expect(api.searchVoteGames).not.toHaveBeenCalled()
+    expect(api.searchVoteCandidates).not.toHaveBeenCalled()
   })
 })

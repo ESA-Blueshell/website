@@ -5593,7 +5593,7 @@ components:
           - string
           - 'null'
       type: object
-    StoreVoteGameRequest:
+    StoreVoteCandidateRequest:
       properties:
         igdbId:
           exclusiveMinimum: 0
@@ -6589,7 +6589,7 @@ components:
       required:
       - picks
       type: object
-    VoteGameResponse:
+    VoteCandidateResponse:
       properties:
         coverPath:
           type:
@@ -6615,7 +6615,7 @@ components:
       type: object
     VotePickRequest:
       properties:
-        gameId:
+        candidateId:
           exclusiveMinimum: 0
           format: int64
           type: integer
@@ -6626,23 +6626,23 @@ components:
           - integer
           - 'null'
       required:
-      - gameId
+      - candidateId
       type: object
     VotePickResponse:
       properties:
-        game:
-          $ref: '#/components/schemas/VoteGameResponse'
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
         track:
           oneOf:
           - $ref: '#/components/schemas/VoteTrackResponse'
           - type: 'null'
       required:
-      - game
+      - candidate
       type: object
     VotePlacingResponse:
       properties:
-        game:
-          $ref: '#/components/schemas/VoteGameResponse'
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
         place:
           format: int32
           type: integer
@@ -6657,17 +6657,17 @@ components:
           format: int32
           type: integer
       required:
-      - game
+      - candidate
       - place
       - points
       - voters
       type: object
     VoteTrackResponse:
       properties:
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
         externalId:
           type: string
-        game:
-          $ref: '#/components/schemas/VoteGameResponse'
         id:
           format: int64
           type: integer
@@ -6685,8 +6685,8 @@ components:
         url:
           type: string
       required:
+      - candidate
       - externalId
-      - game
       - id
       - source
       - title
@@ -32088,9 +32088,9 @@ paths:
           description: Server error
       tags:
       - Health
-  /vote-games:
+  /vote-candidates:
     get:
-      operationId: searchVoteGames
+      operationId: searchVoteCandidates
       parameters:
       - in: query
         name: query
@@ -32214,19 +32214,19 @@ paths:
       tags:
       - Annual vote
     post:
-      operationId: storeVoteGame
+      operationId: storeVoteCandidate
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StoreVoteGameRequest'
+              $ref: '#/components/schemas/StoreVoteCandidateRequest'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/VoteGameResponse'
+                $ref: '#/components/schemas/VoteCandidateResponse'
           description: OK
         '400':
           content:
@@ -32319,9 +32319,9 @@ paths:
           description: Server error
       tags:
       - Annual vote
-  /vote-games/covers/{imageId}:
+  /vote-candidates/covers/{imageId}:
     get:
-      operationId: voteGameCover
+      operationId: voteCandidateCover
       parameters:
       - in: path
         name: imageId
@@ -32435,9 +32435,9 @@ paths:
           description: Server error
       tags:
       - Annual vote
-  /vote-games/{igdbId}/tracks:
+  /vote-candidates/{igdbId}/tracks:
     get:
-      operationId: voteGameTracks
+      operationId: voteCandidateTracks
       parameters:
       - in: path
         name: igdbId

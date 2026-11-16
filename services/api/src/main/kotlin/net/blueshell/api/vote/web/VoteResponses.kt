@@ -16,8 +16,8 @@ data class CatalogueGameResponse(
 )
 
 /** A game somebody picked. [coverPath] is our stored copy, resolved against the api. */
-@Schema(name = "VoteGameResponse")
-data class VoteGameResponse(
+@Schema(name = "VoteCandidateResponse")
+data class VoteCandidateResponse(
     val id: Long,
     val igdbId: Long,
     val name: String,
@@ -28,7 +28,7 @@ data class VoteGameResponse(
 @Schema(name = "VoteTrackResponse")
 data class VoteTrackResponse(
     val id: Long,
-    val game: VoteGameResponse,
+    val candidate: VoteCandidateResponse,
     val source: TrackSource,
     val externalId: String,
     val url: String,
@@ -38,14 +38,14 @@ data class VoteTrackResponse(
 
 @Schema(name = "VotePickResponse")
 data class VotePickResponse(
-    val game: VoteGameResponse,
+    val candidate: VoteCandidateResponse,
     val track: VoteTrackResponse?,
 )
 
 @Schema(name = "VotePlacingResponse")
 data class VotePlacingResponse(
     val place: Int,
-    val game: VoteGameResponse,
+    val candidate: VoteCandidateResponse,
     val track: VoteTrackResponse?,
     val points: Int,
     val voters: Int,

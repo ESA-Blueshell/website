@@ -11,8 +11,8 @@ import net.blueshell.api.shared.model.AutoIdEntity
 
 /** A game somebody picked, copied from IGDB with our own copy of its cover, if one could be made. */
 @Entity
-@Table(name = "vote_games")
-class VoteGame(
+@Table(name = "vote_candidates")
+class VoteCandidate(
     @Column(name = "igdb_id", nullable = false, unique = true)
     val igdbId: Long,
     @Column(name = "name", nullable = false)

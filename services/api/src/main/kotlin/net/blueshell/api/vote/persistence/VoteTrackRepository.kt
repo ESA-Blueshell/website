@@ -11,8 +11,8 @@ interface VoteTrackRepository : BaseRepository<VoteTrack, Long> {
         externalId: String,
     ): VoteTrack?
 
-    @EntityGraph(attributePaths = ["game"])
-    fun findAllByGameIdAndMergedIntoIsNullOrderByAddedAt(gameId: Long): List<VoteTrack>
+    @EntityGraph(attributePaths = ["candidate"])
+    fun findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(candidateId: Long): List<VoteTrack>
 
     fun findAllByMergedIntoId(trackId: Long): List<VoteTrack>
 }

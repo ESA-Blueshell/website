@@ -11,7 +11,14 @@ interface VoteRepository : BaseRepository<Vote, Long> {
         year: Int,
     ): Vote?
 
-    fun findFirstByKindOrderByYearDesc(kind: VoteKind): Vote?
+    /** The vote of [kind] that opened last, by [now]. */
+    fun findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(
+        kind: VoteKind,
+        now: Instant,
+    ): Vote?
+
+    /** The vote of [kind] that opens first, for a kind none of whose votes has opened yet. */
+    fun findFirstByKindOrderByOpensAtAsc(kind: VoteKind): Vote?
 
     /** The votes whose reveal is due and that nobody has counted yet. */
     fun findAllByPublishedAtIsNullAndRevealAtLessThanEqual(now: Instant): List<Vote>

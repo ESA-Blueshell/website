@@ -35,9 +35,19 @@ class VoteUseCases(
     private val transactions: TransactionTemplate,
     private val clock: Clock,
 ) {
-    /** The latest year's vote of [kind], as the public page shows it. */
+    /**
+     * The vote of [kind] the public page shows: the one that opened last, so a vote the board sets
+     * up early for next year does not hide this year's voting or results. Before any has opened,
+     * the one that opens first.
+     */
     @Transactional(readOnly = true)
-    fun current(kind: VoteKind): VoteSummary = summaryOf(votes.findFirstByKindOrderByYearDesc(kind) ?: throw NoAnnualVote(kind))
+    fun current(kind: VoteKind): VoteSummary {
+        val vote =
+            votes.findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(kind, clock.instant())
+                ?: votes.findFirstByKindOrderByOpensAtAsc(kind)
+                ?: throw NoAnnualVote(kind)
+        return summaryOf(vote)
+    }
 
     @Transactional
     fun create(

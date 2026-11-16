@@ -794,13 +794,6 @@ object TestHelper {
         }
 
     /**
-     * Truncate every row from `job_executions`. The api dispatches a
-     * couple of background jobs as part of `POST /users` (contact
-     * sync, activation email) with `app.jobs.auto-dispatch=true`, so
-     * tests that assert exact stats counts have to wipe those carrier
-     * rows after their setup completes.
-     */
-    /**
      * An OST Top 50 vote for [year] whose reveal date passed a day ago, with one ballot from each of
      * [voters] picking the first of [games] then the second, each with a track of its own. Answers
      * the vote's id. Written straight to the tables, because no ballot can be cast through the api
@@ -813,7 +806,9 @@ object TestHelper {
     ): Long =
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             val now = java.time.Instant.now()
+
             fun at(daysAgo: Long) = java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(daysAgo)))
+
             fun inserted(
                 sql: String,
                 bind: (java.sql.PreparedStatement) -> Unit,
@@ -883,6 +878,13 @@ object TestHelper {
             }
         }
 
+    /**
+     * Truncate every row from `job_executions`. The api dispatches a
+     * couple of background jobs as part of `POST /users` (contact
+     * sync, activation email) with `app.jobs.auto-dispatch=true`, so
+     * tests that assert exact stats counts have to wipe those carrier
+     * rows after their setup completes.
+     */
     fun clearJobExecutions() {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement("DELETE FROM job_executions").use { it.executeUpdate() }

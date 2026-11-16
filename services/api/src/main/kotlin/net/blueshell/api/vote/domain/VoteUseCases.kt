@@ -2,8 +2,8 @@ package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.CandidateTrackRepository
+import net.blueshell.api.vote.persistence.CastPick
 import net.blueshell.api.vote.persistence.Vote
-import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
@@ -93,7 +93,7 @@ class VoteUseCases(
         year: Int,
     ): List<Placing> {
         val vote = byYear(kind, year)
-        return count(vote, ballots.findAllByVoteId(vote.id!!)).map { it.placing() }
+        return count(vote, ballots.picksOf(vote.id!!)).map { it.placing() }
     }
 
     /**
@@ -149,12 +149,12 @@ class VoteUseCases(
         vote: Vote,
         now: Instant,
     ) {
-        val cast = ballots.findAllByVoteId(vote.id!!)
+        val cast = ballots.picksOf(vote.id!!)
         val top = count(vote, cast).filter { it.standing.place <= vote.kind.topSize }
         placings.saveAll(
             top.map { VotePlacing(vote.id!!, it.standing.place, it.candidate, it.track, it.standing.points, it.standing.voters) },
         )
-        vote.ballotCount = cast.size
+        vote.ballotCount = cast.distinctBy { it.ballotId }.size
         vote.publishedAt = now
         ballots.deleteAllOfVote(vote.id!!)
         votes.saveAndFlush(vote)
@@ -170,12 +170,12 @@ class VoteUseCases(
 
     private fun count(
         vote: Vote,
-        cast: List<VoteBallot>,
+        cast: List<CastPick>,
     ): List<Counted> {
-        val picked = tracks.findAllById(cast.flatMap { ballot -> ballot.picks.mapNotNull { it.trackId } }.toSet()).associateBy { it.id!! }
+        val picked = tracks.findAllById(cast.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
         val standings =
             Tally.count(
-                cast.map { ballot -> ballot.picks.map { CountedPick(it.position, it.candidateId, it.trackId) } },
+                cast.groupBy { it.ballotId }.values.map { ballot -> ballot.map { CountedPick(it.position, it.candidateId, it.trackId) } },
                 vote.kind.points,
                 canonical = { id -> picked[id]?.canonical()?.id ?: id },
             )

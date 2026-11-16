@@ -5,6 +5,7 @@ import net.blueshell.api.vote.domain.VoteFixtures.NOW
 import net.blueshell.api.vote.domain.VoteFixtures.OPENS
 import net.blueshell.api.vote.domain.VoteFixtures.REVEAL
 import net.blueshell.api.vote.domain.VoteFixtures.ballot
+import net.blueshell.api.vote.domain.VoteFixtures.castOf
 import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.stored
@@ -239,7 +240,7 @@ class VoteUseCasesTest {
     @Test
     fun `standings count the ballots so far, a merged track as the one it was merged into`() {
         whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote())
-        whenever(ballots.findAllByVoteId(1)).thenReturn(listOf(ballot(1, 100, picking(firstSteps)), ballot(2, 101, picking(godOfTheDead))))
+        whenever(ballots.picksOf(1)).thenReturn(castOf(listOf(ballot(1, 100, picking(firstSteps)), ballot(2, 101, picking(godOfTheDead)))))
 
         val standings = service.standings(VoteKind.OST_TOP_50, 2026)
 
@@ -251,7 +252,7 @@ class VoteUseCasesTest {
     fun `a pick of a track no longer found counts as itself`() {
         val gone = track(99, hades)
         whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote())
-        whenever(ballots.findAllByVoteId(1)).thenReturn(listOf(ballot(1, 100, picking(gone))))
+        whenever(ballots.picksOf(1)).thenReturn(castOf(listOf(ballot(1, 100, picking(gone)))))
         whenever(tracks.findAllById(any<Iterable<Long>>())).thenReturn(emptyList<CandidateTrack>()).thenReturn(listOf(gone))
 
         assertThat(
@@ -266,7 +267,7 @@ class VoteUseCasesTest {
     @Test
     fun `standings of a games-only vote have no tracks, and a year without a vote is refused`() {
         whenever(votes.findByKindAndYear(VoteKind.GAME_OF_THE_YEAR, 2026)).thenReturn(vote(kind = VoteKind.GAME_OF_THE_YEAR))
-        whenever(ballots.findAllByVoteId(1)).thenReturn(listOf(ballot(1, 100, hades to null)))
+        whenever(ballots.picksOf(1)).thenReturn(castOf(listOf(ballot(1, 100, hades to null))))
 
         assertThat(service.standings(VoteKind.GAME_OF_THE_YEAR, 2026).single().track).isNull()
         assertThatThrownBy { service.standings(VoteKind.OST_TOP_50, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
@@ -280,7 +281,7 @@ class VoteUseCasesTest {
             val cast = listOf(ballot(1, 100, picking(firstSteps), picking(godOfTheDead)), ballot(2, 101, picking(godOfTheDead)))
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
-            whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
+            whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()
 
             assertThat(service.revealDue()).isEqualTo(1)
@@ -314,7 +315,7 @@ class VoteUseCasesTest {
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
             whenever(votes.findById(1)).thenReturn(Optional.of(first))
             whenever(votes.findById(2)).thenReturn(Optional.of(second))
-            whenever(ballots.findAllByVoteId(any())).thenReturn(emptyList())
+            whenever(ballots.picksOf(any())).thenReturn(emptyList())
             whenever(votes.saveAndFlush(first)).thenThrow(ObjectOptimisticLockingFailureException(Vote::class.java, 1L))
 
             assertThat(service.revealDue()).isEqualTo(1)
@@ -329,8 +330,8 @@ class VoteUseCasesTest {
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
             whenever(votes.findById(1)).thenReturn(Optional.of(first))
             whenever(votes.findById(2)).thenReturn(Optional.of(second))
-            whenever(ballots.findAllByVoteId(1)).thenThrow(IllegalStateException("the database went away"))
-            whenever(ballots.findAllByVoteId(2)).thenReturn(emptyList())
+            whenever(ballots.picksOf(1)).thenThrow(IllegalStateException("the database went away"))
+            whenever(ballots.picksOf(2)).thenReturn(castOf(emptyList()))
 
             assertThat(service.revealDue()).isEqualTo(1)
             assertThat(first.publishedAt).isNull()
@@ -348,7 +349,7 @@ class VoteUseCasesTest {
             val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
-            whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
+            whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()
 
             service.revealDue()
@@ -367,7 +368,7 @@ class VoteUseCasesTest {
             val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
-            whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
+            whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()
 
             service.revealDue()

@@ -1,14 +1,7 @@
 package net.blueshell.api.vote.web
 
 import io.swagger.v3.oas.annotations.media.Schema
-import net.blueshell.api.vote.domain.BallotSummary
-import net.blueshell.api.vote.domain.CatalogueGame
-import net.blueshell.api.vote.domain.GameSummary
-import net.blueshell.api.vote.domain.PickSummary
-import net.blueshell.api.vote.domain.Placing
-import net.blueshell.api.vote.domain.TrackSummary
 import net.blueshell.api.vote.domain.VoteState
-import net.blueshell.api.vote.domain.VoteSummary
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteKind
 import java.time.Instant
@@ -84,35 +77,3 @@ data class VoteBallotResponse(
     val submittedAt: Instant?,
     val picks: List<VotePickResponse>,
 )
-
-internal fun CatalogueGame.asResponse() = CatalogueGameResponse(igdbId, name, firstReleaseYear, coverImageId)
-
-internal fun GameSummary.asResponse() = VoteGameResponse(id, igdbId, name, firstReleaseYear, coverPath)
-
-internal fun TrackSummary.asResponse() = VoteTrackResponse(id, game.asResponse(), source, externalId, url, title, thumbnailPath)
-
-internal fun PickSummary.asResponse() = VotePickResponse(game.asResponse(), track?.asResponse())
-
-internal fun Placing.asResponse() = VotePlacingResponse(place, game.asResponse(), track?.asResponse(), points, voters)
-
-internal fun VoteSummary.asResponse() =
-    AnnualVoteResponse(
-        kind = kind,
-        year = year,
-        state = state,
-        opensAt = opensAt,
-        closesAt = closesAt,
-        revealAt = revealAt,
-        ballots = ballots,
-        results = results.map { it.asResponse() },
-        points = kind.points,
-        picksTrack = kind.picksTrack,
-        releasedInYear = kind.releasedInYear,
-    )
-
-internal fun BallotSummary?.asResponse() =
-    VoteBallotResponse(
-        version = this?.version,
-        submittedAt = this?.submittedAt,
-        picks = this?.picks.orEmpty().map { it.asResponse() },
-    )

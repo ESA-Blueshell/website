@@ -92,7 +92,7 @@ describe("the vote pick finder", () => {
     const {wrapper, picker} = await chosen(aVote("VOTING"), "72")
     expect(wrapper.text()).toContain("Nobody picked a track for Portal 2 yet.")
 
-    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [{...known, thumbnailPath: null}]))
+    vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, [{...known, thumbnail: null}]))
     picker.vm.$emit("pick", "14593")
     await flushPromises()
     expect(wrapper.find(".finder__thumb--none").exists()).toBe(true)

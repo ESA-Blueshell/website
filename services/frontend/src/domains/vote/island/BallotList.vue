@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import IconButton from "@/components/island/IconButton.vue"
-import {storedUrl} from "../adapters/vote"
+import {imageAttrs} from "../adapters/vote"
 import {pointsAt, type BallotPick} from "../ballot"
 
 defineOptions({name: "VoteBallotList"})
@@ -30,10 +30,11 @@ defineEmits<{
     >
       <span class="pick__rank">{{ index + 1 }}</span>
       <img
-        v-if="storedUrl(pick.candidate.coverPath)"
+        v-if="pick.candidate.cover"
+        v-bind="imageAttrs(pick.candidate.cover)"
         alt=""
         class="pick__cover"
-        :src="storedUrl(pick.candidate.coverPath)!"
+        sizes="2.75rem"
       >
       <span
         v-else

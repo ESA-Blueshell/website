@@ -21,7 +21,9 @@ import {
   type VoteCandidateResponse,
   type VotePlacingResponse,
   type CandidateTrackResponse,
+  type Image,
 } from "@/services/api"
+import {srcsetOf, type Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import {readOr} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
@@ -97,5 +99,11 @@ export const mergeTrack = (id: number, intoId: number): Promise<Saved<Track> | R
 export const coverPreviewUrl = (imageId: string | null | undefined): string | null =>
   imageId ? apiUrl(`/vote-candidates/covers/${encodeURIComponent(imageId)}`) : null
 
-/** Where a stored copy of a cover or a thumbnail is drawn from: our own storage, through the api. */
-export const storedUrl = (path: string | null | undefined): string | null => (path ? apiUrl(path) : null)
+/**
+ * What an `<img>` needs to draw our stored copy of a cover or a thumbnail: the full-size address and
+ * the stored widths, through the api, and its size, so the page keeps its space while it loads.
+ */
+export const imageAttrs = (image: Image) => {
+  const picture: Picture = {...image, url: apiUrl(image.url), renditions: image.renditions.map(one => ({...one, url: apiUrl(one.url)}))}
+  return {src: picture.url, srcset: srcsetOf(picture), width: image.width ?? undefined, height: image.height ?? undefined}
+}

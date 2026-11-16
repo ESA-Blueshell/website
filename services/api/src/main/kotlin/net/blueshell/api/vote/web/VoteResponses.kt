@@ -1,6 +1,7 @@
 package net.blueshell.api.vote.web
 
 import io.swagger.v3.oas.annotations.media.Schema
+import net.blueshell.api.file.api.Image
 import net.blueshell.api.vote.domain.VoteState
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteKind
@@ -15,14 +16,14 @@ data class CatalogueGameResponse(
     val coverImageId: String?,
 )
 
-/** A game somebody picked. [coverPath] is our stored copy, resolved against the api. */
+/** A game somebody picked. [cover] is our stored copy, with the widths it is stored at. */
 @Schema(name = "VoteCandidateResponse")
 data class VoteCandidateResponse(
     val id: Long,
     val igdbId: Long,
     val name: String,
     val firstReleaseYear: Int?,
-    val coverPath: String?,
+    val cover: Image?,
 )
 
 @Schema(name = "CandidateTrackResponse")
@@ -33,7 +34,7 @@ data class CandidateTrackResponse(
     val externalId: String,
     val url: String,
     val title: String,
-    val thumbnailPath: String?,
+    val thumbnail: Image?,
 )
 
 @Schema(name = "VotePickResponse")

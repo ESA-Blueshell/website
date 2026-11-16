@@ -117,8 +117,9 @@ class VoteUseCasesTest {
 
             assertThat(summary.ballots).isZero()
             assertThat(summary.results.map { it.place }).containsExactly(1, 2)
-            assertThat(summary.results[0].candidate.coverPath).isEqualTo("/files/public/vote-covers/celeste.webp")
-            assertThat(summary.results[0].track!!.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/r.webp")
+            val first = summary.results[0]
+            assertThat(first.candidate.cover!!.url).isEqualTo("/files/public/vote-covers/celeste.webp")
+            assertThat(first.track!!.thumbnail!!.url).isEqualTo("/files/public/vote-thumbnails/r.webp")
             assertThat(summary.results[1].track).isNull()
             verify(ballots, never()).countByVoteId(any())
 

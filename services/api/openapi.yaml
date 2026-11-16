@@ -979,10 +979,10 @@ components:
           - YOUTUBE
           - SPOTIFY
           type: string
-        thumbnailPath:
-          type:
-          - string
-          - 'null'
+        thumbnail:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
         title:
           type: string
         url:
@@ -6649,10 +6649,10 @@ components:
       type: object
     VoteCandidateResponse:
       properties:
-        coverPath:
-          type:
-          - string
-          - 'null'
+        cover:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
         firstReleaseYear:
           format: int32
           type:

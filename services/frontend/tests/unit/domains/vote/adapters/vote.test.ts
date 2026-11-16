@@ -12,12 +12,12 @@ import {
   loadVote,
   mergeTrack,
   scheduleVote,
-  storedUrl,
+  imageAttrs,
   storeGame,
   tracksOf,
 } from "@/domains/vote"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
-import {aGame, aPick, aPlacing, aResult, aTrack, aVote} from "../fixtures"
+import {aGame, anImage, aPick, aPlacing, aResult, aTrack, aVote} from "../fixtures"
 
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -113,7 +113,10 @@ describe("the vote adapter", () => {
   it("draws a search result's cover through the api, and a stored picture from our storage", () => {
     expect(coverPreviewUrl("co1abc")).toMatch(/\/api\/vote-candidates\/covers\/co1abc$/)
     expect(coverPreviewUrl(null)).toBeNull()
-    expect(storedUrl("/files/public/vote-covers/c.webp")).toMatch(/\/api\/files\/public\/vote-covers\/c\.webp$/)
-    expect(storedUrl(null)).toBeNull()
+    const drawn = imageAttrs(anImage("vote-covers/c.webp", [{url: "/files/public/vote-covers/c-160.webp", width: 160}]))
+    expect(drawn.src).toMatch(/\/api\/files\/public\/vote-covers\/c\.webp$/)
+    expect(drawn.srcset).toMatch(/\/api\/files\/public\/vote-covers\/c-160\.webp 160w, .*\/api\/files\/public\/vote-covers\/c\.webp 264w$/)
+    expect([drawn.width, drawn.height]).toEqual([264, 352])
+    expect(imageAttrs({...anImage("x.webp"), width: null, height: null})).toMatchObject({srcset: undefined, width: undefined, height: undefined})
   })
 })

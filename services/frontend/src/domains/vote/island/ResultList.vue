@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
-import {storedUrl, type Placing} from "../adapters/vote"
+import {imageAttrs, type Placing} from "../adapters/vote"
 import {embedUrl} from "../ballot"
 
 defineOptions({name: "VoteResultList"})
@@ -48,10 +48,12 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
         <div class="result__row">
           <span class="result__place">{{ placing.place }}</span>
           <img
-            v-if="storedUrl(placing.candidate.coverPath)"
+            v-if="placing.candidate.cover"
+            v-bind="imageAttrs(placing.candidate.cover)"
             alt=""
             class="result__cover"
-            :src="storedUrl(placing.candidate.coverPath)!"
+            sizes="3rem"
+            loading="lazy"
           >
           <span
             v-else

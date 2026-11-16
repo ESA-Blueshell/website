@@ -499,7 +499,7 @@ export type CandidateTrackResponse = {
     externalId: string;
     id: number;
     source: 'YOUTUBE' | 'SPOTIFY';
-    thumbnailPath?: string | null;
+    thumbnail?: Image | null;
     title: string;
     url: string;
 };
@@ -3275,7 +3275,7 @@ export type VoteBallotResponse = {
 };
 
 export type VoteCandidateResponse = {
-    coverPath?: string | null;
+    cover?: Image | null;
     firstReleaseYear?: number | null;
     id: number;
     igdbId: number;

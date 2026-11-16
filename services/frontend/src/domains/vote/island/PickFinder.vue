@@ -9,7 +9,7 @@ import {
   addTrack,
   coverPreviewUrl,
   findGames,
-  storedUrl,
+  imageAttrs,
   storeGame,
   tracksOf,
   type AnnualVote,
@@ -157,10 +157,11 @@ onBeforeUnmount(() => clearTimeout(settling))
           class="finder__track"
         >
           <img
-            v-if="storedUrl(track.thumbnailPath)"
+            v-if="track.thumbnail"
+            v-bind="imageAttrs(track.thumbnail)"
             alt=""
             class="finder__thumb"
-            :src="storedUrl(track.thumbnailPath)!"
+            sizes="3.5rem"
           >
           <span
             v-else

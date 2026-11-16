@@ -3,6 +3,7 @@ package net.blueshell.api.vote.domain
 import net.blueshell.api.file.api.RemotePicture
 import net.blueshell.api.file.api.RemotePictures
 import net.blueshell.api.file.api.SitePictures
+import net.blueshell.api.file.api.asImage
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.vote.domain.VoteFixtures.NOW
 import net.blueshell.api.vote.domain.VoteFixtures.game
@@ -121,22 +122,24 @@ class VoteCandidateUseCasesTest {
         fun `a game picked the first time is copied from the catalogue with our copy of its cover`() {
             whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", "co1abc", 2018))
             whenever(pictures.fetch("https://images.igdb.com/igdb/image/upload/t_cover_big/co1abc.jpg")).thenReturn(picture)
+            val cover = stored("vote-covers/c.webp")
             whenever(
                 sitePictures.store(picture.bytes, "igdb-26226.jpg", "image/jpeg", FileType.VOTE_COVER),
-            ).thenReturn(stored("vote-covers/c.webp"))
+            ).thenReturn(cover)
 
             val game = service.candidate(26226, ost, 2026)
 
-            assertThat(game).isEqualTo(CandidateSummary(9, 26226, "Celeste", 2018, "/files/public/vote-covers/c.webp"))
+            assertThat(game).isEqualTo(CandidateSummary(9, 26226, "Celeste", 2018, cover.asImage()))
+            assertThat(game.cover!!.url).isEqualTo("/files/public/vote-covers/c.webp")
         }
 
         @Test
         fun `a game is kept without a cover where it has none, or the copy fails`() {
             whenever(catalogue.byId(1)).thenReturn(CatalogueGame(1, "Bare", null, null))
-            assertThat(service.candidate(1, ost, 2026).coverPath).isNull()
+            assertThat(service.candidate(1, ost, 2026).cover).isNull()
 
             whenever(catalogue.byId(2)).thenReturn(CatalogueGame(2, "Unfetched", "co2", 2020))
-            assertThat(service.candidate(2, ost, 2026).coverPath).isNull()
+            assertThat(service.candidate(2, ost, 2026).cover).isNull()
             verify(sitePictures, never()).store(any(), any(), any(), any())
         }
 
@@ -195,7 +198,7 @@ class VoteCandidateUseCasesTest {
             val added = service.addTrack(100, link, ost, 2026)
 
             assertThat(added.title).isEqualTo("Resurrections")
-            assertThat(added.thumbnailPath).isEqualTo("/files/public/vote-thumbnails/t.webp")
+            assertThat(added.thumbnail?.url).isEqualTo("/files/public/vote-thumbnails/t.webp")
             val saved = argumentCaptor<CandidateTrack>()
             verify(tracks).saveAndFlush(saved.capture())
             assertThat(saved.firstValue.addedAt).isEqualTo(NOW)
@@ -210,7 +213,7 @@ class VoteCandidateUseCasesTest {
 
             assertThat(added.candidate.id).isEqualTo(9)
             assertThat(added.title).hasSize(255)
-            assertThat(added.thumbnailPath).isNull()
+            assertThat(added.thumbnail).isNull()
         }
 
         @Test

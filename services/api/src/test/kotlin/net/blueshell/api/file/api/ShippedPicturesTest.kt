@@ -33,7 +33,7 @@ class ShippedPicturesTest {
                 it.getArgument<TransactionCallback<Boolean>>(0).doInTransaction(mock())
             }
         }
-    private val pictures = ShippedPictures(files, users, transactions)
+    private val pictures = ShippedPictures(files, SiteAccount(users), transactions)
 
     /** The fixture's teams: Nomads twice and Settlers once name art, Settlers sharing Nomads's; Drifters names none. */
     private fun ship(place: (Map<String, String>, () -> File) -> Boolean) =
@@ -77,7 +77,7 @@ class ShippedPicturesTest {
 
     @Test
     fun `places nothing when there is no account to credit the art to`() {
-        val nobody = ShippedPictures(files, mock<UserService>(), transactions)
+        val nobody = ShippedPictures(files, SiteAccount(mock<UserService>()), transactions)
 
         assertThat(nobody.ship(EsportsSeedFixture.files, "teams.csv", "banner", FileType.TEAM_BANNER) { _, _ -> true }).isZero()
         verifyNoInteractions(files)

@@ -9,6 +9,7 @@ import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VoteRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -30,6 +31,7 @@ class VoteCandidateUseCases(
     private val previews: TrackPreviews,
     private val pictures: RemotePictures,
     private val stored: SitePictures,
+    private val votes: VoteRepository,
     private val candidates: VoteCandidateRepository,
     private val tracks: CandidateTrackRepository,
     private val clock: Clock,
@@ -48,9 +50,19 @@ class VoteCandidateUseCases(
     /** A search result's small cover, fetched from IGDB here so the visitor's browser never asks it. */
     fun coverPreview(imageId: String): RemotePicture = igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverNotFound()
 
-    /** The game with that IGDB id, stored with a copy of its cover the first time anybody picks it. */
+    /**
+     * The game with that IGDB id, stored with a copy of its cover the first time anybody picks it,
+     * while the [kind] vote of [year] is open.
+     */
     @Transactional
-    fun candidate(igdbId: Long): CandidateSummary = (candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)).summary()
+    fun candidate(
+        igdbId: Long,
+        kind: VoteKind,
+        year: Int,
+    ): CandidateSummary {
+        requireVoting(kind, year)
+        return (candidates.findByIgdbId(igdbId) ?: candidateFromCatalogue(igdbId)).summary()
+    }
 
     /** The tracks already picked for a game, first added first; none for a game nobody picked. */
     @Transactional(readOnly = true)
@@ -60,14 +72,18 @@ class VoteCandidateUseCases(
     }
 
     /**
-     * The track [pasted] links to, as a track of the game [igdbId]. A link somebody already added
-     * answers with that track, so a ballot never holds two rows for one link.
+     * The track [pasted] links to, as a track of the game [igdbId], while the [kind] vote of [year]
+     * is open. A link somebody already added answers with that track, so a ballot never holds two
+     * rows for one link.
      */
     @Transactional
     fun addTrack(
         igdbId: Long,
         pasted: String,
+        kind: VoteKind,
+        year: Int,
     ): TrackSummary {
+        requireVoting(kind, year)
         val link = TrackLink.parse(pasted)
         tracks.findBySourceAndExternalId(link.source, link.externalId)?.canonical()?.let { existing ->
             if (existing.candidate.igdbId != igdbId) throw TrackOfAnotherGame(existing.id!!, existing.candidate.name)
@@ -111,6 +127,16 @@ class VoteCandidateUseCases(
         tracks.findAllByMergedIntoId(trackId).forEach { it.mergedInto = into }
         tracks.flush()
         return into.summary()
+    }
+
+    // Members store games and tracks, with their pictures, only while a vote they are picked for is open.
+    private fun requireVoting(
+        kind: VoteKind,
+        year: Int,
+    ) {
+        val vote = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
+        val state = vote.stateAt(clock.instant())
+        if (state != VoteState.VOTING) throw WrongVoteState(state)
     }
 
     private fun candidateFromCatalogue(igdbId: Long): VoteCandidate {

@@ -108,9 +108,9 @@ class VoteControllersTest {
     fun `games, covers, tracks, adding and merging go through the game use cases`() {
         whenever(games.search("cel", ost, 2026)).thenReturn(listOf(CatalogueGame(26226, "Celeste", "co1", 2018)))
         whenever(games.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
-        whenever(games.candidate(26226)).thenReturn(celeste)
+        whenever(games.candidate(26226, ost, 2026)).thenReturn(celeste)
         whenever(games.tracksOf(26226)).thenReturn(listOf(resurrections))
-        whenever(games.addTrack(26226, "https://open.spotify.com/track/x")).thenReturn(resurrections)
+        whenever(games.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026)).thenReturn(resurrections)
         whenever(games.merge(12, 11)).thenReturn(resurrections)
 
         assertThat(gameController.searchVoteCandidates("cel", ost, 2026))
@@ -119,10 +119,10 @@ class VoteControllersTest {
         assertThat(cover.body).containsExactly(1, 2)
         assertThat(cover.headers.contentType).isEqualTo(MediaType.IMAGE_JPEG)
         assertThat(cover.headers.cacheControl).contains("max-age=604800")
-        assertThat(gameController.storeVoteCandidate(StoreVoteCandidateRequest(26226))).isEqualTo(celesteResponse)
+        assertThat(gameController.storeVoteCandidate(StoreVoteCandidateRequest(26226, ost, 2026))).isEqualTo(celesteResponse)
         assertThat(gameController.voteCandidateTracks(26226)).containsExactly(resurrectionsResponse)
         assertThat(
-            gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x")),
+            gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026)),
         ).isEqualTo(resurrectionsResponse)
         assertThat(gameController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
     }
@@ -139,6 +139,8 @@ class VoteControllersTest {
             { ballotController.myVoteBallot(goty, 2026) },
             { ballotController.castVoteBallot(goty, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1)), null)) },
             { gameController.searchVoteCandidates("cel", goty, 2026) },
+            { gameController.storeVoteCandidate(StoreVoteCandidateRequest(1, goty, 2026)) },
+            { gameController.addVoteTrack(AddVoteTrackRequest(1, "https://youtu.be/x", goty, 2026)) },
         ).forEach { call -> assertThatThrownBy { call() }.isInstanceOf(VoteKindNotOffered::class.java) }
         verifyNoInteractions(votes, ballots, games)
     }

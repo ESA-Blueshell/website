@@ -79,7 +79,7 @@ function choose(pick: BallotPick) {
 
 async function pickGame() {
   busy.value = true
-  const stored = await storeGame(game.value!.igdbId)
+  const stored = await storeGame(game.value!.igdbId, props.vote)
   busy.value = false
   if (stored.ok) choose({candidate: stored.saved, track: null})
   else problem.value = stored.reason
@@ -88,7 +88,7 @@ async function pickGame() {
 async function addLink() {
   if (!link.value.trim()) return
   busy.value = true
-  const added = await addTrack(game.value!.igdbId, link.value.trim())
+  const added = await addTrack(game.value!.igdbId, link.value.trim(), props.vote)
   busy.value = false
   if (added.ok) choose({candidate: added.saved.candidate, track: added.saved})
   else problem.value = added.reason

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import net.blueshell.api.vote.domain.PickChoice
+import net.blueshell.api.vote.persistence.VoteKind
 import java.time.Instant
 
 private const val FIRST_YEAR = 2000L
@@ -58,6 +59,9 @@ data class CastVoteBallotRequest(
 data class StoreVoteCandidateRequest(
     @field:Positive
     val igdbId: Long,
+    /** The vote the game is picked for, which must be open. */
+    val kind: VoteKind,
+    val year: Int,
 )
 
 @Schema(name = "AddVoteTrackRequest")
@@ -66,6 +70,9 @@ data class AddVoteTrackRequest(
     val igdbId: Long,
     @field:NotBlank @field:Size(max = LINK_MAX)
     val url: String,
+    /** The vote the track is picked for, which must be open. */
+    val kind: VoteKind,
+    val year: Int,
 )
 
 @Schema(name = "MergeVoteTrackRequest")

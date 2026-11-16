@@ -119,7 +119,7 @@ describe("the vote pick finder", () => {
     await wrapper.get("input[data-testid=vote-link]").setValue(" https://example.com ")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
-    expect(api.addVoteTrack).toHaveBeenCalledWith({body: {igdbId: 14593, url: "https://example.com"}})
+    expect(api.addVoteTrack).toHaveBeenCalledWith({body: {igdbId: 14593, url: "https://example.com", kind: "OST_TOP_50", year: 2026}})
     expect(wrapper.get("[data-testid=vote-finder-problem]").text()).toBe("Paste a link to a YouTube video or a Spotify track.")
 
     const added = aTrack(5, aGame(1, "Hollow Knight"))
@@ -147,7 +147,7 @@ describe("the vote pick finder", () => {
     vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(answer(api.storeVoteCandidate, stored))
     await wrapper.get("[data-testid=vote-game-pick]").trigger("click")
     await flushPromises()
-    expect(api.storeVoteCandidate).toHaveBeenLastCalledWith({body: {igdbId: 14593}})
+    expect(api.storeVoteCandidate).toHaveBeenLastCalledWith({body: {igdbId: 14593, kind: "GAME_OF_THE_YEAR", year: 2026}})
     expect(wrapper.emitted("pick")).toEqual([[{candidate: stored, track: null}]])
   })
 

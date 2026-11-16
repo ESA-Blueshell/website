@@ -66,15 +66,15 @@ export const findGames = async (query: string, kind: VoteKind, year: number): Pr
   readOr(searchVoteCandidates({query: {query, kind, year}}), [])
 
 /** The game with that IGDB id as a pick names it, stored the first time anybody picks it. */
-export const storeGame = (igdbId: number): Promise<Saved<Candidate> | Refused> =>
-  refusable(storeVoteCandidate({body: {igdbId}}), "That game could not be picked.")
+export const storeGame = (igdbId: number, vote: AnnualVote): Promise<Saved<Candidate> | Refused> =>
+  refusable(storeVoteCandidate({body: {igdbId, kind: vote.kind, year: vote.year}}), "That game could not be picked.")
 
 /** The tracks members already picked for a game, first added first. */
 export const tracksOf = async (igdbId: number): Promise<Track[]> => readOr(voteCandidateTracks({path: {igdbId}}), [])
 
 /** The track a pasted YouTube or Spotify link is, as a track of the game [igdbId]. */
-export const addTrack = (igdbId: number, url: string): Promise<Saved<Track> | Refused> =>
-  refusable(addVoteTrack({body: {igdbId, url}}), "That link could not be added.")
+export const addTrack = (igdbId: number, url: string, vote: AnnualVote): Promise<Saved<Track> | Refused> =>
+  refusable(addVoteTrack({body: {igdbId, url, kind: vote.kind, year: vote.year}}), "That link could not be added.")
 
 /** Every game's standing so far, which only the board may read before the results are out. */
 export const loadStandings = async (kind: VoteKind, year: number): Promise<Placing[]> =>

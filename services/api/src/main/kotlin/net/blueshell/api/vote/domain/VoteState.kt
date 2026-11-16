@@ -1,6 +1,6 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.vote.persistence.AnnualVote
+import net.blueshell.api.vote.persistence.Vote
 import java.time.Instant
 
 /** Where a vote stands, read off its dates and whether it has been counted. */
@@ -18,7 +18,7 @@ enum class VoteState {
     PUBLISHED,
 }
 
-fun AnnualVote.stateAt(now: Instant): VoteState =
+fun Vote.stateAt(now: Instant): VoteState =
     when {
         publishedAt != null -> VoteState.PUBLISHED
         now.isBefore(opensAt) -> VoteState.UPCOMING

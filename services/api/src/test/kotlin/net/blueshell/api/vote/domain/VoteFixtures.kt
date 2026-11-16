@@ -1,7 +1,7 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.persistence.File
-import net.blueshell.api.vote.persistence.AnnualVote
+import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.BallotPick
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteBallot
@@ -55,7 +55,7 @@ internal object VoteFixtures {
         opensAt: Instant = OPENS,
         closesAt: Instant = CLOSES,
         revealAt: Instant = REVEAL,
-    ) = AnnualVote(kind, year, opensAt, closesAt, revealAt).also { it.id = id }
+    ) = Vote(kind, year, opensAt, closesAt, revealAt).also { it.id = id }
 
     /** A ballot of [picks], each a game and, where given, the track picked for it. */
     fun ballot(

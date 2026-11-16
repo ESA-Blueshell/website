@@ -1,6 +1,6 @@
 # The annual votes: the OST Top 50, Game of the Year, and any later kind run the same way.
 #
-# annual_votes is one row per kind and year, with the three dates the vote runs on by itself.
+# votes is one row per kind and year, with the three dates the vote runs on by itself.
 # vote_games are the IGDB games somebody picked, each with our copy of its cover.
 # vote_tracks are the YouTube or Spotify links picked for a game; one link is one row, and a
 # duplicate the board merges points at the track it was merged into.
@@ -13,7 +13,7 @@ databaseChangeLog:
       author: blueshell
       changes:
         - createTable:
-            tableName: annual_votes
+            tableName: votes
             columns:
               - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
               - column: {name: kind, type: VARCHAR(32), constraints: {nullable: false}}
@@ -30,23 +30,23 @@ databaseChangeLog:
               - column: {name: created_by_id, type: BIGINT}
               - column: {name: updated_by_id, type: BIGINT}
         - addUniqueConstraint:
-            tableName: annual_votes
+            tableName: votes
             columnNames: kind, year, deleted_at
-            constraintName: uk_annual_votes_kind_year_deleted_at
+            constraintName: uk_votes_kind_year_deleted_at
         - createIndex:
-            tableName: annual_votes
-            indexName: idx_annual_votes_reveal_at
+            tableName: votes
+            indexName: idx_votes_reveal_at
             columns:
               - column: {name: reveal_at}
         - addForeignKeyConstraint:
-            constraintName: fk_annual_votes_on_created_by
-            baseTableName: annual_votes
+            constraintName: fk_votes_on_created_by
+            baseTableName: votes
             baseColumnNames: created_by_id
             referencedTableName: users
             referencedColumnNames: id
         - addForeignKeyConstraint:
-            constraintName: fk_annual_votes_on_updated_by
-            baseTableName: annual_votes
+            constraintName: fk_votes_on_updated_by
+            baseTableName: votes
             baseColumnNames: updated_by_id
             referencedTableName: users
             referencedColumnNames: id
@@ -126,7 +126,7 @@ databaseChangeLog:
             constraintName: fk_vote_ballots_vote_id
             baseTableName: vote_ballots
             baseColumnNames: vote_id
-            referencedTableName: annual_votes
+            referencedTableName: votes
             referencedColumnNames: id
         - addForeignKeyConstraint:
             constraintName: fk_vote_ballots_user_id
@@ -189,7 +189,7 @@ databaseChangeLog:
             constraintName: fk_vote_results_vote_id
             baseTableName: vote_results
             baseColumnNames: vote_id
-            referencedTableName: annual_votes
+            referencedTableName: votes
             referencedColumnNames: id
         - addForeignKeyConstraint:
             constraintName: fk_vote_results_game_id
@@ -215,4 +215,4 @@ databaseChangeLog:
         - dropTable:
             tableName: vote_games
         - dropTable:
-            tableName: annual_votes
+            tableName: votes

@@ -24,7 +24,7 @@ import java.time.Instant
     ],
 )
 @SQLRestriction(SoftDelete.ACTIVE)
-class AnnualVote(
+class Vote(
     @Enumerated(EnumType.STRING)
     @Column(name = "kind", nullable = false, length = 32)
     val kind: VoteKind,

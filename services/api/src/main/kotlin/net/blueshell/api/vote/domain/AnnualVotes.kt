@@ -1,7 +1,7 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.vote.persistence.AnnualVote
-import net.blueshell.api.vote.persistence.AnnualVoteRepository
+import net.blueshell.api.vote.persistence.Vote
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteGame
@@ -23,7 +23,7 @@ import java.time.Instant
  */
 @Service
 class AnnualVotes(
-    private val votes: AnnualVoteRepository,
+    private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val games: VoteGameRepository,
     private val tracks: VoteTrackRepository,
@@ -44,7 +44,7 @@ class AnnualVotes(
     ): VoteSummary {
         requireInOrder(opensAt, closesAt, revealAt)
         if (votes.findByKindAndYear(kind, year) != null) throw AnnualVoteExists(kind, year)
-        return summaryOf(votes.saveAndFlush(AnnualVote(kind, year, opensAt, closesAt, revealAt)))
+        return summaryOf(votes.saveAndFlush(Vote(kind, year, opensAt, closesAt, revealAt)))
     }
 
     /** Moves the vote's dates, until it has been revealed. */
@@ -96,7 +96,7 @@ class AnnualVotes(
     ) = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
 
     private fun reveal(
-        vote: AnnualVote,
+        vote: Vote,
         now: Instant,
     ) {
         val cast = ballots.findAllByVoteId(vote.id!!)
@@ -117,7 +117,7 @@ class AnnualVotes(
     }
 
     private fun count(
-        vote: AnnualVote,
+        vote: Vote,
         cast: List<VoteBallot>,
     ): List<Counted> {
         val picked = tracks.findAllById(cast.flatMap { ballot -> ballot.picks.mapNotNull { it.trackId } }.toSet()).associateBy { it.id!! }
@@ -132,7 +132,7 @@ class AnnualVotes(
         return standings.map { Counted(it, gamesById.getValue(it.gameId), it.trackId?.let(tracksById::getValue)) }
     }
 
-    private fun summaryOf(vote: AnnualVote): VoteSummary {
+    private fun summaryOf(vote: Vote): VoteSummary {
         val state = vote.stateAt(clock.instant())
         if (state != VoteState.PUBLISHED) return vote.summaryWith(state, ballots.countByVoteId(vote.id!!).toInt(), emptyList())
         val placings =

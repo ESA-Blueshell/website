@@ -11,8 +11,12 @@ import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VotePlacing
 import net.blueshell.api.vote.persistence.VotePlacingRepository
 import net.blueshell.api.vote.persistence.VoteRepository
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.Instant
 
@@ -28,6 +32,7 @@ class VoteUseCases(
     private val candidates: VoteCandidateRepository,
     private val tracks: CandidateTrackRepository,
     private val placings: VotePlacingRepository,
+    private val transactions: TransactionTemplate,
     private val clock: Clock,
 ) {
     /** The latest year's vote of [kind], as the public page shows it. */
@@ -77,16 +82,23 @@ class VoteUseCases(
     }
 
     /**
-     * Reveals every vote whose reveal is due and that nobody has revealed, and answers how many.
-     * Each is locked while it is counted, so a second pod running this at the same time skips it.
+     * Reveals every vote whose reveal is due and that nobody has revealed, each in a transaction of
+     * its own, and answers how many. A second pod revealing the same vote fails on the vote's
+     * version and stores nothing; a vote that fails otherwise is logged and left for the next run,
+     * without undoing the others.
      */
-    @Transactional
+    @Suppress("TooGenericExceptionCaught") // One vote's failure must not stop the reveal of the rest.
     fun revealDue(): Int {
         val now = clock.instant()
         return votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(now).count { due ->
-            val vote = votes.lockById(due.id!!)?.takeIf { it.publishedAt == null } ?: return@count false
-            reveal(vote, now)
-            true
+            try {
+                transactions.execute { revealIfDue(due.id!!, now) } == true
+            } catch (_: OptimisticLockingFailureException) {
+                false
+            } catch (e: RuntimeException) {
+                log.error("[vote-reveal] could not reveal {} {}: {}", due.kind, due.year, e.message, e)
+                false
+            }
         }
     }
 
@@ -103,6 +115,16 @@ class VoteUseCases(
         kind: VoteKind,
         year: Int,
     ) = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
+
+    // Read again inside the transaction: the vote may have been revealed since it was found.
+    private fun revealIfDue(
+        id: Long,
+        now: Instant,
+    ): Boolean {
+        val vote = votes.findById(id).orElse(null)?.takeIf { it.publishedAt == null } ?: return false
+        reveal(vote, now)
+        return true
+    }
 
     private fun reveal(
         vote: Vote,
@@ -151,5 +173,9 @@ class VoteUseCases(
                 Placing(it.place, it.candidate.summary(), it.track?.summary(), it.points, it.voters)
             }
         return vote.summaryWith(state, vote.ballotCount ?: 0, placings)
+    }
+
+    private companion object {
+        val log: Logger = LoggerFactory.getLogger(VoteUseCases::class.java)
     }
 }

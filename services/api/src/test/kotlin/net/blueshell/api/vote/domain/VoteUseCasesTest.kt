@@ -26,12 +26,18 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.orm.ObjectOptimisticLockingFailureException
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.support.SimpleTransactionStatus
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.ZoneOffset
+import java.util.Optional
 
 class VoteUseCasesTest {
     private val votes = mock<VoteRepository>()
@@ -39,7 +45,9 @@ class VoteUseCasesTest {
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
     private val placings = mock<VotePlacingRepository>()
-    private val service = VoteUseCases(votes, ballots, games, tracks, placings, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val manager = mock<PlatformTransactionManager> { on { getTransaction(any()) } doReturn SimpleTransactionStatus() }
+    private val service =
+        VoteUseCases(votes, ballots, games, tracks, placings, TransactionTemplate(manager), Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, "Celeste", cover = stored("vote-covers/celeste.webp"))
     private val hades = game(2, "Hades")
@@ -237,11 +245,12 @@ class VoteUseCasesTest {
             val due = vote(revealAt = NOW)
             val cast = listOf(ballot(1, 100, picking(firstSteps), picking(godOfTheDead)), ballot(2, 101, picking(godOfTheDead)))
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
-            whenever(votes.lockById(1)).thenReturn(due)
+            whenever(votes.findById(1)).thenReturn(Optional.of(due))
             whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
             val saved = argumentCaptor<List<VotePlacing>>()
 
             assertThat(service.revealDue()).isEqualTo(1)
+            verify(manager).commit(any())
 
             verify(placings).saveAll(saved.capture())
             assertThat(
@@ -257,11 +266,41 @@ class VoteUseCasesTest {
         fun `skips a vote another pod revealed or removed since it was found`() {
             val due = vote(revealAt = NOW)
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due, vote(id = 2, revealAt = NOW)))
-            whenever(votes.lockById(1)).thenReturn(vote(revealAt = NOW).apply { publishedAt = NOW })
-            whenever(votes.lockById(2)).thenReturn(null)
+            whenever(votes.findById(1)).thenReturn(Optional.of(vote(revealAt = NOW).apply { publishedAt = NOW }))
+            whenever(votes.findById(2)).thenReturn(Optional.empty())
 
             assertThat(service.revealDue()).isZero()
             verify(placings, never()).saveAll(any<List<VotePlacing>>())
+        }
+
+        @Test
+        fun `stores nothing for a vote another pod revealed first, and still reveals the rest`() {
+            val first = vote(revealAt = NOW)
+            val second = vote(id = 2, revealAt = NOW)
+            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
+            whenever(votes.findById(1)).thenReturn(Optional.of(first))
+            whenever(votes.findById(2)).thenReturn(Optional.of(second))
+            whenever(ballots.findAllByVoteId(any())).thenReturn(emptyList())
+            whenever(votes.saveAndFlush(first)).thenThrow(ObjectOptimisticLockingFailureException(Vote::class.java, 1L))
+
+            assertThat(service.revealDue()).isEqualTo(1)
+            verify(manager).rollback(any())
+            verify(manager).commit(any())
+        }
+
+        @Test
+        fun `leaves a vote that fails for the next run, and still reveals the rest`() {
+            val first = vote(revealAt = NOW)
+            val second = vote(id = 2, revealAt = NOW)
+            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
+            whenever(votes.findById(1)).thenReturn(Optional.of(first))
+            whenever(votes.findById(2)).thenReturn(Optional.of(second))
+            whenever(ballots.findAllByVoteId(1)).thenThrow(IllegalStateException("the database went away"))
+            whenever(ballots.findAllByVoteId(2)).thenReturn(emptyList())
+
+            assertThat(service.revealDue()).isEqualTo(1)
+            assertThat(first.publishedAt).isNull()
+            assertThat(second.publishedAt).isEqualTo(NOW)
         }
 
         @Test
@@ -274,7 +313,7 @@ class VoteUseCasesTest {
             val cast = many.flatMapIndexed { index, game -> List(index + 1) { ballotId++.let { ballot(it, it, game to null) } } }
             val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
-            whenever(votes.lockById(1)).thenReturn(due)
+            whenever(votes.findById(1)).thenReturn(Optional.of(due))
             whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
             val saved = argumentCaptor<List<VotePlacing>>()
 

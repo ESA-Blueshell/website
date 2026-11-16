@@ -1,5 +1,6 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.file.api.HostBoundRemotePictures
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

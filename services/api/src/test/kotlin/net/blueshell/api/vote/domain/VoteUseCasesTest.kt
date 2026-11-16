@@ -142,7 +142,7 @@ class VoteUseCasesTest {
         }
 
         @Test
-        fun `refuses dates out of order, and a reveal before the close`() {
+        fun `refuses dates out of order, and a reveal at or before the close`() {
             assertThatThrownBy {
                 service.create(
                     VoteKind.OST_TOP_50,
@@ -168,20 +168,29 @@ class VoteUseCasesTest {
                     OPENS,
                     CLOSES,
                     OPENS,
+                )
+            }.isInstanceOf(VoteDatesOutOfOrder::class.java)
+            assertThatThrownBy {
+                service.create(
+                    VoteKind.OST_TOP_50,
+                    2026,
+                    OPENS,
+                    CLOSES,
+                    CLOSES,
                 )
             }.isInstanceOf(VoteDatesOutOfOrder::class.java)
         }
 
         @Test
-        fun `moves a vote's dates, a reveal at the close included`() {
+        fun `moves a vote's dates, with the reveal after the close`() {
             val held = vote()
             whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(held)
             val later = CLOSES.plusSeconds(3600)
 
-            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, later, later)
+            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, later, later.plusSeconds(60))
 
             assertThat(held.closesAt).isEqualTo(later)
-            assertThat(held.revealAt).isEqualTo(later)
+            assertThat(held.revealAt).isEqualTo(later.plusSeconds(60))
         }
 
         @Test

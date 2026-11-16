@@ -102,13 +102,16 @@ class VoteUseCases(
         }
     }
 
-    /** Opens, then closes, then the reveal no earlier than the close. */
+    /**
+     * Opens, then closes, then the reveal after the close: a ballot checks the vote is open and
+     * commits without touching the vote, so a reveal at the close could count before it lands.
+     */
     private fun requireInOrder(
         opensAt: Instant,
         closesAt: Instant,
         revealAt: Instant,
     ) {
-        if (!opensAt.isBefore(closesAt) || revealAt.isBefore(closesAt)) throw VoteDatesOutOfOrder()
+        if (!opensAt.isBefore(closesAt) || !closesAt.isBefore(revealAt)) throw VoteDatesOutOfOrder()
     }
 
     private fun byYear(

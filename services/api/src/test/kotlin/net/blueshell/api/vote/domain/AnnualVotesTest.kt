@@ -10,8 +10,8 @@ import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.stored
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
-import net.blueshell.api.vote.persistence.AnnualVote
-import net.blueshell.api.vote.persistence.AnnualVoteRepository
+import net.blueshell.api.vote.persistence.Vote
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteGame
 import net.blueshell.api.vote.persistence.VoteGameRepository
@@ -34,7 +34,7 @@ import java.time.Clock
 import java.time.ZoneOffset
 
 class AnnualVotesTest {
-    private val votes = mock<AnnualVoteRepository>()
+    private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteGameRepository>()
     private val tracks = mock<VoteTrackRepository>()
@@ -49,8 +49,8 @@ class AnnualVotesTest {
 
     init {
         stubFind(listOf(resurrections, firstSteps, godOfTheDead), listOf(celeste, hades))
-        whenever(votes.saveAndFlush(any<AnnualVote>())).thenAnswer { call ->
-            call.getArgument<AnnualVote>(0).also { if (it.id == null) it.id = 1 }
+        whenever(votes.saveAndFlush(any<Vote>())).thenAnswer { call ->
+            call.getArgument<Vote>(0).also { if (it.id == null) it.id = 1 }
         }
     }
 

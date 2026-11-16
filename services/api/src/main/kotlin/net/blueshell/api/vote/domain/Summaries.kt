@@ -1,7 +1,7 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.PublicFileUrls
-import net.blueshell.api.vote.persistence.AnnualVote
+import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteGame
 import net.blueshell.api.vote.persistence.VoteKind
@@ -95,7 +95,7 @@ internal fun requireInOrder(
     if (!opensAt.isBefore(closesAt) || revealAt.isBefore(closesAt)) throw VoteDatesOutOfOrder()
 }
 
-internal fun AnnualVote.summaryWith(
+internal fun Vote.summaryWith(
     state: VoteState,
     ballots: Int,
     results: List<Placing>,

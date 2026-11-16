@@ -1,7 +1,7 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.vote.persistence.AnnualVote
-import net.blueshell.api.vote.persistence.AnnualVoteRepository
+import net.blueshell.api.vote.persistence.Vote
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.BallotPick
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
@@ -17,7 +17,7 @@ import java.time.Clock
 /** A member's own ballot: reading it back, and casting or changing it while the vote is open. */
 @Service
 class VoteBallots(
-    private val votes: AnnualVoteRepository,
+    private val votes: VoteRepository,
     private val ballots: VoteBallotRepository,
     private val games: VoteGameRepository,
     private val tracks: VoteTrackRepository,
@@ -71,7 +71,7 @@ class VoteBallots(
 
     // Each choice as the game and the track it counts as, checked against what the kind asks for.
     private fun resolve(
-        vote: AnnualVote,
+        vote: Vote,
         choices: List<PickChoice>,
     ): List<Pair<VoteGame, VoteTrack?>> {
         val gamesById = games.findAllById(choices.map { it.gameId }.toSet()).associateBy { it.id!! }

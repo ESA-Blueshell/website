@@ -10,7 +10,7 @@ class VoteEntitiesTest {
         // The constructor the JPA compiler plugin adds, which is the only one Hibernate calls.
         val loaded =
             listOf(
-                AnnualVote::class.java,
+                Vote::class.java,
                 VoteGame::class.java,
                 VoteTrack::class.java,
                 VoteBallot::class.java,

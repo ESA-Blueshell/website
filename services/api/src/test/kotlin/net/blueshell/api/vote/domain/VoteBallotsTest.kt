@@ -8,7 +8,7 @@ import net.blueshell.api.vote.domain.VoteFixtures.game
 import net.blueshell.api.vote.domain.VoteFixtures.picking
 import net.blueshell.api.vote.domain.VoteFixtures.track
 import net.blueshell.api.vote.domain.VoteFixtures.vote
-import net.blueshell.api.vote.persistence.AnnualVoteRepository
+import net.blueshell.api.vote.persistence.VoteRepository
 import net.blueshell.api.vote.persistence.VoteBallot
 import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteGameRepository
@@ -26,7 +26,7 @@ import java.time.Clock
 import java.time.ZoneOffset
 
 class VoteBallotsTest {
-    private val votes = mock<AnnualVoteRepository>()
+    private val votes = mock<VoteRepository>()
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteGameRepository>()
     private val tracks = mock<VoteTrackRepository>()

@@ -52,7 +52,10 @@ class VoteUseCases(
         return summaryOf(votes.saveAndFlush(Vote(kind, year, opensAt, closesAt, revealAt)))
     }
 
-    /** Moves the vote's dates, until it has been revealed. */
+    /**
+     * Moves the vote's dates, until it has been revealed. [version] is the vote as the board member
+     * last read it, so two of them saving the dates at once cannot overwrite each other.
+     */
     @Transactional
     fun reschedule(
         kind: VoteKind,
@@ -60,8 +63,10 @@ class VoteUseCases(
         opensAt: Instant,
         closesAt: Instant,
         revealAt: Instant,
+        version: Long,
     ): VoteSummary {
         val vote = byYear(kind, year)
+        vote.requireVersion(version)
         val state = vote.stateAt(clock.instant())
         if (state == VoteState.PUBLISHED) throw WrongVoteState(state)
         requireInOrder(opensAt, closesAt, revealAt)

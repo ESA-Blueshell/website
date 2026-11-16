@@ -56,6 +56,7 @@ data class BallotSummary(
 data class VoteSummary(
     val kind: VoteKind,
     val year: Int,
+    val version: Long,
     val state: VoteState,
     val opensAt: Instant,
     val closesAt: Instant,
@@ -87,4 +88,4 @@ internal fun Vote.summaryWith(
     state: VoteState,
     ballots: Int,
     results: List<Placing>,
-) = VoteSummary(kind, year, state, opensAt, closesAt, revealAt, ballots, results)
+) = VoteSummary(kind, year, version, state, opensAt, closesAt, revealAt, ballots, results)

@@ -59,7 +59,7 @@ describe("the board's vote tools", () => {
     expect((await tools(aVote("PUBLISHED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
   })
 
-  it("moves an unrevealed vote's dates, shown in the reader's own time", async () => {
+  it("moves an unrevealed vote's dates at the version it read, shown in the reader's own time", async () => {
     const vote = aVote("VOTING")
     vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(answer(api.scheduleAnnualVote, vote))
     const wrapper = await tools(vote)
@@ -70,7 +70,7 @@ describe("the board's vote tools", () => {
 
     expect(api.scheduleAnnualVote).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50", year: 2026},
-      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt},
+      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2},
     })
     expect(wrapper.emitted("changed")).toEqual([[vote]])
   })

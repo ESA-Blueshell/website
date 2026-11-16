@@ -72,7 +72,7 @@ async function save() {
   }
   busy.value = true
   const schedule = {opensAt, closesAt, revealAt}
-  const done = starting.value ? await createVote(props.kind, props.year, schedule) : await scheduleVote(props.kind, props.vote!.year, schedule)
+  const done = starting.value ? await createVote(props.kind, props.year, schedule) : await scheduleVote(props.kind, props.vote!.year, schedule, props.vote!.version)
   busy.value = false
   if (done.ok) emit("changed", done.saved)
   else problem.value = done.reason

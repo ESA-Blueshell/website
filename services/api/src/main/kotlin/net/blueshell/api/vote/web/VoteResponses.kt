@@ -59,6 +59,7 @@ data class VotePlacingResponse(
 data class AnnualVoteResponse(
     val kind: VoteKind,
     val year: Int,
+    val version: Long,
     val state: VoteState,
     val opensAt: Instant,
     val closesAt: Instant,

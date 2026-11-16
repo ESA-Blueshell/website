@@ -22,6 +22,7 @@ fun VoteSummary.asResponse() =
     AnnualVoteResponse(
         kind = kind,
         year = year,
+        version = version,
         state = state,
         opensAt = opensAt,
         closesAt = closesAt,

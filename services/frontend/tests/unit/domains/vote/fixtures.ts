@@ -24,6 +24,7 @@ export const aPlacing = (place: number, game: Candidate, track: Track | null, po
 export const aVote = (state: AnnualVote["state"], overrides: Partial<AnnualVote> = {}): AnnualVote => ({
   kind: "OST_TOP_50",
   year: 2026,
+  version: 2,
   state,
   opensAt: "2026-11-30T23:00:00Z",
   closesAt: "2026-12-21T22:59:00Z",

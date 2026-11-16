@@ -55,13 +55,13 @@ class VoteControllersTest {
     @Test
     fun `a vote reads, opens on its dates, moves them and counts through its use cases`() {
         val published =
-            VoteSummary(ost, 2026, VoteState.PUBLISHED, opens, closes, reveal, 9, listOf(Placing(1, celeste, resurrections, 40, 4)))
+            VoteSummary(ost, 2026, 3, VoteState.PUBLISHED, opens, closes, reveal, 9, listOf(Placing(1, celeste, resurrections, 40, 4)))
         whenever(votes.current(ost)).thenReturn(published)
         whenever(
             votes.create(ost, 2026, opens, closes, reveal),
         ).thenReturn(published.copy(state = VoteState.UPCOMING, results = emptyList()))
         whenever(
-            votes.reschedule(ost, 2026, opens, closes, reveal),
+            votes.reschedule(ost, 2026, opens, closes, reveal, 3),
         ).thenReturn(published.copy(state = VoteState.VOTING, results = emptyList()))
         whenever(votes.standings(ost, 2026)).thenReturn(listOf(Placing(1, celeste, null, 40, 4)))
 
@@ -69,6 +69,7 @@ class VoteControllersTest {
             AnnualVoteResponse(
                 ost,
                 2026,
+                3,
                 VoteState.PUBLISHED,
                 opens,
                 closes,
@@ -84,7 +85,7 @@ class VoteControllersTest {
             voteController.createAnnualVote(ost, CreateAnnualVoteRequest(2026, opens, closes, reveal)).state,
         ).isEqualTo(VoteState.UPCOMING)
         assertThat(
-            voteController.scheduleAnnualVote(ost, 2026, ScheduleAnnualVoteRequest(opens, closes, reveal)).state,
+            voteController.scheduleAnnualVote(ost, 2026, ScheduleAnnualVoteRequest(opens, closes, reveal, 3)).state,
         ).isEqualTo(VoteState.VOTING)
         assertThat(voteController.annualVoteStandings(ost, 2026).single().track).isNull()
     }

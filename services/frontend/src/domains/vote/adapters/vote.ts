@@ -85,8 +85,9 @@ export const createVote = (kind: VoteKind, year: number, dates: VoteSchedule): P
   refusable(createAnnualVote({path: {kind}, body: {year, ...dates}}), "The vote could not be started.")
 
 /** Moves a vote's dates. */
-export const scheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule): Promise<Saved<AnnualVote> | Refused> =>
-  refusable(scheduleAnnualVote({path: {kind, year}, body: dates}), "The dates could not be saved.")
+/** Moves the vote's dates; [version] is the vote as the form read it, so a second board member's save is not lost. */
+export const scheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule, version: number): Promise<Saved<AnnualVote> | Refused> =>
+  refusable(scheduleAnnualVote({path: {kind, year}, body: {...dates, version}}), "The dates could not be saved.")
 
 /** Counts the track [id] as the track [intoId] from now on. */
 export const mergeTrack = (id: number, intoId: number): Promise<Saved<Track> | Refused> =>

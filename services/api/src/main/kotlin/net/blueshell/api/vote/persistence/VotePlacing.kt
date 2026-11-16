@@ -12,12 +12,12 @@ import net.blueshell.api.shared.model.AutoIdEntity
 /** A game's place in a revealed vote, frozen so a later recount cannot move it. */
 @Entity
 @Table(
-    name = "vote_results",
+    name = "vote_placings",
     uniqueConstraints = [
-        UniqueConstraint(name = "uk_vote_results_vote_id_candidate_id", columnNames = ["vote_id", "candidate_id"]),
+        UniqueConstraint(name = "uk_vote_placings_vote_id_candidate_id", columnNames = ["vote_id", "candidate_id"]),
     ],
 )
-class VoteResult(
+class VotePlacing(
     @Column(name = "vote_id", nullable = false)
     val voteId: Long,
     @Column(name = "place", nullable = false)

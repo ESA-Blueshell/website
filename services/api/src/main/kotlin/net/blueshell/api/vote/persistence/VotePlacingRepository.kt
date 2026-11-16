@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.stereotype.Repository
 
 @Repository
-interface VoteResultRepository : BaseRepository<VoteResult, Long> {
+interface VotePlacingRepository : BaseRepository<VotePlacing, Long> {
     @EntityGraph(attributePaths = ["candidate", "track"])
-    fun findAllByVoteIdOrderByPlaceAscCandidateNameAsc(voteId: Long): List<VoteResult>
+    fun findAllByVoteIdOrderByPlaceAscCandidateNameAsc(voteId: Long): List<VotePlacing>
 }

@@ -5,7 +5,7 @@
 # vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link is one row, and a
 # duplicate the board merges points at the track it was merged into.
 # vote_ballots and vote_ballot_picks hold how each member voted until the results are revealed:
-# the reveal writes vote_results and deletes the ballots, so no vote outlives the count.
+# the reveal writes vote_placings and deletes the ballots, so no vote outlives the count.
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-11-14-annual-vote.yaml
@@ -172,7 +172,7 @@ databaseChangeLog:
             referencedColumnNames: id
 
         - createTable:
-            tableName: vote_results
+            tableName: vote_placings
             columns:
               - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
               - column: {name: vote_id, type: BIGINT, constraints: {nullable: false}}
@@ -182,30 +182,30 @@ databaseChangeLog:
               - column: {name: points, type: INT, constraints: {nullable: false}}
               - column: {name: voters, type: INT, constraints: {nullable: false}}
         - addUniqueConstraint:
-            tableName: vote_results
+            tableName: vote_placings
             columnNames: vote_id, candidate_id
-            constraintName: uk_vote_results_vote_id_candidate_id
+            constraintName: uk_vote_placings_vote_id_candidate_id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_results_vote_id
-            baseTableName: vote_results
+            constraintName: fk_vote_placings_vote_id
+            baseTableName: vote_placings
             baseColumnNames: vote_id
             referencedTableName: votes
             referencedColumnNames: id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_results_candidate_id
-            baseTableName: vote_results
+            constraintName: fk_vote_placings_candidate_id
+            baseTableName: vote_placings
             baseColumnNames: candidate_id
             referencedTableName: vote_candidates
             referencedColumnNames: id
         - addForeignKeyConstraint:
-            constraintName: fk_vote_results_track_id
-            baseTableName: vote_results
+            constraintName: fk_vote_placings_track_id
+            baseTableName: vote_placings
             baseColumnNames: track_id
             referencedTableName: vote_candidate_tracks
             referencedColumnNames: id
       rollback:
         - dropTable:
-            tableName: vote_results
+            tableName: vote_placings
         - dropTable:
             tableName: vote_ballot_picks
         - dropTable:

@@ -17,9 +17,9 @@ import net.blueshell.api.vote.persistence.VoteBallotRepository
 import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
+import net.blueshell.api.vote.persistence.VotePlacing
+import net.blueshell.api.vote.persistence.VotePlacingRepository
 import net.blueshell.api.vote.persistence.VoteRepository
-import net.blueshell.api.vote.persistence.VoteResult
-import net.blueshell.api.vote.persistence.VoteResultRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -38,8 +38,8 @@ class AnnualVotesTest {
     private val ballots = mock<VoteBallotRepository>()
     private val games = mock<VoteCandidateRepository>()
     private val tracks = mock<CandidateTrackRepository>()
-    private val results = mock<VoteResultRepository>()
-    private val service = AnnualVotes(votes, ballots, games, tracks, results, Clock.fixed(NOW, ZoneOffset.UTC))
+    private val placings = mock<VotePlacingRepository>()
+    private val service = AnnualVotes(votes, ballots, games, tracks, placings, Clock.fixed(NOW, ZoneOffset.UTC))
 
     private val celeste = game(1, "Celeste", cover = stored("vote-covers/celeste.webp"))
     private val hades = game(2, "Hades")
@@ -83,15 +83,15 @@ class AnnualVotesTest {
             val summary = service.current(VoteKind.OST_TOP_50)
 
             assertThat(summary).isEqualTo(VoteSummary(VoteKind.OST_TOP_50, 2026, VoteState.VOTING, OPENS, CLOSES, REVEAL, 4, emptyList()))
-            verify(results, never()).findAllByVoteIdOrderByPlaceAscCandidateNameAsc(any())
+            verify(placings, never()).findAllByVoteIdOrderByPlaceAscCandidateNameAsc(any())
         }
 
         @Test
         fun `a published vote shows its stored count and results, with our own pictures`() {
             val published = vote().apply { publishedAt = REVEAL }
             whenever(votes.findFirstByKindOrderByYearDesc(VoteKind.OST_TOP_50)).thenReturn(published)
-            whenever(results.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(1)).thenReturn(
-                listOf(VoteResult(1, 1, celeste, resurrections, 40, 4), VoteResult(1, 2, hades, null, 12, 1)),
+            whenever(placings.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(1)).thenReturn(
+                listOf(VotePlacing(1, 1, celeste, resurrections, 40, 4), VotePlacing(1, 2, hades, null, 12, 1)),
             )
 
             val summary = service.current(VoteKind.OST_TOP_50)
@@ -239,11 +239,11 @@ class AnnualVotesTest {
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.lockById(1)).thenReturn(due)
             whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
-            val saved = argumentCaptor<List<VoteResult>>()
+            val saved = argumentCaptor<List<VotePlacing>>()
 
             assertThat(service.revealDue()).isEqualTo(1)
 
-            verify(results).saveAll(saved.capture())
+            verify(placings).saveAll(saved.capture())
             assertThat(
                 saved.firstValue.map { Triple(it.place, it.track?.id, it.points) },
             ).containsExactly(Triple(1, 21L, 22), Triple(2, 11L, 12))
@@ -261,7 +261,7 @@ class AnnualVotesTest {
             whenever(votes.lockById(2)).thenReturn(null)
 
             assertThat(service.revealDue()).isZero()
-            verify(results, never()).saveAll(any<List<VoteResult>>())
+            verify(placings, never()).saveAll(any<List<VotePlacing>>())
         }
 
         @Test
@@ -276,11 +276,11 @@ class AnnualVotesTest {
             whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.lockById(1)).thenReturn(due)
             whenever(ballots.findAllByVoteId(1)).thenReturn(cast)
-            val saved = argumentCaptor<List<VoteResult>>()
+            val saved = argumentCaptor<List<VotePlacing>>()
 
             service.revealDue()
 
-            verify(results).saveAll(saved.capture())
+            verify(placings).saveAll(saved.capture())
             assertThat(saved.firstValue).hasSize(VoteKind.GAME_OF_THE_YEAR.topSize)
             assertThat(saved.firstValue.map { it.candidate.id }).doesNotContain(101L)
         }

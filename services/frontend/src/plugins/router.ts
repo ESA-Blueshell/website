@@ -547,7 +547,7 @@ const routes: RouteRecordRaw[] = [
   // loses this route and its nav entry together.
   ...VOTE_KIND_PAGES.filter(page => page.enabled).map(page => ({
     path: page.path,
-    name: `vote-${page.kind}`,
+    name: page.routeName,
     component: () => import("@/pages/events/AnnualVote.vue"),
     props: {page},
     meta: {title: page.title},

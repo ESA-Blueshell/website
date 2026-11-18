@@ -52,7 +52,7 @@ data class BallotSummary(
 )
 
 /**
- * A year's vote as anybody may see it: [results] only once it is published, and [ballots] counted
+ * A year's vote as anybody may see it: [results] only once it is revealed, and [ballots] counted
  * live until then.
  */
 data class VoteSummary(

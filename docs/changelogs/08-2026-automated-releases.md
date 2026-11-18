@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.28.1](https://github.com/ESA-Blueshell/website/compare/v1.28.0...v1.28.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **api:** disable the Base64 intrinsic against Java4Shell (CVE-2026-114938) ([#2665](https://github.com/ESA-Blueshell/website/issues/2665)) ([#2666](https://github.com/ESA-Blueshell/website/issues/2666)) ([ede6770](https://github.com/ESA-Blueshell/website/commit/ede6770999243d017c1290ff7aa3db17f36c3633))
+* **platform:** bounce@ forwards a copy of its mail to sitecie@ ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2647](https://github.com/ESA-Blueshell/website/issues/2647)) ([b1661eb](https://github.com/ESA-Blueshell/website/commit/b1661eba153a39361df1dc9d2a084440c1afaa33))
+* **platform:** DNS zone stops carrying the mail records Stalwart publishes ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2644](https://github.com/ESA-Blueshell/website/issues/2644)) ([bf3dbdd](https://github.com/ESA-Blueshell/website/commit/bf3dbddb0eb5fbe6b31d937a2a7985ab2d209c7c))
+* **platform:** mail.sh reads the catch-all from the full Domain and lets Microsoft's block through to the delisting ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2643](https://github.com/ESA-Blueshell/website/issues/2643)) ([4752598](https://github.com/ESA-Blueshell/website/commit/4752598cc91af3bbdd66497161140e19cf4dc50a))
+* **platform:** stop advertising IPv6 until the server can serve it ([#2638](https://github.com/ESA-Blueshell/website/issues/2638)) ([#2641](https://github.com/ESA-Blueshell/website/issues/2641)) ([846267b](https://github.com/ESA-Blueshell/website/commit/846267bb73c049dd24ec7ba47aee9fe2276c930a))
+
 ## [1.28.0](https://github.com/ESA-Blueshell/website/compare/v1.27.1...v1.28.0) (2026-10-27)
 
 

@@ -24,6 +24,8 @@ data class CreateAnnualVoteRequest(
     val opensAt: Instant,
     val closesAt: Instant,
     val revealAt: Instant,
+    /** How many picks a ballot holds; the kind's own number where left out. */
+    val picks: Int? = null,
 )
 
 @Schema(name = "RescheduleAnnualVoteRequest")
@@ -33,6 +35,8 @@ data class RescheduleAnnualVoteRequest(
     val revealAt: Instant,
     /** The vote's version as the form read it. */
     val version: Long,
+    /** How many picks a ballot holds, which stays as it is where left out; fixed once a ballot is cast. */
+    val picks: Int? = null,
 )
 
 /** A pick by our game id, with one of its tracks where the vote's kind picks one. */

@@ -880,10 +880,13 @@ pick names a game alone, without a track.
 
 ### Ballot
 
-One member's ranked picks in one vote, best first, each position worth the points
-its kind gives it. Only members cast one, and a member has one per vote, which
-they change until voting closes. Revealing the results deletes every ballot, so
-how anybody voted is never kept past the count.
+One member's ranked picks in one vote, best first. The board sets how many picks a
+ballot holds for each vote, five unless it says otherwise, and can change that
+until the first ballot is cast. The places are worth two points apart, down to 4 for
+the last, so five picks score 12, 10, 8, 6 and 4. Only members cast one, and a
+member has one per vote, which they change until voting closes. Revealing the
+results deletes every ballot, so how anybody voted is never kept past the count.
+The page calls a ballot the member's "top" and counts ballots as "votes".
 
 ### Pick
 

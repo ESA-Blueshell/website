@@ -101,7 +101,20 @@ class VoteUseCasesTest {
             val summary = service.current(VoteKind.OST_TOP_50)
 
             assertThat(summary)
-                .isEqualTo(VoteSummary(VoteKind.OST_TOP_50, 2026, 0, VoteState.VOTING, OPENS, CLOSES, REVEAL, 4, emptyList()))
+                .isEqualTo(
+                    VoteSummary(
+                        VoteKind.OST_TOP_50,
+                        2026,
+                        0,
+                        VoteState.VOTING,
+                        OPENS,
+                        CLOSES,
+                        REVEAL,
+                        4,
+                        emptyList(),
+                        listOf(12, 10, 8, 6, 4),
+                    ),
+                )
             verify(placings, never()).findAllByVoteIdOrderByPlaceAscCandidateNameAsc(any())
         }
 
@@ -139,6 +152,42 @@ class VoteUseCasesTest {
             assertThatThrownBy { service.create(VoteKind.GAME_OF_THE_YEAR, 2026, OPENS, CLOSES, REVEAL) }
                 .isInstanceOf(VoteKindNotOffered::class.java)
             assertThatThrownBy { service.current(VoteKind.GAME_OF_THE_YEAR) }.isInstanceOf(VoteKindNotOffered::class.java)
+        }
+
+        @Test
+        fun `creates a vote with the number of picks the board sets, and refuses one out of range`() {
+            assertThat(service.create(VoteKind.OST_TOP_50, 2027, OPENS, CLOSES, REVEAL, 3).points).containsExactly(8, 6, 4)
+            assertThat(service.create(VoteKind.OST_TOP_50, 2027, OPENS, CLOSES, REVEAL).points).containsExactly(12, 10, 8, 6, 4)
+            assertThatThrownBy { service.create(VoteKind.OST_TOP_50, 2027, OPENS, CLOSES, REVEAL, 0) }
+                .isInstanceOf(VotePicksOutOfRange::class.java)
+            assertThatThrownBy { service.create(VoteKind.OST_TOP_50, 2027, OPENS, CLOSES, REVEAL, MAX_PICKS + 1) }
+                .isInstanceOf(VotePicksOutOfRange::class.java)
+        }
+
+        @Test
+        fun `changes the number of picks until the first ballot, and keeps it where none is sent`() {
+            val held = vote()
+            whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(held)
+
+            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, CLOSES, REVEAL, held.version, 7)
+            assertThat(held.picks).isEqualTo(7)
+            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, CLOSES, REVEAL, held.version)
+            assertThat(held.picks).isEqualTo(7)
+            assertThatThrownBy { service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, CLOSES, REVEAL, held.version, MAX_PICKS + 1) }
+                .isInstanceOf(VotePicksOutOfRange::class.java)
+
+            whenever(ballots.countByVoteId(held.id!!)).thenReturn(1)
+            service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, CLOSES, REVEAL, held.version, 7)
+            assertThatThrownBy { service.reschedule(VoteKind.OST_TOP_50, 2026, OPENS, CLOSES, REVEAL, held.version, 4) }
+                .isInstanceOf(VotePicksFixed::class.java)
+            assertThat(held.picks).isEqualTo(7)
+        }
+
+        @Test
+        fun `scores each place two points apart, down to 4 for the last`() {
+            assertThat(pointsFor(MIN_PICKS)).containsExactly(4)
+            assertThat(pointsFor(5)).containsExactly(12, 10, 8, 6, 4)
+            assertThat(pointsFor(MAX_PICKS)).hasSize(MAX_PICKS).startsWith(22).endsWith(4)
         }
 
         @Test

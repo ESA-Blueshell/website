@@ -133,7 +133,10 @@ class VoteBallotUseCasesTest {
         @Test
         fun `refuses an empty ballot and one with more picks than the kind holds`() {
             assertThatThrownBy { service.cast(ost, 2026, 100, emptyList(), null) }.isInstanceOf(BallotSize::class.java)
-            assertThatThrownBy { service.cast(ost, 2026, 100, List(ost.picksPerBallot + 1) { PickChoice(1, 11) }, null) }
+            assertThatThrownBy { service.cast(ost, 2026, 100, List(ost.defaultPicks + 1) { PickChoice(1, 11) }, null) }
+                .isInstanceOf(BallotSize::class.java)
+            whenever(votes.findLockedByKindAndYear(ost, 2026)).thenReturn(vote(picks = 1))
+            assertThatThrownBy { service.cast(ost, 2026, 100, List(2) { PickChoice(it + 1L, 11) }, null) }
                 .isInstanceOf(BallotSize::class.java)
         }
 

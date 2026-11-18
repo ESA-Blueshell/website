@@ -14,7 +14,7 @@ import java.time.Instant
 /**
  * One kind's vote for one year. It runs on its dates alone: voting between [opensAt] and
  * [closesAt], and counted at [revealAt], which sets [revealedAt] and [ballotCount] as the ballots
- * are deleted.
+ * are deleted. A ballot holds up to [picks] picks, a number the board sets per vote.
  */
 @Entity
 @Table(
@@ -36,6 +36,8 @@ class Vote(
     var closesAt: Instant,
     @Column(name = "reveal_at", nullable = false)
     var revealAt: Instant,
+    @Column(name = "picks", nullable = false)
+    var picks: Int,
 ) : AuditedAutoIdEntity() {
     @Column(name = "ballot_count")
     var ballotCount: Int? = null

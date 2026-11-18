@@ -37,7 +37,10 @@ class AnnualVoteController(
     fun createAnnualVote(
         @PathVariable kind: VoteKind,
         @Valid @RequestBody request: CreateAnnualVoteRequest,
-    ): AnnualVoteResponse = votes.create(kind, request.year, request.opensAt, request.closesAt, request.revealAt).asResponse()
+    ): AnnualVoteResponse =
+        votes
+            .create(kind, request.year, request.opensAt, request.closesAt, request.revealAt, request.picks ?: kind.defaultPicks)
+            .asResponse()
 
     @BoardOnly
     @PutMapping("/{year}")
@@ -46,7 +49,7 @@ class AnnualVoteController(
         @PathVariable year: Int,
         @Valid @RequestBody request: RescheduleAnnualVoteRequest,
     ): AnnualVoteResponse =
-        votes.reschedule(kind, year, request.opensAt, request.closesAt, request.revealAt, request.version).asResponse()
+        votes.reschedule(kind, year, request.opensAt, request.closesAt, request.revealAt, request.version, request.picks).asResponse()
 
     @BoardOnly
     @GetMapping("/{year}/standings")

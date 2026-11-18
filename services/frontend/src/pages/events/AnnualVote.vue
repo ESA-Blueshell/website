@@ -118,8 +118,10 @@ async function save() {
   ballot.value = cast.saved
   picks.value = [...cast.saved.picks]
   saved.value = true
-  // A first ballot moves the count everyone sees.
-  vote.value = (await loadVote(props.page.kind)) ?? vote.value
+  // A first ballot moves the count everyone sees; an answer for a kind left meanwhile is dropped.
+  const kind = props.page.kind
+  const fresh = await loadVote(kind)
+  if (fresh && kind === props.page.kind) vote.value = fresh
 }
 
 // Both kinds share this component and the router reuses it between them, so the vote is read

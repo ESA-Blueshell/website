@@ -31,7 +31,7 @@ class VoteBallotUseCases(
         userId: Long,
     ): BallotSummary? {
         val vote = votes.of(kind, year)
-        return ballots.findByVoteIdAndUserId(vote.id!!, userId)?.let(::summaryOf)
+        return ballots.findByVoteIdAndUserId(vote.id!!, userId)?.let { summaryOf(it, userId) }
     }
 
     /**
@@ -66,7 +66,7 @@ class VoteBallotUseCases(
             } ?: VoteBallot(voteId = vote.id!!, userId = userId, submittedAt = now)
         ballot.picks.clear()
         picks.forEachIndexed { index, (candidate, track) -> ballot.picks += BallotPick(index + 1, candidate.id!!, track?.id) }
-        return summaryOf(ballots.saveAndFlush(ballot))
+        return summaryOf(ballots.saveAndFlush(ballot), userId)
     }
 
     // Each choice as the game and the track it counts as, checked against what the kind asks for.
@@ -84,10 +84,15 @@ class VoteBallotUseCases(
         }
     }
 
-    private fun summaryOf(ballot: VoteBallot): BallotSummary {
+    private fun summaryOf(
+        ballot: VoteBallot,
+        userId: Long,
+    ): BallotSummary {
         val candidatesById = candidates.byIds(ballot.picks.map { it.candidateId })
         val tracksById = tracks.byIds(ballot.picks.mapNotNull { it.trackId })
+        val shown = ballot.picks.mapNotNull { pick -> pick.trackId?.let { tracksById.getValue(it).canonical() } }
         return BallotSummary(
+            renamableTrackIds = shown.filter { it.addedById == userId }.map { it.id!! },
             version = ballot.version,
             submittedAt = ballot.submittedAt,
             picks =

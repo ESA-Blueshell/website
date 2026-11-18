@@ -136,6 +136,34 @@ class VoteControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `the member who added a track and the board rename it, another member may not, and a ballot says which are theirs`() {
+        val board = createUserWithRole(Role.BOARD)
+        startVote(board)
+        val adder = createUserWithRole(Role.MEMBER)
+        val other = createUserWithRole(Role.MEMBER)
+        val added = track(adder, 26226, "https://youtu.be/renameme01")
+        val rename = { who: User, title: String ->
+            mvc.perform(
+                put("/vote-tracks/${added.trackId}/title")
+                    .with(signedIn(who))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"title":"$title"}"""),
+            )
+        }
+
+        rename(other, "Not mine").andExpect(status().isForbidden)
+        rename(adder, "  ").andExpect(status().isBadRequest)
+        rename(adder, "Resurrections").andExpect(status().isOk).andExpect(jsonPath("$.title").value("Resurrections"))
+        rename(board, "Resurrections (OST)").andExpect(status().isOk)
+
+        cast(adder, listOf(added), null).andExpect(status().isOk).andExpect(jsonPath("$.renamableTrackIds[0]").value(added.trackId))
+        cast(other, listOf(added), null).andExpect(status().isOk).andExpect(jsonPath("$.renamableTrackIds", hasSize<Any>(0)))
+        mvc
+            .perform(get("/annual-votes/OST_TOP_50/2026/ballot").with(signedIn(other)))
+            .andExpect(jsonPath("$.picks[0].track.title").value("Resurrections (OST)"))
+    }
+
+    @Test
     fun `a merged track counts as the one it was merged into, and two merges cannot chain`() {
         val board = createUserWithRole(Role.BOARD)
         startVote(board)

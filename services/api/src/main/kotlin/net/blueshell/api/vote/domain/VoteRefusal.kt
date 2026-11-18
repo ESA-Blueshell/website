@@ -59,6 +59,9 @@ class VotePicksOutOfRange(
 /** The number of picks stays as it is once a ballot has been cast. */
 class VotePicksFixed : VoteRefusal(HttpStatus.CONFLICT, "VotePicksFixed", "The number of picks cannot change once a ballot is cast.")
 
+/** Only the member who added a track, or the board, renames it. */
+class TrackRenameNotAllowed : VoteRefusal(HttpStatus.FORBIDDEN, "TrackRenameNotAllowed", "Only its adder or the board renames a track.")
+
 class BallotSize(
     picks: Int,
     max: Int,

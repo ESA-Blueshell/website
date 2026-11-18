@@ -9,6 +9,7 @@ import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
@@ -96,6 +97,7 @@ class VoteCandidateUseCases(
         pasted: String,
         kind: VoteKind,
         year: Int,
+        userId: Long,
     ): TrackSummary {
         votes.of(kind, year).requireVoting(clock.instant())
         val link = TrackLink.parse(pasted)
@@ -113,6 +115,7 @@ class VoteCandidateUseCases(
                 title = preview.title.take(TITLE_MAX),
                 addedAt = clock.instant(),
                 thumbnail = thumbnail,
+                addedById = userId,
             )
         return try {
             transactions.execute { tracks.saveAndFlush(track).summary() }
@@ -120,6 +123,24 @@ class VoteCandidateUseCases(
             // Somebody added the same link while its preview was fetched.
             existingTrack(link, candidate) ?: throw e
         }
+    }
+
+    /**
+     * Gives the track a [title] of the member's own, for everybody who picked it: a video's name is
+     * often more than the song's. Only the member who added the track may, or anybody the caller
+     * says may rename any, which is the board.
+     */
+    @Transactional
+    fun rename(
+        trackId: Long,
+        title: String,
+        userId: Long,
+        mayRenameAny: Boolean,
+    ): TrackSummary {
+        val track = tracks.findByIdOrNull(trackId) ?: throw TrackNotFound(trackId)
+        if (!mayRenameAny && track.addedById != userId) throw TrackRenameNotAllowed()
+        track.title = title.trim().take(TITLE_MAX)
+        return tracks.saveAndFlush(track).summary()
     }
 
     /**

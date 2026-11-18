@@ -33,6 +33,7 @@ internal object VoteFixtures {
         game: VoteCandidate,
         mergedInto: CandidateTrack? = null,
         thumbnail: File? = null,
+        addedById: Long? = null,
     ) = CandidateTrack(
         candidate = game,
         source = TrackSource.YOUTUBE,
@@ -40,6 +41,7 @@ internal object VoteFixtures {
         title = "Track $id",
         addedAt = OPENS,
         thumbnail = thumbnail,
+        addedById = addedById,
     ).also {
         it.id = id
         it.mergedInto = mergedInto

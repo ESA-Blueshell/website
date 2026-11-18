@@ -34,9 +34,9 @@ class VoteBallotUseCasesTest {
 
     private val celeste = game(1, year = 2018)
     private val hades = game(2, year = 2026)
-    private val resurrections = track(11, celeste)
+    private val resurrections = track(11, celeste, addedById = 200)
     private val firstSteps = track(12, celeste, mergedInto = resurrections)
-    private val godOfTheDead = track(21, hades)
+    private val godOfTheDead = track(21, hades, addedById = 100)
 
     private val ost = VoteKind.OST_TOP_50
     private val goty = VoteKind.GAME_OF_THE_YEAR
@@ -64,7 +64,7 @@ class VoteBallotUseCasesTest {
         }
 
         @Test
-        fun `reads the picks back in order, a merged track as the one it was merged into`() {
+        fun `reads the picks back in order, a merged track as the one it was merged into, and which tracks the member added`() {
             whenever(ballots.findByVoteIdAndUserId(1, 100)).thenReturn(ballot(5, 100, picking(godOfTheDead), picking(firstSteps)))
 
             val mine = service.mine(ost, 2026, 100)!!
@@ -72,6 +72,7 @@ class VoteBallotUseCasesTest {
             assertThat(mine.picks.map { it.candidate.id to it.track?.id }).containsExactly(2L to 21L, 1L to 11L)
             assertThat(mine.version).isZero()
             assertThat(mine.submittedAt).isEqualTo(OPENS)
+            assertThat(mine.renamableTrackIds).containsExactly(21L)
         }
 
         @Test

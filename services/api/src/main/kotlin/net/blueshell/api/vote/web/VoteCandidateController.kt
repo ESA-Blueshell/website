@@ -6,16 +6,20 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.security.MemberOnly
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.CacheControl
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -69,7 +73,17 @@ class VoteCandidateController(
     @ResponseStatus(HttpStatus.CREATED)
     fun addVoteTrack(
         @Valid @RequestBody request: AddVoteTrackRequest,
-    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url, request.kind, request.year).asResponse()
+        @AuthenticationPrincipal principal: UserPrincipal,
+    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url, request.kind, request.year, principal.id).asResponse()
+
+    /** Renames a track for everybody who picked it: by the member who added it, or by the board. */
+    @PutMapping("/vote-tracks/{id}/title")
+    fun renameVoteTrack(
+        @PathVariable @Positive id: Long,
+        @Valid @RequestBody request: RenameVoteTrackRequest,
+        @AuthenticationPrincipal principal: UserPrincipal,
+    ): CandidateTrackResponse =
+        candidates.rename(id, request.title, principal.id, mayRenameAny = principal.hasAuthority(Role.BOARD)).asResponse()
 
     @BoardOnly
     @PostMapping("/vote-tracks/{id}/merge")

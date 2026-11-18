@@ -36,6 +36,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.ZoneOffset
+import java.util.Optional
 
 class VoteCandidateUseCasesTest {
     private val catalogue =
@@ -182,7 +183,7 @@ class VoteCandidateUseCasesTest {
                 tracks.findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ"),
             ).thenReturn(track(12, celeste, mergedInto = kept))
 
-            assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
+            assertThat(service.addTrack(100, link, ost, 2026, 7).id).isEqualTo(11)
             verify(previews, never()).of(any())
         }
 
@@ -191,7 +192,7 @@ class VoteCandidateUseCasesTest {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
             whenever(tracks.countByCandidateIdAndMergedIntoIsNull(1)).thenReturn(30)
 
-            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(GameTrackLimit::class.java)
+            assertThatThrownBy { service.addTrack(100, link, ost, 2026, 7) }.isInstanceOf(GameTrackLimit::class.java)
             verify(previews, never()).of(any())
         }
 
@@ -201,7 +202,7 @@ class VoteCandidateUseCasesTest {
             whenever(tracks.findByCandidateIdAndSourceAndExternalId(2, TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))
             whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
 
-            val added = service.addTrack(100, link, ost, 2026)
+            val added = service.addTrack(100, link, ost, 2026, 7)
 
             assertThat(added.candidate.id).isEqualTo(1)
             verify(tracks).findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ")
@@ -218,13 +219,14 @@ class VoteCandidateUseCasesTest {
                 sitePictures.store(any(), eq("youtube-dQw4w9WgXcQ.jpg"), any(), eq(FileType.VOTE_THUMBNAIL)),
             ).thenReturn(stored("vote-thumbnails/t.webp"))
 
-            val added = service.addTrack(100, link, ost, 2026)
+            val added = service.addTrack(100, link, ost, 2026, 7)
 
             assertThat(added.title).isEqualTo("Resurrections")
             assertThat(added.thumbnail?.url).isEqualTo("/files/public/vote-thumbnails/t.webp")
             val saved = argumentCaptor<CandidateTrack>()
             verify(tracks).saveAndFlush(saved.capture())
             assertThat(saved.firstValue.addedAt).isEqualTo(NOW)
+            assertThat(saved.firstValue.addedById).isEqualTo(7)
         }
 
         @Test
@@ -232,7 +234,7 @@ class VoteCandidateUseCasesTest {
             whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
             whenever(previews.of(any())).thenReturn(TrackPreview("x".repeat(300), null))
 
-            val added = service.addTrack(26226, link, ost, 2026)
+            val added = service.addTrack(26226, link, ost, 2026, 7)
 
             assertThat(added.candidate.id).isEqualTo(9)
             assertThat(added.title).hasSize(255)
@@ -242,10 +244,35 @@ class VoteCandidateUseCasesTest {
         @Test
         fun `a link its service does not describe is refused, and anything else before a lookup`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
-            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(TrackLinkUnreadable::class.java)
+            assertThatThrownBy { service.addTrack(100, link, ost, 2026, 7) }.isInstanceOf(TrackLinkUnreadable::class.java)
 
-            assertThatThrownBy { service.addTrack(100, "https://example.com", ost, 2026) }.isInstanceOf(UnsupportedTrackLink::class.java)
+            assertThatThrownBy { service.addTrack(100, "https://example.com", ost, 2026, 7) }.isInstanceOf(UnsupportedTrackLink::class.java)
             verify(tracks).findByCandidateIdAndSourceAndExternalId(any(), any(), any())
+        }
+    }
+
+    @Nested
+    inner class Rename {
+        private val added = track(11, celeste, addedById = 7)
+
+        init {
+            whenever(tracks.findById(11L)).thenReturn(Optional.of(added))
+            whenever(tracks.findById(99L)).thenReturn(Optional.empty())
+            whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenAnswer { it.getArgument<CandidateTrack>(0) }
+        }
+
+        @Test
+        fun `the member who added a track renames it, trimmed and cut to fit`() {
+            assertThat(service.rename(11, "  Resurrections  ", 7, mayRenameAny = false).title).isEqualTo("Resurrections")
+            assertThat(service.rename(11, "x".repeat(300), 7, mayRenameAny = false).title).hasSize(255)
+        }
+
+        @Test
+        fun `another member may not, the board may, and a track that does not exist is refused`() {
+            assertThatThrownBy { service.rename(11, "Mine now", 8, mayRenameAny = false) }.isInstanceOf(TrackRenameNotAllowed::class.java)
+            assertThat(added.title).isEqualTo("Track 11")
+            assertThat(service.rename(11, "Resurrections", 8, mayRenameAny = true).title).isEqualTo("Resurrections")
+            assertThatThrownBy { service.rename(99, "Gone", 7, mayRenameAny = true) }.isInstanceOf(TrackNotFound::class.java)
         }
     }
 
@@ -291,7 +318,7 @@ class VoteCandidateUseCasesTest {
         whenever(votes.findByKindAndYear(ost, 2025)).thenReturn(vote(year = 2025, closesAt = NOW.minusSeconds(60), revealAt = NOW))
 
         assertThatThrownBy { service.storeCandidate(100, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
-        assertThatThrownBy { service.addTrack(100, link, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
+        assertThatThrownBy { service.addTrack(100, link, ost, 2025, 7) }.isInstanceOf(WrongVoteState::class.java)
         assertThatThrownBy { service.storeCandidate(100, ost, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
         verifyNoInteractions(catalogue, previews, pictures)
     }
@@ -303,7 +330,7 @@ class VoteCandidateUseCasesTest {
         whenever(previews.of(any())).thenAnswer { TrackPreview("Resurrections", "https://i.ytimg.com/x.jpg").also { seen += open } }
         whenever(pictures.fetch(any())).thenAnswer { picture.also { seen += open } }
 
-        service.addTrack(26226, link, ost, 2026)
+        service.addTrack(26226, link, ost, 2026, 7)
 
         assertThat(seen).hasSize(4).containsOnly(0)
         verify(manager, atLeastOnce()).commit(any())
@@ -321,7 +348,7 @@ class VoteCandidateUseCasesTest {
         val theirs = track(11, celeste)
         whenever(tracks.findByCandidateIdAndSourceAndExternalId(1, TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(null, theirs)
         whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenThrow(DataIntegrityViolationException("uk_vote_candidate_tracks"))
-        assertThat(service.addTrack(100, link, ost, 2026).id).isEqualTo(11)
+        assertThat(service.addTrack(100, link, ost, 2026, 7).id).isEqualTo(11)
     }
 
     @Test
@@ -333,7 +360,7 @@ class VoteCandidateUseCasesTest {
         whenever(games.findByIgdbId(100)).thenReturn(celeste)
         whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
         whenever(tracks.saveAndFlush(any<CandidateTrack>())).thenThrow(DataIntegrityViolationException("too long"))
-        assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(DataIntegrityViolationException::class.java)
+        assertThatThrownBy { service.addTrack(100, link, ost, 2026, 7) }.isInstanceOf(DataIntegrityViolationException::class.java)
         verify(manager, atLeastOnce()).rollback(any())
     }
 }

@@ -80,4 +80,6 @@ data class VoteBallotResponse(
     val version: Long?,
     val submittedAt: Instant?,
     val picks: List<VotePickResponse>,
+    /** The tracks on the ballot its member added, and so may rename. */
+    val renamableTrackIds: List<Long>,
 )

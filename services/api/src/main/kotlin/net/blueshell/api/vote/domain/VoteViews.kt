@@ -25,6 +25,7 @@ data class TrackSummary(
     val source: TrackSource,
     val externalId: String,
     val url: String,
+    val embedUrl: String,
     val title: String,
     val thumbnail: Image?,
 )
@@ -80,7 +81,8 @@ internal fun CandidateTrack.summary() =
         candidate = candidate.summary(),
         source = source,
         externalId = externalId,
-        url = TrackLink(source, externalId).url,
+        url = source.service.watchUrl(externalId),
+        embedUrl = source.service.embedUrl(externalId),
         title = title,
         thumbnail = thumbnail?.asImage(),
     )

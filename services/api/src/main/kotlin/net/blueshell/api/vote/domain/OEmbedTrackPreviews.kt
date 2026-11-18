@@ -6,11 +6,7 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import tools.jackson.databind.ObjectMapper
 
-private val OEMBED_ENDPOINTS =
-    mapOf(
-        TrackSource.YOUTUBE to "https://www.youtube.com/oembed",
-        TrackSource.SPOTIFY to "https://open.spotify.com/oembed",
-    )
+private val OEMBED_ENDPOINTS = TrackSource.entries.associateWith { it.service.oEmbedEndpoint }
 
 /**
  * Describes a link through YouTube's and Spotify's oEmbed endpoints, which need no key and count

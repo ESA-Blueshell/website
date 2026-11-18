@@ -10,13 +10,9 @@ data class TrackLink(
     val source: TrackSource,
     val externalId: String,
 ) {
-    /** The address oEmbed is asked about and the page links to. */
+    /** The address oEmbed is asked about and a reader opens. */
     val url: String
-        get() =
-            when (source) {
-                TrackSource.YOUTUBE -> "https://www.youtube.com/watch?v=$externalId"
-                TrackSource.SPOTIFY -> "https://open.spotify.com/track/$externalId"
-            }
+        get() = source.service.watchUrl(externalId)
 
     companion object {
         private val YOUTUBE_ID = Regex("^[A-Za-z0-9_-]{11}$")

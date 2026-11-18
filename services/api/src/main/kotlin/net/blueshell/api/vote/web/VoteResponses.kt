@@ -33,6 +33,8 @@ data class CandidateTrackResponse(
     val source: TrackSource,
     val externalId: String,
     val url: String,
+    /** Where the track plays inside a page. */
+    val embedUrl: String,
     val title: String,
     val thumbnail: Image?,
 )

@@ -265,6 +265,15 @@ Granting one to somebody without two-factor signs them out everywhere. For ten m
 after their next sign-in, setting up two-factor starts at the phone rather than with the
 password they have just given.
 
+### Service account
+
+The user the site itself acts as: what it stores on its own, such as the art it ships or
+a cover it copies, is credited to this account. It holds the internal service role, which
+is how the api tells it apart, and nobody ever signs in to it.
+
+**Not a person.** Lists of people, mailings and role changes leave it out. "Site account"
+and "system user" are not used for it.
+
 ## Two-factor
 
 ### Sign-in

@@ -26,6 +26,10 @@ interface UserRepository : BaseRepository<User, Long> {
     )
     fun findAdministrators(): List<User>
 
+    /** The service account, found by its role; the baseline writes exactly one. */
+    @Query("select u from User u join u.roles r where r = net.blueshell.api.shared.enums.Role.SYSTEM order by u.id")
+    fun findServiceAccounts(): List<User>
+
     @Query("select u.id from User u where u.enabled = false")
     fun findIdsByEnabledFalse(): List<Long>
 

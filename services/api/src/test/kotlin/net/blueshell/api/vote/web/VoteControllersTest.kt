@@ -1,7 +1,6 @@
 package net.blueshell.api.vote.web
 
 import net.blueshell.api.file.api.Image
-import net.blueshell.api.file.api.RemotePicture
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.vote.domain.BallotSummary
@@ -10,6 +9,7 @@ import net.blueshell.api.vote.domain.CatalogueGame
 import net.blueshell.api.vote.domain.PickChoice
 import net.blueshell.api.vote.domain.PickSummary
 import net.blueshell.api.vote.domain.Placing
+import net.blueshell.api.vote.domain.RemotePicture
 import net.blueshell.api.vote.domain.TrackSummary
 import net.blueshell.api.vote.domain.VoteBallotUseCases
 import net.blueshell.api.vote.domain.VoteCandidateUseCases

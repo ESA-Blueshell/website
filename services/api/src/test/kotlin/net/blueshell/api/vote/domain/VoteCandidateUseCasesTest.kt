@@ -1,7 +1,5 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.file.api.RemotePicture
-import net.blueshell.api.file.api.RemotePictures
 import net.blueshell.api.file.api.SitePictures
 import net.blueshell.api.file.api.asImage
 import net.blueshell.api.shared.enums.FileType

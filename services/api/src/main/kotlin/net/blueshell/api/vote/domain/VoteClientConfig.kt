@@ -1,7 +1,5 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.file.api.HostBoundRemotePictures
-import net.blueshell.api.file.api.RemotePictures
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.RotatingSecret
 import net.blueshell.api.shared.credentials.WhenCredentialsMissing

@@ -1,6 +1,5 @@
 package net.blueshell.api.vote.domain
 
-import net.blueshell.api.file.api.HostBoundRemotePictures
 import net.blueshell.api.shared.credentials.Credentials
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

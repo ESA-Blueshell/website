@@ -2,8 +2,8 @@ import {describe, expect, it} from "vitest"
 import {decemberDates, isoOf, localOf, said} from "@/domains/vote"
 
 describe("a vote's dates", () => {
-  it("open on the first of December, close on the 21st and are revealed a week later by default", () => {
-    expect(decemberDates(2027)).toEqual({opensAt: "2027-12-01T00:00", closesAt: "2027-12-21T23:59", revealAt: "2027-12-28T20:00"})
+  it("open on the first of December, and close and are revealed on New Year's Eve by default", () => {
+    expect(decemberDates(2027)).toEqual({opensAt: "2027-12-01T00:00", closesAt: "2027-12-31T17:00", revealAt: "2027-12-31T20:00"})
   })
 
   it("go from the form to the api and back unchanged, read as Amsterdam time wherever the reader is", () => {

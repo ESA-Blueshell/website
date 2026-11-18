@@ -11,11 +11,11 @@ export const localOf = (iso: string): string => formatISOIn(iso, LOCAL, ASSOCIAT
 /** A moment from the form, read as Amsterdam time, as the api takes it, or null where the form holds none. */
 export const isoOf = (local: string): string | null => isoFrom(local, LOCAL, ASSOCIATION_ZONE)
 
-/** The December a vote runs in by default, in Amsterdam time: open all month to the 21st, revealed a week later. */
+/** The December a vote runs in by default, in Amsterdam time: open all month, revealed on New Year's Eve. */
 export const decemberDates = (year: number): VoteSchedule => ({
   opensAt: `${year}-12-01T00:00`,
-  closesAt: `${year}-12-21T23:59`,
-  revealAt: `${year}-12-28T20:00`,
+  closesAt: `${year}-12-31T17:00`,
+  revealAt: `${year}-12-31T20:00`,
 })
 
 /**

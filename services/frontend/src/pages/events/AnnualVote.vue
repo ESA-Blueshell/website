@@ -86,10 +86,11 @@ const dialogOpen = ref(false)
 const dialogVote = ref<AnnualVote | null>(null)
 const dialogYear = ref(THIS_YEAR)
 
-function startVote() {
+// One vote a year, started for this one: where it already has one, that vote is opened instead.
+async function startVote() {
+  if (years.value.includes(THIS_YEAR)) return editYear(THIS_YEAR)
   dialogVote.value = null
-  // The year after the current vote's, where this year already has one.
-  dialogYear.value = latest.value && latest.value.year >= THIS_YEAR ? latest.value.year + 1 : THIS_YEAR
+  dialogYear.value = THIS_YEAR
   dialogOpen.value = true
 }
 

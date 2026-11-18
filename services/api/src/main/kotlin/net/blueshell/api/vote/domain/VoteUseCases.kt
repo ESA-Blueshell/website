@@ -42,6 +42,7 @@ class VoteUseCases(
      */
     @Transactional(readOnly = true)
     fun current(kind: VoteKind): VoteSummary {
+        kind.requireOffered()
         val vote =
             votes.findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(kind, clock.instant())
                 ?: votes.findFirstByKindOrderByOpensAtAsc(kind)
@@ -58,7 +59,7 @@ class VoteUseCases(
         revealAt: Instant,
     ): VoteSummary {
         requireInOrder(opensAt, closesAt, revealAt)
-        if (votes.findByKindAndYear(kind, year) != null) throw AnnualVoteExists(kind, year)
+        if (votes.findByKindAndYear(kind.requireOffered(), year) != null) throw AnnualVoteExists(kind, year)
         return summaryOf(votes.saveAndFlush(Vote(kind, year, opensAt, closesAt, revealAt)))
     }
 
@@ -75,7 +76,7 @@ class VoteUseCases(
         revealAt: Instant,
         version: Long,
     ): VoteSummary {
-        val vote = byYear(kind, year)
+        val vote = votes.of(kind, year)
         vote.requireVersion(version)
         val state = vote.stateAt(clock.instant())
         if (state == VoteState.REVEALED) throw WrongVoteState(state)
@@ -92,7 +93,7 @@ class VoteUseCases(
         kind: VoteKind,
         year: Int,
     ): List<Placing> {
-        val vote = byYear(kind, year)
+        val vote = votes.of(kind, year)
         return count(vote, ballots.picksOf(vote.id!!)).map { it.placing() }
     }
 
@@ -128,11 +129,6 @@ class VoteUseCases(
     ) {
         if (!opensAt.isBefore(closesAt) || !closesAt.isBefore(revealAt)) throw VoteDatesOutOfOrder()
     }
-
-    private fun byYear(
-        kind: VoteKind,
-        year: Int,
-    ) = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
 
     // Read again inside the transaction: the vote may have been revealed since it was found.
     private fun revealIfDue(
@@ -172,15 +168,15 @@ class VoteUseCases(
         vote: Vote,
         cast: List<CastPick>,
     ): List<Counted> {
-        val picked = tracks.findAllById(cast.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
+        val picked = tracks.byIds(cast.mapNotNull { it.trackId })
         val standings =
             Tally.count(
                 cast.groupBy { it.ballotId }.values.map { ballot -> ballot.map { CountedPick(it.position, it.candidateId, it.trackId) } },
                 vote.kind.points,
                 canonical = { id -> picked[id]?.canonical()?.id ?: id },
             )
-        val candidatesById = candidates.findAllById(standings.map { it.candidateId }.toSet()).associateBy { it.id!! }
-        val tracksById = tracks.findAllById(standings.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
+        val candidatesById = candidates.byIds(standings.map { it.candidateId })
+        val tracksById = tracks.byIds(standings.mapNotNull { it.trackId })
         return standings.map { Counted(it, candidatesById.getValue(it.candidateId), it.trackId?.let(tracksById::getValue)) }
     }
 

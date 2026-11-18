@@ -5,7 +5,6 @@ import jakarta.annotation.security.PermitAll
 import jakarta.validation.Valid
 import net.blueshell.api.security.BoardOnly
 import net.blueshell.api.vote.domain.VoteUseCases
-import net.blueshell.api.vote.domain.offered
 import net.blueshell.api.vote.persistence.VoteKind
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -30,7 +29,7 @@ class AnnualVoteController(
     @GetMapping("/current")
     fun currentAnnualVote(
         @PathVariable kind: VoteKind,
-    ): AnnualVoteResponse = votes.current(kind.offered()).asResponse()
+    ): AnnualVoteResponse = votes.current(kind).asResponse()
 
     @BoardOnly
     @PostMapping
@@ -38,7 +37,7 @@ class AnnualVoteController(
     fun createAnnualVote(
         @PathVariable kind: VoteKind,
         @Valid @RequestBody request: CreateAnnualVoteRequest,
-    ): AnnualVoteResponse = votes.create(kind.offered(), request.year, request.opensAt, request.closesAt, request.revealAt).asResponse()
+    ): AnnualVoteResponse = votes.create(kind, request.year, request.opensAt, request.closesAt, request.revealAt).asResponse()
 
     @BoardOnly
     @PutMapping("/{year}")
@@ -47,12 +46,12 @@ class AnnualVoteController(
         @PathVariable year: Int,
         @Valid @RequestBody request: ScheduleAnnualVoteRequest,
     ): AnnualVoteResponse =
-        votes.reschedule(kind.offered(), year, request.opensAt, request.closesAt, request.revealAt, request.version).asResponse()
+        votes.reschedule(kind, year, request.opensAt, request.closesAt, request.revealAt, request.version).asResponse()
 
     @BoardOnly
     @GetMapping("/{year}/standings")
     fun annualVoteStandings(
         @PathVariable kind: VoteKind,
         @PathVariable year: Int,
-    ): List<VotePlacingResponse> = votes.standings(kind.offered(), year).map { it.asResponse() }
+    ): List<VotePlacingResponse> = votes.standings(kind, year).map { it.asResponse() }
 }

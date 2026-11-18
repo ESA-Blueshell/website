@@ -94,17 +94,22 @@ class VoteCandidateUseCasesTest {
             whenever(catalogue.search("cel", GAME_SEARCH_LIMIT, null)).thenReturn(listOf(found))
 
             assertThat(service.search("  cel ", VoteKind.OST_TOP_50, 2026)).containsExactly(found)
-            service.search("cel", VoteKind.GAME_OF_THE_YEAR, 2026)
-            verify(catalogue).search("cel", GAME_SEARCH_LIMIT, 2026)
+            assertThatThrownBy { service.search("cel", VoteKind.OST_TOP_50, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
+            assertThatThrownBy { service.search("cel", VoteKind.GAME_OF_THE_YEAR, 2026) }.isInstanceOf(VoteKindNotOffered::class.java)
         }
 
         @Test
         fun `a search result's cover is fetched from IGDB small, and refused where there is none`() {
             whenever(pictures.fetch("https://images.igdb.com/igdb/image/upload/t_cover_small/co1abc.jpg")).thenReturn(picture)
 
+            whenever(votes.existsVotingAt(any())).thenReturn(true)
+
             assertThat(service.coverPreview("co1abc")).isSameAs(picture)
             assertThatThrownBy { service.coverPreview("nothere") }.isInstanceOf(CoverNotFound::class.java)
             assertThatThrownBy { service.coverPreview("../etc") }.isInstanceOf(CoverNotFound::class.java)
+
+            whenever(votes.existsVotingAt(any())).thenReturn(false)
+            assertThatThrownBy { service.coverPreview("co1abc") }.isInstanceOf(NoVoteOpen::class.java)
         }
     }
 

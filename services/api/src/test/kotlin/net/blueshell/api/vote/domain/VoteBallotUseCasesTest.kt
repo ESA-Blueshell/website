@@ -74,12 +74,12 @@ class VoteBallotUseCasesTest {
         }
 
         @Test
-        fun `reads a games-only ballot back without tracks, and refuses a vote that does not exist`() {
+        fun `reads a pick without a track back without one, and refuses a vote that does not exist`() {
             whenever(ballots.findByVoteIdAndUserId(1, 100)).thenReturn(ballot(5, 100, hades to null))
 
             assertThat(
                 service
-                    .mine(goty, 2026, 100)!!
+                    .mine(ost, 2026, 100)!!
                     .picks
                     .single()
                     .track,
@@ -157,16 +157,9 @@ class VoteBallotUseCasesTest {
         }
 
         @Test
-        fun `a games-only vote takes games of its year, and no tracks`() {
-            assertThat(
-                service
-                    .cast(goty, 2026, 100, listOf(PickChoice(2)), null)
-                    .picks
-                    .single()
-                    .candidate.id,
-            ).isEqualTo(2)
-            assertThatThrownBy { service.cast(goty, 2026, 100, listOf(PickChoice(2, 21)), null) }.isInstanceOf(PickTakesNoTrack::class.java)
-            assertThatThrownBy { service.cast(goty, 2026, 100, listOf(PickChoice(1)), null) }.isInstanceOf(GameNotEligible::class.java)
+        fun `a kind the api does not offer takes no ballot and reads none back`() {
+            assertThatThrownBy { service.cast(goty, 2026, 100, listOf(PickChoice(2)), null) }.isInstanceOf(VoteKindNotOffered::class.java)
+            assertThatThrownBy { service.mine(goty, 2026, 100) }.isInstanceOf(VoteKindNotOffered::class.java)
         }
 
         @Test

@@ -72,7 +72,7 @@ class TwoFactorSystemTest : PlaywrightTestBase() {
 
         val trusted = context.cookies().filter { it.name == TestHelper.TRUSTED_BROWSER_COOKIE }
         context.clearCookies()
-        context.addCookies(trusted.map { Cookie(it.name, it.value).setDomain(it.domain).setPath(it.path) })
+        context.addCookies(trusted.map { Cookie(it.name, it.value).setDomain(checkNotNull(it.domain)).setPath(checkNotNull(it.path)) })
         passwordStep(member)
         page.waitForURL { !it.contains("/login") }
         assertThat(byTestId("login-code-form").count()).isZero()

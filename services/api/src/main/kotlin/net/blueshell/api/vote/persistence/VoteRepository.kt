@@ -20,6 +20,9 @@ interface VoteRepository : BaseRepository<Vote, Long> {
         now: Instant,
     ): Vote?
 
+    /** Every vote of [kind], newest year first. */
+    fun findAllByKindOrderByYearDesc(kind: VoteKind): List<Vote>
+
     /** The vote of [kind] that opens first, for a kind none of whose votes has opened yet. */
     fun findFirstByKindOrderByOpensAtAsc(kind: VoteKind): Vote?
 

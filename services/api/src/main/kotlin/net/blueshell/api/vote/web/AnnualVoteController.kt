@@ -31,6 +31,21 @@ class AnnualVoteController(
         @PathVariable kind: VoteKind,
     ): AnnualVoteResponse = votes.current(kind).asResponse()
 
+    /** The years the kind has a vote for, newest first. */
+    @PermitAll
+    @GetMapping("/years")
+    fun annualVoteYears(
+        @PathVariable kind: VoteKind,
+    ): List<Int> = votes.years(kind)
+
+    /** One year's vote, for a reader looking back. */
+    @PermitAll
+    @GetMapping("/{year}")
+    fun annualVote(
+        @PathVariable kind: VoteKind,
+        @PathVariable year: Int,
+    ): AnnualVoteResponse = votes.ofYear(kind, year).asResponse()
+
     @BoardOnly
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

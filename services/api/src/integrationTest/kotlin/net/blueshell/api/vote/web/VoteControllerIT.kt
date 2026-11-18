@@ -164,6 +164,24 @@ class VoteControllerIT : UserTestSupport() {
     }
 
     @Test
+    fun `a reader moves between a kind's years, and the board finds songs by title or game`() {
+        val board = createUserWithRole(Role.BOARD)
+        startVote(board)
+        val member = createUserWithRole(Role.MEMBER)
+        track(member, 26226, "https://youtu.be/findmesong1")
+        track(member, 1942, "https://youtu.be/findmesong2")
+
+        mvc.perform(get("/annual-votes/OST_TOP_50/years")).andExpect(jsonPath("$[0]").value(2026))
+        mvc.perform(get("/annual-votes/OST_TOP_50/2026")).andExpect(status().isOk).andExpect(jsonPath("$.year").value(2026))
+        mvc.perform(get("/annual-votes/OST_TOP_50/2019")).andExpect(status().isNotFound)
+        mvc
+            .perform(get("/vote-tracks").param("query", "CELES").with(signedIn(board)))
+            .andExpect(jsonPath("$", hasSize<Any>(1)))
+            .andExpect(jsonPath("$[0].candidate.name").value("Celeste"))
+        mvc.perform(get("/vote-tracks").with(signedIn(board))).andExpect(jsonPath("$", hasSize<Any>(2)))
+    }
+
+    @Test
     fun `a merged track counts as the one it was merged into, and two merges cannot chain`() {
         val board = createUserWithRole(Role.BOARD)
         startVote(board)

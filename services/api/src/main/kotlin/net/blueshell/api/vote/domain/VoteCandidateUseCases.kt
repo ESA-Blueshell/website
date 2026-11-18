@@ -125,6 +125,10 @@ class VoteCandidateUseCases(
         }
     }
 
+    /** Every live song whose title or game holds [term], game by game, for the board to tend. */
+    @Transactional(readOnly = true)
+    fun songs(term: String): List<TrackSummary> = tracks.findLiveMatching(term.trim()).map { it.summary() }
+
     /**
      * Gives the track a [title] of the member's own, for everybody who picked it: a video's name is
      * often more than the song's. Only the member who added the track may, or anybody the caller

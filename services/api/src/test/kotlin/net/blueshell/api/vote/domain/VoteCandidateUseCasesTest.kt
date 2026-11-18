@@ -251,6 +251,13 @@ class VoteCandidateUseCasesTest {
         }
     }
 
+    @Test
+    fun `lists the live songs whose title or game holds the term, trimmed, for the board`() {
+        whenever(tracks.findLiveMatching("cel")).thenReturn(listOf(track(11, celeste)))
+
+        assertThat(service.songs("  cel ").map { it.id }).containsExactly(11L)
+    }
+
     @Nested
     inner class Rename {
         private val added = track(11, celeste, addedById = 7)

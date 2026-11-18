@@ -82,6 +82,8 @@ class VoteControllersTest {
                 listOf(12, 10, 8, 6, 4),
             )
         whenever(votes.current(ost)).thenReturn(published)
+        whenever(votes.ofYear(ost, 2026)).thenReturn(published)
+        whenever(votes.years(ost)).thenReturn(listOf(2026, 2025))
         whenever(
             votes.create(ost, 2026, opens, closes, reveal),
         ).thenReturn(published.copy(state = VoteState.UPCOMING, results = emptyList()))
@@ -90,6 +92,8 @@ class VoteControllersTest {
         ).thenReturn(published.copy(state = VoteState.VOTING, results = emptyList()))
         whenever(votes.standings(ost, 2026)).thenReturn(listOf(Placing(1, celeste, null, 40, 4)))
 
+        assertThat(voteController.annualVoteYears(ost)).containsExactly(2026, 2025)
+        assertThat(voteController.annualVote(ost, 2026)).isEqualTo(voteController.currentAnnualVote(ost))
         assertThat(voteController.currentAnnualVote(ost)).isEqualTo(
             AnnualVoteResponse(
                 ost,
@@ -137,6 +141,7 @@ class VoteControllersTest {
         whenever(candidates.rename(11, "Resurrections", 7, mayRenameAny = false)).thenReturn(resurrections)
         whenever(candidates.rename(11, "Resurrections", 9, mayRenameAny = true)).thenReturn(resurrections)
         whenever(candidates.merge(12, 11)).thenReturn(resurrections)
+        whenever(candidates.songs("cel")).thenReturn(listOf(resurrections))
 
         assertThat(candidateController.searchVoteCandidates("cel", ost, 2026))
             .containsExactly(CatalogueGameResponse(26226, "Celeste", 2018, "co1"))
@@ -153,6 +158,7 @@ class VoteControllersTest {
         assertThat(candidateController.renameVoteTrack(11, renamed, member)).isEqualTo(resurrectionsResponse)
         assertThat(candidateController.renameVoteTrack(11, renamed, board)).isEqualTo(resurrectionsResponse)
         assertThat(candidateController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
+        assertThat(candidateController.voteSongs("cel")).containsExactly(resurrectionsResponse)
     }
 
     @Test

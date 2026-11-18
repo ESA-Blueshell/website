@@ -50,6 +50,17 @@ class VoteUseCases(
         return summaryOf(vote)
     }
 
+    /** The years [kind] has a vote for, newest first, for a reader to move between. */
+    @Transactional(readOnly = true)
+    fun years(kind: VoteKind): List<Int> = votes.findAllByKindOrderByYearDesc(kind.requireOffered()).map { it.year }
+
+    /** The vote of [kind] for [year], as anybody reads it. */
+    @Transactional(readOnly = true)
+    fun ofYear(
+        kind: VoteKind,
+        year: Int,
+    ): VoteSummary = summaryOf(votes.of(kind, year))
+
     @Transactional
     fun create(
         kind: VoteKind,

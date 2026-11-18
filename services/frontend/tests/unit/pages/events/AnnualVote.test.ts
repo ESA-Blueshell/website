@@ -304,47 +304,43 @@ describe("annual vote page", () => {
     expect(wrapper.findComponent(BallotList).props("renamable")).toEqual(expect.arrayContaining([1, 2]))
   })
 
-  it("moves between a kind's years, the current one at the kind's own address, and shows a past year's results", async () => {
+  it("draws the years the vote ran as a timeline, oldest first, the current one now, and opens the one pressed", async () => {
     voteIs(aVote("VOTING"))
-    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025]))
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025, 2024]))
     const now = await mount(null)
+    const line = now.findComponent(Timeline)
 
-    expect(now.get("[data-testid=vote-year-2026]").attributes("to")).toBe("/events/ost-top-50")
-    expect(now.get("[data-testid=vote-year-2026]").attributes("aria-current")).toBe("page")
-    expect(now.get("[data-testid=vote-year-2025]").attributes("to")).toBe("/events/ost-top-50/2025")
+    expect(line.props("selectedId")).toBe(2026)
+    expect(line.props("stops").map((stop: {label: string; sublabel: string; mark: string}) => [stop.label, stop.sublabel, stop.mark])).toEqual([
+      ["2024", "results", ""], ["2025", "results", ""], ["2026", "voting has started", "Now"],
+    ])
+    const push = vi.spyOn(now.vm.$router, "push")
+    line.vm.$emit("select", 2025)
+    line.vm.$emit("select", 2026)
+    expect(push.mock.calls.map(call => call[0])).toEqual(["/events/ost-top-50/2025", "/events/ost-top-50"])
+  })
 
+  it("names a year after the current one as coming, and draws no timeline for a kind with no vote", async () => {
+    voteIs(aVote("VOTING"))
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2027, 2026]))
+    expect((await mount(null)).findComponent(Timeline).props("stops")[1].sublabel).toBe("coming")
+
+    voteIs(null)
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, []))
+    expect((await mount(null)).findComponent(Timeline).exists()).toBe(false)
+  })
+
+  it("shows a past year's results, without the board's band", async () => {
+    voteIs(aVote("VOTING"))
     vi.mocked(api.annualVote).mockResolvedValue(
       answer(api.annualVote, aVote("REVEALED", {year: 2025, ballots: 9, results: [aPlacing(1, hollow.candidate, hollow, 40, 4)]})),
     )
     const past = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]}, OST_TOP_50, 2025)
+
     expect(api.annualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2025}})
     expect(past.text()).toContain("OST Top 50 · 2025")
-    expect(past.get("[data-testid=vote-year-2025]").attributes("aria-current")).toBe("page")
     expect(past.findAll("[data-testid=vote-result]")).toHaveLength(1)
     expect(past.findComponent(BoardTools).exists()).toBe(false)
-  })
-
-  it("draws the vote's dates as a line lit up to where it stands, and marks that stop now", async () => {
-    voteIs(aVote("CLOSED"))
-    const closed = await mount(null)
-    const line = closed.findComponent(Timeline)
-    expect(line.props("selectedId")).toBe(2)
-    expect(line.props("stops").map((stop: {label: string; mark: string}) => [stop.label, stop.mark])).toEqual([
-      ["Voting opens", ""], ["Voting closes", "Now"], ["Results", ""],
-    ])
-    expect(line.props("stops")[1].sublabel).toBe("21 Dec, 23:59")
-
-    voteIs(aVote("UPCOMING"))
-    expect((await mount(null)).findComponent(Timeline).props("selectedId")).toBeNull()
-    voteIs(null)
-    expect((await mount(null)).findComponent(Timeline).exists()).toBe(false)
-  })
-
-  it("shows no years to move between where a kind has one", async () => {
-    voteIs(aVote("VOTING"))
-    const wrapper = await mount(null)
-
-    expect(wrapper.find("[data-testid=vote-years]").exists()).toBe(false)
   })
 
   it("gives the board its tools, and reads the member's ballot again once the board's change opens voting", async () => {

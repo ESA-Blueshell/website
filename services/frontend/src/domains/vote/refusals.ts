@@ -27,6 +27,8 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   UnsupportedTrackLink: () => "Paste a link to a YouTube video or a Spotify track.",
   TrackLinkUnreadable: () => "That link could not be read. It may be private or removed.",
   GameTrackLimit: r => `${r.max ? `That game already has ${r.max} tracks.` : "That game has all the tracks it can take."} Pick one of them.`,
+  NoVoteOpen: () => "Covers are only shown while a vote is open.",
+  CoverUnfetchable: () => "That cover could not be fetched.",
   TrackMergeInvalid: () => "A track can only be merged into another track of the same game.",
   GameSearchUnavailable: () => "Game search is unavailable right now. Try again in a moment.",
   AnnualVoteExists: () => "That year already has this vote.",

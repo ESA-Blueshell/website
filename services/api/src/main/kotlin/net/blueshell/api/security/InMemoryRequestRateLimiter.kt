@@ -66,7 +66,7 @@ class InMemoryRequestRateLimiter(
         maxRequests: Int,
         window: Duration,
         patience: Duration,
-        pause: (Duration) -> Unit = { Thread.sleep(it) },
+        pause: (Duration) -> Unit,
     ): Boolean {
         val giveUp = now() + patience.toMillis()
         while (true) {

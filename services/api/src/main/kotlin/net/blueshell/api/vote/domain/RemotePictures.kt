@@ -60,7 +60,7 @@ class HostBoundRemotePictures(
                 .substringBefore(';')
                 .trim()
                 .lowercase()
-        val declared = response.headers().firstValueAsLong("Content-Length").orElse(0)
+        val declared = response.headers().firstValue("Content-Length").orElse("").toLongOrNull() ?: 0
         if (response.statusCode() != OK || type !in TYPES || declared > MAX_BYTES) return null
         val bytes = body.readNBytes(MAX_BYTES + 1)
         return if (bytes.isNotEmpty() && bytes.size <= MAX_BYTES) RemotePicture(bytes, type) else null

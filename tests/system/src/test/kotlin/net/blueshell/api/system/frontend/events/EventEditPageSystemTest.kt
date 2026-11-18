@@ -122,7 +122,7 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         // Open the events page in a fresh page so the banner-fetch
         // response is observable without cache interference.
-        val freshContext = context.browser().newContext()
+        val freshContext = browser.newContext()
         try {
             val freshPage = freshContext.newPage()
             val freshLoginStatus = AuthHelper.submitLogin(freshPage, frontendUrl, member.username, member.password)

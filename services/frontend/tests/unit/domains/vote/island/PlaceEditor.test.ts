@@ -37,6 +37,12 @@ describe("the place editor", () => {
     return {wrapper, picker}
   }
 
+  // What the open list says when nothing matches, given only then, as the Discord picker does.
+  const missing = (picker: ReturnType<ReturnType<typeof mount>["findComponent"]>): string | null => {
+    const said = picker.vm.$slots.missing?.()
+    return said ? said.map(node => String(node.children ?? "")).join("").trim() : null
+  }
+
   const chosen = async (vote = aVote("VOTING"), key = "14593") => {
     const found = await searched(vote)
     found.picker.vm.$emit("pick", key)
@@ -52,9 +58,31 @@ describe("the place editor", () => {
       {key: "14593", label: "Hollow Knight", note: "2017", avatar: expect.stringMatching(/\/api\/vote-candidates\/covers\/co14593$/)},
       {key: "72", label: "Portal 2", note: undefined, avatar: undefined},
     ])
-    expect(picker.props("placeholder")).toBe("Search for a game")
-    expect(picker.props("emptyNote")).toBe("No game matches that.")
+    expect(picker.props("placeholder")).toBe("Game")
+    expect(picker.props("emptyNote")).toBe("")
+    expect(missing(picker)).toBeNull()
     expect(wrapper.findAllComponents(SearchPicker)[1]!.props("disabled")).toBe(true)
+  })
+
+  it("opens on the best-known games before anything is typed, once, and says none was found in the list", async () => {
+    const wrapper = mount(PlaceEditor, {props: {vote: aVote("VOTING")}})
+    const picker = wrapper.findAllComponents(SearchPicker)[0]!
+    picker.vm.$emit("opened")
+    picker.vm.$emit("opened")
+    await flushPromises()
+
+    expect(api.searchVoteCandidates).toHaveBeenCalledTimes(1)
+    expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "", kind: "OST_TOP_50", year: 2026}})
+    expect(picker.props("options")).toHaveLength(2)
+    picker.vm.$emit("opened")
+    expect(api.searchVoteCandidates).toHaveBeenCalledTimes(1)
+
+    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(answer(api.searchVoteCandidates, []))
+    picker.vm.$emit("search", "zzz")
+    await vi.advanceTimersByTimeAsync(250)
+    await flushPromises()
+    expect(missing(picker)).toBe("No game found. Try another name.")
+    expect(wrapper.get(".place-editor__game").classes()).toContain("place-editor--wrong")
   })
 
   it("says why a search was refused, and forgets it once a search answers", async () => {
@@ -67,6 +95,7 @@ describe("the place editor", () => {
 
     expect(wrapper.emitted("problem")!.at(-1)![0]).toContain("unavailable")
     expect(picker.props("options")).toEqual([])
+    expect(wrapper.get(".place-editor__game").classes()).toContain("place-editor--wrong")
   })
 
   it("keeps the newest search's answer when an older one comes back last", async () => {
@@ -96,10 +125,12 @@ describe("the place editor", () => {
     expect(api.voteCandidateTracks).toHaveBeenCalledWith({path: {igdbId: 14593}})
     expect(song(wrapper).props("disabled")).toBe(false)
     expect(song(wrapper).props("options")).toEqual([{key: "1", label: known.title, note: "YouTube"}])
-    expect(song(wrapper).props("emptyNote")).toContain("No song matches")
+    expect(missing(song(wrapper))).toBeNull()
     song(wrapper).vm.$emit("search", "nothing like it")
     await flushPromises()
     expect(song(wrapper).props("options")).toEqual([])
+    expect(missing(song(wrapper))).toContain("No song matches")
+    expect(wrapper.get(".place-editor__song").classes()).toContain("place-editor--wrong")
 
     song(wrapper).vm.$emit("pick", "1")
     await flushPromises()
@@ -115,13 +146,13 @@ describe("the place editor", () => {
     vi.mocked(api.voteCandidateTracks).mockResolvedValueOnce(answer(api.voteCandidateTracks, []))
     picker.vm.$emit("pick", "72")
     await flushPromises()
-    expect(song(wrapper).props("emptyNote")).toContain("Nobody added a song")
+    expect(missing(song(wrapper))).toContain("Nobody added a song")
   })
 
   it("forgets a game the picker no longer offers, a cleared choice and a song it does not know", async () => {
     const {wrapper, picker} = await chosen(aVote("VOTING"), "999")
     expect(song(wrapper).props("disabled")).toBe(true)
-    expect(song(wrapper).props("emptyNote")).toBe("")
+    expect(missing(song(wrapper))).toBeNull()
 
     picker.vm.$emit("pick", "14593")
     await flushPromises()
@@ -148,6 +179,7 @@ describe("the place editor", () => {
     await flushPromises()
     expect(api.addVoteTrack).toHaveBeenCalledWith({body: {igdbId: 14593, url: "https://example.com", kind: "OST_TOP_50", year: 2026}})
     expect(wrapper.emitted("problem")!.at(-1)).toEqual(["Paste a link to a YouTube video or a Spotify track."])
+    expect(wrapper.get(".place-editor__song").classes()).toContain("place-editor--wrong")
 
     const added = aTrack(5, aGame(1, "Hollow Knight"))
     vi.mocked(api.addVoteTrack).mockResolvedValueOnce(answer(api.addVoteTrack, added))
@@ -163,7 +195,7 @@ describe("the place editor", () => {
     vi.mocked(api.storeVoteCandidate).mockResolvedValueOnce(refusal(api.storeVoteCandidate, {code: "GameSearchUnavailable"}, 503))
     const {wrapper, picker} = await chosen(goty)
 
-    expect(picker.props("placeholder")).toBe("Search games released in 2026")
+    expect(picker.props("placeholder")).toBe("Game released in 2026")
     expect(wrapper.findAllComponents(SearchPicker)).toHaveLength(1)
     expect(api.voteCandidateTracks).not.toHaveBeenCalled()
     expect(wrapper.emitted("problem")!.at(-1)![0]).toContain("unavailable")

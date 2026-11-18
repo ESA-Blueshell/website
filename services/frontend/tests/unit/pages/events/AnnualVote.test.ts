@@ -248,6 +248,22 @@ describe("annual vote page", () => {
     expect(wrapper.findAll("[data-testid=vote-result]")).toHaveLength(2)
   })
 
+  it("shows a member their own top as they cast it once the vote is revealed, and nothing to a member who did not vote", async () => {
+    voteIs(aVote("REVEALED", {ballots: 30, results: [aPlacing(1, hollow.candidate, hollow, 120, 12)]}))
+    const wrapper = await mount(member)
+
+    expect(api.myVoteBallot).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}})
+    const mine = wrapper.get("[data-testid=vote-mine]")
+    expect(mine.text()).toContain("Your top 5")
+    expect(mine.findAll("[data-testid=vote-pick]")).toHaveLength(2)
+    expect(mine.find("[data-testid=vote-free]").exists()).toBe(false)
+    expect(mine.find("[data-testid=vote-pick-grip-0]").exists()).toBe(false)
+
+    vi.mocked(api.myVoteBallot).mockResolvedValue(answer(api.myVoteBallot, {version: null, submittedAt: null, picks: []}))
+    const none = await mount(member)
+    expect(none.find("[data-testid=vote-mine]").exists()).toBe(false)
+  })
+
   it("gives the board its tools, and reads the member's ballot again once the board's change opens voting", async () => {
     voteIs(aVote("UPCOMING"))
     const wrapper = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]})

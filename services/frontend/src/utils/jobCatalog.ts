@@ -297,7 +297,7 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     title: "Reveal due votes",
     description:
       "Counts every annual vote (such as the OST Top 50) whose reveal date has passed, stores " +
-      "its results for good and deletes its ballots. Runs every few minutes on its own; running " +
+      "its results for good. Runs every few minutes on its own; running " +
       "it again reveals nothing twice and is skipped when no vote is due.",
   },
   "user.seal-addresses": {

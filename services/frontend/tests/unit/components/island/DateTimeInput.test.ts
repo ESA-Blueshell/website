@@ -29,6 +29,22 @@ describe("a moment, a day and a time in one box", () => {
     expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["2026-10-03T19:30"])
   })
 
+  it("keeps the other half while one is emptied to be typed again, and joins them once it is", async () => {
+    const wrapper = field({"modelValue": "2026-10-03T19:30", "onUpdate:modelValue": (next: string) => wrapper.setProps({modelValue: next})})
+    const [day, time] = wrapper.findAll("input")
+
+    await day!.setValue("")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([""])
+    expect((time!.element as HTMLInputElement).value).toBe("19:30")
+    await day!.setValue("04/10/2026")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["2026-10-04T19:30"])
+
+    await time!.setValue("")
+    expect((day!.element as HTMLInputElement).value).toBe("04/10/2026")
+    await time!.setValue("20:15")
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual(["2026-10-04T20:15"])
+  })
+
   it("empties both halves when the form empties it", async () => {
     const wrapper = field({modelValue: "2026-10-03T19:30"})
 

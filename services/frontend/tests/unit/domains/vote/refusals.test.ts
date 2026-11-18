@@ -17,6 +17,8 @@ describe("vote refusals", () => {
     expect(sentence({code: "BallotSize"})).toBe("A ballot holds too few or too many picks.")
     expect(sentence({code: "GameTrackLimit", max: 30})).toBe("That game already has 30 tracks. Pick one of them.")
     expect(sentence({code: "GameTrackLimit"})).toBe("That game has all the tracks it can take. Pick one of them.")
+    expect(sentence({code: "NoVoteOpen"})).toBe("Covers are only shown while a vote is open.")
+    expect(sentence({code: "CoverUnfetchable"})).toBe("That cover could not be fetched.")
     expect(sentence({code: "GamePickedTwice"})).toContain("once")
     expect(sentence({code: "PickNeedsTrack"})).toContain("track for each game")
     expect(sentence({code: "PickTakesNoTrack"})).toBe("This vote picks games, not tracks.")

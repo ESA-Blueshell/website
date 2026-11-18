@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component
 /**
  * Queues the reveal every few minutes, so a vote is revealed shortly after its date without anybody
  * pressing anything. The job's dedup key drops a run while one is waiting, and a second pod that
- * reveals a vote anyway fails on the vote's version, so nothing is revealed twice.
+ * reveals a vote anyway waits on the vote's lock and then skips it, so nothing is revealed twice.
  */
 @Component
 class VoteRevealScheduler(

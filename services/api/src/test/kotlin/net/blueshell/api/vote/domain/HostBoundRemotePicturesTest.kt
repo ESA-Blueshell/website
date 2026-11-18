@@ -82,6 +82,13 @@ class HostBoundRemotePicturesTest {
     }
 
     @Test
+    fun `a length it cannot read is checked against what arrives instead`() {
+        answer(200, byteArrayOf(1, 2), "Content-Type" to "image/png", "Content-Length" to "two")
+
+        assertThat(pictures.fetch(url)!!.bytes).containsExactly(1, 2)
+    }
+
+    @Test
     fun `a host out of reach is no picture`() {
         whenever(http.send(any(), any<HttpResponse.BodyHandler<InputStream>>())).thenThrow(IOException("refused"))
 

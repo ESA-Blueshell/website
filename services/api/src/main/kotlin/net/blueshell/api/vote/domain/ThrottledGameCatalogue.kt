@@ -50,6 +50,12 @@ class ThrottledGameCatalogue(
 
     override fun byId(igdbId: Long): CatalogueGame? = turn { catalogue.byId(igdbId) }
 
+    // An address only: the picture is fetched from the image host, which the API's limit does not cover.
+    override fun coverUrl(
+        imageId: String,
+        size: CoverSize,
+    ): String? = catalogue.coverUrl(imageId, size)
+
     private fun <T> turn(lookup: () -> T): T {
         if (!limiter.awaitTurn(KEY, perSecond, Duration.ofSeconds(1), patience, pause)) throw GameSearchUnavailable()
         return lookup()

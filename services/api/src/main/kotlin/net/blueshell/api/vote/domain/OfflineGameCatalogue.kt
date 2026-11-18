@@ -31,4 +31,10 @@ class OfflineGameCatalogue : GameCatalogue {
             .take(limit)
 
     override fun byId(igdbId: Long): CatalogueGame? = OFFLINE_GAMES.firstOrNull { it.igdbId == igdbId }
+
+    // Its games have no covers.
+    override fun coverUrl(
+        imageId: String,
+        size: CoverSize,
+    ): String? = null
 }

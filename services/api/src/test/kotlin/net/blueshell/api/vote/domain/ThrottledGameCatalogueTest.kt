@@ -91,4 +91,13 @@ class ThrottledGameCatalogueTest {
 
         assertThat(waits).containsExactly(Duration.ofSeconds(1))
     }
+
+    @Test
+    fun `a cover address is the catalogue's, and takes no turn`() {
+        whenever(igdb.coverUrl("co1", CoverSize.BIG)).thenReturn("https://images.igdb.com/x.jpg")
+        val strict = ThrottledGameCatalogue(igdb, clock, perSecond = 1) { error("no wait expected") }
+        strict.byId(1)
+
+        assertThat(strict.coverUrl("co1", CoverSize.BIG)).isEqualTo("https://images.igdb.com/x.jpg")
+    }
 }

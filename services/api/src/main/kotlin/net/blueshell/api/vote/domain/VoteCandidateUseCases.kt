@@ -62,7 +62,7 @@ class VoteCandidateUseCases(
      */
     fun coverPreview(imageId: String): RemotePicture {
         if (!votes.existsVotingAt(clock.instant())) throw NoVoteOpen()
-        return igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverUnfetchable()
+        return catalogue.coverUrl(imageId, CoverSize.SMALL)?.let(pictures::fetch) ?: throw CoverUnfetchable()
     }
 
     /**
@@ -159,7 +159,7 @@ class VoteCandidateUseCases(
         val found = catalogue.byId(igdbId) ?: throw VoteCandidateNotFound(igdbId)
         val cover =
             found.coverImageId
-                ?.let { igdbCoverUrl(it, "t_cover_big") }
+                ?.let { catalogue.coverUrl(it, CoverSize.BIG) }
                 ?.let { copy(it, "igdb-${found.igdbId}.jpg", FileType.VOTE_COVER) }
         val candidate =
             VoteCandidate(

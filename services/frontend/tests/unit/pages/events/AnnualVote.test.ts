@@ -8,7 +8,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import * as api from "@/services/api"
 import type {StoredLogin} from "@/plugins/store"
 import AnnualVote from "@/pages/events/AnnualVote.vue"
-import PickFinder from "@/domains/vote/island/PickFinder.vue"
+import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
 import {GAME_OF_THE_YEAR, OST_TOP_50, type VoteKindPage} from "@/domains/vote"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
@@ -83,16 +83,22 @@ describe("annual vote page", () => {
 
     expect(wrapper.get("[data-testid=vote-upcoming]").text()).toMatch(/Voting opens .*2026 .* and closes 21 December 2026/)
     expect(api.currentAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50"}})
+    expect(wrapper.get("[data-testid=vote-opens]").text()).toMatch(/^Opens \d+ Dec/)
+    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 21 Dec, 23:59")
+    expect(wrapper.get("[data-testid=vote-reveals]").text()).toBe("Results 28 Dec, 20:00")
+    expect(wrapper.find("[data-testid=vote-ballots]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=vote-help]").exists()).toBe(false)
   })
 
-  it("asks a visitor to log in to vote, and says the scoring and the dates", async () => {
+  it("asks a visitor to log in to vote, and says how it works and the dates", async () => {
     voteIs(aVote("VOTING"))
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("voting is open")
-    expect(wrapper.text()).toContain("Your first pick is worth 12 points, then 10, 8, 6 and 4.")
-    expect(wrapper.text()).toContain("pick another track for it and it takes the old one's place")
-    expect(wrapper.text()).toContain("Voting closes 21 December 2026")
+    expect(wrapper.text()).toContain("Every member ranks their 5 favourites.")
+    expect(wrapper.text()).toContain("Pick another track for it and the new track takes the old one's place.")
+    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 21 Dec, 23:59")
+    expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("3 votes")
     expect(wrapper.get("[data-testid=vote-sign-in-link]").attributes("to")).toBe("/login?redirect=%2Fevents%2Fost-top-50")
     expect(api.myVoteBallot).not.toHaveBeenCalled()
   })
@@ -113,7 +119,7 @@ describe("annual vote page", () => {
 
     expect(wrapper.get("[data-testid=vote-ballot-unread]").text()).toContain("could not be read")
     expect(wrapper.find("[data-testid=vote-save]").exists()).toBe(false)
-    expect(wrapper.find("[data-testid=vote-ballot-empty]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=vote-ballot]").exists()).toBe(false)
   })
 
   it("shows a member their ballot, ranked, with nothing to save until it changes", async () => {
@@ -125,8 +131,10 @@ describe("annual vote page", () => {
       expect.stringContaining("Hollow Knight"),
       expect.stringContaining("Portal 2"),
     ])
-    expect(wrapper.get("[data-testid=vote-save]").text()).toBe("Save your ballot")
+    expect(wrapper.get("[data-testid=vote-save]").text()).toBe("Save your top 5")
     expect(wrapper.get("[data-testid=vote-save]").attributes("disabled")).toBeDefined()
+    expect(wrapper.get("[data-testid=vote-ballot-head]").text()).toBe("Your top 5")
+    expect(wrapper.get("[data-testid=vote-help]").attributes("to")).toBe("/account/help#help-events-annual-vote")
   })
 
   it("lets a member reorder, drop and add picks, and saves them at the version read", async () => {
@@ -135,7 +143,9 @@ describe("annual vote page", () => {
     await wrapper.get("[data-testid=vote-pick-down-0]").trigger("click")
     await wrapper.get("[data-testid=vote-pick-remove-0]").trigger("click")
     const added = aTrack(3)
-    wrapper.findComponent(PickFinder).vm.$emit("pick", aPick(added))
+    wrapper.findComponent(BallotList).vm.$emit("pick", aPick(added))
+    wrapper.findComponent(BallotList).vm.$emit("reorder", 1, 0)
+    wrapper.findComponent(BallotList).vm.$emit("reorder", 1, 0)
     await settle()
 
     expect(wrapper.findAll("[data-testid=vote-pick]").map(row => row.text())).toEqual([
@@ -153,7 +163,7 @@ describe("annual vote page", () => {
       body: {picks: [{candidateId: 1, trackId: 1}, {candidateId: 30, trackId: 3}], version: 1},
     })
     expect(wrapper.get("[data-testid=vote-saved]").exists()).toBe(true)
-    expect(wrapper.get("[data-testid=vote-ballot-head]").text()).toContain("4")
+    expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("4 votes")
   })
 
   it("keeps the member's picks and says why a save was refused", async () => {
@@ -166,6 +176,10 @@ describe("annual vote page", () => {
 
     expect(wrapper.get("[data-testid=vote-problem]").text()).toBe("The vote has closed, so that cannot be done now.")
     expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(1)
+
+    wrapper.findComponent(BallotList).vm.$emit("problem", "")
+    await settle()
+    expect(wrapper.find("[data-testid=vote-problem]").exists()).toBe(false)
   })
 
   it("starts a first ballot empty, and says when it is full", async () => {
@@ -173,11 +187,11 @@ describe("annual vote page", () => {
     vi.mocked(api.myVoteBallot).mockResolvedValue(answer(api.myVoteBallot, {version: null, submittedAt: null, picks: []}))
     const wrapper = await mount(member)
 
-    expect(wrapper.get("[data-testid=vote-ballot-empty]").exists()).toBe(true)
-    expect(wrapper.get("[data-testid=vote-save]").text()).toBe("Cast your ballot")
-    for (const id of [11, 12, 13, 14, 15]) wrapper.findComponent(PickFinder).vm.$emit("pick", aPick(aTrack(id)))
+    expect(wrapper.findAll("[data-testid=vote-free]")).toHaveLength(5)
+    expect(wrapper.get("[data-testid=vote-save]").text()).toBe("Cast your vote")
+    for (const id of [11, 12, 13, 14, 15]) wrapper.findComponent(BallotList).vm.$emit("pick", aPick(aTrack(id)))
     await settle()
-    expect(wrapper.get("[data-testid=vote-ballot-full]").text()).toContain("or pick a new track")
+    expect(wrapper.get("[data-testid=vote-ballot-full]").text()).toBe("Your top is full. Take a game off to add another.")
   })
 
   it("runs a games-only vote under its own name, without tracks in what it says", async () => {
@@ -189,9 +203,10 @@ describe("annual vote page", () => {
 
     expect(api.currentAnnualVote).toHaveBeenCalledWith({path: {kind: "GAME_OF_THE_YEAR"}})
     expect(wrapper.text()).toContain("Game of the Year · 2026")
-    expect(wrapper.text()).toContain("Rank your top 3")
-    expect(wrapper.text()).toContain("Your first pick is worth 3 points, then 2 and 1. A game can be on your ballot once.")
-    expect(wrapper.get("[data-testid=vote-ballot-full]").text()).toBe("Your ballot is full. Take a game off to add another.")
+    expect(wrapper.text()).toContain("Your top 3")
+    expect(wrapper.text()).toContain("A game is in your top once. Drag")
+    expect(wrapper.text()).not.toContain("track")
+    expect(wrapper.get("[data-testid=vote-ballot-full]").text()).toBe("Your top is full. Take a game off to add another.")
   })
 
   it("reads the other kind's vote when the router reuses the page for it", async () => {
@@ -213,11 +228,13 @@ describe("annual vote page", () => {
   })
 
   it("says voting has closed, and when they are revealed", async () => {
-    voteIs(aVote("CLOSED", {ballots: 12}))
+    voteIs(aVote("CLOSED", {ballots: 1}))
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("voting has closed")
-    expect(wrapper.get("[data-testid=vote-closed]").text()).toMatch(/after 12 ballots\. The results are revealed 28 December 2026/)
+    expect(wrapper.get("[data-testid=vote-closed]").text()).toMatch(/after 1 vote\. The results are revealed 28 December 2026/)
+    expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("1 vote")
+    expect(wrapper.find("[data-testid=vote-closes]").exists()).toBe(false)
   })
 
   it("shows the revealed top", async () => {
@@ -225,7 +242,9 @@ describe("annual vote page", () => {
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("the results are in")
-    expect(wrapper.get("[data-testid=vote-results-head]").text()).toContain("From 30 ballots")
+    expect(wrapper.get("[data-testid=vote-results-head]").text()).toBe("OST Top 50 of 2026")
+    expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("30 votes")
+    expect(wrapper.find("[data-testid=vote-reveals]").exists()).toBe(false)
     expect(wrapper.findAll("[data-testid=vote-result]")).toHaveLength(2)
   })
 

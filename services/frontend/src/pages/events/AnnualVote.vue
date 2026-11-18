@@ -1,22 +1,26 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
+import BandRule from "@/components/island/BandRule.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import HeaderBand from "@/components/island/HeaderBand.vue"
 import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import StateTag from "@/components/island/StateTag.vue"
+import TaskLayout from "@/components/island/TaskLayout.vue"
 import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
-import PickFinder from "@/domains/vote/island/PickFinder.vue"
 import ResultList from "@/domains/vote/island/ResultList.vue"
 import {
   castBallot,
   loadBallot,
   loadVote,
   moved,
+  movedTo,
   said,
+  saidShort,
   samePicks,
   useVoteRights,
   without,
@@ -37,6 +41,9 @@ const props = defineProps<{page: VoteKindPage}>()
 
 /** The year a new vote is for: this one, in the association's time. */
 const THIS_YEAR = yearIn(ASSOCIATION_ZONE)
+
+/** The Help topic on taking part, which the aside links to. */
+const HELP_TOPIC = "events-annual-vote"
 
 const vote = ref<AnnualVote | null>(null)
 const loaded = ref(false)
@@ -66,18 +73,11 @@ const tail = computed<string>(() => {
   return vote.value ? TAIL[vote.value.state] : "no vote yet"
 })
 
-const scoring = computed<string>(() => {
-  const points = vote.value?.points ?? []
-  return `Your first pick is worth ${points[0]} points, then ${points.slice(1, -1).join(", ")} and ${points.at(-1)}.`
-})
-
 const onceSaid = computed<string>(() => vote.value?.picksTrack
-  ? "A game can be on your ballot once; pick another track for it and it takes the old one's place."
-  : "A game can be on your ballot once.")
+  ? "A game is in your top once. Pick another track for it and the new track takes the old one's place."
+  : "A game is in your top once.")
 
-const fullSaid = computed<string>(() => vote.value?.picksTrack
-  ? "Your ballot is full. Take a game off to add another, or pick a new track for a game already on it."
-  : "Your ballot is full. Take a game off to add another.")
+const FULL_SAID = "Your top is full. Take a game off to add another."
 
 async function readBallot() {
   if (!voting.value || !isMember.value) return
@@ -98,6 +98,11 @@ function onPick(pick: BallotPick) {
 
 function onMove(index: number, step: -1 | 1) {
   picks.value = moved(picks.value, index, step)
+  saved.value = false
+}
+
+function onReorder(from: number, to: number) {
+  picks.value = movedTo(picks.value, from, to)
   saved.value = false
 }
 
@@ -151,181 +156,231 @@ watch(() => props.page.kind, async kind => {
         :eyebrow="vote ? `${page.title} · ${vote.year}` : page.title"
         :heading="`${page.title},`"
         :heading-tail="tail"
-      />
-
-      <lead-band testid="vote-band">
-        <loading-spinner
-          v-if="!loaded"
-          label="Loading the vote"
-        />
-
-        <notice-box
-          v-else-if="!vote"
-          testid="vote-none"
+      >
+        <template
+          v-if="vote"
+          #acts
         >
-          There is no vote yet. Keep an eye on the events page.
-        </notice-box>
+          <state-tag
+            v-if="vote.state === 'UPCOMING'"
+            testid="vote-opens"
+          >
+            Opens {{ saidShort(vote.opensAt) }}
+          </state-tag>
+          <state-tag
+            v-if="vote.state === 'UPCOMING' || vote.state === 'VOTING'"
+            testid="vote-closes"
+            tone="warn"
+          >
+            Closes {{ saidShort(vote.closesAt) }}
+          </state-tag>
+          <state-tag
+            v-if="vote.state !== 'REVEALED'"
+            testid="vote-reveals"
+            tone="brand"
+          >
+            Results {{ saidShort(vote.revealAt) }}
+          </state-tag>
+          <state-tag
+            v-if="vote.state !== 'UPCOMING'"
+            testid="vote-ballots"
+            tone="quiet"
+          >
+            {{ vote.ballots }} {{ vote.ballots === 1 ? "vote" : "votes" }}
+          </state-tag>
+        </template>
+      </header-band>
 
-        <notice-box
-          v-else-if="vote.state === 'UPCOMING'"
-          testid="vote-upcoming"
+      <band-rule testid="vote-rule" />
+
+      <lead-band
+        class="vote-band"
+        testid="vote-band"
+      >
+        <task-layout
+          aside-title="How it works"
+          wide
         >
-          Voting opens {{ said(vote.opensAt) }} and closes {{ said(vote.closesAt) }}.
-        </notice-box>
-
-        <template v-else-if="vote.state === 'VOTING'">
-          <band-head
-            :count="vote.ballots"
-            count-said="ballots cast"
-            eyebrow="Your ballot"
-            :heading="`Rank your top ${vote.points.length}`"
-            testid="vote-ballot-head"
+          <loading-spinner
+            v-if="!loaded"
+            label="Loading the vote"
           />
-          <p class="said">
-            {{ scoring }} {{ onceSaid }}
-            Voting closes {{ said(vote.closesAt) }}, and the results are revealed {{ said(vote.revealAt) }}.
-          </p>
 
           <notice-box
-            v-if="!signedIn"
-            testid="vote-sign-in"
+            v-else-if="!vote"
+            testid="vote-none"
           >
-            Only members can vote.
-            <cut-button
-              :href="loginHref(page.path)"
-              small
-              testid="vote-sign-in-link"
-              tone="solid"
-            >
-              Log in to vote
-            </cut-button>
-          </notice-box>
-          <notice-box
-            v-else-if="!isMember"
-            testid="vote-not-member"
-          >
-            Only members can vote. Become a member and your ballot counts too.
-            <cut-button
-              href="/membership"
-              small
-              testid="vote-become-member"
-              tone="solid"
-            >
-              Become a member
-            </cut-button>
-          </notice-box>
-          <notice-box
-            v-else-if="unread"
-            testid="vote-ballot-unread"
-            tone="danger"
-          >
-            Your ballot could not be read, so nothing can be saved over it. Reload the page to try again.
+            There is no vote yet. Keep an eye on the events page.
           </notice-box>
 
-          <div
-            v-else
-            class="ballot"
+          <notice-box
+            v-else-if="vote.state === 'UPCOMING'"
+            testid="vote-upcoming"
           >
-            <ballot-list
-              v-if="picks.length"
-              :picks="picks"
-              :points="vote.points"
-              @move="onMove"
-              @remove="onRemove"
+            Voting opens {{ said(vote.opensAt) }} and closes {{ said(vote.closesAt) }}.
+          </notice-box>
+
+          <section
+            v-else-if="vote.state === 'VOTING'"
+            class="vote__section"
+            data-testid="vote-ballot-panel"
+          >
+            <band-head
+              :heading="`Your top ${vote.points.length}`"
+              testid="vote-ballot-head"
             />
-            <p
-              v-else
-              class="said"
-              data-testid="vote-ballot-empty"
-            >
-              Your ballot is empty. Find a game below to start.
-            </p>
 
-            <pick-finder
-              :vote="vote"
-              @pick="onPick"
-            />
-            <p
-              v-if="full"
-              class="said"
-              data-testid="vote-ballot-full"
-            >
-              {{ fullSaid }}
-            </p>
-
-            <div class="ballot__save">
-              <cut-button
-                :disabled="saving || !changed || picks.length === 0"
-                testid="vote-save"
-                tone="solid"
-                @click="save"
-              >
-                {{ ballot?.version == null ? "Cast your ballot" : "Save your ballot" }}
-              </cut-button>
-              <span
-                v-if="saved && !changed"
-                class="said"
-                data-testid="vote-saved"
-              >Saved. You can change it until voting closes.</span>
-            </div>
             <notice-box
-              v-if="problem"
-              testid="vote-problem"
+              v-if="!signedIn"
+              testid="vote-sign-in"
+            >
+              Only members can vote.
+              <cut-button
+                :href="loginHref(page.path)"
+                small
+                testid="vote-sign-in-link"
+                tone="solid"
+              >
+                Log in to vote
+              </cut-button>
+            </notice-box>
+            <notice-box
+              v-else-if="!isMember"
+              testid="vote-not-member"
+            >
+              Only members can vote. Become a member and your top counts too.
+              <cut-button
+                href="/membership"
+                small
+                testid="vote-become-member"
+                tone="solid"
+              >
+                Become a member
+              </cut-button>
+            </notice-box>
+            <notice-box
+              v-else-if="unread"
+              testid="vote-ballot-unread"
               tone="danger"
             >
-              {{ problem }}
+              Your top could not be read, so nothing can be saved over it. Reload the page to try again.
             </notice-box>
-          </div>
-        </template>
 
-        <notice-box
-          v-else-if="vote.state === 'CLOSED'"
-          testid="vote-closed"
-        >
-          Voting has closed after {{ vote.ballots }} ballots. The results are revealed {{ said(vote.revealAt) }}.
-        </notice-box>
+            <template v-else>
+              <ballot-list
+                :picks="picks"
+                :vote="vote"
+                @move="onMove"
+                @pick="onPick"
+                @problem="problem = $event"
+                @remove="onRemove"
+                @reorder="onReorder"
+              />
 
-        <template v-else>
-          <band-head
-            :count="vote.results.length"
-            count-said="games in the top"
-            :eyebrow="`From ${vote.ballots} ballots`"
-            :heading="`${page.title} of ${vote.year}`"
-            testid="vote-results-head"
-          />
-          <result-list :placings="vote.results" />
-        </template>
+              <notice-box
+                v-if="problem"
+                testid="vote-problem"
+                tone="danger"
+              >
+                {{ problem }}
+              </notice-box>
 
-        <board-tools
-          v-if="loaded && isBoard"
-          :kind="page.kind"
-          :vote="vote"
-          :year="THIS_YEAR"
-          @changed="onChanged"
-        />
+              <div class="form-save">
+                <span
+                  v-if="saved && !changed"
+                  class="form-save__words"
+                  data-testid="vote-saved"
+                >Saved. You can change it until voting closes.</span>
+                <span
+                  v-else-if="full"
+                  class="form-save__words"
+                  data-testid="vote-ballot-full"
+                >{{ FULL_SAID }}</span>
+                <cut-button
+                  :disabled="saving || !changed || picks.length === 0"
+                  testid="vote-save"
+                  tone="solid"
+                  @click="save"
+                >
+                  {{ ballot?.version == null ? "Cast your vote" : `Save your top ${vote.points.length}` }}
+                </cut-button>
+              </div>
+            </template>
+          </section>
+
+          <notice-box
+            v-else-if="vote.state === 'CLOSED'"
+            testid="vote-closed"
+          >
+            Voting has closed after {{ vote.ballots }} {{ vote.ballots === 1 ? "vote" : "votes" }}. The results are revealed {{ said(vote.revealAt) }}.
+          </notice-box>
+
+          <section
+            v-else
+            class="vote__section"
+          >
+            <band-head
+              :heading="`${page.title} of ${vote.year}`"
+              testid="vote-results-head"
+            />
+            <result-list :placings="vote.results" />
+          </section>
+
+          <template #aside>
+            <p v-if="vote">
+              Every member ranks their {{ vote.points.length }} favourites. Each place is worth the points beside it, and
+              the points of every ballot add up to the {{ page.title }}.
+            </p>
+            <p v-if="vote?.picksTrack">
+              Pick a game, then the one track that sums up its soundtrack. Pick a track others already added, or paste a
+              YouTube or Spotify link.
+            </p>
+            <p v-if="vote">
+              {{ onceSaid }} Drag a game by its handle to change its place.
+            </p>
+            <p v-if="vote">
+              You can change your top until voting closes. Nobody sees how anybody voted; the ballots are deleted once
+              the results are revealed.
+            </p>
+            <p v-if="signedIn">
+              <router-link
+                data-testid="vote-help"
+                :to="`/account/help#help-${HELP_TOPIC}`"
+              >
+                More in Help
+              </router-link>
+            </p>
+          </template>
+        </task-layout>
       </lead-band>
+
+      <template v-if="loaded && isBoard">
+        <band-rule
+          mirrored
+          testid="vote-board-rule"
+        />
+        <lead-band testid="vote-board-band">
+          <board-tools
+            :kind="page.kind"
+            :vote="vote"
+            :year="THIS_YEAR"
+            @changed="onChanged"
+          />
+        </lead-band>
+      </template>
     </island>
   </main>
 </template>
 
 <style scoped>
-.said {
-  margin: 1rem 0;
-  font-size: 0.95rem;
-  color: var(--color-ash);
+/* The top stands on a ground of its own, tinted blue, so its rows read as bars laid on it. */
+.vote-band {
+  --band-ground: color-mix(in oklab, var(--color-brand) 9%, var(--color-ground));
 }
 
-.ballot {
+.vote__section {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  margin-top: 1.25rem;
-}
-
-.ballot__save {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 </style>

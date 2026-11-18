@@ -24,3 +24,7 @@ export const decemberDates = (year: number): VoteSchedule => ({
  */
 export const said = (iso: string): string =>
   new Date(iso).toLocaleString("en-GB", {dateStyle: "long", timeStyle: "short"})
+
+/** A moment as a tag says it, short, in the reader's own time, such as "21 Dec, 23:59". */
+export const saidShort = (iso: string): string =>
+  new Date(iso).toLocaleString("en-GB", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})

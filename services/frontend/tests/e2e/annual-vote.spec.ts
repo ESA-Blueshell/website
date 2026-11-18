@@ -85,23 +85,29 @@ async function standInVote(page: Page) {
 }
 
 test.describe("the annual vote", () => {
-  test("a member finds two games, picks a track of each, saves the ballot and changes it", async ({page, context}) => {
+  test("a member fills two places with a game and a song each, casts the vote and changes it", async ({page, context}) => {
     await installApiMocks(page)
     const sent = await standInVote(page)
     await loginAsMember(context)
 
     await page.goto(PAGE)
-    await expect(page.getByTestId("vote-ballot-empty")).toBeVisible()
+    await expect(page.getByTestId("vote-free")).toHaveCount(5)
+    const place = page.getByTestId("vote-finder")
+    const game = place.getByRole("combobox").nth(0)
+    const song = place.getByRole("combobox").nth(1)
 
-    await page.getByTestId("vote-game-search").fill("cel")
+    await game.click()
+    await game.fill("cel")
     await page.getByTestId("vote-game-26226").click()
-    await page.getByTestId("vote-track-pick-11").click()
+    await song.click()
+    await page.getByTestId("vote-song-11").click()
 
-    await page.getByTestId("vote-game-search").fill("hol")
+    await game.click()
+    await game.fill("hol")
     await page.getByTestId("vote-game-14593").click()
-    await expect(page.getByTestId("vote-tracks")).toContainText("Nobody picked a track for Hollow Knight yet.")
-    await page.getByTestId("vote-link").fill("https://youtu.be/video000021")
-    await page.getByTestId("vote-link-add").click()
+    await song.click()
+    await song.fill("https://youtu.be/video000021")
+    await page.getByTestId("vote-song-link").click()
 
     await expect(page.getByTestId("vote-pick")).toHaveText([/Celeste.*Resurrections/s, /Hollow Knight.*Greenpath/s])
     await page.getByTestId("vote-save").click()
@@ -124,6 +130,37 @@ test.describe("the annual vote", () => {
     })
   })
 
+  test("a member on a phone drags a pick to the top by its handle @phone", async ({page, context}) => {
+    await installApiMocks(page)
+    const sent = await standInVote(page)
+    await loginAsMember(context)
+    await page.goto(PAGE)
+    const place = page.getByTestId("vote-finder")
+    for (const [term, igdbId, song] of [["cel", 26226, "vote-song-11"], ["hol", 14593, null]] as const) {
+      await place.getByRole("combobox").nth(0).click()
+      await place.getByRole("combobox").nth(0).fill(term)
+      await page.getByTestId(`vote-game-${igdbId}`).click()
+      await place.getByRole("combobox").nth(1).click()
+      if (song) await page.getByTestId(song).click()
+      else {
+        await place.getByRole("combobox").nth(1).fill("https://youtu.be/video000021")
+        await page.getByTestId("vote-song-link").click()
+      }
+    }
+    await expect(page.getByTestId("vote-pick-up-1")).toBeHidden()
+
+    const grip = (await page.getByTestId("vote-pick-grip-1").boundingBox())!
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(grip.x + grip.width / 2, grip.y - 120, {steps: 10})
+    await page.mouse.up()
+    await expect(page.getByTestId("vote-pick")).toHaveText([/Hollow Knight/, /Celeste/])
+
+    await page.getByTestId("vote-save").click()
+    const casts = () => sent.filter(one => one.method === "PUT" && one.path.endsWith("/ballot")).map(one => one.body)
+    await expect.poll(casts).toEqual([{picks: [{candidateId: 2, trackId: 21}, {candidateId: 1, trackId: 11}], version: null}])
+  })
+
   test("the board saves the dates at the version it read, and merges a duplicate track", async ({page, context}) => {
     await installApiMocks(page)
     const sent = await standInVote(page)
@@ -131,6 +168,7 @@ test.describe("the annual vote", () => {
 
     await page.goto(PAGE)
     await expect(page.getByTestId("vote-board")).toContainText("in Amsterdam time")
+    await expect(page.getByTestId("vote-board-picks")).toHaveCount(0)
     await page.getByTestId("vote-board-save").click()
     await expect.poll(() => sent.find(one => one.method === "PUT" && one.path === "/annual-votes/OST_TOP_50/2026")?.body).toEqual({
       opensAt: "2026-11-30T23:00:00Z",

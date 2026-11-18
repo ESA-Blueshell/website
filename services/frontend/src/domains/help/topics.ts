@@ -392,6 +392,31 @@ export const HELP: HelpSection[] = [
         ],
       },
       {
+        id: "events-annual-vote",
+        title: "Vote in the OST Top 50",
+        audience: "member",
+        body: [
+          "Every December, members pick the game soundtracks they love most. Open OST Top 50 under Events while voting is open.",
+          "Under Your top 5, find a game, then pick the track that sums up its soundtrack. Pick a track someone already added, or paste a YouTube or Spotify link and press Add.",
+          "Each place is worth the points beside it: 12 for first, then 10, 8, 6 and 4. Drag a game by its handle to change its place, or use the arrows. Press the cross to take it off.",
+          "Press Cast your vote. Until voting closes you can change your top and press Save your top 5 again.",
+          "The results are revealed on the date at the top of the page. Nobody sees how anybody voted, and the ballots are deleted at the reveal.",
+        ],
+        links: [{label: "OST Top 50", to: "/events/ost-top-50"}],
+      },
+      {
+        id: "events-annual-vote-board",
+        title: "Run the OST Top 50",
+        audience: "board",
+        body: [
+          "Open OST Top 50 under Events. Under Board, the dates are filled in for December in Amsterdam time. Press the Start button, which names this year, to start it.",
+          "You can move the dates until the results are revealed. Change them and press Save. Until the first vote is cast, Picks per vote sets how many games each member ranks.",
+          "The board sees the standings while voting is open. Open a game to see its tracks, and press Merge into the leading track to fold a duplicate into the leading one.",
+          "The site reveals the results by itself at the reveal date.",
+        ],
+        links: [{label: "OST Top 50", to: "/events/ost-top-50"}],
+      },
+      {
         id: "events-approve",
         title: "Approve an event",
         audience: "board",

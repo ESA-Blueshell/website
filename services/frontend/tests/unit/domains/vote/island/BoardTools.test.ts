@@ -49,7 +49,7 @@ describe("the board's vote tools", () => {
 
     expect(api.createAnnualVote).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50"},
-      body: {year: 2026, opensAt: isoOf("2026-12-01T00:00"), closesAt: isoOf("2026-12-21T23:59"), revealAt: isoOf("2026-12-30T20:00")},
+      body: {year: 2026, opensAt: isoOf("2026-12-01T00:00"), closesAt: isoOf("2026-12-21T23:59"), revealAt: isoOf("2026-12-30T20:00"), picks: 5},
     })
     expect(wrapper.emitted("changed")).toEqual([[started]])
   })
@@ -59,12 +59,37 @@ describe("the board's vote tools", () => {
     expect((await tools(aVote("REVEALED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
   })
 
+  it("sets the number of picks until the first vote is cast, and sends none when it is emptied", async () => {
+    const vote = aVote("UPCOMING", {ballots: 0, points: [8, 6, 4]})
+    vi.mocked(api.rescheduleAnnualVote).mockResolvedValue(answer(api.rescheduleAnnualVote, vote))
+    const wrapper = await tools(vote)
+    const picks = wrapper.get("[data-testid=vote-board-picks]")
+
+    expect((picks.element as HTMLInputElement).value).toBe("3")
+    await picks.setValue("7")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(api.rescheduleAnnualVote).toHaveBeenLastCalledWith({
+      path: {kind: "OST_TOP_50", year: 2026},
+      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2, picks: 7},
+    })
+
+    await picks.setValue("")
+    await wrapper.get("form").trigger("submit")
+    await flushPromises()
+    expect(api.rescheduleAnnualVote).toHaveBeenLastCalledWith({
+      path: {kind: "OST_TOP_50", year: 2026},
+      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2},
+    })
+  })
+
   it("moves an unrevealed vote's dates at the version it read, shown in Amsterdam time", async () => {
-    const vote = aVote("VOTING")
+    const vote = aVote("VOTING", {ballots: 3})
     vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(answer(api.rescheduleAnnualVote, vote))
     const wrapper = await tools(vote)
 
-    expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Save the dates")
+    expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Save")
+    expect(wrapper.find("[data-testid=vote-board-picks]").exists()).toBe(false)
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 

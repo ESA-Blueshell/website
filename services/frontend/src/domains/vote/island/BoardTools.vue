@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref, watch} from "vue"
+import BandHead from "@/components/island/BandHead.vue"
+import CountInput from "@/components/island/CountInput.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import FormField from "@/components/island/FormField.vue"
@@ -36,6 +38,11 @@ const standings = ref<Placing[] | null>([])
 const problem = ref("")
 const busy = ref(false)
 const dates = ref<VoteSchedule>(decemberDates(props.year))
+/** The number of picks a ballot holds, as the form holds it; empty sends none. */
+const picks = ref("")
+
+/** What a new vote's ballot holds unless the board says otherwise. TWIN: `VoteKind.defaultPicks` in the api. */
+const DEFAULT_PICKS = 5
 /** The game whose tracks are listed for merging, and those tracks. */
 const opened = ref<number | null>(null)
 const openedTracks = ref<Track[]>([])
@@ -43,13 +50,15 @@ const openedTracks = ref<Track[]>([])
 /** A new vote is started before the first, and once the last one is revealed and its year is past. */
 const starting = computed<boolean>(() => !props.vote || (props.vote.state === "REVEALED" && props.vote.year < props.year))
 const editing = computed<boolean>(() => !starting.value && props.vote!.state !== "REVEALED")
+/** The number of picks can change until the first vote is cast. TWIN: `VotePicksFixed` in the api. */
+const picksOpen = computed<boolean>(() => starting.value || props.vote!.ballots === 0)
 
 const datesSaid = computed<string>(() => starting.value
   ? `Start the ${props.year} vote. It runs on these dates, in Amsterdam time, by itself: nobody has to press anything on the day.`
   : "The vote runs on these dates, in Amsterdam time. You can move them until the results are revealed.")
-const saveSaid = computed<string>(() => (starting.value ? `Start the ${props.year} vote` : "Save the dates"))
+const saveSaid = computed<string>(() => (starting.value ? `Start the ${props.year} vote` : "Save"))
 
-const FIELDS: Array<{key: keyof VoteSchedule, label: string}> = [
+const FIELDS: Array<{key: Exclude<keyof VoteSchedule, "picks">, label: string}> = [
   {key: "opensAt", label: "Voting opens"},
   {key: "closesAt", label: "Voting closes"},
   {key: "revealAt", label: "Results revealed"},
@@ -57,6 +66,7 @@ const FIELDS: Array<{key: keyof VoteSchedule, label: string}> = [
 
 function reset() {
   const vote = props.vote
+  picks.value = String(starting.value || !vote ? DEFAULT_PICKS : vote.points.length)
   dates.value = starting.value || !vote
     ? decemberDates(props.year)
     : {opensAt: localOf(vote.opensAt), closesAt: localOf(vote.closesAt), revealAt: localOf(vote.revealAt)}
@@ -78,7 +88,7 @@ async function save() {
     return
   }
   busy.value = true
-  const schedule = {opensAt, closesAt, revealAt}
+  const schedule = {opensAt, closesAt, revealAt, ...(picksOpen.value && picks.value ? {picks: Number(picks.value)} : {})}
   const done = starting.value ? await createVote(props.kind, props.year, schedule) : await rescheduleVote(props.kind, props.vote!.year, schedule, props.vote!.version)
   busy.value = false
   if (done.ok) emit("changed", done.saved)
@@ -114,9 +124,7 @@ watch(() => props.vote, refresh)
     class="tools"
     data-testid="vote-board"
   >
-    <h3 class="tools__title">
-      Board
-    </h3>
+    <band-head heading="Board" />
 
     <form
       v-if="starting || editing"
@@ -143,14 +151,30 @@ watch(() => props.vote, refresh)
           </template>
         </form-field>
       </div>
-      <cut-button
-        :disabled="busy"
-        submit
-        testid="vote-board-save"
-        tone="solid"
+      <form-field
+        v-if="picksOpen"
+        :filled="Boolean(picks)"
+        label="Picks per vote"
       >
-        {{ saveSaid }}
-      </cut-button>
+        <template #default="{controlId}">
+          <count-input
+            v-model="picks"
+            :control-id="controlId"
+            :min="1"
+            testid="vote-board-picks"
+          />
+        </template>
+      </form-field>
+      <div class="form-save">
+        <cut-button
+          :disabled="busy"
+          submit
+          testid="vote-board-save"
+          tone="solid"
+        >
+          {{ saveSaid }}
+        </cut-button>
+      </div>
     </form>
 
     <notice-box
@@ -240,21 +264,11 @@ watch(() => props.vote, refresh)
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--color-hairline);
-}
-
-.tools__title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  text-transform: uppercase;
 }
 
 .tools__dates {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 1rem;
 }
 

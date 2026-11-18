@@ -19,8 +19,8 @@ export {
   tracksOf,
 } from "./adapters/vote"
 export type {BallotPick} from "./ballot"
-export {moved, pointsAt, samePicks, without, withPick} from "./ballot"
-export {decemberDates, isoOf, localOf, said} from "./dates"
+export {moved, movedTo, pointsAt, samePicks, without, withPick} from "./ballot"
+export {decemberDates, isoOf, localOf, said, saidShort} from "./dates"
 export type {VoteKindPage} from "./kinds"
 export {GAME_OF_THE_YEAR, OST_TOP_50, VOTE_KIND_PAGES} from "./kinds"
 export {reasonFor} from "./refusals"

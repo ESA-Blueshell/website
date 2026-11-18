@@ -17,15 +17,17 @@ export function withPick(picks: BallotPick[], pick: BallotPick, max: number): Ba
   return picks.length >= max ? picks : [...picks, pick]
 }
 
-/** The picks with the one at [index] moved by [step], one place up (-1) or down (1). */
-export function moved(picks: BallotPick[], index: number, step: -1 | 1): BallotPick[] {
-  const to = index + step
-  if (to < 0 || to >= picks.length) return picks
+/** The picks with the one at [from] taken out and put back at [to], the others closing up around it. */
+export function movedTo(picks: BallotPick[], from: number, to: number): BallotPick[] {
+  if (from === to || from < 0 || to < 0 || from >= picks.length || to >= picks.length) return picks
   const next = [...picks]
-  const [pick] = next.splice(index, 1)
+  const [pick] = next.splice(from, 1)
   next.splice(to, 0, pick!)
   return next
 }
+
+/** The picks with the one at [index] moved by [step], one place up (-1) or down (1). */
+export const moved = (picks: BallotPick[], index: number, step: -1 | 1): BallotPick[] => movedTo(picks, index, index + step)
 
 /** The picks without the one at [index]. */
 export const without = (picks: BallotPick[], index: number): BallotPick[] => picks.filter((_, at) => at !== index)

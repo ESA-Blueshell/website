@@ -5,6 +5,7 @@ import type {VoteState} from "./adapters/vote"
 
 interface RefusalBody extends RefusalCode {
   state?: VoteState
+  min?: number
   max?: number
   year?: number
 }
@@ -19,9 +20,11 @@ const STATE_SAID: Record<VoteState, string> = {
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
   WrongVoteState: r => `The vote ${(r.state && STATE_SAID[r.state]) || "is not open"}, so that cannot be done now.`,
-  BallotSize: r => (r.max ? `A ballot holds one to ${r.max} picks.` : "A ballot holds too few or too many picks."),
-  GamePickedTwice: () => "Each game can be on your ballot once. Pick a different game, or swap the track.",
-  PickNeedsTrack: () => "Pick a track for each game on your ballot.",
+  BallotSize: r => (r.max ? `Your top holds one to ${r.max} picks.` : "Your top holds too few or too many picks."),
+  VotePicksOutOfRange: r => (r.min && r.max ? `A top holds ${r.min} to ${r.max} picks.` : "That number of picks is not allowed."),
+  VotePicksFixed: () => "Votes have been cast, so the number of picks stays as it is.",
+  GamePickedTwice: () => "Each game can be in your top once. Pick a different game, or swap the track.",
+  PickNeedsTrack: () => "Pick a song for each game in your top.",
   PickTakesNoTrack: () => "This vote picks games, not tracks.",
   GameNotEligible: r => `Only games first released in ${r.year ?? "the vote's year"} can be picked.`,
   UnsupportedTrackLink: () => "Paste a link to a YouTube video or a Spotify track.",

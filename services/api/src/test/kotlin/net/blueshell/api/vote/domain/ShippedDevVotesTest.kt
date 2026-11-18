@@ -72,7 +72,7 @@ class ShippedDevVotesTest {
         assertThat(seeder("2026-11-18T12:00:00Z").apply()).isZero()
 
         whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(null)
-        assertThat(seeder("2026-12-30T12:00:00Z").apply()).isZero()
+        assertThat(seeder("2026-12-31T18:00:00Z").apply()).isZero()
         verify(votes, never()).saveAndFlush(any())
     }
 

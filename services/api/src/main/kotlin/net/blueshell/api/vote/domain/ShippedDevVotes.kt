@@ -113,8 +113,8 @@ class ShippedDevVotes(
             kind = VoteKind.OST_TOP_50,
             year = year,
             opensAt = LocalDate.of(year, Month.DECEMBER, 1).atStartOfDay(AMSTERDAM).toInstant(),
-            closesAt = LocalDateTime.of(year, Month.DECEMBER, CLOSES_DAY, LAST_HOUR, LAST_MINUTE).atZone(AMSTERDAM).toInstant(),
-            revealAt = LocalDateTime.of(year, Month.DECEMBER, REVEAL_DAY, REVEAL_HOUR, 0).atZone(AMSTERDAM).toInstant(),
+            closesAt = LocalDateTime.of(year, Month.DECEMBER, LAST_DAY, CLOSES_HOUR, 0).atZone(AMSTERDAM).toInstant(),
+            revealAt = LocalDateTime.of(year, Month.DECEMBER, LAST_DAY, REVEAL_HOUR, 0).atZone(AMSTERDAM).toInstant(),
             picks = VoteKind.OST_TOP_50.defaultPicks,
         )
 
@@ -138,10 +138,8 @@ class ShippedDevVotes(
         val AMSTERDAM: ZoneId = ZoneId.of("Europe/Amsterdam")
         const val EXTERNAL_ID_LENGTH = 11
         const val VOTER_SPREAD = 5
-        const val CLOSES_DAY = 21
-        const val REVEAL_DAY = 28
-        const val LAST_HOUR = 23
-        const val LAST_MINUTE = 59
+        const val LAST_DAY = 31
+        const val CLOSES_HOUR = 17
         const val REVEAL_HOUR = 20
         val OPEN_FOR: Duration = Duration.ofDays(7)
     }

@@ -90,11 +90,11 @@ describe("annual vote page", () => {
     voteIs(aVote("UPCOMING"))
     const wrapper = await mount(null)
 
-    expect(wrapper.get("[data-testid=vote-upcoming]").text()).toMatch(/Voting opens .*2026 .* and closes 21 December 2026/)
+    expect(wrapper.get("[data-testid=vote-upcoming]").text()).toMatch(/Voting opens .*2026 .* and closes 31 December 2026/)
     expect(api.currentAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50"}})
     expect(wrapper.get("[data-testid=vote-opens]").text()).toMatch(/^Opens \d+ Dec/)
-    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 21 Dec, 23:59")
-    expect(wrapper.get("[data-testid=vote-reveals]").text()).toBe("Results 28 Dec, 20:00")
+    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 31 Dec, 17:00")
+    expect(wrapper.get("[data-testid=vote-reveals]").text()).toBe("Results 31 Dec, 20:00")
     expect(wrapper.find("[data-testid=vote-ballots]").exists()).toBe(false)
     expect(wrapper.find("[data-testid=vote-help]").exists()).toBe(false)
   })
@@ -106,7 +106,7 @@ describe("annual vote page", () => {
     expect(wrapper.text()).toContain("voting has started")
     expect(wrapper.text()).toContain("Every member ranks their 5 favourites.")
     expect(wrapper.text()).toContain("Pick another track for it and the new track takes the old one's place.")
-    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 21 Dec, 23:59")
+    expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 31 Dec, 17:00")
     expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("3 votes")
     expect(wrapper.get("[data-testid=vote-sign-in-link]").attributes("to")).toBe("/login?redirect=%2Fevents%2Fost-top-50")
     expect(api.myVoteBallot).not.toHaveBeenCalled()
@@ -241,7 +241,7 @@ describe("annual vote page", () => {
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("voting has closed")
-    expect(wrapper.get("[data-testid=vote-closed]").text()).toMatch(/after 1 vote\. The results are revealed 28 December 2026/)
+    expect(wrapper.get("[data-testid=vote-closed]").text()).toMatch(/after 1 vote\. The results are revealed 31 December 2026/)
     expect(wrapper.get("[data-testid=vote-ballots]").text()).toBe("1 vote")
     expect(wrapper.find("[data-testid=vote-closes]").exists()).toBe(false)
   })
@@ -384,10 +384,10 @@ describe("annual vote page", () => {
     await settle()
     expect(dialog.props("open")).toBe(false)
 
+    // This year already has its vote, so starting one opens it: one vote a year.
     line.vm.$emit("add")
     await settle()
-    expect(dialog.props("vote")).toBeNull()
-    expect(dialog.props("year")).toBe(Math.max(new Date().getFullYear(), 2026 + 1))
+    expect(dialog.props("vote").year).toBe(2026)
 
     vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025]))
     dialog.vm.$emit("changed", aVote("VOTING"))

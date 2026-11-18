@@ -43,15 +43,15 @@ describe("the board's dates dialog", () => {
     vi.mocked(api.createAnnualVote).mockResolvedValueOnce(answer(api.createAnnualVote, started))
     const wrapper = await dialog(null)
 
-    expect(fields(wrapper).map(field => field.props("modelValue"))).toEqual(["2026-12-01T00:00", "2026-12-21T23:59", "2026-12-28T20:00"])
+    expect(fields(wrapper).map(field => field.props("modelValue"))).toEqual(["2026-12-01T00:00", "2026-12-31T17:00", "2026-12-31T20:00"])
     expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Start the 2026 vote")
-    fields(wrapper)[2]!.vm.$emit("update:modelValue", "2026-12-30T20:00")
+    fields(wrapper)[2]!.vm.$emit("update:modelValue", "2026-12-31T21:00")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
     expect(api.createAnnualVote).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50"},
-      body: {year: 2026, opensAt: isoOf("2026-12-01T00:00"), closesAt: isoOf("2026-12-21T23:59"), revealAt: isoOf("2026-12-30T20:00"), picks: 5},
+      body: {year: 2026, opensAt: isoOf("2026-12-01T00:00"), closesAt: isoOf("2026-12-31T17:00"), revealAt: isoOf("2026-12-31T21:00"), picks: 5},
     })
     expect(wrapper.emitted("changed")).toEqual([[started]])
     expect(wrapper.emitted("update:open")).toEqual([[false]])
@@ -63,7 +63,7 @@ describe("the board's dates dialog", () => {
     expect(wrapper.text()).toContain("dates and picks stay as they were")
     expect(fields(wrapper).every(field => field.props("disabled"))).toBe(true)
     expect(wrapper.find("[data-testid=vote-board-save]").exists()).toBe(false)
-    expect(wrapper.find("[data-testid=vote-board-picks]").exists()).toBe(false)
+    expect(wrapper.get("input[data-testid=vote-board-picks]").attributes("disabled")).toBeDefined()
   })
 
   it("sets the number of picks until the first vote is cast, and sends none when it is emptied", async () => {
@@ -96,7 +96,8 @@ describe("the board's dates dialog", () => {
     const wrapper = await dialog(vote)
 
     expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Save")
-    expect(wrapper.find("[data-testid=vote-board-picks]").exists()).toBe(false)
+    expect(wrapper.get("input[data-testid=vote-board-picks]").attributes("disabled")).toBeDefined()
+    expect(wrapper.text()).toContain("Fixed once votes are cast")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 

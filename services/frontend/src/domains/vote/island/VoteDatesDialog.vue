@@ -123,22 +123,22 @@ async function save() {
             />
           </template>
         </form-field>
+        <form-field
+          :filled="Boolean(picks)"
+          :hint="picksOpen || revealed ? '' : 'Fixed once votes are cast'"
+          label="Picks per vote"
+        >
+          <template #default="{controlId}">
+            <count-input
+              v-model="picks"
+              :control-id="controlId"
+              :disabled="!picksOpen || revealed"
+              :min="1"
+              testid="vote-board-picks"
+            />
+          </template>
+        </form-field>
       </div>
-      <form-field
-        v-if="picksOpen && !revealed"
-        class="dates__picks"
-        :filled="Boolean(picks)"
-        label="Picks per vote"
-      >
-        <template #default="{controlId}">
-          <count-input
-            v-model="picks"
-            :control-id="controlId"
-            :min="1"
-            testid="vote-board-picks"
-          />
-        </template>
-      </form-field>
       <notice-box
         v-if="problem"
         testid="vote-board-problem"
@@ -177,13 +177,16 @@ async function save() {
   color: var(--color-ash);
 }
 
+/* Two to a row: when voting opens and closes, then the reveal beside the picks. */
 .dates__fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
 }
 
-.dates__picks {
-  max-width: 12rem;
+@media (max-width: 640px) {
+  .dates__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

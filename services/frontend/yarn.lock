@@ -1041,11 +1041,11 @@ __metadata:
   linkType: hard
 
 "@iconify-json/noto@npm:^1.2.8":
-  version: 1.2.9
-  resolution: "@iconify-json/noto@npm:1.2.9"
+  version: 1.2.10
+  resolution: "@iconify-json/noto@npm:1.2.10"
   dependencies:
     "@iconify/types": "npm:*"
-  checksum: 10c0/3f7c986d2a5bbd60a5a14a9ff465ebeca6a5ca0af0ec1edfc74f24de39804b1d70ed0ffb99007def03b7e9cb1d86ee31c6407d66fcaf147f6027bf8fe56cb3ef
+  checksum: 10c0/1586e67bc309b9b3bd69d635c4af2a8a1c844183079c6a0271865393f59ec2c8cbe29ff742b0134ec2964e0f8516e6ec0bd3512e9efe6f9f61f9613e0aa77e39
   languageName: node
   linkType: hard
 

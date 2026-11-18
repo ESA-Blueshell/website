@@ -117,7 +117,7 @@ export type AnnualVoteResponse = {
     releasedInYear: boolean;
     results: Array<VotePlacingResponse>;
     revealAt: string;
-    state: 'UPCOMING' | 'VOTING' | 'COUNTING' | 'PUBLISHED';
+    state: 'UPCOMING' | 'VOTING' | 'CLOSED' | 'REVEALED';
     version: number;
     year: number;
 };

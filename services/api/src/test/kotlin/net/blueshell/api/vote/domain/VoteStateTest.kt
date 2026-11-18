@@ -14,9 +14,9 @@ class VoteStateTest {
         assertThat(vote.stateAt(OPENS.minusSeconds(1))).isEqualTo(VoteState.UPCOMING)
         assertThat(vote.stateAt(OPENS)).isEqualTo(VoteState.VOTING)
         assertThat(vote.stateAt(CLOSES.minusSeconds(1))).isEqualTo(VoteState.VOTING)
-        assertThat(vote.stateAt(CLOSES)).isEqualTo(VoteState.COUNTING)
+        assertThat(vote.stateAt(CLOSES)).isEqualTo(VoteState.CLOSED)
 
-        vote.publishedAt = CLOSES
-        assertThat(vote.stateAt(OPENS)).isEqualTo(VoteState.PUBLISHED)
+        vote.revealedAt = CLOSES
+        assertThat(vote.stateAt(OPENS)).isEqualTo(VoteState.REVEALED)
     }
 }

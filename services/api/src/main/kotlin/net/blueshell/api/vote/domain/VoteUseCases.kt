@@ -78,7 +78,7 @@ class VoteUseCases(
         val vote = byYear(kind, year)
         vote.requireVersion(version)
         val state = vote.stateAt(clock.instant())
-        if (state == VoteState.PUBLISHED) throw WrongVoteState(state)
+        if (state == VoteState.REVEALED) throw WrongVoteState(state)
         requireInOrder(opensAt, closesAt, revealAt)
         vote.opensAt = opensAt
         vote.closesAt = closesAt
@@ -105,7 +105,7 @@ class VoteUseCases(
     @Suppress("TooGenericExceptionCaught") // One vote's failure must not stop the reveal of the rest.
     fun revealDue(): Int {
         val now = clock.instant()
-        return votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(now).count { due ->
+        return votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(now).count { due ->
             try {
                 transactions.execute { revealIfDue(due.id!!, now) } == true
             } catch (_: OptimisticLockingFailureException) {
@@ -139,7 +139,7 @@ class VoteUseCases(
         id: Long,
         now: Instant,
     ): Boolean {
-        val vote = votes.findById(id).orElse(null)?.takeIf { it.publishedAt == null } ?: return false
+        val vote = votes.findById(id).orElse(null)?.takeIf { it.revealedAt == null } ?: return false
         reveal(vote, now)
         return true
     }
@@ -155,7 +155,7 @@ class VoteUseCases(
             top.map { VotePlacing(vote.id!!, it.standing.place, it.candidate, it.track, it.standing.points, it.standing.voters) },
         )
         vote.ballotCount = cast.distinctBy { it.ballotId }.size
-        vote.publishedAt = now
+        vote.revealedAt = now
         ballots.deleteAllOfVote(vote.id!!)
         votes.saveAndFlush(vote)
     }
@@ -186,7 +186,7 @@ class VoteUseCases(
 
     private fun summaryOf(vote: Vote): VoteSummary {
         val state = vote.stateAt(clock.instant())
-        if (state != VoteState.PUBLISHED) return vote.summaryWith(state, ballots.countByVoteId(vote.id!!).toInt(), emptyList())
+        if (state != VoteState.REVEALED) return vote.summaryWith(state, ballots.countByVoteId(vote.id!!).toInt(), emptyList())
         val placings =
             placings.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(vote.id!!).map {
                 Placing(it.place, it.candidate.summary(), it.track?.summary(), it.points, it.voters)

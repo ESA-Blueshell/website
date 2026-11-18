@@ -53,8 +53,8 @@ const full = computed<boolean>(() => picks.value.length >= (vote.value?.points.l
 const tail = computed<string>(() => {
   switch (vote.value?.state) {
     case "VOTING": return "voting is open"
-    case "COUNTING": return "the votes are being counted"
-    case "PUBLISHED": return "the results are in"
+    case "CLOSED": return "voting has closed"
+    case "REVEALED": return "the results are in"
     default: return "coming soon"
   }
 })
@@ -250,8 +250,8 @@ watch(() => props.page.kind, async kind => {
         </template>
 
         <notice-box
-          v-else-if="vote.state === 'COUNTING'"
-          testid="vote-counting"
+          v-else-if="vote.state === 'CLOSED'"
+          testid="vote-closed"
         >
           Voting has closed after {{ vote.ballots }} ballots. The results are revealed {{ said(vote.revealAt) }}.
         </notice-box>

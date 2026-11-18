@@ -13,7 +13,7 @@ import java.time.Instant
 
 /**
  * One kind's vote for one year. It runs on its dates alone: voting between [opensAt] and
- * [closesAt], and counted at [revealAt], which sets [publishedAt] and [ballotCount] as the ballots
+ * [closesAt], and counted at [revealAt], which sets [revealedAt] and [ballotCount] as the ballots
  * are deleted.
  */
 @Entity
@@ -40,6 +40,6 @@ class Vote(
     @Column(name = "ballot_count")
     var ballotCount: Int? = null
 
-    @Column(name = "published_at")
-    var publishedAt: Instant? = null
+    @Column(name = "revealed_at")
+    var revealedAt: Instant? = null
 }

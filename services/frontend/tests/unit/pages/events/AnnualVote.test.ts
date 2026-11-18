@@ -149,7 +149,7 @@ describe("annual vote page", () => {
     voteIs(aVote("VOTING"))
     const wrapper = await mount(member)
     await wrapper.get("[data-testid=vote-pick-remove-1]").trigger("click")
-    vi.mocked(api.castVoteBallot).mockResolvedValueOnce(refusal(api.castVoteBallot, {code: "WrongVoteState", state: "COUNTING"}, 409))
+    vi.mocked(api.castVoteBallot).mockResolvedValueOnce(refusal(api.castVoteBallot, {code: "WrongVoteState", state: "CLOSED"}, 409))
     await wrapper.get("[data-testid=vote-save]").trigger("click")
     await settle()
 
@@ -201,16 +201,16 @@ describe("annual vote page", () => {
     expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(0)
   })
 
-  it("says the votes are being counted, and when they are revealed", async () => {
-    voteIs(aVote("COUNTING", {ballots: 12}))
+  it("says voting has closed, and when they are revealed", async () => {
+    voteIs(aVote("CLOSED", {ballots: 12}))
     const wrapper = await mount(null)
 
-    expect(wrapper.text()).toContain("the votes are being counted")
-    expect(wrapper.get("[data-testid=vote-counting]").text()).toMatch(/after 12 ballots\. The results are revealed 28 December 2026/)
+    expect(wrapper.text()).toContain("voting has closed")
+    expect(wrapper.get("[data-testid=vote-closed]").text()).toMatch(/after 12 ballots\. The results are revealed 28 December 2026/)
   })
 
   it("shows the revealed top", async () => {
-    voteIs(aVote("PUBLISHED", {ballots: 30, results: [aPlacing(1, hollow.candidate, hollow, 120, 12), aPlacing(2, portal.candidate, portal, 90, 9)]}))
+    voteIs(aVote("REVEALED", {ballots: 30, results: [aPlacing(1, hollow.candidate, hollow, 120, 12), aPlacing(2, portal.candidate, portal, 90, 9)]}))
     const wrapper = await mount(null)
 
     expect(wrapper.text()).toContain("the results are in")

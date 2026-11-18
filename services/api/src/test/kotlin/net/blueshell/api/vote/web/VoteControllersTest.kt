@@ -59,7 +59,7 @@ class VoteControllersTest {
     @Test
     fun `a vote reads, opens on its dates, moves them and counts through its use cases`() {
         val published =
-            VoteSummary(ost, 2026, 3, VoteState.PUBLISHED, opens, closes, reveal, 9, listOf(Placing(1, celeste, resurrections, 40, 4)))
+            VoteSummary(ost, 2026, 3, VoteState.REVEALED, opens, closes, reveal, 9, listOf(Placing(1, celeste, resurrections, 40, 4)))
         whenever(votes.current(ost)).thenReturn(published)
         whenever(
             votes.create(ost, 2026, opens, closes, reveal),
@@ -74,7 +74,7 @@ class VoteControllersTest {
                 ost,
                 2026,
                 3,
-                VoteState.PUBLISHED,
+                VoteState.REVEALED,
                 opens,
                 closes,
                 reveal,

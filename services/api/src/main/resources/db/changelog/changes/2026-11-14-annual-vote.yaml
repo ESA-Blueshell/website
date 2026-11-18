@@ -22,7 +22,7 @@ databaseChangeLog:
               - column: {name: closes_at, type: DATETIME, constraints: {nullable: false}}
               - column: {name: reveal_at, type: DATETIME, constraints: {nullable: false}}
               - column: {name: ballot_count, type: INT}
-              - column: {name: published_at, type: DATETIME}
+              - column: {name: revealed_at, type: DATETIME}
               - column: {name: deleted_at, type: DATETIME, defaultValue: "9999-12-31 23:59:59", constraints: {nullable: false}}
               - column: {name: created_at, type: DATETIME, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
               - column: {name: updated_at, type: DATETIME, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}

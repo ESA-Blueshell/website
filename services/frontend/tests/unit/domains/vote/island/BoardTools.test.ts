@@ -55,8 +55,8 @@ describe("the board's vote tools", () => {
   })
 
   it("starts a new year's vote once last year's is revealed, and not before", async () => {
-    expect((await tools(aVote("PUBLISHED", {year: 2025}))).get("[data-testid=vote-board-save]").text()).toBe("Start the 2026 vote")
-    expect((await tools(aVote("PUBLISHED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
+    expect((await tools(aVote("REVEALED", {year: 2025}))).get("[data-testid=vote-board-save]").text()).toBe("Start the 2026 vote")
+    expect((await tools(aVote("REVEALED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
   })
 
   it("moves an unrevealed vote's dates at the version it read, shown in Amsterdam time", async () => {
@@ -96,9 +96,9 @@ describe("the board's vote tools", () => {
     expect(wrapper.text()).toContain("merge a duplicate track")
 
     vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(answer(api.annualVoteStandings, []))
-    expect((await tools(aVote("COUNTING"))).text()).toContain("No ballots yet.")
+    expect((await tools(aVote("CLOSED"))).text()).toContain("No ballots yet.")
 
-    await wrapper.setProps({vote: aVote("PUBLISHED")})
+    await wrapper.setProps({vote: aVote("REVEALED")})
     await flushPromises()
     expect(wrapper.find("[data-testid=vote-standings]").exists()).toBe(false)
   })
@@ -112,7 +112,7 @@ describe("the board's vote tools", () => {
   })
 
   it("merges a duplicate track into the one leading its game, and says why one cannot", async () => {
-    const wrapper = await tools(aVote("COUNTING"))
+    const wrapper = await tools(aVote("CLOSED"))
 
     await wrapper.get("[data-testid=vote-standing-open-100]").trigger("click")
     await flushPromises()

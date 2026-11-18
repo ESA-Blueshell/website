@@ -188,7 +188,7 @@ class VoteControllerIT : UserTestSupport() {
         mvc
             .perform(get("/annual-votes/OST_TOP_50/current"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.state").value("PUBLISHED"))
+            .andExpect(jsonPath("$.state").value("REVEALED"))
             .andExpect(jsonPath("$.ballots").value(2))
             .andExpect(jsonPath("$.results[*].candidate.name", contains("Celeste", "The Witcher 3: Wild Hunt")))
             .andExpect(jsonPath("$.results[0].points").value(24))

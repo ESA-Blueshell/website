@@ -21,5 +21,5 @@ interface VoteRepository : BaseRepository<Vote, Long> {
     fun findFirstByKindOrderByOpensAtAsc(kind: VoteKind): Vote?
 
     /** The votes whose reveal is due and that nobody has counted yet. */
-    fun findAllByPublishedAtIsNullAndRevealAtLessThanEqual(now: Instant): List<Vote>
+    fun findAllByRevealedAtIsNullAndRevealAtLessThanEqual(now: Instant): List<Vote>
 }

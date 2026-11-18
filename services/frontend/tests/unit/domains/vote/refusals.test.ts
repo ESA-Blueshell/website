@@ -7,8 +7,8 @@ describe("vote refusals", () => {
   it("says where the vote stands when it does not allow a write", () => {
     expect(sentence({code: "WrongVoteState", state: "UPCOMING"})).toBe("The vote has not opened yet, so that cannot be done now.")
     expect(sentence({code: "WrongVoteState", state: "VOTING"})).toBe("The vote is open, so that cannot be done now.")
-    expect(sentence({code: "WrongVoteState", state: "COUNTING"})).toBe("The vote has closed, so that cannot be done now.")
-    expect(sentence({code: "WrongVoteState", state: "PUBLISHED"})).toBe("The vote has been revealed, so that cannot be done now.")
+    expect(sentence({code: "WrongVoteState", state: "CLOSED"})).toBe("The vote has closed, so that cannot be done now.")
+    expect(sentence({code: "WrongVoteState", state: "REVEALED"})).toBe("The vote has been revealed, so that cannot be done now.")
     expect(sentence({code: "WrongVoteState"})).toBe("The vote is not open, so that cannot be done now.")
   })
 

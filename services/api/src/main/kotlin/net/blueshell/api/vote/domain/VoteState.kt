@@ -12,16 +12,16 @@ enum class VoteState {
     VOTING,
 
     /** Closed, and not yet counted: the board merges duplicate tracks until the reveal. */
-    COUNTING,
+    CLOSED,
 
     /** Counted: the results are stored and public, and the ballots are gone. */
-    PUBLISHED,
+    REVEALED,
 }
 
 fun Vote.stateAt(now: Instant): VoteState =
     when {
-        publishedAt != null -> VoteState.PUBLISHED
+        revealedAt != null -> VoteState.REVEALED
         now.isBefore(opensAt) -> VoteState.UPCOMING
         now.isBefore(closesAt) -> VoteState.VOTING
-        else -> VoteState.COUNTING
+        else -> VoteState.CLOSED
     }

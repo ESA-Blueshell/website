@@ -260,8 +260,8 @@ components:
           enum:
           - UPCOMING
           - VOTING
-          - COUNTING
-          - PUBLISHED
+          - CLOSED
+          - REVEALED
           type: string
         version:
           format: int64

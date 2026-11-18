@@ -39,8 +39,8 @@ const opened = ref<number | null>(null)
 const openedTracks = ref<Track[]>([])
 
 /** A new vote is started before the first, and once the last one is revealed and its year is past. */
-const starting = computed<boolean>(() => !props.vote || (props.vote.state === "PUBLISHED" && props.vote.year < props.year))
-const editing = computed<boolean>(() => !starting.value && props.vote!.state !== "PUBLISHED")
+const starting = computed<boolean>(() => !props.vote || (props.vote.state === "REVEALED" && props.vote.year < props.year))
+const editing = computed<boolean>(() => !starting.value && props.vote!.state !== "REVEALED")
 
 const FIELDS: Array<{key: keyof VoteDates, label: string}> = [
   {key: "opensAt", label: "Voting opens"},
@@ -58,7 +58,7 @@ function reset() {
 async function refresh() {
   reset()
   const vote = props.vote
-  standings.value = vote && vote.state !== "PUBLISHED" ? await loadStandings(vote.kind, vote.year) : []
+  standings.value = vote && vote.state !== "REVEALED" ? await loadStandings(vote.kind, vote.year) : []
 }
 
 async function save() {
@@ -155,7 +155,7 @@ watch(() => props.vote, refresh)
     </notice-box>
 
     <div
-      v-if="vote && vote.state !== 'PUBLISHED'"
+      v-if="vote && vote.state !== 'REVEALED'"
       class="standings"
       data-testid="vote-standings"
     >

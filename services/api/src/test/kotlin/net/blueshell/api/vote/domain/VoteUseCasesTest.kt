@@ -108,7 +108,7 @@ class VoteUseCasesTest {
 
         @Test
         fun `a published vote shows its stored count and results, with our own pictures`() {
-            val published = vote().apply { publishedAt = REVEAL }
+            val published = vote().apply { revealedAt = REVEAL }
             whenever(votes.findFirstByKindAndOpensAtLessThanEqualOrderByOpensAtDesc(VoteKind.OST_TOP_50, NOW)).thenReturn(published)
             whenever(placings.findAllByVoteIdOrderByPlaceAscCandidateNameAsc(1)).thenReturn(
                 listOf(VotePlacing(1, 1, celeste, resurrections, 40, 4), VotePlacing(1, 2, hades, null, 12, 1)),
@@ -208,7 +208,7 @@ class VoteUseCasesTest {
 
         @Test
         fun `refuses to move a published vote, or one that does not exist`() {
-            whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote().apply { publishedAt = REVEAL })
+            whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote().apply { revealedAt = REVEAL })
 
             assertThatThrownBy {
                 service.reschedule(
@@ -279,7 +279,7 @@ class VoteUseCasesTest {
         fun `reveals each due vote, storing the counted top, keeping the count and deleting the ballots`() {
             val due = vote(revealAt = NOW)
             val cast = listOf(ballot(1, 100, picking(firstSteps), picking(godOfTheDead)), ballot(2, 101, picking(godOfTheDead)))
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
             whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()
@@ -293,15 +293,15 @@ class VoteUseCasesTest {
             ).containsExactly(Triple(1, 21L, 22), Triple(2, 11L, 12))
             assertThat(saved.firstValue.map { it.candidate.name to it.voters }).containsExactly("Hades" to 2, "Celeste" to 1)
             assertThat(due.ballotCount).isEqualTo(2)
-            assertThat(due.publishedAt).isEqualTo(NOW)
+            assertThat(due.revealedAt).isEqualTo(NOW)
             verify(ballots).deleteAllOfVote(1)
         }
 
         @Test
         fun `skips a vote another pod revealed or removed since it was found`() {
             val due = vote(revealAt = NOW)
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due, vote(id = 2, revealAt = NOW)))
-            whenever(votes.findById(1)).thenReturn(Optional.of(vote(revealAt = NOW).apply { publishedAt = NOW }))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due, vote(id = 2, revealAt = NOW)))
+            whenever(votes.findById(1)).thenReturn(Optional.of(vote(revealAt = NOW).apply { revealedAt = NOW }))
             whenever(votes.findById(2)).thenReturn(Optional.empty())
 
             assertThat(service.revealDue()).isZero()
@@ -312,7 +312,7 @@ class VoteUseCasesTest {
         fun `stores nothing for a vote another pod revealed first, and still reveals the rest`() {
             val first = vote(revealAt = NOW)
             val second = vote(id = 2, revealAt = NOW)
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
             whenever(votes.findById(1)).thenReturn(Optional.of(first))
             whenever(votes.findById(2)).thenReturn(Optional.of(second))
             whenever(ballots.picksOf(any())).thenReturn(emptyList())
@@ -327,15 +327,15 @@ class VoteUseCasesTest {
         fun `leaves a vote that fails for the next run, and still reveals the rest`() {
             val first = vote(revealAt = NOW)
             val second = vote(id = 2, revealAt = NOW)
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(first, second))
             whenever(votes.findById(1)).thenReturn(Optional.of(first))
             whenever(votes.findById(2)).thenReturn(Optional.of(second))
             whenever(ballots.picksOf(1)).thenThrow(IllegalStateException("the database went away"))
             whenever(ballots.picksOf(2)).thenReturn(castOf(emptyList()))
 
             assertThat(service.revealDue()).isEqualTo(1)
-            assertThat(first.publishedAt).isNull()
-            assertThat(second.publishedAt).isEqualTo(NOW)
+            assertThat(first.revealedAt).isNull()
+            assertThat(second.revealedAt).isEqualTo(NOW)
         }
 
         @Test
@@ -347,7 +347,7 @@ class VoteUseCasesTest {
             var ballotId = 0L
             val cast = many.flatMapIndexed { index, game -> List(index + 1) { ballotId++.let { ballot(it, it, game to null) } } }
             val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
             whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()
@@ -366,7 +366,7 @@ class VoteUseCasesTest {
             stubFind(emptyList(), many)
             val cast = many.mapIndexed { index, game -> ballot(index.toLong(), index.toLong(), game to null) }
             val due = vote(kind = VoteKind.GAME_OF_THE_YEAR, revealAt = NOW)
-            whenever(votes.findAllByPublishedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
+            whenever(votes.findAllByRevealedAtIsNullAndRevealAtLessThanEqual(NOW)).thenReturn(listOf(due))
             whenever(votes.findById(1)).thenReturn(Optional.of(due))
             whenever(ballots.picksOf(1)).thenReturn(castOf(cast))
             val saved = argumentCaptor<List<VotePlacing>>()

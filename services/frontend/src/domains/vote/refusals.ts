@@ -11,8 +11,8 @@ interface RefusalBody extends RefusalCode {
 const STATE_SAID: Record<string, string> = {
   UPCOMING: "has not opened yet",
   VOTING: "is open",
-  COUNTING: "has closed",
-  PUBLISHED: "has been revealed",
+  CLOSED: "has closed",
+  REVEALED: "has been revealed",
 }
 
 const sentences: Record<string, (r: RefusalBody) => string> = {

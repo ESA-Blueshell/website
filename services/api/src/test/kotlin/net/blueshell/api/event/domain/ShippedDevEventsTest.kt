@@ -6,6 +6,7 @@ import net.blueshell.api.event.persistence.Event
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.testsupport.Entities
+import net.blueshell.api.user.api.ServiceAccount
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -35,6 +36,7 @@ class ShippedDevEventsTest {
     private val events = mock<EventRepository>()
     private val files = mock<FileService>()
     private val users = mock<UserService>()
+    private val account = mock<ServiceAccount>()
 
     private val manager = mock<PlatformTransactionManager>()
     private val transactions = TransactionTemplate(manager)
@@ -44,7 +46,7 @@ class ShippedDevEventsTest {
         whenever(manager.getTransaction(any())).thenReturn(mock<TransactionStatus>())
     }
 
-    private val loader = ShippedDevEvents(committees, events, files, users, transactions)
+    private val loader = ShippedDevEvents(committees, events, files, users, account, transactions)
 
     private val rows = EventSeed.files.rows(EventSeed.EVENTS)
     private val named = EventSeed.files.rows(EventSeed.COMMITTEES)
@@ -52,7 +54,7 @@ class ShippedDevEventsTest {
 
     private fun database() {
         whenever(events.count()).thenReturn(0)
-        whenever(users.findByUsername("system")).thenReturn(Entities.user())
+        whenever(account.orNull(any())).thenReturn(Entities.user())
         whenever(committees.findAll()).thenReturn(mutableListOf())
         whenever(committees.create(any())).thenAnswer { it.arguments[0] }
         whenever(files.store(any(), any(), any(), any(), any())).thenReturn(Entities.file())
@@ -109,7 +111,6 @@ class ShippedDevEventsTest {
     @Test
     fun `without the account the art is credited to nothing is written`() {
         whenever(events.count()).thenReturn(0)
-        whenever(users.findByUsername("system")).thenThrow(RuntimeException("no such user"))
 
         assertThat(loader.apply()).isEqualTo(ShippedDevEvents.Applied(0, 0, 0))
         verify(events, never()).save(any())

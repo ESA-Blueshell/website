@@ -3,6 +3,7 @@ package net.blueshell.api.file.api
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.seed.SeedCsv
+import net.blueshell.api.user.api.ServiceAccount
 import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -14,13 +15,13 @@ import org.springframework.transaction.support.TransactionTemplate
  * Runs on start rather than in the migration that loads the same rows: storing a picture needs
  * the volume and the converter a migration runner lacks. Every picture is stored on every start
  * even when nothing is waiting for it, which is what lets a lost storage volume repair itself,
- * and each is credited to the site's own account. A row that fails is logged and skipped rather
+ * and each is credited to the service account. A row that fails is logged and skipped rather
  * than failing the start: its record keeps the picture it had yesterday.
  */
 @Component
 class ShippedPictures(
     private val files: FileService,
-    private val site: SiteAccount,
+    private val serviceAccount: ServiceAccount,
     private val transactions: TransactionTemplate,
 ) {
     /**
@@ -38,15 +39,15 @@ class ShippedPictures(
         kind: FileType,
         place: (row: Map<String, String>, picture: () -> File) -> Boolean,
     ): Int =
-        site.attempt("$csv in ${seed.directory}") {
-            val owner = site.orNull("the art in ${seed.directory}") ?: return@attempt 0
+        storingOrSkip("$csv in ${seed.directory}") {
+            val owner = serviceAccount.orNull("the art in ${seed.directory}") ?: return@storingOrSkip 0
             val rows = seed.rows(csv).mapNotNull { row -> row[column]?.ifBlank { null }?.let { art -> row to art } }
             // Every picture first, so one that is waiting for nothing is still put back.
             val stored = mutableMapOf<String, String>()
-            rows.forEach { (_, art) -> site.attempt(art) { store(seed, art, kind, owner, stored) } }
+            rows.forEach { (_, art) -> storingOrSkip(art) { store(seed, art, kind, owner, stored) } }
             val placed =
                 rows.count { (row, art) ->
-                    site.attempt(art) { transactions.execute { place(row) { store(seed, art, kind, owner, stored) } } } == true
+                    storingOrSkip(art) { transactions.execute { place(row) { store(seed, art, kind, owner, stored) } } } == true
                 }
             if (placed > 0) log.info("[shipped-pictures] {} {} pictures now come from {}", placed, kind, seed.directory)
             placed

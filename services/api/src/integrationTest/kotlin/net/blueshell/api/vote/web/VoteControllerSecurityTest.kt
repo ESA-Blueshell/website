@@ -1,9 +1,9 @@
 package net.blueshell.api.vote.web
 
-import net.blueshell.api.file.api.RemotePictures
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
 import net.blueshell.api.user.persistence.User
+import net.blueshell.api.vote.domain.RemotePictures
 import net.blueshell.api.vote.domain.TrackPreview
 import net.blueshell.api.vote.domain.TrackPreviews
 import org.assertj.core.api.Assertions.assertThat

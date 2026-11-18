@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
+import {useRouter} from "vue-router"
 import BandHead from "@/components/island/BandHead.vue"
 import BandRule from "@/components/island/BandRule.vue"
 import CutButton from "@/components/island/CutButton.vue"
@@ -44,6 +45,8 @@ import {loginHref} from "@/utils/loginRedirect"
 
 defineOptions({name: "AnnualVotePage"})
 
+const router = useRouter()
+
 const props = defineProps<{
   page: VoteKindPage
   /** A past year to look back on; left out, the kind's current vote. */
@@ -63,16 +66,18 @@ const latest = ref<AnnualVote | null>(null)
 const years = ref<number[]>([])
 const loaded = ref(false)
 /** Whether the year shown is the current one, the only one the board's band acts on. */
-// The vote's three dates as stops on a line, lit up to the one it has reached; "Now" marks it.
-const PHASE_OF: Record<VoteState, number | null> = {UPCOMING: null, VOTING: 1, CLOSED: 2, REVEALED: 3}
-const phase = computed<number | null>(() => (vote.value ? PHASE_OF[vote.value.state] : null))
-const phases = computed<Stop[]>(() => {
-  const shown = vote.value
-  if (!shown) return []
-  const stop = (id: number, label: string, at: string): Stop =>
-    ({id, name: `${label}, ${said(at)}`, label, sublabel: saidShort(at), mark: id === phase.value ? "Now" : ""})
-  return [stop(1, "Voting opens", shown.opensAt), stop(2, "Voting closes", shown.closesAt), stop(3, "Results", shown.revealAt)]
-})
+// The years the vote ran, oldest first, as stops on the site's timeline; the current one is Now.
+const yearStops = computed<Stop[]>(() => [...years.value].reverse().map(year => ({
+  id: year,
+  name: `${props.page.title} ${year}`,
+  label: String(year),
+  sublabel: year === latest.value?.year ? TAIL[latest.value.state] : year < (latest.value?.year ?? year) ? "results" : "coming",
+  mark: year === latest.value?.year ? "Now" : "",
+})))
+
+function onYear(year: number) {
+  void router.push(yearHref(year))
+}
 
 const showingLatest = computed<boolean>(() => !vote.value || vote.value.year === latest.value?.year)
 const yearHref = (year: number): string => (year === latest.value?.year ? props.page.path : `${props.page.path}/${year}`)
@@ -241,38 +246,23 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
           >
             {{ vote.ballots }} {{ vote.ballots === 1 ? "vote" : "votes" }}
           </state-tag>
-          <nav
-            v-if="years.length > 1"
-            aria-label="Years"
-            class="vote-years"
-            data-testid="vote-years"
-          >
-            <router-link
-              v-for="one in years"
-              :key="one"
-              :aria-current="one === vote?.year ? 'page' : undefined"
-              class="vote-years__year"
-              :class="{'vote-years__year--on': one === vote?.year}"
-              :data-testid="`vote-year-${one}`"
-              :to="yearHref(one)"
-            >
-              {{ one }}
-            </router-link>
-          </nav>
         </template>
       </header-band>
 
-      <!-- The vote's dates as a line, lit up to where it stands: a slice of its own under the head. -->
+      <!-- The years the vote ran as a line, the one shown lit: a slice of its own under the head. -->
       <section
-        v-if="vote"
+        v-if="years.length > 0"
         class="w-full"
         data-testid="vote-timeline"
       >
         <timeline
           :accent="BRAND_ACCENT"
-          :selected-id="phase"
-          :stops="phases"
-          testid-prefix="vote-phase"
+          pan-back-label="Show earlier years"
+          pan-on-label="Show later years"
+          :selected-id="vote?.year ?? null"
+          :stops="yearStops"
+          testid-prefix="vote-year"
+          @select="onYear"
         />
       </section>
 
@@ -504,30 +494,6 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
 
 .vote__problem {
   flex-basis: 100%;
-}
-
-/* The years a kind has a vote for, on their own line under the tags: the one shown is lit. */
-.vote-years {
-  display: flex;
-  flex-basis: 100%;
-  flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-}
-
-.vote-years__year {
-  color: var(--color-ash);
-  text-decoration: none;
-}
-
-.vote-years__year:hover {
-  color: var(--color-chalk);
-}
-
-.vote-years__year--on {
-  color: var(--color-chalk);
-  box-shadow: inset 0 -2px 0 var(--color-brand-ink);
 }
 
 .vote__section {

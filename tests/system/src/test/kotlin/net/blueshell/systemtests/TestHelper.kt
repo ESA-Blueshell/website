@@ -822,7 +822,7 @@ object TestHelper {
                     }
                 }
             val voteId =
-                inserted("INSERT INTO votes (kind, year, opens_at, closes_at, reveal_at) VALUES ('OST_TOP_50', ?, ?, ?, ?)") {
+                inserted("INSERT INTO votes (kind, year, opens_at, closes_at, reveal_at, picks) VALUES ('OST_TOP_50', ?, ?, ?, ?, 5)") {
                     it.setInt(1, year)
                     it.setTimestamp(2, at(3))
                     it.setTimestamp(3, at(2))

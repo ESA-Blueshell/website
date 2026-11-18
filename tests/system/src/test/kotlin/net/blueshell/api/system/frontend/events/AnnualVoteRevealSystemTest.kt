@@ -56,7 +56,7 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
         // The band draws its words in capitals, which innerText reads as drawn.
         page.navigate("$frontendUrl/events/ost-top-50")
         byTestId("vote-results-head").waitFor()
-        assertThat(byTestId("vote-results-head").innerText()).containsIgnoringCase("From 2 ballots")
+        assertThat(byTestId("vote-ballots").innerText()).containsIgnoringCase("2 votes")
         assertThat(page.locator("[data-testid='vote-result']").allInnerTexts()).satisfiesExactly(
             { assertThat(it).containsIgnoringCase(first) },
             { assertThat(it).containsIgnoringCase(second) },

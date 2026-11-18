@@ -3,6 +3,19 @@ package net.blueshell.api.vote.domain
 import net.blueshell.api.vote.persistence.CandidateTrack
 import net.blueshell.api.vote.persistence.CastPick
 
+/** The fewest and the most picks the board may give a ballot. */
+const val MIN_PICKS = 1
+const val MAX_PICKS = 10
+
+private const val LAST_PLACE_POINTS = 4
+private const val POINTS_STEP = 2
+
+/**
+ * What each place on a ballot of [picks] picks is worth, best first: two points apart down to 4 for
+ * the last, so five picks score 12, 10, 8, 6 and 4, as Eurovision scores its top.
+ */
+fun pointsFor(picks: Int): List<Int> = List(picks) { LAST_PLACE_POINTS + POINTS_STEP * (picks - 1 - it) }
+
 /**
  * A candidate's standing: its [points], how many ballots named it ([voters]), how many named it at each
  * position ([byPosition], index 0 for first), and the track that earned it the most points, if

@@ -57,16 +57,20 @@ class VoteUseCases(
         opensAt: Instant,
         closesAt: Instant,
         revealAt: Instant,
+        picks: Int = kind.defaultPicks,
     ): VoteSummary {
         requireInOrder(opensAt, closesAt, revealAt)
+        requirePicks(picks)
         if (votes.findByKindAndYear(kind.requireOffered(), year) != null) throw AnnualVoteExists(kind, year)
-        return summaryOf(votes.saveAndFlush(Vote(kind, year, opensAt, closesAt, revealAt)))
+        return summaryOf(votes.saveAndFlush(Vote(kind, year, opensAt, closesAt, revealAt, picks)))
     }
 
     /**
-     * Moves the vote's dates, until it has been revealed. [version] is the vote as the board member
-     * last read it, so two of them saving the dates at once cannot overwrite each other.
+     * Moves the vote's dates, until it has been revealed, and sets its number of [picks] until the
+     * first ballot is cast. [version] is the vote as the board member last read it, so two of them
+     * saving at once cannot overwrite each other.
      */
+    @Suppress("LongParameterList") // The three dates are the board's form as it is sent.
     @Transactional
     fun reschedule(
         kind: VoteKind,
@@ -75,12 +79,18 @@ class VoteUseCases(
         closesAt: Instant,
         revealAt: Instant,
         version: Long,
+        picks: Int? = null,
     ): VoteSummary {
         val vote = votes.of(kind, year)
         vote.requireVersion(version)
         val state = vote.stateAt(clock.instant())
         if (state == VoteState.REVEALED) throw WrongVoteState(state)
         requireInOrder(opensAt, closesAt, revealAt)
+        if (picks != null && picks != vote.picks) {
+            requirePicks(picks)
+            if (ballots.countByVoteId(vote.id!!) > 0) throw VotePicksFixed()
+            vote.picks = picks
+        }
         vote.opensAt = opensAt
         vote.closesAt = closesAt
         vote.revealAt = revealAt
@@ -127,6 +137,10 @@ class VoteUseCases(
         if (!opensAt.isBefore(closesAt) || !closesAt.isBefore(revealAt)) throw VoteDatesOutOfOrder()
     }
 
+    private fun requirePicks(picks: Int) {
+        if (picks !in MIN_PICKS..MAX_PICKS) throw VotePicksOutOfRange(MIN_PICKS, MAX_PICKS)
+    }
+
     // Read again, locked, inside the transaction: the vote may have been revealed since it was found.
     private fun revealIfDue(
         id: Long,
@@ -169,7 +183,7 @@ class VoteUseCases(
         val standings =
             Tally.count(
                 cast.groupBy { it.ballotId }.values.toList(),
-                vote.kind.points,
+                pointsFor(vote.picks),
                 canonical = { id -> picked[id]?.canonical()?.id ?: id },
             )
         val candidatesById = candidates.byIds(standings.map { it.candidateId })

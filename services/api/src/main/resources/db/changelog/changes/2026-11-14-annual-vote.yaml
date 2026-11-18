@@ -1,6 +1,7 @@
 # The annual votes: the OST Top 50, Game of the Year, and any later kind run the same way.
 #
-# votes is one row per kind and year, with the three dates the vote runs on by itself.
+# votes is one row per kind and year, with the three dates the vote runs on by itself and how
+# many picks a ballot holds.
 # vote_candidates are the IGDB games somebody picked, each with our copy of its cover.
 # vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link for one game is
 # one row, and a duplicate the board merges points at the track it was merged into.
@@ -21,6 +22,7 @@ databaseChangeLog:
               - column: {name: opens_at, type: DATETIME, constraints: {nullable: false}}
               - column: {name: closes_at, type: DATETIME, constraints: {nullable: false}}
               - column: {name: reveal_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: picks, type: INT, constraints: {nullable: false}}
               - column: {name: ballot_count, type: INT}
               - column: {name: revealed_at, type: DATETIME}
               - column: {name: deleted_at, type: DATETIME, defaultValue: "9999-12-31 23:59:59", constraints: {nullable: false}}

@@ -45,6 +45,20 @@ class WrongVoteState(
     state: VoteState,
 ) : VoteRefusal(HttpStatus.CONFLICT, "WrongVoteState", "The vote is not in a state that allows this.", mapOf("state" to state.name))
 
+/** A ballot's number of picks is between [min] and [max]. */
+class VotePicksOutOfRange(
+    min: Int,
+    max: Int,
+) : VoteRefusal(
+        HttpStatus.BAD_REQUEST,
+        "VotePicksOutOfRange",
+        "A ballot holds too few or too many picks.",
+        mapOf("min" to min, "max" to max),
+    )
+
+/** The number of picks stays as it is once a ballot has been cast. */
+class VotePicksFixed : VoteRefusal(HttpStatus.CONFLICT, "VotePicksFixed", "The number of picks cannot change once a ballot is cast.")
+
 class BallotSize(
     picks: Int,
     max: Int,

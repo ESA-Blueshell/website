@@ -65,6 +65,8 @@ data class VoteSummary(
     val revealAt: Instant,
     val ballots: Int,
     val results: List<Placing>,
+    /** What each place on a ballot is worth, best first; its size is how many picks a ballot holds. */
+    val points: List<Int>,
 )
 
 /** What a pick asks for: a game by our id, and one of its tracks where the kind picks one. */
@@ -91,4 +93,4 @@ internal fun Vote.summaryWith(
     state: VoteState,
     ballots: Int,
     results: List<Placing>,
-) = VoteSummary(kind, year, version, state, opensAt, closesAt, revealAt, ballots, results)
+) = VoteSummary(kind, year, version, state, opensAt, closesAt, revealAt, ballots, results, pointsFor(picks))

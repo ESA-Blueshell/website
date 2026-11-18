@@ -52,7 +52,8 @@ internal object VoteFixtures {
         opensAt: Instant = OPENS,
         closesAt: Instant = CLOSES,
         revealAt: Instant = REVEAL,
-    ) = Vote(kind, year, opensAt, closesAt, revealAt).also { it.id = id }
+        picks: Int = kind.defaultPicks,
+    ) = Vote(kind, year, opensAt, closesAt, revealAt, picks).also { it.id = id }
 
     /** A ballot of [picks], each a game and, where given, the track picked for it. */
     fun ballot(

@@ -21,7 +21,7 @@ class VoteLookupTest {
     private val votes = mock<VoteRepository>()
     private val opens = VoteFixtures.OPENS
     private val closes = VoteFixtures.CLOSES
-    private val vote = Vote(VoteKind.OST_TOP_50, 2026, opens, closes, VoteFixtures.REVEAL)
+    private val vote = Vote(VoteKind.OST_TOP_50, 2026, opens, closes, VoteFixtures.REVEAL, 5)
 
     @Test
     fun `a vote is found by kind and year, and a missing one is refused`() {

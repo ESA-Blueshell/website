@@ -933,6 +933,7 @@ export type CreateAddressRequest = {
 export type CreateAnnualVoteRequest = {
     closesAt: string;
     opensAt: string;
+    picks?: number | null;
     revealAt: string;
     year: number;
 };
@@ -2439,6 +2440,7 @@ export type ReenrolRequest = {
 export type RescheduleAnnualVoteRequest = {
     closesAt: string;
     opensAt: string;
+    picks?: number | null;
     revealAt: string;
     version: number;
 };

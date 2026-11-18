@@ -29,7 +29,7 @@ fun VoteSummary.asResponse() =
         revealAt = revealAt,
         ballots = ballots,
         results = results.map { it.asResponse() },
-        points = kind.points,
+        points = points,
         picksTrack = kind.picksTrack,
         releasedInYear = kind.releasedInYear,
     )

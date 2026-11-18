@@ -1865,6 +1865,11 @@ components:
         opensAt:
           format: date-time
           type: string
+        picks:
+          format: int32
+          type:
+          - integer
+          - 'null'
         revealAt:
           format: date-time
           type: string
@@ -4832,6 +4837,11 @@ components:
         opensAt:
           format: date-time
           type: string
+        picks:
+          format: int32
+          type:
+          - integer
+          - 'null'
         revealAt:
           format: date-time
           type: string

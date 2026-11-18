@@ -173,7 +173,8 @@ test.describe("the annual vote", () => {
     await loginAsBoard(context)
 
     await page.goto(PAGE)
-    await expect(page.getByTestId("vote-board")).toContainText("in Amsterdam time")
+    await page.getByTestId("vote-board-edit").click()
+    await expect(page.getByTestId("vote-board-dates")).toContainText("in Amsterdam time")
     await expect(page.getByTestId("vote-board-picks")).toHaveCount(0)
     await page.getByTestId("vote-board-save").click()
     await expect.poll(() => sent.find(one => one.method === "PUT" && one.path === "/annual-votes/OST_TOP_50/2026")?.body).toEqual({

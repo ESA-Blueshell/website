@@ -1,100 +1,36 @@
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from "vue"
+import {onMounted, ref, watch} from "vue"
 import BandHead from "@/components/island/BandHead.vue"
-import CountInput from "@/components/island/CountInput.vue"
 import CutButton from "@/components/island/CutButton.vue"
-import DateTimeInput from "@/components/island/DateTimeInput.vue"
-import FormField from "@/components/island/FormField.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import {countOf} from "@/utils/countOf"
-import {
-  createVote,
-  loadStandings,
-  mergeTrack,
-  renameTrack,
-  rescheduleVote,
-  tracksOf,
-  type AnnualVote,
-  type Placing,
-  type Track,
-  type VoteKind,
-  type VoteSchedule,
-} from "../adapters/vote"
-import {decemberDates, isoOf, localOf} from "../dates"
+import {loadStandings, mergeTrack, renameTrack, tracksOf, type AnnualVote, type Placing, type Track} from "../adapters/vote"
 import TrackTitle from "./TrackTitle.vue"
 
 defineOptions({name: "VoteBoardTools"})
 
 const props = defineProps<{
-  kind: VoteKind
-  /** The latest vote of the kind, or null before the first. */
+  /** The current vote of the kind, or null before the first. */
   vote: AnnualVote | null
-  /** The year a new vote is started for. */
-  year: number
 }>()
 
-const emit = defineEmits<{changed: [vote: AnnualVote]}>()
+defineEmits<{
+  /** The board asks to move the current vote's dates or picks. */
+  edit: []
+  /** The board asks to start a new vote. */
+  start: []
+}>()
 
 /** The standings so far, or null where they could not be read. */
 const standings = ref<Placing[] | null>([])
 const problem = ref("")
-const busy = ref(false)
-const dates = ref<VoteSchedule>(decemberDates(props.year))
-/** The number of picks a ballot holds, as the form holds it; empty sends none. */
-const picks = ref("")
-
-/** What a new vote's ballot holds unless the board says otherwise. TWIN: `VoteKind.defaultPicks` in the api. */
-const DEFAULT_PICKS = 5
 /** The game whose tracks are listed for merging, and those tracks. */
 const opened = ref<number | null>(null)
 const openedTracks = ref<Track[]>([])
 
-/** A new vote is started before the first, and once the last one is revealed and its year is past. */
-const starting = computed<boolean>(() => !props.vote || (props.vote.state === "REVEALED" && props.vote.year < props.year))
-const editing = computed<boolean>(() => !starting.value && props.vote!.state !== "REVEALED")
-/** The number of picks can change until the first vote is cast. TWIN: `VotePicksFixed` in the api. */
-const picksOpen = computed<boolean>(() => starting.value || props.vote!.ballots === 0)
-
-const datesSaid = computed<string>(() => starting.value
-  ? `Start the ${props.year} vote. It runs on these dates, in Amsterdam time, by itself: nobody has to press anything on the day.`
-  : "The vote runs on these dates, in Amsterdam time. You can move them until the results are revealed.")
-const saveSaid = computed<string>(() => (starting.value ? `Start the ${props.year} vote` : "Save"))
-
-const FIELDS: Array<{key: Exclude<keyof VoteSchedule, "picks">, label: string}> = [
-  {key: "opensAt", label: "Voting opens"},
-  {key: "closesAt", label: "Voting closes"},
-  {key: "revealAt", label: "Results revealed"},
-]
-
-function reset() {
-  const vote = props.vote
-  picks.value = String(starting.value || !vote ? DEFAULT_PICKS : vote.points.length)
-  dates.value = starting.value || !vote
-    ? decemberDates(props.year)
-    : {opensAt: localOf(vote.opensAt), closesAt: localOf(vote.closesAt), revealAt: localOf(vote.revealAt)}
-}
-
 async function refresh() {
-  reset()
   const vote = props.vote
   standings.value = vote && vote.state !== "REVEALED" ? await loadStandings(vote.kind, vote.year) : []
-}
-
-async function save() {
-  const opensAt = isoOf(dates.value.opensAt)
-  const closesAt = isoOf(dates.value.closesAt)
-  const revealAt = isoOf(dates.value.revealAt)
-  problem.value = ""
-  if (!opensAt || !closesAt || !revealAt) {
-    problem.value = "Fill in all three dates."
-    return
-  }
-  busy.value = true
-  const schedule = {opensAt, closesAt, revealAt, ...(picksOpen.value && picks.value ? {picks: Number(picks.value)} : {})}
-  const done = starting.value ? await createVote(props.kind, props.year, schedule) : await rescheduleVote(props.kind, props.vote!.year, schedule, props.vote!.version)
-  busy.value = false
-  if (done.ok) emit("changed", done.saved)
-  else problem.value = done.reason
 }
 
 async function showTracks(igdbId: number) {
@@ -137,58 +73,17 @@ watch(() => props.vote, refresh)
     class="tools"
     data-testid="vote-board"
   >
-    <band-head heading="Board" />
-
-    <form
-      v-if="starting || editing"
-      class="tools__dates"
-      data-testid="vote-board-dates"
-      @submit.prevent="save"
-    >
-      <p class="tools__said">
-        {{ datesSaid }}
-      </p>
-      <div class="tools__fields">
-        <form-field
-          v-for="field in FIELDS"
-          :key="field.key"
-          :filled="Boolean(dates[field.key])"
-          :label="field.label"
-        >
-          <template #default="{controlId}">
-            <date-time-input
-              v-model="dates[field.key]"
-              :control-id="controlId"
-              :testid="`vote-board-${field.key}`"
-            />
-          </template>
-        </form-field>
-      </div>
-      <form-field
-        v-if="picksOpen"
-        :filled="Boolean(picks)"
-        label="Picks per vote"
+    <div class="tools__head">
+      <band-head heading="Board" />
+      <cut-button
+        small
+        :testid="vote && vote.state !== 'REVEALED' ? 'vote-board-edit' : 'vote-board-start'"
+        tone="plain"
+        @click="vote && vote.state !== 'REVEALED' ? $emit('edit') : $emit('start')"
       >
-        <template #default="{controlId}">
-          <count-input
-            v-model="picks"
-            :control-id="controlId"
-            :min="1"
-            testid="vote-board-picks"
-          />
-        </template>
-      </form-field>
-      <div class="form-save">
-        <cut-button
-          :disabled="busy"
-          submit
-          testid="vote-board-save"
-          tone="solid"
-        >
-          {{ saveSaid }}
-        </cut-button>
-      </div>
-    </form>
+        {{ vote && vote.state !== 'REVEALED' ? "Dates and picks" : "Start a vote" }}
+      </cut-button>
+    </div>
 
     <notice-box
       v-if="problem"
@@ -284,17 +179,12 @@ watch(() => props.vote, refresh)
   gap: 1rem;
 }
 
-.tools__dates {
+.tools__head {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 1rem;
-}
-
-.tools__fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: 1rem;
-  width: 100%;
 }
 
 .tools__said {

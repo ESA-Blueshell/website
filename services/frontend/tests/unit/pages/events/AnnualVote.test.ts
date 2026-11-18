@@ -11,6 +11,8 @@ import AnnualVote from "@/pages/events/AnnualVote.vue"
 import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
 import Timeline from "@/components/island/Timeline.vue"
+import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
+import VoteDatesDialog from "@/domains/vote/island/VoteDatesDialog.vue"
 import {GAME_OF_THE_YEAR, OST_TOP_50, type VoteKindPage} from "@/domains/vote"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
 import {answer, refusal} from "../../helpers/sdkAnswers"
@@ -255,20 +257,34 @@ describe("annual vote page", () => {
     expect(wrapper.findAll("[data-testid=vote-result]")).toHaveLength(2)
   })
 
-  it("shows a member their own top as they cast it once the vote is revealed, and nothing to a member who did not vote", async () => {
+  it("shows a revealed vote's results first, and switches to the member's own top as they cast it", async () => {
     voteIs(aVote("REVEALED", {ballots: 30, results: [aPlacing(1, hollow.candidate, hollow, 120, 12)]}))
     const wrapper = await mount(member)
 
     expect(api.myVoteBallot).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}})
+    expect(wrapper.get("[data-testid=vote-results-head]").text()).toBe("OST Top 50 of 2026")
+    expect(wrapper.findAll("[data-testid=vote-result]")).toHaveLength(1)
+    wrapper.findComponent(SegmentedChoice).vm.$emit("update:modelValue", "mine")
+    await settle()
+
+    expect(wrapper.get("[data-testid=vote-results-head]").text()).toBe("Your top 5")
     const mine = wrapper.get("[data-testid=vote-mine]")
-    expect(mine.text()).toContain("Your top 5")
     expect(mine.findAll("[data-testid=vote-pick]")).toHaveLength(2)
     expect(mine.find("[data-testid=vote-free]").exists()).toBe(false)
     expect(mine.find("[data-testid=vote-pick-grip-0]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=vote-result]").exists()).toBe(false)
 
     vi.mocked(api.myVoteBallot).mockResolvedValue(answer(api.myVoteBallot, {version: null, submittedAt: null, picks: []}))
     const none = await mount(member)
+    expect(none.findComponent(SegmentedChoice).exists()).toBe(false)
     expect(none.find("[data-testid=vote-mine]").exists()).toBe(false)
+  })
+
+  it("shows a member their own top under a closed vote, which has no results yet", async () => {
+    voteIs(aVote("CLOSED"))
+    const wrapper = await mount(member)
+
+    expect(wrapper.get("[data-testid=vote-mine]").findAll("[data-testid=vote-pick]")).toHaveLength(2)
   })
 
   it("lets a member rename the songs they added, in their top and in a place just filled, and says why one could not be", async () => {
@@ -343,17 +359,55 @@ describe("annual vote page", () => {
     expect(past.findComponent(BoardTools).exists()).toBe(false)
   })
 
-  it("gives the board its tools, and reads the member's ballot again once the board's change opens voting", async () => {
+  it("starts and changes a year's vote in the dialog, from the timeline or the board's band, and reads it again", async () => {
     voteIs(aVote("UPCOMING"))
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025]))
+    vi.mocked(api.annualVote).mockResolvedValue(answer(api.annualVote, aVote("REVEALED", {year: 2025})))
     const wrapper = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]})
-    const tools = wrapper.findComponent(BoardTools)
-    expect(tools.props("year")).toBe(new Date().getFullYear())
-    expect(tools.props("kind")).toBe("OST_TOP_50")
+    const dialog = wrapper.findComponent(VoteDatesDialog)
+    const line = wrapper.findComponent(Timeline)
+    expect(line.props("mayEdit")).toBe(true)
 
-    tools.vm.$emit("changed", aVote("VOTING"))
+    wrapper.findComponent(BoardTools).vm.$emit("edit")
     await settle()
+    expect(dialog.props("open")).toBe(true)
+    expect(dialog.props("vote").year).toBe(2026)
 
+    line.vm.$emit("edit", 2025)
+    await settle()
+    expect(api.annualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2025}})
+    expect(dialog.props("vote").state).toBe("REVEALED")
+
+    vi.mocked(api.annualVote).mockResolvedValueOnce(refusal(api.annualVote, {code: "AnnualVoteNotFound"}, 404))
+    dialog.vm.$emit("update:open", false)
+    line.vm.$emit("edit", 2019)
+    await settle()
+    expect(dialog.props("open")).toBe(false)
+
+    line.vm.$emit("add")
+    await settle()
+    expect(dialog.props("vote")).toBeNull()
+    expect(dialog.props("year")).toBe(Math.max(new Date().getFullYear(), 2026 + 1))
+
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025]))
+    dialog.vm.$emit("changed", aVote("VOTING"))
+    await settle()
     expect(api.myVoteBallot).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}})
     expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(2)
   })
+
+  it("starts this year's vote from the board's band where the kind has none", async () => {
+    voteIs(null)
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, []))
+    const wrapper = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]})
+
+    wrapper.findComponent(BoardTools).vm.$emit("start")
+    await settle()
+    expect(wrapper.findComponent(VoteDatesDialog).props("year")).toBe(new Date().getFullYear())
+
+    wrapper.findComponent(VoteDatesDialog).vm.$emit("changed", aVote("UPCOMING"))
+    await settle()
+    expect(wrapper.text()).toContain("coming soon")
+  })
+
 })

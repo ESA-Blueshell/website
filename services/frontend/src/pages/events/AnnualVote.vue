@@ -9,6 +9,7 @@ import Island from "@/components/island/Island.vue"
 import LeadBand from "@/components/island/LeadBand.vue"
 import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
+import SegmentedChoice from "@/components/island/SegmentedChoice.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import Timeline from "@/components/island/Timeline.vue"
@@ -16,6 +17,7 @@ import type {Stop} from "@/components/island/stripAxis"
 import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardSongs from "@/domains/vote/island/BoardSongs.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
+import VoteDatesDialog from "@/domains/vote/island/VoteDatesDialog.vue"
 import ResultList from "@/domains/vote/island/ResultList.vue"
 import {
   castBallot,
@@ -74,6 +76,29 @@ const yearStops = computed<Stop[]>(() => [...years.value].reverse().map(year => 
   sublabel: year === latest.value?.year ? TAIL[latest.value.state] : year < (latest.value?.year ?? year) ? "results" : "coming",
   mark: year === latest.value?.year ? "Now" : "",
 })))
+
+/** A revealed vote shows its results, or the member's own top as they cast it. */
+const VIEWS = [{key: "results", label: "Results"}, {key: "mine", label: "Your top"}]
+const view = ref("results")
+
+// The board starts and changes a year's vote in a dialog, opened from the timeline or its band.
+const dialogOpen = ref(false)
+const dialogVote = ref<AnnualVote | null>(null)
+const dialogYear = ref(THIS_YEAR)
+
+function startVote() {
+  dialogVote.value = null
+  // The year after the current vote's, where this year already has one.
+  dialogYear.value = latest.value && latest.value.year >= THIS_YEAR ? latest.value.year + 1 : THIS_YEAR
+  dialogOpen.value = true
+}
+
+async function editYear(year: number) {
+  const chosen = year === latest.value?.year ? latest.value : await loadYearVote(props.page.kind, year)
+  if (!chosen) return
+  dialogVote.value = chosen
+  dialogOpen.value = true
+}
 
 function onYear(year: number) {
   void router.push(yearHref(year))
@@ -142,8 +167,10 @@ async function readBallot() {
 }
 
 async function onChanged(next: AnnualVote) {
-  vote.value = next
-  latest.value = next
+  if (!latest.value || next.year >= latest.value.year) latest.value = next
+  // The page shows what the board changed where it showed that year, or the new current vote.
+  if (!vote.value || next.year === vote.value.year || (!props.year && next === latest.value)) vote.value = next
+  years.value = await loadYears(props.page.kind)
   await readBallot()
 }
 
@@ -196,6 +223,7 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
   picks.value = []
   saved.value = false
   problem.value = ""
+  view.value = "results"
   const [now, shown, listed] = await Promise.all([loadVote(kind), year ? loadYearVote(kind, year) : null, loadYears(kind)])
   if (!current()) return
   latest.value = now
@@ -260,8 +288,12 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
           pan-back-label="Show earlier years"
           pan-on-label="Show later years"
           :selected-id="vote?.year ?? null"
+          add-label="Start a vote"
+          :may-edit="isBoard"
           :stops="yearStops"
           testid-prefix="vote-year"
+          @add="startVote"
+          @edit="editYear"
           @select="onYear"
         />
       </section>
@@ -397,15 +429,35 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
             v-else
             class="vote__section"
           >
-            <band-head
-              :heading="`${page.title} of ${vote.year}`"
-              testid="vote-results-head"
+            <div class="vote__results-head">
+              <band-head
+                :heading="view === 'mine' ? `Your top ${vote.points.length}` : `${page.title} of ${vote.year}`"
+                testid="vote-results-head"
+              />
+              <segmented-choice
+                v-if="ballot?.picks.length"
+                v-model="view"
+                :options="VIEWS"
+                testid-prefix="vote-view"
+              />
+            </div>
+            <result-list
+              v-if="view === 'results' || !ballot?.picks.length"
+              :placings="vote.results"
             />
-            <result-list :placings="vote.results" />
+            <ballot-list
+              v-else
+              data-testid="vote-mine"
+              :picks="ballot.picks"
+              readonly
+              :renamable="renamable"
+              :vote="vote"
+              @rename="onRename"
+            />
           </section>
 
           <section
-            v-if="vote && vote.state !== 'VOTING' && ballot?.picks.length"
+            v-if="vote && vote.state === 'CLOSED' && ballot?.picks.length"
             class="vote__section"
             data-testid="vote-mine"
           >
@@ -454,10 +506,9 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
         />
         <lead-band testid="vote-board-band">
           <board-tools
-            :kind="page.kind"
             :vote="vote"
-            :year="THIS_YEAR"
-            @changed="onChanged"
+            @edit="editYear(vote!.year)"
+            @start="startVote"
           />
         </lead-band>
         <band-rule testid="vote-songs-rule" />
@@ -468,6 +519,14 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
           <board-songs />
         </lead-band>
       </template>
+      <vote-dates-dialog
+        v-if="isBoard"
+        v-model:open="dialogOpen"
+        :kind="page.kind"
+        :vote="dialogVote"
+        :year="dialogYear"
+        @changed="onChanged"
+      />
     </island>
   </main>
 </template>
@@ -494,6 +553,15 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
 
 .vote__problem {
   flex-basis: 100%;
+}
+
+/* The results' heading with the switch to the member's own top at its right. */
+.vote__results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .vote__section {

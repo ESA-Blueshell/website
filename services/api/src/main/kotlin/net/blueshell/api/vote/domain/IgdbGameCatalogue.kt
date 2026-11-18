@@ -7,6 +7,7 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
+import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -27,10 +28,17 @@ class IgdbGameCatalogue(
     private val tokenUrl: String = "https://id.twitch.tv/oauth2/token",
     private val apiUrl: String = "https://api.igdb.com/v4",
 ) : GameCatalogue {
-    private data class TwitchApp(
+    // Not a data class: its generated toString would print the secret.
+    private class TwitchApp(
         val id: String,
         val secret: String,
-    )
+    ) {
+        override fun equals(other: Any?) = other is TwitchApp && other.id == id && other.secret == secret
+
+        override fun hashCode() = 31 * id.hashCode() + secret.hashCode()
+
+        override fun toString() = "TwitchApp($id)"
+    }
 
     private data class Token(
         val value: String,
@@ -38,7 +46,7 @@ class IgdbGameCatalogue(
         val issuedFor: TwitchApp,
     )
 
-    private class Answer(
+    private class Raw(
         val status: Int,
         val body: String,
     )
@@ -66,18 +74,34 @@ class IgdbGameCatalogue(
     }
 
     private fun games(body: String): List<CatalogueGame> {
-        val app = TwitchApp(clientId.current(), clientSecret.current())
-        var answer = query(body, app, tokenFor(app))
-        if (answer.status == UNAUTHORIZED) answer = query(body, app, tokenFor(app, fresh = true))
+        var (app, bearer) = authorised()
+        var answer = query(body, app, bearer)
+        if (answer.status == UNAUTHORIZED) {
+            authorised(fresh = true).let { (again, token) -> answer = query(body, again, token) }
+        }
         if (answer.status !in OK_RANGE) throw GameSearchUnavailable()
         return json.readTree(answer.body).mapNotNull(::gameOf)
+    }
+
+    private fun currentApp() = TwitchApp(clientId.current(), clientSecret.current())
+
+    // A rotation writes the id and the secret one at a time, so a refused pair is read once more.
+    private fun authorised(fresh: Boolean = false): Pair<TwitchApp, String> {
+        val app = currentApp()
+        return try {
+            app to tokenFor(app, fresh)
+        } catch (refused: GameSearchUnavailable) {
+            val again = currentApp()
+            if (again == app) throw refused
+            again to tokenFor(again, fresh = true)
+        }
     }
 
     private fun query(
         body: String,
         app: TwitchApp,
         bearer: String,
-    ): Answer =
+    ): Raw =
         send {
             rest
                 .post()
@@ -85,7 +109,7 @@ class IgdbGameCatalogue(
                 .header("Client-ID", app.id)
                 .header("Authorization", "Bearer $bearer")
                 .accept(MediaType.APPLICATION_JSON)
-                .contentType(MediaType.TEXT_PLAIN)
+                .contentType(MediaType("text", "plain", StandardCharsets.UTF_8))
                 .body(body)
         }
 
@@ -117,9 +141,9 @@ class IgdbGameCatalogue(
         return value.also { token = Token(it, clock.instant().plusSeconds(lifetime - EARLY_RENEWAL_SECONDS), app) }
     }
 
-    private fun send(request: () -> RestClient.RequestBodySpec): Answer =
+    private fun send(request: () -> RestClient.RequestBodySpec): Raw =
         try {
-            request().exchange { _, response -> Answer(response.statusCode.value(), response.bodyTo(String::class.java).orEmpty()) }
+            request().exchange { _, response -> Raw(response.statusCode.value(), response.bodyTo(String::class.java).orEmpty()) }
         } catch (_: RestClientException) {
             throw GameSearchUnavailable()
         }

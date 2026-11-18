@@ -40,6 +40,7 @@ class IgdbGameCatalogueTest {
     private var gamesAnswer: (HttpExchange) -> Unit = { it.answer(200, CELESTE) }
     private val environment = MockEnvironment().withProperty("igdb.id", "client").withProperty("igdb.secret", "secret")
     private val clientIds = mutableListOf<String>()
+    private var clientId = "client"
 
     init {
         server.createContext("/token") { tokenAnswer(it) }
@@ -51,7 +52,10 @@ class IgdbGameCatalogueTest {
     }
 
     @AfterEach
-    fun stop() = server.stop(0)
+    fun stop() {
+        server.stop(0)
+        assertThat(clientIds).allMatch { it == clientId }
+    }
 
     private fun catalogue(api: String = "$base/v4") =
         IgdbGameCatalogue(
@@ -75,6 +79,13 @@ class IgdbGameCatalogueTest {
         assertThat(queries.single().second).isEqualTo(
             "search \"Cel\\\"este\"; fields name,first_release_date,cover.image_id; where version_parent = null; limit 10;",
         )
+    }
+
+    @Test
+    fun `a search sends its text as UTF-8, whatever the client's default`() {
+        catalogue().search("Pokémon 東方", 5, null)
+
+        assertThat(queries.single().second).startsWith("search \"Pokémon 東方\";")
     }
 
     @Test
@@ -116,11 +127,43 @@ class IgdbGameCatalogueTest {
         igdb.search("a", 1, null)
         environment.setProperty("igdb.id", "rotated")
         environment.setProperty("igdb.secret", "fresh")
-        igdb.search("a", 1, null)
+        igdb.search("b", 1, null)
 
         assertThat(tokensIssued.last()).isEqualTo("client_id=rotated&client_secret=fresh&grant_type=client_credentials")
         assertThat(clientIds).containsExactly("client", "rotated")
         assertThat(queries.map { it.first }).containsExactly("Bearer token1", "Bearer token2")
+        clientIds.clear()
+        clientId = "rotated"
+    }
+
+    @Test
+    fun `a pair Twitch refuses mid-rotation is read once more, and the search goes on with the whole new pair`() {
+        environment.setProperty("igdb.secret", "fresh")
+        tokenAnswer = { exchange ->
+            val form = exchange.requestBody.readAllBytes().decodeToString()
+            tokensIssued += form
+            if (form.contains("client_secret=fresh") && !form.contains("client_id=rotated")) {
+                environment.setProperty("igdb.id", "rotated")
+                exchange.answer(400, "{}")
+            } else {
+                exchange.answer(200, """{"access_token":"token${tokensIssued.size}","expires_in":3600}""")
+            }
+        }
+        clientId = "rotated"
+
+        assertThat(catalogue().search("a", 1, null)).hasSize(1)
+        assertThat(tokensIssued.last()).isEqualTo("client_id=rotated&client_secret=fresh&grant_type=client_credentials")
+    }
+
+    @Test
+    fun `a pair Twitch refuses that has not changed stays refused`() {
+        tokenAnswer = { exchange ->
+            tokensIssued += "refused"
+            exchange.answer(400, "{}")
+        }
+
+        assertThatThrownBy { catalogue().search("a", 1, null) }.isInstanceOf(GameSearchUnavailable::class.java)
+        assertThat(tokensIssued).hasSize(1)
     }
 
     @Test

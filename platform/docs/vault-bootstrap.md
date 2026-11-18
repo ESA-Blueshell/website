@@ -421,7 +421,7 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
   ```
 
 - **IGDB client id and secret.** Patch both in one `vault kv patch`; the next
-  game search asks Twitch for a token with the new pair. A pair set where none
+  uncached game search asks Twitch for a token with the new pair. A pair set where none
   was before needs a restart, since the IGDB client only exists when the api
   starts with one.
 

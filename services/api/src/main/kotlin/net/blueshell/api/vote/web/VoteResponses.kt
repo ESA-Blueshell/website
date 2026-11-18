@@ -56,7 +56,7 @@ data class VotePlacingResponse(
 
 /**
  * A year's vote, with what its kind asks for: [points] per position, so its size is how many picks
- * a ballot holds. [results] is empty until it is published.
+ * a ballot holds. [results] is empty until it is revealed.
  */
 @Schema(name = "AnnualVoteResponse")
 data class AnnualVoteResponse(

@@ -1,6 +1,6 @@
 package net.blueshell.api.vote.domain
 
-private val OFFLINE_GAMES =
+internal val OFFLINE_GAMES =
     listOf(
         CatalogueGame(1942, "The Witcher 3: Wild Hunt", null, 2015),
         CatalogueGame(7346, "The Legend of Zelda: Breath of the Wild", null, 2017),

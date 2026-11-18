@@ -1,4 +1,6 @@
 package net.blueshell.api.vote.domain
 
-/** IGDB's image host, YouTube's thumbnail host and Spotify's image hosts. */
-fun isPictureHost(host: String): Boolean = host in setOf("images.igdb.com", "i.ytimg.com", "i.scdn.co") || host.endsWith(".spotifycdn.com")
+import net.blueshell.api.vote.persistence.TrackSource
+
+/** IGDB's image host, and the thumbnail hosts of the services a track can come from. */
+fun isPictureHost(host: String): Boolean = host == "images.igdb.com" || TrackSource.entries.any { it.service.isThumbnailHost(host) }

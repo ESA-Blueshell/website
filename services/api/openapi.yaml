@@ -969,6 +969,8 @@ components:
       properties:
         candidate:
           $ref: '#/components/schemas/VoteCandidateResponse'
+        embedUrl:
+          type: string
         externalId:
           type: string
         id:
@@ -989,6 +991,7 @@ components:
           type: string
       required:
       - candidate
+      - embedUrl
       - externalId
       - id
       - source

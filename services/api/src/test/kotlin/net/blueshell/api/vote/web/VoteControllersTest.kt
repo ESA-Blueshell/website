@@ -42,10 +42,28 @@ class VoteControllersTest {
     private val cover = Image(url = "/files/public/vote-covers/c.webp", path = "vote-covers/c.webp", width = 264, height = 352)
     private val celeste = CandidateSummary(1, 26226, "Celeste", 2018, cover)
     private val resurrections =
-        TrackSummary(11, celeste, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
+        TrackSummary(
+            11,
+            celeste,
+            TrackSource.SPOTIFY,
+            "x",
+            "https://open.spotify.com/track/x",
+            "https://open.spotify.com/embed/track/x",
+            "Resurrections",
+            null,
+        )
     private val celesteResponse = VoteCandidateResponse(1, 26226, "Celeste", 2018, cover)
     private val resurrectionsResponse =
-        CandidateTrackResponse(11, celesteResponse, TrackSource.SPOTIFY, "x", "https://open.spotify.com/track/x", "Resurrections", null)
+        CandidateTrackResponse(
+            11,
+            celesteResponse,
+            TrackSource.SPOTIFY,
+            "x",
+            "https://open.spotify.com/track/x",
+            "https://open.spotify.com/embed/track/x",
+            "Resurrections",
+            null,
+        )
 
     @Test
     fun `a vote reads, opens on its dates, moves them and counts through its use cases`() {

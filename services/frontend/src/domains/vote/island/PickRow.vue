@@ -99,21 +99,31 @@ const rank = computed<string>(() => RANKS[place - 1] ?? "var(--color-ash)")
   min-height: var(--row-h);
   padding: 0.6rem calc(var(--cut) + 0.8rem) 0.6rem calc(var(--cut) + 0.4rem);
   clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
+  /* Ruled at its foot in the place's colour, which marks the whole place as its own. */
   background:
-    linear-gradient(100deg, color-mix(in oklab, var(--rank) 16%, transparent) 0, transparent 9rem),
-    var(--color-surface);
+    linear-gradient(0deg, color-mix(in oklab, var(--rank) 70%, transparent) 0 2px, transparent 2px),
+    linear-gradient(100deg, color-mix(in oklab, var(--rank) 22%, transparent) 0, transparent 11rem),
+    var(--color-raised);
   color: var(--color-chalk);
   transition: background-color 160ms ease, scale 160ms ease;
 }
 
+/* A free place is the ground it waits on, darker than a filled one, under the same rule. */
 .pick-row--free {
-  background: color-mix(in oklab, var(--color-surface) 45%, transparent);
+  background:
+    linear-gradient(0deg, color-mix(in oklab, var(--rank) 55%, transparent) 0 2px, transparent 2px),
+    var(--color-pit);
+}
+
+.pick-row--free .pick-row__words {
+  align-self: center;
 }
 
 .pick-row--dragging {
   z-index: 1;
   scale: 1.02;
   background:
+    linear-gradient(0deg, var(--rank) 0 2px, transparent 2px),
     linear-gradient(100deg, color-mix(in oklab, var(--rank) 30%, transparent) 0, transparent 12rem),
     var(--color-raised);
 }
@@ -178,7 +188,8 @@ const rank = computed<string>(() => RANKS[place - 1] ?? "var(--color-ash)")
   color: var(--color-ash);
 }
 
-/* What the place is worth: a cut chip in the place's colour. */
+/* What the place is worth, bracketed: ruled above and below in the place's colour and leaning at
+   the row's 12°. Skewed rather than clipped, since a clip shaves whichever rule lands on its edge. */
 .pick-row__points {
   display: inline-flex;
   align-items: baseline;
@@ -186,9 +197,16 @@ const rank = computed<string>(() => RANKS[place - 1] ?? "var(--color-ash)")
   min-width: 4.2rem;
   justify-content: center;
   padding: 0.3rem 0.8rem;
-  clip-path: polygon(0.45rem 0, 100% 0, calc(100% - 0.45rem) 100%, 0 100%);
-  background-color: color-mix(in oklab, var(--rank) 20%, transparent);
+  transform: skewX(-12deg);
+  background-color: color-mix(in oklab, var(--rank) 8%, transparent);
+  border-block: 1px solid var(--rank);
   color: var(--color-chalk);
+}
+
+/* The words stand upright inside the lean. */
+.pick-row__points > * {
+  display: inline-block;
+  transform: skewX(12deg);
 }
 
 .pick-row__value {
@@ -206,7 +224,6 @@ const rank = computed<string>(() => RANKS[place - 1] ?? "var(--color-ash)")
 
 .pick-row--free .pick-row__points {
   background-color: transparent;
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--rank) 45%, transparent);
 }
 
 .pick-row__end {

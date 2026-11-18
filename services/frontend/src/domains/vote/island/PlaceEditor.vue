@@ -38,6 +38,8 @@ const game = ref<CatalogueGame | null>(null)
 const tracks = ref<Track[]>([])
 const songTerm = ref("")
 const busy = ref(false)
+/** Which field the last refusal was about, ruled red until it is typed in again. */
+const wrong = ref<"game" | "song" | null>(null)
 let settling: ReturnType<typeof setTimeout> | undefined
 // A slower answer to an older term must not replace a newer one.
 const searches = latestWins()
@@ -58,10 +60,16 @@ const songOptions = computed(() => {
     .map(one => ({key: String(one.id), label: one.title, note: one.source === "SPOTIFY" ? "Spotify" : "YouTube"}))
 })
 
-const gameNote = computed<string>(() => (searched.value && !searching.value ? "No game matches that." : ""))
+
+/* Said in the open list, as the Discord picker says nobody was found: only once a search has answered. */
+const noGame = computed<boolean>(() => searched.value && !searching.value && games.value.length === 0)
 const songNote = computed<string>(() => (tracks.value.length
   ? "No song matches. Paste a YouTube or Spotify link to add one."
   : "Nobody added a song for this game yet. Paste a YouTube or Spotify link."))
+
+/* Ruled red where what is typed matches nothing, or where the last refusal was about the field. */
+const gameWrong = computed<boolean>(() => wrong.value === "game" || (noGame.value && !game.value))
+const songWrong = computed<boolean>(() => wrong.value === "song" || (songTerm.value.trim() !== "" && songOptions.value.length === 0))
 
 async function ask(term: string) {
   const current = searches.begin()
@@ -69,9 +77,15 @@ async function ask(term: string) {
   const found = await findGames(term, props.vote.kind, props.vote.year)
   if (!current()) return
   games.value = found.ok ? found.saved : []
-  searched.value = term.trim() !== ""
+  searched.value = true
   searching.value = false
+  wrong.value = found.ok ? null : "game"
   if (!found.ok) emit("problem", found.reason)
+}
+
+// Opened before anything is typed, the list shows the games a member is likeliest to look for.
+function onOpened() {
+  if (!searched.value && !searching.value) void ask("")
 }
 
 function onSearch(term: string) {
@@ -80,6 +94,7 @@ function onSearch(term: string) {
 }
 
 function reset() {
+  wrong.value = null
   game.value = null
   tracks.value = []
   songTerm.value = ""
@@ -96,7 +111,10 @@ async function onPickGame(key: string) {
     if (stored.ok) {
       emit("pick", {candidate: stored.saved, track: null})
       reset()
-    } else emit("problem", stored.reason)
+    } else {
+      wrong.value = "game"
+      emit("problem", stored.reason)
+    }
     return
   }
   tracks.value = await tracksOf(game.value.igdbId)
@@ -116,7 +134,10 @@ async function onPickSong(key: string) {
   if (added.ok) {
     emit("pick", {candidate: added.saved.candidate, track: added.saved})
     reset()
-  } else emit("problem", added.reason)
+  } else {
+    wrong.value = "song"
+    emit("problem", added.reason)
+  }
 }
 
 onBeforeUnmount(() => clearTimeout(settling))
@@ -128,6 +149,8 @@ onBeforeUnmount(() => clearTimeout(settling))
     data-testid="vote-finder"
   >
     <form-field
+      class="place-editor__game"
+      :class="{'place-editor--wrong': gameWrong}"
       :filled="Boolean(game)"
       label="Game"
       variant="inside"
@@ -136,22 +159,32 @@ onBeforeUnmount(() => clearTimeout(settling))
         <search-picker
           :control-id="controlId"
           :disabled="busy"
-          :empty-note="gameNote"
+          empty-note=""
           :labelled-by="labelId"
           :loading="searching"
           :options="gameOptions"
-          :placeholder="vote.releasedInYear ? `Search games released in ${vote.year}` : 'Search for a game'"
+          :placeholder="vote.releasedInYear ? `Game released in ${vote.year}` : 'Game'"
           remote
           :selected-key="game ? String(game.igdbId) : null"
           testid-prefix="vote-game"
           @clear="reset"
+          @opened="onOpened"
           @pick="onPickGame"
           @search="onSearch"
-        />
+        >
+          <template
+            v-if="noGame"
+            #missing
+          >
+            No game found. Try another name.
+          </template>
+        </search-picker>
       </template>
     </form-field>
     <form-field
       v-if="vote.picksTrack"
+      class="place-editor__song"
+      :class="{'place-editor--wrong': songWrong}"
       :filled="false"
       label="Song"
       variant="inside"
@@ -160,25 +193,94 @@ onBeforeUnmount(() => clearTimeout(settling))
         <search-picker
           :control-id="controlId"
           :disabled="!game || busy"
-          :empty-note="game ? songNote : ''"
+          empty-note=""
           :labelled-by="labelId"
           :options="songOptions"
-          :placeholder="game ? 'Pick a song or paste a link' : 'Pick a game first'"
+          :placeholder="game ? 'Song, or paste a YouTube or Spotify link' : 'Song'"
           remote
           testid-prefix="vote-song"
           @pick="onPickSong"
-          @search="songTerm = $event"
-        />
+          @search="songTerm = $event; wrong = null"
+        >
+          <template
+            v-if="game && songOptions.length === 0"
+            #missing
+          >
+            {{ songNote }}
+          </template>
+        </search-picker>
       </template>
     </form-field>
   </div>
 </template>
 
 <style scoped>
+/* The fields take the look of what they fill in: the game as a row names it, the song under it as
+   a row's track line, on the row's own ground, ruled in the place's colour. */
 .place-editor {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
   min-width: 0;
+}
+
+/* The words the field says stand in it as its placeholder; the label stays for a screen reader. */
+.place-editor :deep(.island-field__label) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.place-editor :deep(.island-field__said) {
+  display: none;
+}
+
+/* No rule at rest: the place's rule runs under the whole row, so the two fields read as its lines.
+   A line shows under the one being typed in, green once it holds a choice and red where what is
+   typed matches nothing or was refused. */
+.place-editor :deep(.picker__field),
+.place-editor :deep(.picker__field:focus-within) {
+  background: none;
+  border-bottom: 2px solid transparent;
+}
+
+.place-editor :deep(.picker__field:focus-within) {
+  border-bottom-color: color-mix(in oklab, var(--color-chalk) 45%, transparent);
+}
+
+.place-editor :deep(.picker__field--chosen) {
+  background: none;
+  border-bottom-color: var(--color-ok);
+}
+
+.place-editor .place-editor--wrong :deep(.picker__field) {
+  border-bottom-color: var(--color-danger);
+}
+
+.place-editor :deep(.island-field) {
+  gap: 0;
+}
+
+.place-editor :deep(.island-field.island-field--inside .picker__search) {
+  padding: 0.3rem 0.1rem;
+}
+
+.place-editor :deep(.island-field.island-field--inside:not(:focus-within) .picker__search::placeholder) {
+  color: var(--color-ash);
+}
+
+.place-editor :deep(.picker__caret--field) {
+  padding-inline: 0.4rem;
+}
+
+.place-editor__game :deep(.picker__search) {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.place-editor__song :deep(.picker__search) {
+  font-size: 0.85rem;
 }
 </style>

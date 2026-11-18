@@ -36,19 +36,26 @@ describe("the ballot list", () => {
     expect(rows[1]!.find(".pick-row__track").exists()).toBe(false)
   })
 
-  it("shows every free place with its points, the next one filled in where it stands", async () => {
+  it("shows every free place with its points, each filled in where it stands", async () => {
     const wrapper = listed()
 
     const free = wrapper.findAll("[data-testid=vote-free]")
     expect(free.map(row => row.find(".pick-row__points").text())).toEqual(["8pts", "6pts"])
-    expect(free[0]!.findComponent(PlaceEditor).exists()).toBe(true)
-    expect(free[1]!.text()).toContain("Free")
+    expect(free.map(row => row.findComponent(PlaceEditor).exists())).toEqual([true, true])
 
     const editor = free[0]!.findComponent(PlaceEditor)
     editor.vm.$emit("pick", picks[0])
     editor.vm.$emit("problem", "No.")
     expect(wrapper.emitted("pick")).toEqual([[picks[0]]])
     expect(wrapper.emitted("problem")).toEqual([["No."]])
+  })
+
+  it("shows a cast top as it is, without free places or anything to move", () => {
+    const wrapper = mount(BallotList, {props: {picks, vote, readonly: true}})
+
+    expect(wrapper.findAll("[data-testid=vote-pick]")).toHaveLength(2)
+    expect(wrapper.find("[data-testid=vote-free]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=vote-pick-grip-0]").exists()).toBe(false)
   })
 
   it("asks to move or drop a pick, and cannot move the first up or the last down", async () => {

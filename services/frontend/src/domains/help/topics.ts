@@ -400,7 +400,7 @@ export const HELP: HelpSection[] = [
           "Under Your top 5, find a game, then pick the track that sums up its soundtrack. Pick a track someone already added, or paste a YouTube or Spotify link and press Add.",
           "Each place is worth the points beside it: 12 for first, then 10, 8, 6 and 4. Drag a game by its handle to change its place, or use the arrows. Press the cross to take it off.",
           "Press Cast your vote. Until voting closes you can change your top and press Save your top 5 again.",
-          "The results are revealed on the date at the top of the page. Nobody sees how anybody voted, and the ballots are deleted at the reveal.",
+          "The results are revealed on the date at the top of the page. Your top stays on the page after that, so you can look back on it. Nobody else sees how you voted.",
         ],
         links: [{label: "OST Top 50", to: "/events/ost-top-50"}],
       },

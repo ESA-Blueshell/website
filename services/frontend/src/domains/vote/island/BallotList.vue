@@ -7,15 +7,18 @@ import PickRow from "./PickRow.vue"
 import PlaceEditor from "./PlaceEditor.vue"
 
 /**
- * Every place of a top, filled or free, each with what it is worth. The next free place is filled
- * in where it stands. A pick moves by dragging its handle, by the arrow keys on the handle, or by
- * its up and down buttons.
+ * Every place of a top, filled or free, each with what it is worth. A free place is filled in
+ * where it stands, and its pick joins the top after the last one filled. A pick moves by dragging
+ * its handle, by the arrow keys on the handle, or by its up and down buttons. Every row is as tall
+ * as a free place's two fields, so the columns and the cut line up down the list.
  */
 defineOptions({name: "VoteBallotList"})
 
 const props = defineProps<{
   vote: AnnualVote
   picks: BallotPick[]
+  /** Shown as it was cast, once voting has closed: no free places, nothing to move. */
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -111,7 +114,10 @@ function onKey(event: KeyboardEvent, index: number) {
         :points="pointsAt(vote.points, index)"
         :track="pick.track?.title"
       >
-        <template #end>
+        <template
+          v-if="!readonly"
+          #end
+        >
           <button
             :aria-label="`Move ${pick.candidate.name}: drag, or press the arrow keys`"
             class="ballot__grip"
@@ -207,9 +213,9 @@ function onKey(event: KeyboardEvent, index: number) {
       </pick-row>
     </li>
     <li
-      v-for="index in vote.points.length - picks.length"
+      v-for="index in readonly ? 0 : vote.points.length - picks.length"
       :key="`free-${index}`"
-      :class="{'ballot__place--editing': index === 1}"
+      class="ballot__place--free"
       data-testid="vote-free"
     >
       <pick-row
@@ -218,25 +224,35 @@ function onKey(event: KeyboardEvent, index: number) {
       >
         <template #free>
           <place-editor
-            v-if="index === 1"
             :vote="vote"
             @pick="$emit('pick', $event)"
             @problem="$emit('problem', $event)"
           />
-          <template v-else>
-            Free
-          </template>
         </template>
       </pick-row>
+    </li>
+    <li
+      v-if="$slots.foot"
+      class="ballot__foot"
+    >
+      <slot name="foot" />
     </li>
   </ol>
 </template>
 
 <style scoped>
 .ballot {
+  /* Every row's height, and so its cut: a free place's two fields and the padding around them. */
+  --row-h: 6.4rem;
+  --cut: calc(var(--row-h) * 0.2126);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+.ballot :deep(.pick-row),
+.ballot :deep(.pick-row:has(.pick-row__end)) {
+  --row-h: inherit;
 }
 
 .ballot__place--held {
@@ -245,13 +261,30 @@ function onKey(event: KeyboardEvent, index: number) {
   user-select: none;
 }
 
-/* Two fields stand in the place being filled, so the row, and with it its cut, is two fields tall. */
-.ballot__place--editing :deep(.pick-row) {
-  --row-h: 9.6rem;
-}
-
 .ballot__place:not(.ballot__place--held) {
   transition: translate 160ms ease;
+}
+
+/* The foot's words stand where the rows' content does, and its button is a bar as wide as a row,
+   cut at a row's lean, so the list ends on it. */
+.ballot__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.ballot__foot > :deep(.form-save__words) {
+  padding-inline-start: calc(var(--cut) + 0.4rem);
+}
+
+.ballot__foot > :deep(.island-cut) {
+  flex: 1 1 100%;
+  justify-content: center;
+  min-height: 3.25rem;
+  font-size: 1rem;
+  clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
 }
 
 .ballot__grip {
@@ -282,40 +315,71 @@ function onKey(event: KeyboardEvent, index: number) {
   display: flex;
 }
 
+/* Fixed columns, filled or free, so the numbers, names and buttons each run in one line and the
+   points stand at the right edge of every place. A free place's fields run up to its points. */
+@media (min-width: 601px) {
+  .ballot :deep(.pick-row) {
+    grid-template-columns: 3.4rem 3.5rem minmax(0, 1fr) auto 5.2rem;
+  }
+
+  .ballot :deep(.pick-row__cover) {
+    width: 3.5rem;
+  }
+
+  .ballot :deep(.pick-row__end) {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .ballot :deep(.pick-row__points) {
+    grid-column: 5;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .ballot__place--free :deep(.pick-row__words) {
+    grid-column: 3 / 5;
+  }
+}
+
 @media (max-width: 600px) {
+  .ballot {
+    --row-h: 6.4rem;
+  }
+
   /* No room for the steps on a phone: the handle drags, and its arrow keys step. */
   .ballot__steps {
     display: none;
   }
 
-  /* The fields take the cover's room, so they keep a width a name can be typed in. */
-  .ballot__place--editing :deep(.pick-row) {
-    --row-h: 9rem;
+  /* A free place gives the cover's room to its fields, with its points under its number. */
+  .ballot__place--free :deep(.pick-row) {
     grid-template-areas:
       "place words"
       "points words";
     grid-template-columns: 3.4rem minmax(0, 1fr);
-    gap: 0.4rem 0.6rem;
+    gap: 0.3rem 0.6rem;
   }
 
-  .ballot__place--editing :deep(.pick-row__place) {
+  .ballot__place--free :deep(.pick-row__cover) {
+    display: none;
+  }
+
+  .ballot__place--free :deep(.pick-row__place) {
     grid-area: place;
     align-self: end;
   }
 
-  .ballot__place--editing :deep(.pick-row__words) {
+  .ballot__place--free :deep(.pick-row__words) {
     grid-area: words;
+    align-self: center;
   }
 
-  .ballot__place--editing :deep(.pick-row__points) {
+  .ballot__place--free :deep(.pick-row__points) {
     grid-area: points;
     align-self: start;
     min-width: 0;
     padding-inline: 0.5rem;
-  }
-
-  .ballot__place--editing :deep(.pick-row__cover) {
-    display: none;
   }
 }
 </style>

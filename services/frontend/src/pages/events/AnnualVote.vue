@@ -56,7 +56,6 @@ const saved = ref(false)
 const problem = ref("")
 
 const {signedIn, isMember, isBoard} = useVoteRights()
-const voting = computed<boolean>(() => vote.value?.state === "VOTING")
 const changed = computed<boolean>(() => !samePicks(picks.value, ballot.value?.picks ?? []))
 const full = computed<boolean>(() => picks.value.length >= (vote.value?.points.length ?? 0))
 
@@ -79,8 +78,9 @@ const onceSaid = computed<string>(() => vote.value?.picksTrack
 
 const FULL_SAID = "Your top is full. Take a game off to add another."
 
+// Read while voting, to change it, and after, for the member to look back on how they voted.
 async function readBallot() {
-  if (!voting.value || !isMember.value) return
+  if (!vote.value || vote.value.state === "UPCOMING" || !isMember.value) return
   ballot.value = await loadBallot(vote.value!.kind, vote.value!.year)
   unread.value = ballot.value === null
   picks.value = [...(ballot.value?.picks ?? [])]
@@ -275,36 +275,36 @@ watch(() => props.page.kind, async kind => {
                 @problem="problem = $event"
                 @remove="onRemove"
                 @reorder="onReorder"
-              />
-
-              <notice-box
-                v-if="problem"
-                testid="vote-problem"
-                tone="danger"
               >
-                {{ problem }}
-              </notice-box>
-
-              <div class="form-save">
-                <span
-                  v-if="saved && !changed"
-                  class="form-save__words"
-                  data-testid="vote-saved"
-                >Saved. You can change it until voting closes.</span>
-                <span
-                  v-else-if="full"
-                  class="form-save__words"
-                  data-testid="vote-ballot-full"
-                >{{ FULL_SAID }}</span>
-                <cut-button
-                  :disabled="saving || !changed || picks.length === 0"
-                  testid="vote-save"
-                  tone="solid"
-                  @click="save"
-                >
-                  {{ ballot?.version == null ? "Cast your vote" : `Save your top ${vote.points.length}` }}
-                </cut-button>
-              </div>
+                <template #foot>
+                  <notice-box
+                    v-if="problem"
+                    class="vote__problem"
+                    testid="vote-problem"
+                    tone="danger"
+                  >
+                    {{ problem }}
+                  </notice-box>
+                  <span
+                    v-if="saved && !changed"
+                    class="form-save__words"
+                    data-testid="vote-saved"
+                  >Saved. You can change it until voting closes.</span>
+                  <span
+                    v-else-if="full"
+                    class="form-save__words"
+                    data-testid="vote-ballot-full"
+                  >{{ FULL_SAID }}</span>
+                  <cut-button
+                    :disabled="saving || !changed || picks.length === 0"
+                    testid="vote-save"
+                    tone="solid"
+                    @click="save"
+                  >
+                    {{ ballot?.version == null ? "Cast your vote" : `Save your top ${vote.points.length}` }}
+                  </cut-button>
+                </template>
+              </ballot-list>
             </template>
           </section>
 
@@ -326,6 +326,19 @@ watch(() => props.page.kind, async kind => {
             <result-list :placings="vote.results" />
           </section>
 
+          <section
+            v-if="vote && vote.state !== 'VOTING' && ballot?.picks.length"
+            class="vote__section"
+            data-testid="vote-mine"
+          >
+            <band-head :heading="`Your top ${vote.points.length}`" />
+            <ballot-list
+              :picks="ballot.picks"
+              readonly
+              :vote="vote"
+            />
+          </section>
+
           <template #aside>
             <p v-if="vote">
               Every member ranks their {{ vote.points.length }} favourites. Each place is worth the points beside it, and
@@ -339,8 +352,8 @@ watch(() => props.page.kind, async kind => {
               {{ onceSaid }} Drag a game by its handle to change its place.
             </p>
             <p v-if="vote">
-              You can change your top until voting closes. Nobody sees how anybody voted; the ballots are deleted once
-              the results are revealed.
+              You can change your top until voting closes. It stays here after the reveal for you to look back on;
+              nobody else sees how you voted.
             </p>
             <p v-if="signedIn">
               <router-link
@@ -375,7 +388,25 @@ watch(() => props.page.kind, async kind => {
 <style scoped>
 /* The top stands on a ground of its own, tinted blue, so its rows read as bars laid on it. */
 .vote-band {
-  --band-ground: color-mix(in oklab, var(--color-brand) 9%, var(--color-ground));
+  --band-ground: color-mix(in oklab, var(--color-brand) 16%, var(--color-ground));
+}
+
+/* The top takes the room, the aside a reading column beside it, and the band's own padding is the
+   only gap over the heading. */
+.vote-band :deep(.task) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+  gap: 2.5rem;
+  padding-top: 0;
+}
+
+@media (max-width: 1023px) {
+  .vote-band :deep(.task) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.vote__problem {
+  flex-basis: 100%;
 }
 
 .vote__section {

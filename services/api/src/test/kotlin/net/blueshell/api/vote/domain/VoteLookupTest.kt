@@ -1,9 +1,11 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.CandidateTrack
+import net.blueshell.api.vote.persistence.CandidateTrackRepository
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.Vote
 import net.blueshell.api.vote.persistence.VoteCandidate
+import net.blueshell.api.vote.persistence.VoteCandidateRepository
 import net.blueshell.api.vote.persistence.VoteKind
 import net.blueshell.api.vote.persistence.VoteRepository
 import org.assertj.core.api.Assertions.assertThat
@@ -63,5 +65,16 @@ class VoteLookupTest {
         assertThatThrownBy { VoteKind.GAME_OF_THE_YEAR.requirePick(2026, celeste, track) }.isInstanceOf(PickTakesNoTrack::class.java)
         assertThatThrownBy { VoteKind.OST_TOP_50.requirePick(2026, celeste, null) }.isInstanceOf(PickNeedsTrack::class.java)
         assertThatThrownBy { VoteKind.OST_TOP_50.requirePick(2026, old, track) }.isInstanceOf(PickNeedsTrack::class.java)
+    }
+
+    @Test
+    fun `no ids asks for nothing`() {
+        val candidates = mock<VoteCandidateRepository>()
+        val tracks = mock<CandidateTrackRepository>()
+
+        assertThat(candidates.byIds(emptyList())).isEmpty()
+        assertThat(tracks.byIds(emptyList())).isEmpty()
+        verify(candidates, never()).findAllByIdIn(any())
+        verify(tracks, never()).findAllByIdIn(any())
     }
 }

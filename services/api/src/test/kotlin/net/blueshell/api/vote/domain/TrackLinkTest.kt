@@ -17,6 +17,7 @@ class TrackLinkTest {
             "http://youtube.com/watch?v=dQw4w9WgXcQ",
             "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
             "https://music.youtube.com/watch?v=dQw4w9WgXcQ&list=RD",
+            "https://www.youtube.com/watch?v=dQw4w9WgXc%51",
             "https://www.youtube.com/shorts/dQw4w9WgXcQ",
             "https://www.youtube.com/live/dQw4w9WgXcQ",
             "https://www.youtube.com/embed/dQw4w9WgXcQ",

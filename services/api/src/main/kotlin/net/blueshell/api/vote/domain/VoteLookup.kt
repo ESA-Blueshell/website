@@ -18,6 +18,12 @@ internal fun VoteRepository.of(
     year: Int,
 ): Vote = findByKindAndYear(kind.requireOffered(), year) ?: throw AnnualVoteNotFound(kind, year)
 
+/** [of], with the vote read under the lock a ballot is cast under. */
+internal fun VoteRepository.lockedOf(
+    kind: VoteKind,
+    year: Int,
+): Vote = findLockedByKindAndYear(kind.requireOffered(), year) ?: throw AnnualVoteNotFound(kind, year)
+
 /** Refused unless members may cast and change ballots at [now]. */
 internal fun Vote.requireVoting(now: Instant) {
     val state = stateAt(now)
@@ -39,7 +45,7 @@ internal fun VoteKind.requirePick(
 }
 
 internal fun VoteCandidateRepository.byIds(ids: Collection<Long>): Map<Long, VoteCandidate> =
-    findAllById(ids.toSet()).associateBy { it.id!! }
+    if (ids.isEmpty()) emptyMap() else findAllByIdIn(ids.toSet()).associateBy { it.id!! }
 
 internal fun CandidateTrackRepository.byIds(ids: Collection<Long>): Map<Long, CandidateTrack> =
-    findAllById(ids.toSet()).associateBy { it.id!! }
+    if (ids.isEmpty()) emptyMap() else findAllByIdIn(ids.toSet()).associateBy { it.id!! }

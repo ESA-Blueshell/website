@@ -15,10 +15,17 @@ interface CandidateTrackRepository : BaseRepository<CandidateTrack, Long> {
         externalId: String,
     ): CandidateTrack?
 
-    @EntityGraph(attributePaths = ["candidate"])
+    // A track is read with its game, the game's cover and its own thumbnail; renditions come in batches.
+    @EntityGraph(attributePaths = ["candidate", "candidate.cover", "thumbnail"])
     fun findAllByCandidateIdAndMergedIntoIsNullOrderByAddedAt(candidateId: Long): List<CandidateTrack>
 
     fun findAllByMergedIntoId(trackId: Long): List<CandidateTrack>
+
+    @EntityGraph(attributePaths = ["candidate", "candidate.cover", "thumbnail"])
+    fun findAllByIdIn(ids: Collection<Long>): List<CandidateTrack>
+
+    /** How many live tracks a game has, merged ones left out. */
+    fun countByCandidateIdAndMergedIntoIsNull(candidateId: Long): Long
 
     /**
      * The track, with its version raised when the transaction commits even if nothing on it changed.

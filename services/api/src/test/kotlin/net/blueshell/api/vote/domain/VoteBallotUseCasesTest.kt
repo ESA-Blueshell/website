@@ -44,15 +44,16 @@ class VoteBallotUseCasesTest {
     init {
         val tracksById = listOf(resurrections, firstSteps, godOfTheDead).associateBy { it.id!! }
         val candidatesById = listOf(celeste, hades).associateBy { it.id!! }
-        whenever(tracks.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
-            call.getArgument<Iterable<Long>>(0).mapNotNull { tracksById[it] }
+        whenever(tracks.findAllByIdIn(any<Collection<Long>>())).thenAnswer { call ->
+            call.getArgument<Collection<Long>>(0).mapNotNull { tracksById[it] }
         }
-        whenever(games.findAllById(any<Iterable<Long>>())).thenAnswer { call ->
-            call.getArgument<Iterable<Long>>(0).mapNotNull { candidatesById[it] }
+        whenever(games.findAllByIdIn(any<Collection<Long>>())).thenAnswer { call ->
+            call.getArgument<Collection<Long>>(0).mapNotNull { candidatesById[it] }
         }
         whenever(ballots.saveAndFlush(any<VoteBallot>())).thenAnswer { it.getArgument<VoteBallot>(0) }
         whenever(votes.findByKindAndYear(ost, 2026)).thenReturn(vote())
         whenever(votes.findByKindAndYear(goty, 2026)).thenReturn(vote(kind = goty))
+        whenever(votes.findLockedByKindAndYear(ost, 2026)).thenReturn(vote())
     }
 
     @Nested
@@ -119,13 +120,13 @@ class VoteBallotUseCasesTest {
 
         @Test
         fun `refuses a vote that is not open, before it opens and after it closes`() {
-            whenever(votes.findByKindAndYear(ost, 2026)).thenReturn(vote(opensAt = NOW.plusSeconds(1)))
+            whenever(votes.findLockedByKindAndYear(ost, 2026)).thenReturn(vote(opensAt = NOW.plusSeconds(1)))
             assertThatThrownBy { service.cast(ost, 2026, 100, listOf(PickChoice(1, 11)), null) }.isInstanceOf(WrongVoteState::class.java)
 
-            whenever(votes.findByKindAndYear(ost, 2026)).thenReturn(vote(opensAt = OPENS, closesAt = NOW))
+            whenever(votes.findLockedByKindAndYear(ost, 2026)).thenReturn(vote(opensAt = OPENS, closesAt = NOW))
             assertThatThrownBy { service.cast(ost, 2026, 100, listOf(PickChoice(1, 11)), null) }.isInstanceOf(WrongVoteState::class.java)
 
-            whenever(votes.findByKindAndYear(ost, 2026)).thenReturn(vote(closesAt = CLOSES))
+            whenever(votes.findLockedByKindAndYear(ost, 2026)).thenReturn(vote(closesAt = CLOSES))
             assertThat(service.cast(ost, 2026, 100, listOf(PickChoice(1, 11)), null).picks).hasSize(1)
         }
 

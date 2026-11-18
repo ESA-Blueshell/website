@@ -11,12 +11,15 @@ import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
 import BallotList from "@/domains/vote/island/BallotList.vue"
+import BoardSongs from "@/domains/vote/island/BoardSongs.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
 import ResultList from "@/domains/vote/island/ResultList.vue"
 import {
   castBallot,
   loadBallot,
   loadVote,
+  loadYearVote,
+  loadYears,
   moved,
   movedTo,
   renameTrack,
@@ -38,7 +41,11 @@ import {loginHref} from "@/utils/loginRedirect"
 
 defineOptions({name: "AnnualVotePage"})
 
-const props = defineProps<{page: VoteKindPage}>()
+const props = defineProps<{
+  page: VoteKindPage
+  /** A past year to look back on; left out, the kind's current vote. */
+  year?: number
+}>()
 
 /** The year a new vote is for: this one, in the association's time. */
 const THIS_YEAR = yearIn(ASSOCIATION_ZONE)
@@ -47,7 +54,14 @@ const THIS_YEAR = yearIn(ASSOCIATION_ZONE)
 const HELP_TOPIC = "events-annual-vote"
 
 const vote = ref<AnnualVote | null>(null)
+/** The kind's current vote, which the board's band works on whatever year is shown. */
+const latest = ref<AnnualVote | null>(null)
+/** The years the kind has a vote for, newest first, to move between. */
+const years = ref<number[]>([])
 const loaded = ref(false)
+/** Whether the year shown is the current one, the only one the board's band acts on. */
+const showingLatest = computed<boolean>(() => !vote.value || vote.value.year === latest.value?.year)
+const yearHref = (year: number): string => (year === latest.value?.year ? props.page.path : `${props.page.path}/${year}`)
 const ballot = ref<Ballot | null>(null)
 /** Whether the member's ballot was asked for and could not be read: nothing is offered to cast then. */
 const unread = ref(false)
@@ -110,6 +124,7 @@ async function readBallot() {
 
 async function onChanged(next: AnnualVote) {
   vote.value = next
+  latest.value = next
   await readBallot()
 }
 
@@ -154,7 +169,7 @@ async function save() {
 // Both kinds share this component and the router reuses it between them, so the vote is read
 // again for each kind rather than once on mount, and a read for a kind left behind is dropped.
 const reads = latestWins()
-watch(() => props.page.kind, async kind => {
+watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
   const current = reads.begin()
   loaded.value = false
   ballot.value = null
@@ -162,9 +177,11 @@ watch(() => props.page.kind, async kind => {
   picks.value = []
   saved.value = false
   problem.value = ""
-  const read = await loadVote(kind)
+  const [now, shown, listed] = await Promise.all([loadVote(kind), year ? loadYearVote(kind, year) : null, loadYears(kind)])
   if (!current()) return
-  vote.value = read
+  latest.value = now
+  years.value = listed
+  vote.value = year ? shown : now
   loaded.value = true
   await readBallot()
 }, {immediate: true})
@@ -210,6 +227,24 @@ watch(() => props.page.kind, async kind => {
           >
             {{ vote.ballots }} {{ vote.ballots === 1 ? "vote" : "votes" }}
           </state-tag>
+          <nav
+            v-if="years.length > 1"
+            aria-label="Years"
+            class="vote-years"
+            data-testid="vote-years"
+          >
+            <router-link
+              v-for="one in years"
+              :key="one"
+              :aria-current="one === vote?.year ? 'page' : undefined"
+              class="vote-years__year"
+              :class="{'vote-years__year--on': one === vote?.year}"
+              :data-testid="`vote-year-${one}`"
+              :to="yearHref(one)"
+            >
+              {{ one }}
+            </router-link>
+          </nav>
         </template>
       </header-band>
 
@@ -394,7 +429,7 @@ watch(() => props.page.kind, async kind => {
         </task-layout>
       </lead-band>
 
-      <template v-if="loaded && isBoard">
+      <template v-if="loaded && isBoard && showingLatest">
         <band-rule
           mirrored
           testid="vote-board-rule"
@@ -406,6 +441,7 @@ watch(() => props.page.kind, async kind => {
             :year="THIS_YEAR"
             @changed="onChanged"
           />
+          <board-songs />
         </lead-band>
       </template>
     </island>
@@ -434,6 +470,30 @@ watch(() => props.page.kind, async kind => {
 
 .vote__problem {
   flex-basis: 100%;
+}
+
+/* The years a kind has a vote for, on their own line under the tags: the one shown is lit. */
+.vote-years {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.vote-years__year {
+  color: var(--color-ash);
+  text-decoration: none;
+}
+
+.vote-years__year:hover {
+  color: var(--color-chalk);
+}
+
+.vote-years__year--on {
+  color: var(--color-chalk);
+  box-shadow: inset 0 -2px 0 var(--color-brand-ink);
 }
 
 .vote__section {

@@ -15,8 +15,9 @@ import {
   type Placing,
   type Track,
   type VoteKind,
+  type VoteSchedule,
 } from "../adapters/vote"
-import {decemberDates, isoOf, localOf, type VoteDates} from "../dates"
+import {decemberDates, isoOf, localOf} from "../dates"
 
 defineOptions({name: "VoteBoardTools"})
 
@@ -30,10 +31,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{changed: [vote: AnnualVote]}>()
 
-const standings = ref<Placing[]>([])
+/** The standings so far, or null where they could not be read. */
+const standings = ref<Placing[] | null>([])
 const problem = ref("")
 const busy = ref(false)
-const dates = ref<VoteDates>(decemberDates(props.year))
+const dates = ref<VoteSchedule>(decemberDates(props.year))
 /** The game whose tracks are listed for merging, and those tracks. */
 const opened = ref<number | null>(null)
 const openedTracks = ref<Track[]>([])
@@ -42,7 +44,12 @@ const openedTracks = ref<Track[]>([])
 const starting = computed<boolean>(() => !props.vote || (props.vote.state === "REVEALED" && props.vote.year < props.year))
 const editing = computed<boolean>(() => !starting.value && props.vote!.state !== "REVEALED")
 
-const FIELDS: Array<{key: keyof VoteDates, label: string}> = [
+const datesSaid = computed<string>(() => starting.value
+  ? `Start the ${props.year} vote. It runs on these dates, in Amsterdam time, by itself: nobody has to press anything on the day.`
+  : "The vote runs on these dates, in Amsterdam time. You can move them until the results are revealed.")
+const saveSaid = computed<string>(() => (starting.value ? `Start the ${props.year} vote` : "Save the dates"))
+
+const FIELDS: Array<{key: keyof VoteSchedule, label: string}> = [
   {key: "opensAt", label: "Voting opens"},
   {key: "closesAt", label: "Voting closes"},
   {key: "revealAt", label: "Results revealed"},
@@ -118,7 +125,7 @@ watch(() => props.vote, refresh)
       @submit.prevent="save"
     >
       <p class="tools__said">
-        {{ starting ? `Start the ${year} vote. It runs on these dates, in Amsterdam time, by itself: nobody has to press anything on the day.` : "The vote runs on these dates, in Amsterdam time. You can move them until the results are revealed." }}
+        {{ datesSaid }}
       </p>
       <div class="tools__fields">
         <form-field
@@ -142,7 +149,7 @@ watch(() => props.vote, refresh)
         testid="vote-board-save"
         tone="solid"
       >
-        {{ starting ? `Start the ${year} vote` : "Save the dates" }}
+        {{ saveSaid }}
       </cut-button>
     </form>
 
@@ -165,8 +172,15 @@ watch(() => props.vote, refresh)
           Open a game to merge a duplicate track into the one that leads it.
         </template>
       </p>
+      <notice-box
+        v-if="standings === null"
+        testid="vote-standings-unread"
+        tone="danger"
+      >
+        The standings could not be read. Reload the page to try again.
+      </notice-box>
       <p
-        v-if="standings.length === 0"
+        v-else-if="standings.length === 0"
         class="tools__said"
       >
         No ballots yet.

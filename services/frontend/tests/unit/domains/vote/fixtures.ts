@@ -1,28 +1,29 @@
 import type {Image} from "@/services/api"
-import type {AnnualVote, BallotPick, CatalogueGame, Candidate, Placing, Track} from "@/domains/vote"
+import type {AnnualVote, BallotPick, CatalogueGame, VoteCandidate, Placing, Track} from "@/domains/vote"
 
-export const anImage = (path: string, renditions: {url: string; width: number}[] = []): Image =>
+export const aVotePicture = (path: string, renditions: {url: string; width: number}[] = []): Image =>
   ({url: `/files/public/${path}`, path, width: 264, height: 352, renditions})
 
-export const aGame = (id: number, name = `Game ${id}`, cover: Image | null = anImage(`vote-covers/${id}.webp`)): Candidate =>
+export const aGame = (id: number, name = `Game ${id}`, cover: Image | null = aVotePicture(`vote-covers/${id}.webp`)): VoteCandidate =>
   ({id, igdbId: id * 100, name, firstReleaseYear: 2017, cover})
 
-export const aResult = (igdbId: number, name = `Game ${igdbId}`, coverImageId: string | null = `co${igdbId}`): CatalogueGame =>
+export const aSearchHit = (igdbId: number, name = `Game ${igdbId}`, coverImageId: string | null = `co${igdbId}`): CatalogueGame =>
   ({igdbId, name, firstReleaseYear: 2017, coverImageId})
 
-export const aTrack = (id: number, game: Candidate = aGame(id * 10), source: Track["source"] = "YOUTUBE"): Track => ({
+export const aTrack = (id: number, game: VoteCandidate = aGame(id * 10), source: Track["source"] = "YOUTUBE"): Track => ({
   id,
   candidate: game,
   source,
   externalId: `video${id}`,
   url: `https://www.youtube.com/watch?v=video${id}`,
+  embedUrl: source === "SPOTIFY" ? `https://open.spotify.com/embed/track/video${id}` : `https://www.youtube-nocookie.com/embed/video${id}`,
   title: `Track ${id}`,
-  thumbnail: anImage(`vote-thumbnails/${id}.webp`),
+  thumbnail: aVotePicture(`vote-thumbnails/${id}.webp`),
 })
 
 export const aPick = (track: Track): BallotPick => ({candidate: track.candidate, track})
 
-export const aPlacing = (place: number, game: Candidate, track: Track | null, points = 12, voters = 1): Placing =>
+export const aPlacing = (place: number, game: VoteCandidate, track: Track | null, points = 12, voters = 1): Placing =>
   ({place, candidate: game, track, points, voters})
 
 export const aVote = (state: AnnualVote["state"], overrides: Partial<AnnualVote> = {}): AnnualVote => ({

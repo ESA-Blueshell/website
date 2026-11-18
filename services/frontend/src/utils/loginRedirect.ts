@@ -59,3 +59,6 @@ export function resolveLoginRedirect(
 
   return HOME
 }
+
+/** The login page, sending the reader back to [path] once they have signed in. */
+export const loginHref = (path: string): string => `/login?redirect=${encodeURIComponent(path)}`

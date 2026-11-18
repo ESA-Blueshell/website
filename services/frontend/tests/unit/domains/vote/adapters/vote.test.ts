@@ -1,11 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import * as api from "@/services/api"
+import * as network from "@/plugins/handleNetworkError"
 import {
   addTrack,
   castBallot,
   coverPreviewUrl,
   createVote,
-  EMPTY_BALLOT,
   findGames,
   loadBallot,
   loadStandings,
@@ -17,7 +17,9 @@ import {
   tracksOf,
 } from "@/domains/vote"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
-import {aGame, anImage, aPick, aPlacing, aResult, aTrack, aVote} from "../fixtures"
+import {aGame, aVotePicture, aPick, aPlacing, aSearchHit, aTrack, aVote} from "../fixtures"
+
+vi.mock("@/plugins/handleNetworkError", () => ({$handleNetworkError: vi.fn()}))
 
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -49,13 +51,23 @@ describe("the vote adapter", () => {
     expect(await loadVote("OST_TOP_50")).toBeNull()
   })
 
-  it("reads the member's ballot, empty where it is refused", async () => {
+  it("reads the member's ballot, and none where it is refused", async () => {
     vi.mocked(api.myVoteBallot).mockResolvedValueOnce(answer(api.myVoteBallot, {version: 2, submittedAt: "2026-12-02T18:00:00Z", picks: [aPick(track)]}))
     expect((await loadBallot("OST_TOP_50", 2026)).picks).toHaveLength(1)
     expect(api.myVoteBallot).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}})
 
     vi.mocked(api.myVoteBallot).mockResolvedValueOnce(refusal(api.myVoteBallot, null, 403))
-    expect(await loadBallot("OST_TOP_50", 2026)).toBe(EMPTY_BALLOT)
+    expect(await loadBallot("OST_TOP_50", 2026)).toBeNull()
+    expect(network.$handleNetworkError).not.toHaveBeenCalled()
+  })
+
+  it("hands a lapsed sign-in to the network handler, which offers to sign in again", async () => {
+    vi.mocked(api.myVoteBallot).mockResolvedValueOnce(refusal(api.myVoteBallot, null, 401))
+    expect(await loadBallot("OST_TOP_50", 2026)).toBeNull()
+    expect(network.$handleNetworkError).toHaveBeenCalledWith({response: expect.objectContaining({status: 401})})
+
+    vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(refusal(api.annualVoteStandings, null, 500))
+    expect(await loadStandings("OST_TOP_50", 2026)).toBeNull()
   })
 
   it("casts the picks by game and track id at the version read, and says why a cast is refused", async () => {
@@ -72,8 +84,8 @@ describe("the vote adapter", () => {
   })
 
   it("finds games for a kind and year, stores one, and lists a game's tracks", async () => {
-    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(answer(api.searchVoteCandidates, [aResult(1)]))
-    expect(await findGames("hol", "GAME_OF_THE_YEAR", 2026)).toEqual({ok: true, saved: [aResult(1)]})
+    vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(answer(api.searchVoteCandidates, [aSearchHit(1)]))
+    expect(await findGames("hol", "GAME_OF_THE_YEAR", 2026)).toEqual({ok: true, saved: [aSearchHit(1)]})
     expect(api.searchVoteCandidates).toHaveBeenCalledWith({query: {query: "hol", kind: "GAME_OF_THE_YEAR", year: 2026}})
     vi.mocked(api.searchVoteCandidates).mockResolvedValueOnce(refusal(api.searchVoteCandidates, {code: "GameSearchUnavailable"}, 503))
     expect(await findGames("hol", "OST_TOP_50", 2026)).toEqual({ok: false, reason: "Game search is unavailable right now. Try again in a moment."})
@@ -113,10 +125,10 @@ describe("the vote adapter", () => {
   it("draws a search result's cover through the api, and a stored picture from our storage", () => {
     expect(coverPreviewUrl("co1abc")).toMatch(/\/api\/vote-candidates\/covers\/co1abc$/)
     expect(coverPreviewUrl(null)).toBeNull()
-    const drawn = imageAttrs(anImage("vote-covers/c.webp", [{url: "/files/public/vote-covers/c-160.webp", width: 160}]))
+    const drawn = imageAttrs(aVotePicture("vote-covers/c.webp", [{url: "/files/public/vote-covers/c-160.webp", width: 160}]))
     expect(drawn.src).toMatch(/\/api\/files\/public\/vote-covers\/c\.webp$/)
     expect(drawn.srcset).toMatch(/\/api\/files\/public\/vote-covers\/c-160\.webp 160w, .*\/api\/files\/public\/vote-covers\/c\.webp 264w$/)
     expect([drawn.width, drawn.height]).toEqual([264, 352])
-    expect(imageAttrs({...anImage("x.webp"), width: null, height: null})).toMatchObject({srcset: undefined, width: undefined, height: undefined})
+    expect(imageAttrs({...aVotePicture("x.webp"), width: null, height: null})).toMatchObject({srcset: undefined, width: undefined, height: undefined})
   })
 })

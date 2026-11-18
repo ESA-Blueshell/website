@@ -4,7 +4,7 @@ import * as api from "@/services/api"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import PickFinder from "@/domains/vote/island/PickFinder.vue"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
-import {aGame, aGamesVote, aResult, aTrack, aVote} from "../fixtures"
+import {aGame, aGamesVote, aSearchHit, aTrack, aVote} from "../fixtures"
 
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
@@ -15,8 +15,8 @@ vi.mock("@/services/api", async importOriginal => ({
 }))
 
 describe("the vote pick finder", () => {
-  const hollow = aResult(14593, "Hollow Knight")
-  const portal = {...aResult(72, "Portal 2", null), firstReleaseYear: null}
+  const hollow = aSearchHit(14593, "Hollow Knight")
+  const portal = {...aSearchHit(72, "Portal 2", null), firstReleaseYear: null}
   const known = aTrack(1, aGame(1, "Hollow Knight"))
 
   beforeEach(() => {

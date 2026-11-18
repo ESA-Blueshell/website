@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {safeFormatISO, toISO} from "@/utils/datetime"
+import {ASSOCIATION_ZONE, formatISOIn, isoFrom, safeFormatISO, toISO, yearIn} from "@/utils/datetime"
 import {DateTime} from "luxon"
 
 describe("datetime utils", () => {
@@ -55,5 +55,16 @@ describe("datetime utils", () => {
 
   it("returns empty string when no inputs are provided", () => {
     expect(toISO({})).toBe("")
+  })
+
+  it("formats and reads a moment in a given zone, and nothing that is not one", () => {
+    expect(formatISOIn("2026-12-21T22:59:00Z", "yyyy-MM-dd HH:mm", ASSOCIATION_ZONE)).toBe("2026-12-21 23:59")
+    expect(formatISOIn("not a date", "yyyy-MM-dd", ASSOCIATION_ZONE)).toBe("")
+    expect(isoFrom("2026-07-01 12:00", "yyyy-MM-dd HH:mm", ASSOCIATION_ZONE)).toBe("2026-07-01T10:00:00Z")
+    expect(isoFrom("half", "yyyy-MM-dd HH:mm", ASSOCIATION_ZONE)).toBeNull()
+  })
+
+  it("says the year it is in a zone", () => {
+    expect(yearIn(ASSOCIATION_ZONE)).toBe(DateTime.now().setZone(ASSOCIATION_ZONE).year)
   })
 })

@@ -73,7 +73,7 @@ describe("annual vote page", () => {
     const wrapper = await mount(member)
 
     expect(wrapper.get("[data-testid=vote-none]").exists()).toBe(true)
-    expect(wrapper.text()).toContain("coming soon")
+    expect(wrapper.text()).toContain("no vote yet")
     expect(wrapper.findComponent(BoardTools).exists()).toBe(false)
   })
 
@@ -93,7 +93,7 @@ describe("annual vote page", () => {
     expect(wrapper.text()).toContain("Your first pick is worth 12 points, then 10, 8, 6 and 4.")
     expect(wrapper.text()).toContain("pick another track for it and it takes the old one's place")
     expect(wrapper.text()).toContain("Voting closes 21 December 2026")
-    expect(wrapper.get("[data-testid=vote-sign-in-link]").attributes("to")).toBe("/login?redirect=/events/ost-top-50")
+    expect(wrapper.get("[data-testid=vote-sign-in-link]").attributes("to")).toBe("/login?redirect=%2Fevents%2Fost-top-50")
     expect(api.myVoteBallot).not.toHaveBeenCalled()
   })
 
@@ -102,7 +102,18 @@ describe("annual vote page", () => {
     const wrapper = await mount(login([]))
 
     expect(wrapper.get("[data-testid=vote-not-member]").exists()).toBe(true)
+    expect(wrapper.get("[data-testid=vote-become-member]").attributes("to")).toBe("/membership")
     expect(api.myVoteBallot).not.toHaveBeenCalled()
+  })
+
+  it("says a ballot it could not read, and offers nothing to cast over it", async () => {
+    voteIs(aVote("VOTING"))
+    vi.mocked(api.myVoteBallot).mockResolvedValue(refusal(api.myVoteBallot, null, 500))
+    const wrapper = await mount(member)
+
+    expect(wrapper.get("[data-testid=vote-ballot-unread]").text()).toContain("could not be read")
+    expect(wrapper.find("[data-testid=vote-save]").exists()).toBe(false)
+    expect(wrapper.find("[data-testid=vote-ballot-empty]").exists()).toBe(false)
   })
 
   it("shows a member their ballot, ranked, with nothing to save until it changes", async () => {
@@ -159,7 +170,7 @@ describe("annual vote page", () => {
 
   it("starts a first ballot empty, and says when it is full", async () => {
     voteIs(aVote("VOTING"))
-    vi.mocked(api.myVoteBallot).mockResolvedValue(refusal(api.myVoteBallot, null, 403))
+    vi.mocked(api.myVoteBallot).mockResolvedValue(answer(api.myVoteBallot, {version: null, submittedAt: null, picks: []}))
     const wrapper = await mount(member)
 
     expect(wrapper.get("[data-testid=vote-ballot-empty]").exists()).toBe(true)

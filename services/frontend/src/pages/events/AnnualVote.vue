@@ -18,45 +18,51 @@ import {
   moved,
   said,
   samePicks,
+  useVoteRights,
   without,
   withPick,
   type AnnualVote,
   type Ballot,
   type BallotPick,
   type VoteKindPage,
+  type VoteState,
 } from "@/domains/vote"
-import {useIsBoard} from "@/composables/useIsBoard"
-import store from "@/plugins/store"
+import {ASSOCIATION_ZONE, yearIn} from "@/utils/datetime"
+import {loginHref} from "@/utils/loginRedirect"
 
 defineOptions({name: "AnnualVotePage"})
 
 const props = defineProps<{page: VoteKindPage}>()
 
-/** The year a new vote is for: this one. */
-const THIS_YEAR = new Date().getFullYear()
+/** The year a new vote is for: this one, in the association's time. */
+const THIS_YEAR = yearIn(ASSOCIATION_ZONE)
 
 const vote = ref<AnnualVote | null>(null)
 const loaded = ref(false)
 const ballot = ref<Ballot | null>(null)
+/** Whether the member's ballot was asked for and could not be read: nothing is offered to cast then. */
+const unread = ref(false)
 const picks = ref<BallotPick[]>([])
 const saving = ref(false)
 const saved = ref(false)
 const problem = ref("")
 
-const isBoard = useIsBoard()
-const signedIn = computed<boolean>(() => store.getters.isLoggedIn === true)
-const isMember = computed<boolean>(() => store.getters.isMember === true)
+const {signedIn, isMember, isBoard} = useVoteRights()
 const voting = computed<boolean>(() => vote.value?.state === "VOTING")
 const changed = computed<boolean>(() => !samePicks(picks.value, ballot.value?.picks ?? []))
 const full = computed<boolean>(() => picks.value.length >= (vote.value?.points.length ?? 0))
 
+// The heading's own words for each state; the refusals say the same states as "The vote …".
+const TAIL: Record<VoteState, string> = {
+  UPCOMING: "coming soon",
+  VOTING: "voting is open",
+  CLOSED: "voting has closed",
+  REVEALED: "the results are in",
+}
+
 const tail = computed<string>(() => {
-  switch (vote.value?.state) {
-    case "VOTING": return "voting is open"
-    case "CLOSED": return "voting has closed"
-    case "REVEALED": return "the results are in"
-    default: return "coming soon"
-  }
+  if (!loaded.value) return ""
+  return vote.value ? TAIL[vote.value.state] : "no vote yet"
 })
 
 const scoring = computed<string>(() => {
@@ -75,7 +81,8 @@ const fullSaid = computed<string>(() => vote.value?.picksTrack
 async function readBallot() {
   if (!voting.value || !isMember.value) return
   ballot.value = await loadBallot(vote.value!.kind, vote.value!.year)
-  picks.value = [...ballot.value.picks]
+  unread.value = ballot.value === null
+  picks.value = [...(ballot.value?.picks ?? [])]
 }
 
 async function onChanged(next: AnnualVote) {
@@ -119,6 +126,7 @@ async function save() {
 watch(() => props.page.kind, async kind => {
   loaded.value = false
   ballot.value = null
+  unread.value = false
   picks.value = []
   saved.value = false
   problem.value = ""
@@ -178,7 +186,7 @@ watch(() => props.page.kind, async kind => {
           >
             Only members can vote.
             <cut-button
-              :href="`/login?redirect=${page.path}`"
+              :href="loginHref(page.path)"
               small
               testid="vote-sign-in-link"
               tone="solid"
@@ -191,6 +199,21 @@ watch(() => props.page.kind, async kind => {
             testid="vote-not-member"
           >
             Only members can vote. Become a member and your ballot counts too.
+            <cut-button
+              href="/membership"
+              small
+              testid="vote-become-member"
+              tone="solid"
+            >
+              Become a member
+            </cut-button>
+          </notice-box>
+          <notice-box
+            v-else-if="unread"
+            testid="vote-ballot-unread"
+            tone="danger"
+          >
+            Your ballot could not be read, so nothing can be saved over it. Reload the page to try again.
           </notice-box>
 
           <div

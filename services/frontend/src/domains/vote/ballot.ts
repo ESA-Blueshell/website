@@ -1,4 +1,4 @@
-import type {VotePickResponse, CandidateTrackResponse} from "@/services/api"
+import type {VotePickResponse} from "@/services/api"
 
 /** One pick as the page holds it: a game, and its track where the vote's kind picks one. */
 export type BallotPick = VotePickResponse
@@ -33,9 +33,3 @@ export const without = (picks: BallotPick[], index: number): BallotPick[] => pic
 export const samePicks = (a: BallotPick[], b: BallotPick[]): boolean =>
   a.length === b.length && a.every((pick, index) => pick.candidate.id === b[index]!.candidate.id && pick.track?.id === b[index]!.track?.id)
 
-/** The address a track plays from inside the page: YouTube's privacy-enhanced player, or Spotify's. */
-export function embedUrl(track: Pick<CandidateTrackResponse, "source" | "externalId">): string {
-  return track.source === "SPOTIFY"
-    ? `https://open.spotify.com/embed/track/${track.externalId}`
-    : `https://www.youtube-nocookie.com/embed/${track.externalId}`
-}

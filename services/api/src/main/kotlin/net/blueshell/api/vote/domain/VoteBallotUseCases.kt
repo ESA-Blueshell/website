@@ -30,7 +30,7 @@ class VoteBallotUseCases(
         year: Int,
         userId: Long,
     ): BallotSummary? {
-        val vote = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
+        val vote = votes.of(kind, year)
         return ballots.findByVoteIdAndUserId(vote.id!!, userId)?.let(::summaryOf)
     }
 
@@ -46,10 +46,9 @@ class VoteBallotUseCases(
         choices: List<PickChoice>,
         version: Long?,
     ): BallotSummary {
-        val vote = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
+        val vote = votes.of(kind, year)
         val now = clock.instant()
-        val state = vote.stateAt(now)
-        if (state != VoteState.VOTING) throw WrongVoteState(state)
+        vote.requireVoting(now)
         if (choices.isEmpty() || choices.size > kind.picksPerBallot) throw BallotSize(choices.size, kind.picksPerBallot)
 
         val picks = resolve(vote, choices)
@@ -74,23 +73,19 @@ class VoteBallotUseCases(
         vote: Vote,
         choices: List<PickChoice>,
     ): List<Pair<VoteCandidate, CandidateTrack?>> {
-        val candidatesById = candidates.findAllById(choices.map { it.candidateId }.toSet()).associateBy { it.id!! }
-        val tracksById = tracks.findAllById(choices.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
+        val candidatesById = candidates.byIds(choices.map { it.candidateId })
+        val tracksById = tracks.byIds(choices.mapNotNull { it.trackId })
         return choices.map { choice ->
             val candidate = candidatesById[choice.candidateId] ?: throw VoteCandidateNotFound(choice.candidateId)
-            if (vote.kind.releasedInYear && candidate.firstReleaseYear != vote.year) throw GameNotEligible(candidate.id!!, vote.year)
             val track = choice.trackId?.let { id -> (tracksById[id] ?: throw TrackNotFound(id)).canonical() }
-            when {
-                !vote.kind.picksTrack && track != null -> throw PickTakesNoTrack(candidate.id!!)
-                vote.kind.picksTrack && track?.candidate?.id != candidate.id -> throw PickNeedsTrack(candidate.id!!)
-            }
+            vote.kind.requirePick(vote.year, candidate, track)
             candidate to track
         }
     }
 
     private fun summaryOf(ballot: VoteBallot): BallotSummary {
-        val candidatesById = candidates.findAllById(ballot.picks.map { it.candidateId }.toSet()).associateBy { it.id!! }
-        val tracksById = tracks.findAllById(ballot.picks.mapNotNull { it.trackId }.toSet()).associateBy { it.id!! }
+        val candidatesById = candidates.byIds(ballot.picks.map { it.candidateId })
+        val tracksById = tracks.byIds(ballot.picks.mapNotNull { it.trackId })
         return BallotSummary(
             version = ballot.version,
             submittedAt = ballot.submittedAt,

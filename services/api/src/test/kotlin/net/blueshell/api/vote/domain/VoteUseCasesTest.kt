@@ -132,11 +132,14 @@ class VoteUseCasesTest {
     @Nested
     inner class Schedule {
         @Test
-        fun `creates a vote for a kind's new year on its dates`() {
-            val summary = service.create(VoteKind.GAME_OF_THE_YEAR, 2026, OPENS, CLOSES, REVEAL)
+        fun `creates a vote for a kind's new year on its dates, for a kind the api offers`() {
+            val summary = service.create(VoteKind.OST_TOP_50, 2027, OPENS, CLOSES, REVEAL)
 
-            assertThat(summary.kind).isEqualTo(VoteKind.GAME_OF_THE_YEAR)
+            assertThat(summary.kind).isEqualTo(VoteKind.OST_TOP_50)
             assertThat(summary.state).isEqualTo(VoteState.VOTING)
+            assertThatThrownBy { service.create(VoteKind.GAME_OF_THE_YEAR, 2026, OPENS, CLOSES, REVEAL) }
+                .isInstanceOf(VoteKindNotOffered::class.java)
+            assertThatThrownBy { service.current(VoteKind.GAME_OF_THE_YEAR) }.isInstanceOf(VoteKindNotOffered::class.java)
         }
 
         @Test
@@ -265,11 +268,11 @@ class VoteUseCasesTest {
     }
 
     @Test
-    fun `standings of a games-only vote have no tracks, and a year without a vote is refused`() {
-        whenever(votes.findByKindAndYear(VoteKind.GAME_OF_THE_YEAR, 2026)).thenReturn(vote(kind = VoteKind.GAME_OF_THE_YEAR))
+    fun `standings of picks without a track have no tracks, and a year without a vote is refused`() {
+        whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2026)).thenReturn(vote())
         whenever(ballots.picksOf(1)).thenReturn(castOf(listOf(ballot(1, 100, hades to null))))
 
-        assertThat(service.standings(VoteKind.GAME_OF_THE_YEAR, 2026).single().track).isNull()
+        assertThat(service.standings(VoteKind.OST_TOP_50, 2026).single().track).isNull()
         assertThatThrownBy { service.standings(VoteKind.OST_TOP_50, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
     }
 

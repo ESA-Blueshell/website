@@ -43,19 +43,29 @@ class VoteCandidateUseCases(
     private val transactions: TransactionTemplate,
     private val clock: Clock,
 ) {
-    /** Games matching [query]; for a kind of the year's games, only those first released in [year]. */
+    /**
+     * Games matching [query] for the [kind] vote of [year]; for a kind of the year's games, only
+     * those first released in [year].
+     */
     fun search(
         query: String,
         kind: VoteKind,
         year: Int,
     ): List<CatalogueGame> {
+        votes.of(kind, year)
         val trimmed = query.trim()
         if (trimmed.length < MIN_GAME_QUERY) return emptyList()
-        return catalogue.search(trimmed, GAME_SEARCH_LIMIT, year.takeIf { kind.releasedInYear })
+        return catalogue.search(trimmed, GAME_SEARCH_LIMIT, kind.releaseYearFor(year))
     }
 
-    /** A search result's small cover, fetched from IGDB here so the visitor's browser never asks it. */
-    fun coverPreview(imageId: String): RemotePicture = igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverNotFound()
+    /**
+     * A search result's small cover, fetched from IGDB here so the visitor's browser never asks it,
+     * while some vote is open: covers are only searched for then.
+     */
+    fun coverPreview(imageId: String): RemotePicture {
+        if (!votes.existsVotingAt(clock.instant())) throw NoVoteOpen()
+        return igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverNotFound()
+    }
 
     /**
      * The game with that IGDB id, stored with a copy of its cover the first time anybody picks it,
@@ -66,7 +76,7 @@ class VoteCandidateUseCases(
         kind: VoteKind,
         year: Int,
     ): CandidateSummary {
-        requireVoting(kind, year)
+        votes.of(kind, year).requireVoting(clock.instant())
         return storedCandidate(igdbId).summary()
     }
 
@@ -88,7 +98,7 @@ class VoteCandidateUseCases(
         kind: VoteKind,
         year: Int,
     ): TrackSummary {
-        requireVoting(kind, year)
+        votes.of(kind, year).requireVoting(clock.instant())
         val link = TrackLink.parse(pasted)
         val candidate = storedCandidate(igdbId)
         existingTrack(link, candidate)?.let { return it }
@@ -105,7 +115,7 @@ class VoteCandidateUseCases(
                 thumbnail = thumbnail,
             )
         return try {
-            written { tracks.saveAndFlush(track).summary() }
+            transactions.execute { tracks.saveAndFlush(track).summary() }
         } catch (e: DataIntegrityViolationException) {
             // Somebody added the same link while its preview was fetched.
             existingTrack(link, candidate) ?: throw e
@@ -131,22 +141,12 @@ class VoteCandidateUseCases(
         return into.summary()
     }
 
-    // Members store games and tracks, with their pictures, only while a vote they are picked for is open.
-    private fun requireVoting(
-        kind: VoteKind,
-        year: Int,
-    ) {
-        val vote = votes.findByKindAndYear(kind, year) ?: throw AnnualVoteNotFound(kind, year)
-        val state = vote.stateAt(clock.instant())
-        if (state != VoteState.VOTING) throw WrongVoteState(state)
-    }
-
     // The link's track for [candidate], as the track it was merged into, where somebody already added it.
     private fun existingTrack(
         link: TrackLink,
         candidate: VoteCandidate,
     ): TrackSummary? =
-        written {
+        transactions.execute {
             tracks.findByCandidateIdAndSourceAndExternalId(candidate.id!!, link.source, link.externalId)?.canonical()?.summary()
         }
 
@@ -166,18 +166,11 @@ class VoteCandidateUseCases(
                 cover = cover,
             )
         return try {
-            written { candidates.saveAndFlush(candidate) }
+            transactions.execute { candidates.saveAndFlush(candidate) }
         } catch (e: DataIntegrityViolationException) {
             // Somebody stored the same game while it was fetched.
             candidates.findByIgdbId(igdbId) ?: throw e
         }
-    }
-
-    // [work] in a transaction of its own; what it throws rolls the transaction back and reaches the caller.
-    private fun <T> written(work: () -> T): T {
-        val answer = mutableListOf<T>()
-        transactions.executeWithoutResult { answer += work() }
-        return answer.single()
     }
 
     // Our own copy of a picture, or none where it cannot be fetched or stored.

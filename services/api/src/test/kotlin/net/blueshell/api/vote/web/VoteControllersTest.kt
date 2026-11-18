@@ -3,8 +3,7 @@ package net.blueshell.api.vote.web
 import net.blueshell.api.file.api.Image
 import net.blueshell.api.file.api.RemotePicture
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.security.CurrentUser
-import net.blueshell.api.shared.security.CurrentUserProvider
+import net.blueshell.api.shared.security.UserPrincipal
 import net.blueshell.api.vote.domain.BallotSummary
 import net.blueshell.api.vote.domain.CandidateSummary
 import net.blueshell.api.vote.domain.CatalogueGame
@@ -14,34 +13,26 @@ import net.blueshell.api.vote.domain.Placing
 import net.blueshell.api.vote.domain.TrackSummary
 import net.blueshell.api.vote.domain.VoteBallotUseCases
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
-import net.blueshell.api.vote.domain.VoteKindNotOffered
 import net.blueshell.api.vote.domain.VoteState
 import net.blueshell.api.vote.domain.VoteSummary
 import net.blueshell.api.vote.domain.VoteUseCases
 import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteKind
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.http.MediaType
-import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 
 class VoteControllersTest {
     private val votes = mock<VoteUseCases>()
     private val ballots = mock<VoteBallotUseCases>()
     private val games = mock<VoteCandidateUseCases>()
-    private var signedIn: CurrentUser? = CurrentUser(7, setOf(Role.MEMBER), null)
-    private val currentUser =
-        object : CurrentUserProvider {
-            override fun currentUser() = signedIn
-        }
+    private val member = UserPrincipal(7, "member", "h", true, setOf(Role.MEMBER), null, null)
 
     private val voteController = AnnualVoteController(votes)
-    private val ballotController = VoteBallotController(ballots, currentUser)
+    private val ballotController = VoteBallotController(ballots)
     private val gameController = VoteCandidateController(games)
 
     private val ost = VoteKind.OST_TOP_50
@@ -101,8 +92,8 @@ class VoteControllersTest {
             ballots.cast(ost, 2026, 7, listOf(PickChoice(1, 11)), 2),
         ).thenReturn(BallotSummary(3, closes, listOf(PickSummary(celeste, resurrections))))
 
-        assertThat(ballotController.myVoteBallot(ost, 2026)).isEqualTo(VoteBallotResponse(null, null, emptyList()))
-        assertThat(ballotController.castVoteBallot(ost, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1, 11)), 2)))
+        assertThat(ballotController.myVoteBallot(ost, 2026, member)).isEqualTo(VoteBallotResponse(null, null, emptyList()))
+        assertThat(ballotController.castVoteBallot(ost, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1, 11)), 2), member))
             .isEqualTo(VoteBallotResponse(3, closes, listOf(VotePickResponse(celesteResponse, resurrectionsResponse))))
     }
 
@@ -127,31 +118,6 @@ class VoteControllersTest {
             gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026)),
         ).isEqualTo(resurrectionsResponse)
         assertThat(gameController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
-    }
-
-    @Test
-    fun `a kind the api does not offer yet is refused before any use case runs`() {
-        val goty = VoteKind.GAME_OF_THE_YEAR
-
-        listOf<() -> Any>(
-            { voteController.currentAnnualVote(goty) },
-            { voteController.createAnnualVote(goty, CreateAnnualVoteRequest(2026, opens, closes, reveal)) },
-            { voteController.scheduleAnnualVote(goty, 2026, ScheduleAnnualVoteRequest(opens, closes, reveal, 0)) },
-            { voteController.annualVoteStandings(goty, 2026) },
-            { ballotController.myVoteBallot(goty, 2026) },
-            { ballotController.castVoteBallot(goty, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1)), null)) },
-            { gameController.searchVoteCandidates("cel", goty, 2026) },
-            { gameController.storeVoteCandidate(StoreVoteCandidateRequest(1, goty, 2026)) },
-            { gameController.addVoteTrack(AddVoteTrackRequest(1, "https://youtu.be/x", goty, 2026)) },
-        ).forEach { call -> assertThatThrownBy { call() }.isInstanceOf(VoteKindNotOffered::class.java) }
-        verifyNoInteractions(votes, ballots, games)
-    }
-
-    @Test
-    fun `nobody signed in is turned away where the voter is needed`() {
-        signedIn = null
-
-        assertThatThrownBy { ballotController.myVoteBallot(ost, 2026) }.isInstanceOf(ResponseStatusException::class.java)
     }
 
     @Test

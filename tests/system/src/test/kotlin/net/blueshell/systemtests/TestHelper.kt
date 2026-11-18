@@ -816,7 +816,10 @@ object TestHelper {
                 conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS).use { stmt ->
                     bind(stmt)
                     stmt.executeUpdate()
-                    stmt.generatedKeys.use { keys -> keys.next().let { keys.getLong(1) } }
+                    stmt.generatedKeys.use { keys ->
+                        require(keys.next()) { "INSERT produced no id" }
+                        keys.getLong(1)
+                    }
                 }
             val voteId =
                 inserted("INSERT INTO votes (kind, year, opens_at, closes_at, reveal_at) VALUES ('OST_TOP_50', ?, ?, ?, ?)") {
@@ -874,7 +877,10 @@ object TestHelper {
         DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
             conn.prepareStatement("SELECT COUNT(*) FROM $table WHERE vote_id = ?").use { stmt ->
                 stmt.setLong(1, voteId)
-                stmt.executeQuery().use { rs -> rs.next().let { rs.getInt(1) } }
+                stmt.executeQuery().use { rs ->
+                    require(rs.next()) { "COUNT(*) answered no row" }
+                    rs.getInt(1)
+                }
             }
         }
 

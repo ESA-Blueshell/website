@@ -2,6 +2,7 @@ package net.blueshell.api.system.frontend.events
 
 import net.blueshell.api.system.frontend.helper.AuthHelper
 import net.blueshell.api.system.frontend.helper.SelectHelper
+import net.blueshell.api.system.frontend.helper.TestIdLocatorHelper
 import net.blueshell.systemtests.PlaywrightTestBase
 import net.blueshell.systemtests.TestHelper
 import net.blueshell.systemtests.awaitResponseFrom
@@ -17,8 +18,10 @@ import org.junit.jupiter.api.Test
  */
 @Tag("system")
 class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
+    private fun byTestId(id: String) = TestIdLocatorHelper.byTestId(page, id)
+
     @Test
-    fun `the reveal job publishes a due vote's top and deletes its ballots`() {
+    fun `the reveal job reveals a due vote's top and deletes its ballots`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val voter = TestHelper.registerActivateAndPromote("MEMBER")
         val suffix = TestHelper.uniqueSuffix()
@@ -35,12 +38,12 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
 
         assertThat(AuthHelper.submitLogin(page, frontendUrl, admin.username, admin.password)).isEqualTo(200)
         page.navigate("$frontendUrl/management/jobs")
-        page.locator("[data-testid='job-manager-trigger-btn']").first().click()
-        page.locator("[data-testid='job-trigger-dialog']").first().waitFor()
+        byTestId("job-manager-trigger-btn").click()
+        byTestId("job-trigger-dialog").waitFor()
         SelectHelper.pickFromList(page, "job-trigger-type", "Reveal due votes")
         val enqueued =
             page.awaitResponseFrom(
-                control = page.locator("[data-testid='job-trigger-submit']").first(),
+                control = byTestId("job-trigger-submit"),
                 expected = "POST /management/jobs/enqueue",
             ) { it.request().method() == "POST" && it.url().contains("/management/jobs/enqueue") }
         assertThat(enqueued.status()).isEqualTo(200)
@@ -52,8 +55,8 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
 
         // The band draws its words in capitals, which innerText reads as drawn.
         page.navigate("$frontendUrl/events/ost-top-50")
-        page.locator("[data-testid='vote-results-head']").first().waitFor()
-        assertThat(page.locator("[data-testid='vote-results-head']").first().innerText()).containsIgnoringCase("From 2 ballots")
+        byTestId("vote-results-head").waitFor()
+        assertThat(byTestId("vote-results-head").innerText()).containsIgnoringCase("From 2 ballots")
         assertThat(page.locator("[data-testid='vote-result']").allInnerTexts()).satisfiesExactly(
             { assertThat(it).containsIgnoringCase(first) },
             { assertThat(it).containsIgnoringCase(second) },

@@ -82,6 +82,19 @@ class IgdbGameCatalogueTest {
     }
 
     @Test
+    fun `a blank search asks for the most-rated main games, of one year where asked`() {
+        catalogue().search(" ", 10, null)
+        catalogue().search("", 5, releasedIn = 2026)
+
+        assertThat(queries.map { it.second }).containsExactly(
+            "fields name,first_release_date,cover.image_id; where version_parent = null & total_rating_count != null; " +
+                "sort total_rating_count desc; limit 10;",
+            "fields name,first_release_date,cover.image_id; where version_parent = null & total_rating_count != null" +
+                " & first_release_date >= 1767225600 & first_release_date < 1798761600; sort total_rating_count desc; limit 5;",
+        )
+    }
+
+    @Test
     fun `a search sends its text as UTF-8, whatever the client's default`() {
         catalogue().search("Pokémon 東方", 5, null)
 

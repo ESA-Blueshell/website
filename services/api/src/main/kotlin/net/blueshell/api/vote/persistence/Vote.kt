@@ -13,8 +13,8 @@ import java.time.Instant
 
 /**
  * One kind's vote for one year. It runs on its dates alone: voting between [opensAt] and
- * [closesAt], and counted at [revealAt], which sets [revealedAt] and [ballotCount] as the ballots
- * are deleted. A ballot holds up to [picks] picks, a number the board sets per vote.
+ * [closesAt], and counted at [revealAt], which sets [revealedAt] and [ballotCount]. A ballot holds
+ * up to [picks] picks, a number the board sets per vote.
  */
 @Entity
 @Table(

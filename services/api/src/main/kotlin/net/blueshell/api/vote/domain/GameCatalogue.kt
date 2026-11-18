@@ -10,7 +10,10 @@ data class CatalogueGame(
 
 /** Where games are looked up: IGDB, or a short fixed list in development without credentials. */
 interface GameCatalogue {
-    /** Games whose name matches [query], best match first, at most [limit]; only those first released in [releasedIn] when given. */
+    /**
+     * Games whose name matches [query], best match first, or the best-known games for a blank one;
+     * at most [limit], and only those first released in [releasedIn] when given.
+     */
     fun search(
         query: String,
         limit: Int,

@@ -168,7 +168,7 @@ class VoteControllerIT : UserTestSupport() {
     }
 
     @Test
-    fun `the reveal stores the top, deletes every ballot and pick, and only then shows the results`() {
+    fun `the reveal stores the top, keeps every ballot for its member, and only then shows the results`() {
         startVote(createUserWithRole(Role.BOARD))
         val alice = createUserWithRole(Role.MEMBER)
         val bob = createUserWithRole(Role.MEMBER)
@@ -186,9 +186,13 @@ class VoteControllerIT : UserTestSupport() {
         assertThat(votes.revealDue()).isEqualTo(1)
         assertThat(votes.revealDue()).isZero()
 
-        assertThat(rows("vote_ballots")).isZero()
-        assertThat(rows("vote_ballot_picks")).isZero()
+        assertThat(rows("vote_ballots")).isEqualTo(2)
+        assertThat(rows("vote_ballot_picks")).isEqualTo(3)
         assertThat(rows("vote_placings")).isEqualTo(2)
+        mvc
+            .perform(get("/annual-votes/OST_TOP_50/2026/ballot").with(signedIn(alice)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.picks[*].candidate.name", contains("Celeste", "The Witcher 3: Wild Hunt")))
         mvc
             .perform(get("/annual-votes/OST_TOP_50/current"))
             .andExpect(status().isOk)

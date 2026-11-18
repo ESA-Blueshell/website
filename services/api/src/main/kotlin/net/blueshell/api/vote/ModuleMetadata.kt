@@ -5,8 +5,9 @@ import org.springframework.modulith.PackageInfo
 
 /**
  * The annual votes, such as the OST Top 50 and Game of the Year: members rank their picks between
- * the dates the board set, and at the reveal date the ballots are counted, the result is stored
- * and the ballots are deleted. A ballot names its voter by id only.
+ * the dates the board set, and at the reveal date the ballots are counted and the result is
+ * stored. The ballots are kept, so a member can look back on their own; nobody reads another's.
+ * A ballot names its voter by id only.
  */
 @PackageInfo
 @ApplicationModule(

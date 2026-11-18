@@ -59,6 +59,10 @@ class IgdbGameCatalogue(
         releasedIn: Int?,
     ): List<CatalogueGame> {
         val year = releasedIn?.let { " & first_release_date >= ${startOf(it)} & first_release_date < ${startOf(it + 1)}" }.orEmpty()
+        // Nothing typed yet: the games most people have rated, so the list opens on names a member knows.
+        if (query.isBlank()) {
+            return games("fields $FIELDS; where version_parent = null & total_rating_count != null$year; $BEST_KNOWN limit $limit;")
+        }
         return games("search \"${escape(query)}\"; fields $FIELDS; where version_parent = null$year; limit $limit;")
     }
 
@@ -162,6 +166,7 @@ class IgdbGameCatalogue(
 
     private companion object {
         const val FIELDS = "name,first_release_date,cover.image_id"
+        const val BEST_KNOWN = "sort total_rating_count desc;"
         val IMAGE_ID = Regex("^[a-z0-9]{1,40}$")
         const val UNAUTHORIZED = 401
         const val EARLY_RENEWAL_SECONDS = 60L

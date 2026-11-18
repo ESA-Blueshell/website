@@ -66,7 +66,7 @@ class VoteClientConfig {
     ): TrackPreviews = OEmbedTrackPreviews(rest(builder), json)
 
     @Bean
-    fun remotePictures(): RemotePictures = HostBoundRemotePictures(http, ::pictureHost)
+    fun remotePictures(): RemotePictures = HostBoundRemotePictures(http, ::isPictureHost)
 
     private companion object {
         const val CONNECT_TIMEOUT_SECONDS = 3L

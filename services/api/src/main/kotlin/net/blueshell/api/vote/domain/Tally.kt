@@ -1,13 +1,7 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.CandidateTrack
-
-/** One pick as the count reads it. [position] is 1-based; [trackId] is the track as picked, if any. */
-data class CountedPick(
-    val position: Int,
-    val candidateId: Long,
-    val trackId: Long?,
-)
+import net.blueshell.api.vote.persistence.CastPick
 
 /**
  * A candidate's standing: its [points], how many ballots named it ([voters]), how many named it at each
@@ -33,7 +27,7 @@ data class Standing(
  */
 object Tally {
     fun count(
-        ballots: List<List<CountedPick>>,
+        ballots: List<List<CastPick>>,
         points: List<Int>,
         canonical: (Long) -> Long = { it },
     ): List<Standing> {

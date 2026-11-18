@@ -58,7 +58,7 @@ class VoteCandidateController(
     @PostMapping("/vote-candidates")
     fun storeVoteCandidate(
         @Valid @RequestBody request: StoreVoteCandidateRequest,
-    ): VoteCandidateResponse = candidates.candidate(request.igdbId, request.kind, request.year).asResponse()
+    ): VoteCandidateResponse = candidates.storeCandidate(request.igdbId, request.kind, request.year).asResponse()
 
     @GetMapping("/vote-candidates/{igdbId}/tracks")
     fun voteCandidateTracks(

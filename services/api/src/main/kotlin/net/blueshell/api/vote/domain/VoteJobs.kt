@@ -9,8 +9,8 @@ object VoteJobs {
         override val payloadType: Class<RevealDuePayload> = RevealDuePayload::class.java
     }
 
-    /** Nothing to say: the job reaches every vote that is due. */
+    /** Nothing to say: the job reaches every vote that is due, and one payload dedupes with the next. */
     data class RevealDuePayload(
-        val reason: String? = null,
+        val unused: Unit = Unit,
     )
 }

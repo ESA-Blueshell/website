@@ -23,7 +23,7 @@ const val GAME_SEARCH_LIMIT = 10
 /**
  * Finding games and the tracks already picked for one, storing a game or a track the first time
  * somebody picks it, merging duplicate tracks, and fetching a search result's cover on a visitor's
- * behalf. Every picture a page shows comes from here or from our own storage.
+ * behalf. Every picture a vote is read with comes from here or from our own storage.
  *
  * Storing asks IGDB, YouTube or Spotify and fetches a picture before it writes, each call taking up
  * to seconds, so those calls run outside any transaction and only the reads and the write hold a
@@ -62,14 +62,14 @@ class VoteCandidateUseCases(
      */
     fun coverPreview(imageId: String): RemotePicture {
         if (!votes.existsVotingAt(clock.instant())) throw NoVoteOpen()
-        return igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverNotFound()
+        return igdbCoverUrl(imageId, "t_cover_small")?.let(pictures::fetch) ?: throw CoverUnfetchable()
     }
 
     /**
      * The game with that IGDB id, stored with a copy of its cover the first time anybody picks it,
      * while the [kind] vote of [year] is open.
      */
-    fun candidate(
+    fun storeCandidate(
         igdbId: Long,
         kind: VoteKind,
         year: Int,

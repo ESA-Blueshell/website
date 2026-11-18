@@ -103,8 +103,8 @@ class VoteCandidateUseCasesTest {
             whenever(votes.existsVotingAt(any())).thenReturn(true)
 
             assertThat(service.coverPreview("co1abc")).isSameAs(picture)
-            assertThatThrownBy { service.coverPreview("nothere") }.isInstanceOf(CoverNotFound::class.java)
-            assertThatThrownBy { service.coverPreview("../etc") }.isInstanceOf(CoverNotFound::class.java)
+            assertThatThrownBy { service.coverPreview("nothere") }.isInstanceOf(CoverUnfetchable::class.java)
+            assertThatThrownBy { service.coverPreview("../etc") }.isInstanceOf(CoverUnfetchable::class.java)
 
             whenever(votes.existsVotingAt(any())).thenReturn(false)
             assertThatThrownBy { service.coverPreview("co1abc") }.isInstanceOf(NoVoteOpen::class.java)
@@ -117,7 +117,7 @@ class VoteCandidateUseCasesTest {
         fun `a game already stored is answered as it is`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
 
-            assertThat(service.candidate(100, ost, 2026).name).isEqualTo("Celeste")
+            assertThat(service.storeCandidate(100, ost, 2026).name).isEqualTo("Celeste")
             verify(catalogue, never()).byId(any())
         }
 
@@ -130,7 +130,7 @@ class VoteCandidateUseCasesTest {
                 sitePictures.store(picture.bytes, "igdb-26226.jpg", "image/jpeg", FileType.VOTE_COVER),
             ).thenReturn(cover)
 
-            val game = service.candidate(26226, ost, 2026)
+            val game = service.storeCandidate(26226, ost, 2026)
 
             assertThat(game).isEqualTo(CandidateSummary(9, 26226, "Celeste", 2018, cover.asImage()))
             assertThat(game.cover!!.url).isEqualTo("/files/public/vote-covers/c.webp")
@@ -139,16 +139,16 @@ class VoteCandidateUseCasesTest {
         @Test
         fun `a game is kept without a cover where it has none, or the copy fails`() {
             whenever(catalogue.byId(1)).thenReturn(CatalogueGame(1, "Bare", null, null))
-            assertThat(service.candidate(1, ost, 2026).cover).isNull()
+            assertThat(service.storeCandidate(1, ost, 2026).cover).isNull()
 
             whenever(catalogue.byId(2)).thenReturn(CatalogueGame(2, "Unfetched", "co2", 2020))
-            assertThat(service.candidate(2, ost, 2026).cover).isNull()
+            assertThat(service.storeCandidate(2, ost, 2026).cover).isNull()
             verify(sitePictures, never()).store(any(), any(), any(), any())
         }
 
         @Test
         fun `a game the catalogue does not know is refused`() {
-            assertThatThrownBy { service.candidate(26226, ost, 2026) }.isInstanceOf(VoteCandidateNotFound::class.java)
+            assertThatThrownBy { service.storeCandidate(26226, ost, 2026) }.isInstanceOf(VoteCandidateNotFound::class.java)
         }
     }
 
@@ -270,9 +270,9 @@ class VoteCandidateUseCasesTest {
     fun `stores no game and no track unless the vote they are picked for is open`() {
         whenever(votes.findByKindAndYear(ost, 2025)).thenReturn(vote(year = 2025, closesAt = NOW.minusSeconds(60), revealAt = NOW))
 
-        assertThatThrownBy { service.candidate(100, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
+        assertThatThrownBy { service.storeCandidate(100, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
         assertThatThrownBy { service.addTrack(100, link, ost, 2025) }.isInstanceOf(WrongVoteState::class.java)
-        assertThatThrownBy { service.candidate(100, ost, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
+        assertThatThrownBy { service.storeCandidate(100, ost, 2030) }.isInstanceOf(AnnualVoteNotFound::class.java)
         verifyNoInteractions(catalogue, previews, pictures)
     }
 
@@ -294,7 +294,7 @@ class VoteCandidateUseCasesTest {
         whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
         whenever(games.findByIgdbId(26226)).thenReturn(null, celeste)
         whenever(games.saveAndFlush(any<VoteCandidate>())).thenThrow(DataIntegrityViolationException("uk_vote_candidates_igdb_id"))
-        assertThat(service.candidate(26226, ost, 2026).name).isEqualTo("Celeste")
+        assertThat(service.storeCandidate(26226, ost, 2026).name).isEqualTo("Celeste")
 
         whenever(games.findByIgdbId(100)).thenReturn(celeste)
         whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))
@@ -308,7 +308,7 @@ class VoteCandidateUseCasesTest {
     fun `a failed write that nobody else made is not hidden`() {
         whenever(catalogue.byId(26226)).thenReturn(CatalogueGame(26226, "Celeste", null, 2018))
         whenever(games.saveAndFlush(any<VoteCandidate>())).thenThrow(DataIntegrityViolationException("too long"))
-        assertThatThrownBy { service.candidate(26226, ost, 2026) }.isInstanceOf(DataIntegrityViolationException::class.java)
+        assertThatThrownBy { service.storeCandidate(26226, ost, 2026) }.isInstanceOf(DataIntegrityViolationException::class.java)
 
         whenever(games.findByIgdbId(100)).thenReturn(celeste)
         whenever(previews.of(any())).thenReturn(TrackPreview("Resurrections", null))

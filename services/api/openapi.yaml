@@ -1000,7 +1000,7 @@ components:
         picks:
           items:
             $ref: '#/components/schemas/VotePickRequest'
-          maxItems: 10
+          maxItems: 2147483647
           minItems: 1
           type: array
         version:

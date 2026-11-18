@@ -1,37 +1,46 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.shared.credentials.RotatingSecret
+import org.springframework.http.MediaType
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientException
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
-import java.io.IOException
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
- * Looks games up in IGDB with a Twitch app token from the client-credentials flow. The token is
- * kept until shortly before it expires and fetched again once IGDB turns it away. IGDB allows four
- * requests a second per client; [ThrottledGameCatalogue] keeps the whole site under that.
+ * Looks games up in IGDB with a Twitch app token from the client-credentials flow. The credentials
+ * are read on each token request, so rotated credentials take over without a restart (api ADR-033). A
+ * token is kept until shortly before it expires, until IGDB turns it away, or until the credentials
+ * it was issued for change. [ThrottledGameCatalogue] keeps the lookups under IGDB's rate limit.
  */
 class IgdbGameCatalogue(
-    private val clientId: String,
-    private val clientSecret: String,
-    private val http: HttpClient,
+    private val clientId: RotatingSecret,
+    private val clientSecret: RotatingSecret,
+    private val rest: RestClient,
     private val json: ObjectMapper,
     private val clock: Clock,
     private val tokenUrl: String = "https://id.twitch.tv/oauth2/token",
     private val apiUrl: String = "https://api.igdb.com/v4",
 ) : GameCatalogue {
+    private data class TwitchApp(
+        val id: String,
+        val secret: String,
+    )
+
     private data class Token(
         val value: String,
         val expiresAt: Instant,
+        val issuedFor: TwitchApp,
+    )
+
+    private class Answer(
+        val status: Int,
+        val body: String,
     )
 
     @Volatile private var token: Token? = null
@@ -48,54 +57,61 @@ class IgdbGameCatalogue(
     override fun byId(igdbId: Long): CatalogueGame? = games("fields $FIELDS; where id = $igdbId;").firstOrNull()
 
     private fun games(body: String): List<CatalogueGame> {
-        val response = query(body, tokenNow()).let { if (it.statusCode() == UNAUTHORIZED) query(body, tokenNow(fresh = true)) else it }
-        if (response.statusCode() !in OK_RANGE) throw GameSearchUnavailable()
-        return json.readTree(response.body()).mapNotNull(::gameOf)
+        val app = TwitchApp(clientId.current(), clientSecret.current())
+        var answer = query(body, app, tokenFor(app))
+        if (answer.status == UNAUTHORIZED) answer = query(body, app, tokenFor(app, fresh = true))
+        if (answer.status !in OK_RANGE) throw GameSearchUnavailable()
+        return json.readTree(answer.body).mapNotNull(::gameOf)
     }
 
     private fun query(
         body: String,
+        app: TwitchApp,
         bearer: String,
-    ): HttpResponse<String> =
-        send(
-            HttpRequest
-                .newBuilder(URI.create("$apiUrl/games"))
-                .timeout(TIMEOUT)
-                .header("Client-ID", clientId)
+    ): Answer =
+        send {
+            rest
+                .post()
+                .uri("$apiUrl/games")
+                .header("Client-ID", app.id)
                 .header("Authorization", "Bearer $bearer")
-                .header("Accept", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build(),
-        )
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(body)
+        }
 
-    private fun tokenNow(fresh: Boolean = false): String {
-        val held = token
-        if (!fresh && held != null && clock.instant().isBefore(held.expiresAt)) return held.value
+    private fun tokenFor(
+        app: TwitchApp,
+        fresh: Boolean = false,
+    ): String {
+        val held = token?.takeIf { !fresh && it.issuedFor == app }
+        if (held != null && clock.instant().isBefore(held.expiresAt)) return held.value
         val form =
-            mapOf("client_id" to clientId, "client_secret" to clientSecret, "grant_type" to "client_credentials")
-                .entries
-                .joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, StandardCharsets.UTF_8)}" }
-        val response =
-            send(
-                HttpRequest
-                    .newBuilder(URI.create(tokenUrl))
-                    .timeout(TIMEOUT)
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(form))
-                    .build(),
-            )
-        if (response.statusCode() !in OK_RANGE) throw GameSearchUnavailable()
-        val answer = json.readTree(response.body())
-        val value = answer.get("access_token")?.asString() ?: throw GameSearchUnavailable()
-        val lifetime = answer.get("expires_in")?.asLong() ?: 0
+            LinkedMultiValueMap<String, String>().apply {
+                add("client_id", app.id)
+                add("client_secret", app.secret)
+                add("grant_type", "client_credentials")
+            }
+        val answer =
+            send {
+                rest
+                    .post()
+                    .uri(tokenUrl)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+            }
+        if (answer.status !in OK_RANGE) throw GameSearchUnavailable()
+        val read = json.readTree(answer.body)
+        val value = read.get("access_token")?.asString() ?: throw GameSearchUnavailable()
+        val lifetime = read.get("expires_in")?.asLong() ?: 0
         // Renew a minute early, so a token never lapses between reading it and IGDB checking it.
-        return value.also { token = Token(it, clock.instant().plusSeconds(lifetime - EARLY_RENEWAL_SECONDS)) }
+        return value.also { token = Token(it, clock.instant().plusSeconds(lifetime - EARLY_RENEWAL_SECONDS), app) }
     }
 
-    private fun send(request: HttpRequest): HttpResponse<String> =
+    private fun send(request: () -> RestClient.RequestBodySpec): Answer =
         try {
-            http.send(request, HttpResponse.BodyHandlers.ofString())
-        } catch (_: IOException) {
+            request().exchange { _, response -> Answer(response.statusCode.value(), response.bodyTo(String::class.java).orEmpty()) }
+        } catch (_: RestClientException) {
             throw GameSearchUnavailable()
         }
 
@@ -116,7 +132,6 @@ class IgdbGameCatalogue(
         const val UNAUTHORIZED = 401
         const val EARLY_RENEWAL_SECONDS = 60L
         val OK_RANGE = 200..299
-        val TIMEOUT: Duration = Duration.ofSeconds(5)
 
         // IGDB's query language quotes a search with double quotes and escapes with a backslash.
         fun escape(query: String) = query.replace("\\", "\\\\").replace("\"", "\\\"")

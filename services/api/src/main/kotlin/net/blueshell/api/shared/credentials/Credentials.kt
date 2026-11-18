@@ -15,6 +15,8 @@ object Credentials {
     const val IMAP_USERNAME = "email.bounce.imap.username"
     const val IMAP_PASSWORD = "email.bounce.imap.password"
     const val DISCORD_BOT = "discord.botToken"
+    const val IGDB_CLIENT_ID = "app.vote.igdb.client-id"
+    const val IGDB_CLIENT_SECRET = "app.vote.igdb.client-secret"
 }
 
 /**

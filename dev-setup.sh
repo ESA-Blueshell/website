@@ -67,6 +67,10 @@ BREVO_API_KEY=
 # Google Calendar (optional)
 GOOGLE_CALENDAR_ID=
 GOOGLE_CALENDAR_SA_JSON=
+
+# IGDB for the annual votes (optional; without it dev searches a short fixed list)
+IGDB_CLIENT_ID=
+IGDB_CLIENT_SECRET=
 EOF
   ok "Created ${API_ENV} (JWT_SECRET auto-generated)"
 else

@@ -1,10 +1,12 @@
 package net.blueshell.api.vote.domain
 
 import net.blueshell.api.file.api.HostBoundRemotePictures
+import net.blueshell.api.shared.credentials.Credentials
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.mock.env.MockEnvironment
+import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 import java.time.Clock
 
@@ -13,30 +15,30 @@ class VoteClientConfigTest {
     private val json = JsonMapper.builder().build()
     private val clock = Clock.systemUTC()
 
-    private fun environment(vararg profiles: String) = MockEnvironment().apply { setActiveProfiles(*profiles) }
+    private val builder = RestClient.builder()
 
     @Test
-    fun `IGDB is used once both credentials are set`() {
-        assertThat(config.gameCatalogue("id", "secret", json, clock, environment("prod"))).isInstanceOf(ThrottledGameCatalogue::class.java)
+    fun `with IGDB credentials, games come from IGDB under the throttle`() {
+        val environment =
+            MockEnvironment()
+                .withProperty(Credentials.IGDB_CLIENT_ID, "id")
+                .withProperty(Credentials.IGDB_CLIENT_SECRET, "secret")
+
+        assertThat(config.igdbGameCatalogue(builder, environment, json, clock)).isInstanceOf(ThrottledGameCatalogue::class.java)
     }
 
     @Test
-    fun `without both credentials, development and tests get the fixed list`() {
-        assertThat(config.gameCatalogue("id", "", json, clock, environment("dev"))).isInstanceOf(OfflineGameCatalogue::class.java)
-        assertThat(config.gameCatalogue("", "secret", json, clock, environment("test"))).isInstanceOf(OfflineGameCatalogue::class.java)
-    }
+    fun `without them, the stand-in offers the fixed list only where offline games are allowed`() {
+        assertThat(config.standInGameCatalogue(offlineGames = true)).isInstanceOf(OfflineGameCatalogue::class.java)
 
-    @Test
-    fun `without credentials anywhere else, every search is refused`() {
-        val catalogue = config.gameCatalogue("", "", json, clock, environment("prod"))
-
-        assertThatThrownBy { catalogue.search("celeste", 5, null) }.isInstanceOf(GameSearchUnavailable::class.java)
-        assertThatThrownBy { catalogue.byId(1) }.isInstanceOf(GameSearchUnavailable::class.java)
+        val refusing = config.standInGameCatalogue(offlineGames = false)
+        assertThatThrownBy { refusing.search("celeste", 5, null) }.isInstanceOf(GameSearchUnavailable::class.java)
+        assertThatThrownBy { refusing.byId(1) }.isInstanceOf(GameSearchUnavailable::class.java)
     }
 
     @Test
     fun `track previews come from oEmbed, and pictures from the known hosts`() {
-        assertThat(config.trackPreviews(json)).isInstanceOf(OEmbedTrackPreviews::class.java)
+        assertThat(config.trackPreviews(builder, json)).isInstanceOf(OEmbedTrackPreviews::class.java)
         assertThat(config.remotePictures()).isInstanceOf(HostBoundRemotePictures::class.java)
     }
 

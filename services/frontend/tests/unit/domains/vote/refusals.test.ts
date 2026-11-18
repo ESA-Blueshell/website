@@ -31,6 +31,7 @@ describe("vote refusals", () => {
     expect(sentence({code: "UnsupportedTrackLink"})).toBe("Paste a link to a YouTube video or a Spotify track.")
     expect(sentence({code: "TrackLinkUnreadable"})).toContain("private or removed")
     expect(sentence({code: "TrackMergeInvalid"})).toContain("same game")
+    expect(sentence({code: "TrackRenameNotAllowed"})).toContain("or the board")
     expect(sentence({code: "GameSearchUnavailable"})).toContain("unavailable")
     expect(sentence({code: "AnnualVoteExists"})).toBe("That year already has this vote.")
     expect(sentence({code: "VoteDatesOutOfOrder"})).toContain("opens before it closes")

@@ -188,6 +188,7 @@ describe("the place editor", () => {
     song(wrapper).vm.$emit("pick", "link")
     await flushPromises()
     expect(wrapper.emitted("pick")).toEqual([[{candidate: added.candidate, track: added}]])
+    expect(wrapper.emitted("added")).toEqual([[5]])
   })
 
   it("in a games-only vote, offers the year's games and puts a picked game in the top without a song", async () => {

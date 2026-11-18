@@ -32,6 +32,7 @@ const sentences: Record<string, (r: RefusalBody) => string> = {
   GameTrackLimit: r => `${r.max ? `That game already has ${r.max} tracks.` : "That game has all the tracks it can take."} Pick one of them.`,
   NoVoteOpen: () => "Covers are only shown while a vote is open.",
   CoverUnfetchable: () => "That cover could not be fetched.",
+  TrackRenameNotAllowed: () => "Only who added this song, or the board, can rename it.",
   TrackMergeInvalid: () => "A track can only be merged into another track of the same game.",
   GameSearchUnavailable: () => "Game search is unavailable right now. Try again in a moment.",
   AnnualVoteExists: () => "That year already has this vote.",

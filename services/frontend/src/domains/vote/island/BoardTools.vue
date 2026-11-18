@@ -11,6 +11,7 @@ import {
   createVote,
   loadStandings,
   mergeTrack,
+  renameTrack,
   rescheduleVote,
   tracksOf,
   type AnnualVote,
@@ -20,6 +21,7 @@ import {
   type VoteSchedule,
 } from "../adapters/vote"
 import {decemberDates, isoOf, localOf} from "../dates"
+import TrackTitle from "./TrackTitle.vue"
 
 defineOptions({name: "VoteBoardTools"})
 
@@ -102,6 +104,17 @@ async function showTracks(igdbId: number) {
   }
   opened.value = igdbId
   openedTracks.value = await tracksOf(igdbId)
+}
+
+async function rename(track: Track, title: string) {
+  problem.value = ""
+  const renamed = await renameTrack(track.id, title)
+  if (!renamed.ok) {
+    problem.value = renamed.reason
+    return
+  }
+  openedTracks.value = await tracksOf(track.candidate.igdbId)
+  standings.value = await loadStandings(props.vote!.kind, props.vote!.year)
 }
 
 async function merge(track: Track, into: Track) {
@@ -237,7 +250,12 @@ watch(() => props.vote, refresh)
               :key="track.id"
               class="standing__dup"
             >
-              <span>{{ track.title }}</span>
+              <track-title
+                renamable
+                :testid="`vote-track-title-${track.id}`"
+                :title="track.title"
+                @rename="rename(track, $event)"
+              />
               <cut-button
                 v-if="track.id !== placing.track.id"
                 small

@@ -50,6 +50,20 @@ describe("the ballot list", () => {
     expect(wrapper.emitted("problem")).toEqual([["No."]])
   })
 
+  it("lets a member rename only the songs they may, and hands up a rename and a song added in a place", async () => {
+    const wrapper = mount(BallotList, {props: {picks, vote, renamable: [1]}})
+
+    expect(wrapper.get("[data-testid=vote-pick-title-0]").element.tagName).toBe("BUTTON")
+    await wrapper.get("[data-testid=vote-pick-title-0]").trigger("click")
+    await wrapper.get("[data-testid=vote-pick-title-0-field]").setValue("Resurrections")
+    await wrapper.get("[data-testid=vote-pick-title-0-field]").trigger("keydown", {key: "Enter"})
+    expect(wrapper.emitted("rename")).toEqual([[1, "Resurrections"]])
+
+    wrapper.findComponent(PlaceEditor).vm.$emit("added", 5)
+    expect(wrapper.emitted("added")).toEqual([[5]])
+    expect(mount(BallotList, {props: {picks, vote}}).get("[data-testid=vote-pick-title-0]").element.tagName).toBe("SPAN")
+  })
+
   it("shows a cast top as it is, without free places or anything to move", () => {
     const wrapper = mount(BallotList, {props: {picks, vote, readonly: true}})
 

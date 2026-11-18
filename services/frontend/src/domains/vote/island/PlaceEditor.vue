@@ -24,7 +24,7 @@ defineOptions({name: "VotePlaceEditor"})
 
 const props = defineProps<{vote: AnnualVote}>()
 
-const emit = defineEmits<{pick: [pick: BallotPick], problem: [reason: string]}>()
+const emit = defineEmits<{pick: [pick: BallotPick], added: [trackId: number], problem: [reason: string]}>()
 
 /** How long typing must pause before the catalogue is asked, so a word is one search. */
 const SETTLE_MS = 250
@@ -132,6 +132,7 @@ async function onPickSong(key: string) {
   const added = await addTrack(game.value!.igdbId, songTerm.value.trim(), props.vote)
   busy.value = false
   if (added.ok) {
+    emit("added", added.saved.id)
     emit("pick", {candidate: added.saved.candidate, track: added.saved})
     reset()
   } else {
@@ -243,7 +244,7 @@ onBeforeUnmount(() => clearTimeout(settling))
 .place-editor :deep(.picker__field),
 .place-editor :deep(.picker__field:focus-within) {
   background: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
 }
 
 .place-editor :deep(.picker__field:focus-within) {

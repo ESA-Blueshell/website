@@ -496,6 +496,7 @@ export type BulkTargetMoveResult = {
 
 export type CandidateTrackResponse = {
     candidate: VoteCandidateResponse;
+    embedUrl: string;
     externalId: string;
     id: number;
     source: 'YOUTUBE' | 'SPOTIFY';
@@ -2435,6 +2436,13 @@ export type ReenrolRequest = {
     username: string;
 };
 
+export type RescheduleAnnualVoteRequest = {
+    closesAt: string;
+    opensAt: string;
+    revealAt: string;
+    version: number;
+};
+
 export enum Role {
     ANONYMOUS = 'ANONYMOUS',
     VEGAN = 'VEGAN',
@@ -2540,13 +2548,6 @@ export type RosterPersonResponse = {
      * Their Discord name where Discord is linked, otherwise their username
      */
     name: string;
-};
-
-export type ScheduleAnnualVoteRequest = {
-    closesAt: string;
-    opensAt: string;
-    revealAt: string;
-    version: number;
 };
 
 /**
@@ -3597,8 +3598,8 @@ export type CurrentAnnualVoteResponses = {
 
 export type CurrentAnnualVoteResponse = CurrentAnnualVoteResponses[keyof CurrentAnnualVoteResponses];
 
-export type ScheduleAnnualVoteData = {
-    body: ScheduleAnnualVoteRequest;
+export type RescheduleAnnualVoteData = {
+    body: RescheduleAnnualVoteRequest;
     path: {
         kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
         year: number;
@@ -3607,7 +3608,7 @@ export type ScheduleAnnualVoteData = {
     url: '/annual-votes/{kind}/{year}';
 };
 
-export type ScheduleAnnualVoteErrors = {
+export type RescheduleAnnualVoteErrors = {
     /**
      * Validation error
      */
@@ -3630,16 +3631,16 @@ export type ScheduleAnnualVoteErrors = {
     500: ApiError;
 };
 
-export type ScheduleAnnualVoteError = ScheduleAnnualVoteErrors[keyof ScheduleAnnualVoteErrors];
+export type RescheduleAnnualVoteError = RescheduleAnnualVoteErrors[keyof RescheduleAnnualVoteErrors];
 
-export type ScheduleAnnualVoteResponses = {
+export type RescheduleAnnualVoteResponses = {
     /**
      * OK
      */
     200: AnnualVoteResponse;
 };
 
-export type ScheduleAnnualVoteResponse = ScheduleAnnualVoteResponses[keyof ScheduleAnnualVoteResponses];
+export type RescheduleAnnualVoteResponse = RescheduleAnnualVoteResponses[keyof RescheduleAnnualVoteResponses];
 
 export type MyVoteBallotData = {
     body?: never;

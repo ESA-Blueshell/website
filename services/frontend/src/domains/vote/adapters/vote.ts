@@ -11,7 +11,7 @@ import {
   currentAnnualVote,
   mergeVoteTrack,
   myVoteBallot,
-  scheduleAnnualVote,
+  rescheduleAnnualVote,
   searchVoteCandidates,
   storeVoteCandidate,
   voteCandidateTracks,
@@ -88,8 +88,8 @@ export const createVote = (kind: VoteKind, year: number, dates: VoteSchedule): P
 
 /** Moves a vote's dates. */
 /** Moves the vote's dates; [version] is the vote as the form read it, so a second board member's save is not lost. */
-export const scheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule, version: number): Promise<Saved<AnnualVote> | Refused> =>
-  refusable(scheduleAnnualVote({path: {kind, year}, body: {...dates, version}}), "The dates could not be saved.")
+export const rescheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule, version: number): Promise<Saved<AnnualVote> | Refused> =>
+  refusable(rescheduleAnnualVote({path: {kind, year}, body: {...dates, version}}), "The dates could not be saved.")
 
 /** Counts the track [id] as the track [intoId] from now on. */
 export const mergeTrack = (id: number, intoId: number): Promise<Saved<Track> | Refused> =>

@@ -14,7 +14,7 @@ export {
   loadStandings,
   loadVote,
   mergeTrack,
-  scheduleVote,
+  rescheduleVote,
   imageAttrs,
   storeGame,
   tracksOf,

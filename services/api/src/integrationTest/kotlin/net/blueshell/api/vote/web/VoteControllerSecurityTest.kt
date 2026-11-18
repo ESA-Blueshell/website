@@ -115,6 +115,9 @@ class VoteControllerSecurityTest : UserTestSupport() {
         fun endpoints(): List<Arguments> =
             listOf(
                 Endpoint(HttpMethod.GET, "/annual-votes/OST_TOP_50/current", who = Who.ANYBODY),
+                Endpoint(HttpMethod.GET, "/annual-votes/OST_TOP_50/years", who = Who.ANYBODY),
+                Endpoint(HttpMethod.GET, "/annual-votes/OST_TOP_50/2026", who = Who.ANYBODY),
+                Endpoint(HttpMethod.GET, "/vote-tracks?query=cel", who = Who.BOARD),
                 Endpoint(HttpMethod.POST, "/annual-votes/OST_TOP_50", """{"year":2027,$DATES}""", Who.BOARD),
                 Endpoint(HttpMethod.PUT, "/annual-votes/OST_TOP_50/2026", """{$DATES,"version":0}""", Who.BOARD),
                 Endpoint(HttpMethod.GET, "/annual-votes/OST_TOP_50/2026/standings", who = Who.BOARD),

@@ -69,6 +69,13 @@ class VoteCandidateController(
         @PathVariable @Positive igdbId: Long,
     ): List<CandidateTrackResponse> = candidates.tracksOf(igdbId).map { it.asResponse() }
 
+    /** Every live song whose title or game holds [query], game by game, for the board to tend. */
+    @BoardOnly
+    @GetMapping("/vote-tracks")
+    fun voteSongs(
+        @RequestParam(defaultValue = "") @Size(max = QUERY_MAX) query: String,
+    ): List<CandidateTrackResponse> = candidates.songs(query).map { it.asResponse() }
+
     @PostMapping("/vote-tracks")
     @ResponseStatus(HttpStatus.CREATED)
     fun addVoteTrack(

@@ -142,6 +142,21 @@ class VoteUseCasesTest {
     }
 
     @Nested
+    inner class Years {
+        @Test
+        fun `lists a kind's years newest first, and reads one year's vote`() {
+            val older = vote(id = 2, year = 2025)
+            whenever(votes.findAllByKindOrderByYearDesc(VoteKind.OST_TOP_50)).thenReturn(listOf(vote(), older))
+            whenever(votes.findByKindAndYear(VoteKind.OST_TOP_50, 2025)).thenReturn(older)
+
+            assertThat(service.years(VoteKind.OST_TOP_50)).containsExactly(2026, 2025)
+            assertThat(service.ofYear(VoteKind.OST_TOP_50, 2025).year).isEqualTo(2025)
+            assertThatThrownBy { service.years(VoteKind.GAME_OF_THE_YEAR) }.isInstanceOf(VoteKindNotOffered::class.java)
+            assertThatThrownBy { service.ofYear(VoteKind.OST_TOP_50, 2019) }.isInstanceOf(AnnualVoteNotFound::class.java)
+        }
+    }
+
+    @Nested
     inner class Schedule {
         @Test
         fun `creates a vote for a kind's new year on its dates, for a kind the api offers`() {

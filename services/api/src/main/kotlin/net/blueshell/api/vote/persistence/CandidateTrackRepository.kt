@@ -21,6 +21,18 @@ interface CandidateTrackRepository : BaseRepository<CandidateTrack, Long> {
 
     fun findAllByMergedIntoId(trackId: Long): List<CandidateTrack>
 
+    /**
+     * Every live track whose title or game's name holds [term], game by game; the board's list of
+     * songs. An empty [term] holds for every track.
+     */
+    @EntityGraph(attributePaths = ["candidate", "candidate.cover", "thumbnail"])
+    @Query(
+        "select t from CandidateTrack t where t.mergedInto is null and " +
+            "(lower(t.title) like lower(concat('%', :term, '%')) or lower(t.candidate.name) like lower(concat('%', :term, '%'))) " +
+            "order by t.candidate.name, t.addedAt",
+    )
+    fun findLiveMatching(term: String): List<CandidateTrack>
+
     @EntityGraph(attributePaths = ["candidate", "candidate.cover", "thumbnail"])
     fun findAllByIdIn(ids: Collection<Long>): List<CandidateTrack>
 

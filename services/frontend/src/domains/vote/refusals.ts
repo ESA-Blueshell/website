@@ -18,7 +18,7 @@ const STATE_SAID: Record<VoteState, string> = {
 }
 
 const sentences: Record<string, (r: RefusalBody) => string> = {
-  WrongVoteState: r => `The vote ${r.state ? STATE_SAID[r.state] : "is not open"}, so that cannot be done now.`,
+  WrongVoteState: r => `The vote ${(r.state && STATE_SAID[r.state]) || "is not open"}, so that cannot be done now.`,
   BallotSize: r => (r.max ? `A ballot holds one to ${r.max} picks.` : "A ballot holds too few or too many picks."),
   GamePickedTwice: () => "Each game can be on your ballot once. Pick a different game, or swap the track.",
   PickNeedsTrack: () => "Pick a track for each game on your ballot.",

@@ -9,6 +9,7 @@ describe("vote refusals", () => {
     expect(sentence({code: "WrongVoteState", state: "VOTING"})).toBe("The vote is open, so that cannot be done now.")
     expect(sentence({code: "WrongVoteState", state: "CLOSED"})).toBe("The vote has closed, so that cannot be done now.")
     expect(sentence({code: "WrongVoteState", state: "REVEALED"})).toBe("The vote has been revealed, so that cannot be done now.")
+    expect(sentence({code: "WrongVoteState", state: "ARCHIVED"})).toBe("The vote is not open, so that cannot be done now.")
     expect(sentence({code: "WrongVoteState"})).toBe("The vote is not open, so that cannot be done now.")
   })
 

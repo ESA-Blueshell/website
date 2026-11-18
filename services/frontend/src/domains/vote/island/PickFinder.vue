@@ -5,6 +5,7 @@ import FormField from "@/components/island/FormField.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import SearchPicker from "@/components/island/SearchPicker.vue"
 import TextInput from "@/components/island/TextInput.vue"
+import {latestWins} from "@/utils/latestWins"
 import {
   addTrack,
   coverPreviewUrl,
@@ -35,7 +36,8 @@ const link = ref("")
 const busy = ref(false)
 const problem = ref("")
 let settling: ReturnType<typeof setTimeout> | undefined
-let asked = 0
+// A slower answer to an older term must not replace a newer one.
+const searches = latestWins()
 
 const options = computed(() => games.value.map(one => ({
   key: String(one.igdbId),
@@ -45,11 +47,10 @@ const options = computed(() => games.value.map(one => ({
 })))
 
 async function ask(term: string) {
-  const mine = ++asked
+  const current = searches.begin()
   searching.value = true
   const found = await findGames(term, props.vote.kind, props.vote.year)
-  // A slower answer to an older term must not replace a newer one.
-  if (mine !== asked) return
+  if (!current()) return
   games.value = found.ok ? found.saved : []
   problem.value = found.ok ? "" : found.reason
   searching.value = false
@@ -248,8 +249,12 @@ onBeforeUnmount(() => clearTimeout(settling))
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.4rem 1rem;
-  clip-path: polygon(0.5rem 0, 100% 0, calc(100% - 0.5rem) 100%, 0 100%);
+  /* A small button's height and the padding around it; the cut is a list row's 12° of that. */
+  --row-h: 3rem;
+  --cut: calc(var(--row-h) * 0.2126);
+  min-height: var(--row-h);
+  padding: 0.4rem calc(var(--cut) + 0.6rem);
+  clip-path: polygon(var(--cut) 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
   background-color: var(--color-raised);
 }
 

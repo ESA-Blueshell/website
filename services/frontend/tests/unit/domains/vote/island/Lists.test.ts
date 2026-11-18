@@ -14,9 +14,9 @@ describe("the ballot list", () => {
     const rows = wrapper.findAll("[data-testid=vote-pick]")
     expect(rows.map(row => row.text())).toEqual([expect.stringContaining("12pts"), expect.stringContaining("10pts")])
     expect(rows[0]!.find("img").attributes("src")).toMatch(/\/api\/files\/public\/vote-covers\/10\.webp$/)
-    expect(rows[0]!.find(".pick__track").text()).toBe("Track 1")
+    expect(rows[0]!.find(".pick-row__track").text()).toBe("Track 1")
     expect(rows[1]!.find("img").exists()).toBe(false)
-    expect(rows[1]!.find(".pick__track").exists()).toBe(false)
+    expect(rows[1]!.find(".pick-row__track").exists()).toBe(false)
   })
 
   it("asks to move or drop a pick, and cannot move the first up or the last down", async () => {
@@ -46,8 +46,8 @@ describe("the result list", () => {
 
     expect(wrapper.get("[data-testid=vote-results-players]").text()).toContain("until you press Play")
     const rows = wrapper.findAll("[data-testid=vote-result]")
-    expect(rows[0]!.classes()).toContain("result--podium")
-    expect(rows[1]!.classes()).not.toContain("result--podium")
+    expect(rows[0]!.get(".pick-row").classes()).toContain("pick-row--podium")
+    expect(rows[1]!.get(".pick-row").classes()).not.toContain("pick-row--podium")
     expect(rows[0]!.text()).toContain("40pts")
     expect(rows[0]!.get("a").attributes("href")).toBe(youtube.url)
     expect(rows[0]!.get("img").attributes("src")).toMatch(/\/api\/files\/public\/vote-covers\/10\.webp$/)

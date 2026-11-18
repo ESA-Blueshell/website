@@ -23,7 +23,7 @@ import {
   type CandidateTrackResponse,
   type Image,
 } from "@/services/api"
-import {srcsetOf, type Picture} from "@/components/island/pictures"
+import {sizeOf, srcsetOf, type Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
 import {readOr, type Answer} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
@@ -114,5 +114,5 @@ export const coverPreviewUrl = (imageId: string | null | undefined): string | nu
  */
 export const imageAttrs = (image: Image) => {
   const picture: Picture = {...image, url: apiUrl(image.url), renditions: image.renditions.map(one => ({...one, url: apiUrl(one.url)}))}
-  return {src: picture.url, srcset: srcsetOf(picture), width: image.width ?? undefined, height: image.height ?? undefined}
+  return {src: picture.url, srcset: srcsetOf(picture), ...sizeOf(picture)}
 }

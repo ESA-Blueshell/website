@@ -49,6 +49,7 @@ class VoteBallotUseCases(
         val vote = votes.lockedOf(kind, year)
         val now = clock.instant()
         vote.requireVoting(now)
+        // TWIN: `withPick` in the frontend's `ballot.ts` keeps a ballot to these two rules while it is edited.
         if (choices.isEmpty() || choices.size > kind.picksPerBallot) throw BallotSize(choices.size, kind.picksPerBallot)
 
         val picks = resolve(vote, choices)

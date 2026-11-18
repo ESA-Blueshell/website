@@ -28,6 +28,7 @@ import {
   type VoteState,
 } from "@/domains/vote"
 import {ASSOCIATION_ZONE, yearIn} from "@/utils/datetime"
+import {latestWins} from "@/utils/latestWins"
 import {loginHref} from "@/utils/loginRedirect"
 
 defineOptions({name: "AnnualVotePage"})
@@ -122,16 +123,19 @@ async function save() {
 }
 
 // Both kinds share this component and the router reuses it between them, so the vote is read
-// again for each kind rather than once on mount.
+// again for each kind rather than once on mount, and a read for a kind left behind is dropped.
+const reads = latestWins()
 watch(() => props.page.kind, async kind => {
+  const current = reads.begin()
   loaded.value = false
   ballot.value = null
   unread.value = false
   picks.value = []
   saved.value = false
   problem.value = ""
-  vote.value = await loadVote(kind)
-  if (kind !== props.page.kind) return
+  const read = await loadVote(kind)
+  if (!current()) return
+  vote.value = read
   loaded.value = true
   await readBallot()
 }, {immediate: true})

@@ -124,6 +124,17 @@ class IgdbGameCatalogueTest {
     }
 
     @Test
+    fun `a cover address is built only from an id IGDB would issue, small or big`() {
+        val igdb = catalogue()
+
+        assertThat(igdb.coverUrl("co1abc", CoverSize.SMALL)).isEqualTo("https://images.igdb.com/igdb/image/upload/t_cover_small/co1abc.jpg")
+        assertThat(igdb.coverUrl("co1abc", CoverSize.BIG)).isEqualTo("https://images.igdb.com/igdb/image/upload/t_cover_big/co1abc.jpg")
+        assertThat(igdb.coverUrl("../x", CoverSize.BIG)).isNull()
+        assertThat(igdb.coverUrl("", CoverSize.BIG)).isNull()
+        assertThat(queries).isEmpty()
+    }
+
+    @Test
     fun `a token IGDB turns away is fetched again, once`() {
         gamesAnswer = { exchange -> if (queries.size == 1) exchange.answer(401, "{}") else exchange.answer(200, CELESTE) }
 

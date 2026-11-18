@@ -33,6 +33,7 @@ class VoteClientConfigTest {
         val refusing = config.standInGameCatalogue(offlineGames = false)
         assertThatThrownBy { refusing.search("celeste", 5, null) }.isInstanceOf(GameSearchUnavailable::class.java)
         assertThatThrownBy { refusing.byId(1) }.isInstanceOf(GameSearchUnavailable::class.java)
+        assertThat(refusing.coverUrl("co1", CoverSize.SMALL)).isNull()
     }
 
     @Test
@@ -50,5 +51,6 @@ class VoteClientConfigTest {
         assertThat(offline.search("e", 2, null)).hasSize(2)
         assertThat(offline.byId(offline.search("Celeste", 1, null).single().igdbId)?.name).isEqualTo("Celeste")
         assertThat(offline.byId(-1)).isNull()
+        assertThat(offline.coverUrl("co1", CoverSize.SMALL)).isNull()
     }
 }

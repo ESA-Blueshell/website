@@ -56,6 +56,15 @@ class IgdbGameCatalogue(
 
     override fun byId(igdbId: Long): CatalogueGame? = games("fields $FIELDS; where id = $igdbId;").firstOrNull()
 
+    override fun coverUrl(
+        imageId: String,
+        size: CoverSize,
+    ): String? {
+        if (!IMAGE_ID.matches(imageId)) return null
+        val token = if (size == CoverSize.SMALL) "t_cover_small" else "t_cover_big"
+        return "https://images.igdb.com/igdb/image/upload/$token/$imageId.jpg"
+    }
+
     private fun games(body: String): List<CatalogueGame> {
         val app = TwitchApp(clientId.current(), clientSecret.current())
         var answer = query(body, app, tokenFor(app))
@@ -129,6 +138,7 @@ class IgdbGameCatalogue(
 
     private companion object {
         const val FIELDS = "name,first_release_date,cover.image_id"
+        val IMAGE_ID = Regex("^[a-z0-9]{1,40}$")
         const val UNAUTHORIZED = 401
         const val EARLY_RENEWAL_SECONDS = 60L
         val OK_RANGE = 200..299

@@ -38,7 +38,14 @@ import java.time.Clock
 import java.time.ZoneOffset
 
 class VoteCandidateUseCasesTest {
-    private val catalogue = mock<GameCatalogue>()
+    private val catalogue =
+        mock<GameCatalogue> {
+            on { coverUrl(any(), any()) } doAnswer { call ->
+                val id = call.getArgument<String>(0)
+                val size = if (call.getArgument<CoverSize>(1) == CoverSize.SMALL) "t_cover_small" else "t_cover_big"
+                "https://images.igdb.com/igdb/image/upload/$size/$id.jpg".takeIf { id.all(Char::isLetterOrDigit) }
+            }
+        }
     private val previews = mock<TrackPreviews>()
     private val pictures = mock<RemotePictures>()
     private val sitePictures = mock<SitePictures>()

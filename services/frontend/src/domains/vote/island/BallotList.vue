@@ -5,6 +5,7 @@ import type {AnnualVote} from "../adapters/vote"
 import {pointsAt, type BallotPick} from "../ballot"
 import PickRow from "./PickRow.vue"
 import PlaceEditor from "./PlaceEditor.vue"
+import TrackTitle from "./TrackTitle.vue"
 
 /**
  * Every place of a top, filled or free, each with what it is worth. A free place is filled in
@@ -19,10 +20,14 @@ const props = defineProps<{
   picks: BallotPick[]
   /** Shown as it was cast, once voting has closed: no free places, nothing to move. */
   readonly?: boolean
+  /** The songs this member may rename: those they added, or every one for the board. */
+  renamable?: number[]
 }>()
 
 const emit = defineEmits<{
   pick: [pick: BallotPick]
+  added: [trackId: number]
+  rename: [trackId: number, title: string]
   problem: [reason: string]
   move: [index: number, step: -1 | 1]
   reorder: [from: number, to: number]
@@ -114,6 +119,17 @@ function onKey(event: KeyboardEvent, index: number) {
         :points="pointsAt(vote.points, index)"
         :track="pick.track?.title"
       >
+        <template
+          v-if="pick.track"
+          #track
+        >
+          <track-title
+            :renamable="renamable?.includes(pick.track.id)"
+            :testid="`vote-pick-title-${index}`"
+            :title="pick.track.title"
+            @rename="$emit('rename', pick.track.id, $event)"
+          />
+        </template>
         <template
           v-if="!readonly"
           #end
@@ -225,6 +241,7 @@ function onKey(event: KeyboardEvent, index: number) {
         <template #free>
           <place-editor
             :vote="vote"
+            @added="$emit('added', $event)"
             @pick="$emit('pick', $event)"
             @problem="$emit('problem', $event)"
           />

@@ -13,6 +13,7 @@ export {
   loadStandings,
   loadVote,
   mergeTrack,
+  renameTrack,
   rescheduleVote,
   imageAttrs,
   storeGame,

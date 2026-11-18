@@ -12,6 +12,7 @@ vi.mock("@/services/api", async importOriginal => ({
   annualVoteStandings: vi.fn(),
   createAnnualVote: vi.fn(),
   mergeVoteTrack: vi.fn(),
+  renameVoteTrack: vi.fn(),
   rescheduleAnnualVote: vi.fn(),
   voteCandidateTracks: vi.fn(),
 }))
@@ -139,6 +140,28 @@ describe("the board's vote tools", () => {
 
     expect(wrapper.text()).not.toContain("merge a duplicate track")
     expect(wrapper.get("[data-testid=vote-standing-open-100]").attributes("disabled")).toBeDefined()
+  })
+
+  it("renames any song of an opened game, and says why one could not be", async () => {
+    const wrapper = await tools(aVote("VOTING"))
+    await wrapper.get("[data-testid=vote-standing-open-100]").trigger("click")
+    await flushPromises()
+    const rename = async (title: string) => {
+      await wrapper.get("[data-testid=vote-track-title-2]").trigger("click")
+      await wrapper.get("[data-testid=vote-track-title-2-field]").setValue(title)
+      await wrapper.get("[data-testid=vote-track-title-2-field]").trigger("keydown", {key: "Enter"})
+      await flushPromises()
+    }
+
+    vi.mocked(api.renameVoteTrack).mockResolvedValueOnce(refusal(api.renameVoteTrack, {code: "TrackRenameNotAllowed"}, 403))
+    await rename("Mine")
+    expect(wrapper.get("[data-testid=vote-board-problem]").text()).toContain("or the board")
+
+    vi.mocked(api.renameVoteTrack).mockResolvedValueOnce(answer(api.renameVoteTrack, {...duplicate, title: "Greenpath"}))
+    await rename("Greenpath")
+    expect(api.renameVoteTrack).toHaveBeenLastCalledWith({path: {id: 2}, body: {title: "Greenpath"}})
+    expect(wrapper.find("[data-testid=vote-board-problem]").exists()).toBe(false)
+    expect(api.voteCandidateTracks).toHaveBeenCalledTimes(2)
   })
 
   it("merges a duplicate track into the one leading its game, and says why one cannot", async () => {

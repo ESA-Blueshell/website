@@ -22,6 +22,7 @@ vi.mock("@/services/api", async importOriginal => ({
   castVoteBallot: vi.fn(),
   currentAnnualVote: vi.fn(),
   myVoteBallot: vi.fn(),
+  renameVoteTrack: vi.fn(),
 }))
 
 const login = (roles: string[]): StoredLogin => ({
@@ -94,7 +95,7 @@ describe("annual vote page", () => {
     voteIs(aVote("VOTING"))
     const wrapper = await mount(null)
 
-    expect(wrapper.text()).toContain("voting is open")
+    expect(wrapper.text()).toContain("voting has started")
     expect(wrapper.text()).toContain("Every member ranks their 5 favourites.")
     expect(wrapper.text()).toContain("Pick another track for it and the new track takes the old one's place.")
     expect(wrapper.get("[data-testid=vote-closes]").text()).toBe("Closes 21 Dec, 23:59")
@@ -262,6 +263,39 @@ describe("annual vote page", () => {
     vi.mocked(api.myVoteBallot).mockResolvedValue(answer(api.myVoteBallot, {version: null, submittedAt: null, picks: []}))
     const none = await mount(member)
     expect(none.find("[data-testid=vote-mine]").exists()).toBe(false)
+  })
+
+  it("lets a member rename the songs they added, in their top and in a place just filled, and says why one could not be", async () => {
+    voteIs(aVote("VOTING"))
+    vi.mocked(api.myVoteBallot).mockResolvedValue(
+      answer(api.myVoteBallot, {version: 1, submittedAt: "2026-12-02T18:00:00Z", picks: [aPick(hollow), aPick(portal)], renamableTrackIds: [1]}),
+    )
+    const wrapper = await mount(member)
+    const list = wrapper.findComponent(BallotList)
+    expect(list.props("renamable")).toEqual([1])
+
+    vi.mocked(api.renameVoteTrack).mockResolvedValueOnce(refusal(api.renameVoteTrack, {code: "TrackRenameNotAllowed"}, 403))
+    list.vm.$emit("rename", 1, "Mine")
+    await settle()
+    expect(wrapper.get("[data-testid=vote-problem]").text()).toContain("or the board")
+
+    vi.mocked(api.renameVoteTrack).mockResolvedValueOnce(answer(api.renameVoteTrack, {...hollow, title: "Greenpath"}))
+    list.vm.$emit("rename", 1, "Greenpath")
+    await settle()
+    expect(api.renameVoteTrack).toHaveBeenLastCalledWith({path: {id: 1}, body: {title: "Greenpath"}})
+    expect(wrapper.findAll("[data-testid=vote-pick]")[0]!.text()).toContain("Greenpath")
+    expect(wrapper.get("[data-testid=vote-save]").attributes("disabled")).toBeDefined()
+
+    list.vm.$emit("added", 9)
+    await settle()
+    expect(list.props("renamable")).toEqual([1, 9])
+  })
+
+  it("lets the board rename every song in its top", async () => {
+    voteIs(aVote("VOTING"))
+    const wrapper = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]})
+
+    expect(wrapper.findComponent(BallotList).props("renamable")).toEqual(expect.arrayContaining([1, 2]))
   })
 
   it("gives the board its tools, and reads the member's ballot again once the board's change opens voting", async () => {

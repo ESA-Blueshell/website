@@ -2437,6 +2437,10 @@ export type ReenrolRequest = {
     username: string;
 };
 
+export type RenameVoteTrackRequest = {
+    title: string;
+};
+
 export type RescheduleAnnualVoteRequest = {
     closesAt: string;
     opensAt: string;
@@ -3273,6 +3277,7 @@ export type Version = {
 
 export type VoteBallotResponse = {
     picks: Array<VotePickResponse>;
+    renamableTrackIds: Array<number>;
     submittedAt?: string | null;
     version?: number | null;
 };
@@ -13552,3 +13557,46 @@ export type MergeVoteTrackResponses = {
 };
 
 export type MergeVoteTrackResponse = MergeVoteTrackResponses[keyof MergeVoteTrackResponses];
+
+export type RenameVoteTrackData = {
+    body: RenameVoteTrackRequest;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/vote-tracks/{id}/title';
+};
+
+export type RenameVoteTrackErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type RenameVoteTrackError = RenameVoteTrackErrors[keyof RenameVoteTrackErrors];
+
+export type RenameVoteTrackResponses = {
+    /**
+     * OK
+     */
+    200: CandidateTrackResponse;
+};
+
+export type RenameVoteTrackResponse = RenameVoteTrackResponses[keyof RenameVoteTrackResponses];

@@ -56,8 +56,12 @@ const rank = computed<string>(() => RANKS[place - 1] ?? "var(--color-ash)")
     <div class="pick-row__words">
       <template v-if="game">
         <span class="pick-row__game">{{ game }}</span>
+        <span
+          v-if="$slots.track"
+          class="pick-row__track"
+        ><slot name="track" /></span>
         <a
-          v-if="track && trackHref"
+          v-else-if="track && trackHref"
           class="pick-row__track"
           :href="trackHref"
           rel="noopener"

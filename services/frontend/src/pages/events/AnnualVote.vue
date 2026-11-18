@@ -19,6 +19,7 @@ import {
   loadVote,
   moved,
   movedTo,
+  renameTrack,
   said,
   saidShort,
   samePicks,
@@ -54,15 +55,36 @@ const picks = ref<BallotPick[]>([])
 const saving = ref(false)
 const saved = ref(false)
 const problem = ref("")
+/** Songs this member added since the page read their ballot, which they may rename too. */
+const added = ref<number[]>([])
 
 const {signedIn, isMember, isBoard} = useVoteRights()
+
+// The board renames any song; a member the ones they added. TWIN: `VoteCandidateUseCases.rename`.
+const renamable = computed<number[]>(() => {
+  const shown = [...picks.value, ...(ballot.value?.picks ?? [])].flatMap(pick => (pick.track ? [pick.track.id] : []))
+  if (isBoard.value) return shown
+  return [...(ballot.value?.renamableTrackIds ?? []), ...added.value]
+})
+
+async function onRename(trackId: number, title: string) {
+  problem.value = ""
+  const renamed = await renameTrack(trackId, title)
+  if (!renamed.ok) {
+    problem.value = renamed.reason
+    return
+  }
+  const retitled = (pick: BallotPick): BallotPick => (pick.track?.id === trackId ? {...pick, track: renamed.saved} : pick)
+  picks.value = picks.value.map(retitled)
+  if (ballot.value) ballot.value = {...ballot.value, picks: ballot.value.picks.map(retitled)}
+}
 const changed = computed<boolean>(() => !samePicks(picks.value, ballot.value?.picks ?? []))
 const full = computed<boolean>(() => picks.value.length >= (vote.value?.points.length ?? 0))
 
 // The heading's own words for each state; the refusals say the same states as "The vote …".
 const TAIL: Record<VoteState, string> = {
   UPCOMING: "coming soon",
-  VOTING: "voting is open",
+  VOTING: "voting has started",
   CLOSED: "voting has closed",
   REVEALED: "the results are in",
 }
@@ -269,11 +291,14 @@ watch(() => props.page.kind, async kind => {
             <template v-else>
               <ballot-list
                 :picks="picks"
+                :renamable="renamable"
                 :vote="vote"
+                @added="added.push($event)"
                 @move="onMove"
                 @pick="onPick"
                 @problem="problem = $event"
                 @remove="onRemove"
+                @rename="onRename"
                 @reorder="onReorder"
               >
                 <template #foot>
@@ -335,7 +360,9 @@ watch(() => props.page.kind, async kind => {
             <ballot-list
               :picks="ballot.picks"
               readonly
+              :renamable="renamable"
               :vote="vote"
+              @rename="onRename"
             />
           </section>
 
@@ -388,7 +415,7 @@ watch(() => props.page.kind, async kind => {
 <style scoped>
 /* The top stands on a ground of its own, tinted blue, so its rows read as bars laid on it. */
 .vote-band {
-  --band-ground: color-mix(in oklab, var(--color-brand) 16%, var(--color-ground));
+  --band-ground: color-mix(in oklab, var(--color-brand) 10%, var(--color-ground));
 }
 
 /* The top takes the room, the aside a reading column beside it, and the band's own padding is the

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * The reveal, the one step of an annual vote that cannot be undone, run for real: the job the
- * scheduler queues counts a vote whose reveal date has passed, stores its top, deletes every
+ * scheduler queues counts a vote whose reveal date has passed, stores its top, keeps every
  * ballot, and the public page then shows the results.
  */
 @Tag("system")
@@ -21,7 +21,7 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
     private fun byTestId(id: String) = TestIdLocatorHelper.byTestId(page, id)
 
     @Test
-    fun `the reveal job reveals a due vote's top and deletes its ballots`() {
+    fun `the reveal job reveals a due vote's top and keeps its ballots`() {
         val admin = TestHelper.registerActivateAndPromote("ADMIN")
         val voter = TestHelper.registerActivateAndPromote("MEMBER")
         val suffix = TestHelper.uniqueSuffix()
@@ -50,7 +50,7 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
         val jobId = Regex("\"id\":(\\d+)").find(enqueued.text())!!.groupValues[1].toLong()
 
         pollForValue("the reveal job $jobId to succeed") { TestHelper.findJobExecution(jobId)?.takeIf { it.status == "SUCCESS" } }
-        assertThat(TestHelper.voteRows("vote_ballots", voteId)).isZero()
+        assertThat(TestHelper.voteRows("vote_ballots", voteId)).isEqualTo(2)
         assertThat(TestHelper.voteRows("vote_placings", voteId)).isEqualTo(2)
 
         // The band draws its words in capitals, which innerText reads as drawn.

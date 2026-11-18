@@ -88,9 +88,13 @@ class VoteCandidateUseCasesTest {
     @Nested
     inner class Search {
         @Test
-        fun `a query too short to mean anything is not sent`() {
+        fun `a query too short to mean anything is not sent, and an empty one asks for the best-known games`() {
             assertThat(service.search(" h ", VoteKind.OST_TOP_50, 2026)).isEmpty()
             verify(catalogue, never()).search(any(), any(), any())
+
+            val known = CatalogueGame(1942, "The Witcher 3: Wild Hunt", null, 2015)
+            whenever(catalogue.search("", GAME_SEARCH_LIMIT, null)).thenReturn(listOf(known))
+            assertThat(service.search("  ", VoteKind.OST_TOP_50, 2026)).containsExactly(known)
         }
 
         @Test

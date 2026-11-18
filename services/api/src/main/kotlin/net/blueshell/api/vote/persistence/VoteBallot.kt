@@ -16,7 +16,7 @@ import net.blueshell.api.shared.model.Identifiable
 import net.blueshell.api.shared.model.VersionedEntity
 import java.time.Instant
 
-/** A member's response to one vote: their ranked picks, until the reveal deletes it. */
+/** A member's response to one vote: their ranked picks, kept after the reveal for them to look back on. */
 @Entity
 @Table(
     name = "vote_ballots",

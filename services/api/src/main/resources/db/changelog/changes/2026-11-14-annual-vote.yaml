@@ -5,8 +5,8 @@
 # vote_candidates are the IGDB games somebody picked, each with our copy of its cover.
 # vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link for one game is
 # one row, and a duplicate the board merges points at the track it was merged into.
-# vote_ballots and vote_ballot_picks hold how each member voted until the results are revealed:
-# the reveal writes vote_placings and deletes the ballots, so no vote outlives the count.
+# vote_ballots and vote_ballot_picks hold how each member voted; the reveal writes vote_placings
+# and keeps the ballots, which only their own member reads.
 databaseChangeLog:
   - changeSet:
       logicalFilePath: db/changelog/changes/2026-11-14-annual-vote.yaml

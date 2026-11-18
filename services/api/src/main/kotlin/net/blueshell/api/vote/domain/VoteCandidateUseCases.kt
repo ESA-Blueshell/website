@@ -52,7 +52,8 @@ class VoteCandidateUseCases(
     ): List<CatalogueGame> {
         votes.of(kind, year)
         val trimmed = query.trim()
-        if (trimmed.length < MIN_GAME_QUERY) return emptyList()
+        // Nothing typed opens the list on the best-known games; a letter or so means nothing yet.
+        if (trimmed.isNotEmpty() && trimmed.length < MIN_GAME_QUERY) return emptyList()
         return catalogue.search(trimmed, GAME_SEARCH_LIMIT, kind.releaseYearFor(year))
     }
 

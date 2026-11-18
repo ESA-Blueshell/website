@@ -22,8 +22,8 @@ import java.time.Instant
 
 /**
  * A year's vote from its creation to its revealed result. It runs on the dates the board set; the
- * board may move them until the reveal, which counts the ballots once, stores the top and deletes
- * the ballots.
+ * board may move them until the reveal, which counts the ballots once and stores the top. The
+ * ballots stay, each one its member's to look back on.
  */
 @Service
 class VoteUseCases(
@@ -163,7 +163,6 @@ class VoteUseCases(
         )
         vote.ballotCount = cast.distinctBy { it.ballotId }.size
         vote.revealedAt = now
-        ballots.deleteAllOfVote(vote.id!!)
         votes.saveAndFlush(vote)
     }
 

@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.ceil
 
 private const val BUCKET_IDLE_MINUTES = 30L
+private const val MILLIS_PER_SECOND = 1000.0
 
 /**
  * Lightweight in-memory sliding-window limiter for low-volume abuse protection.
@@ -23,6 +24,8 @@ class InMemoryRequestRateLimiter(
     private val bucketIdleTtl: Duration = Duration.ofMinutes(BUCKET_IDLE_MINUTES),
     @param:Value("\${security.auth-rate-limit.cleanup-interval:128}")
     private val cleanupInterval: Int = 128,
+    // No bean has this type, so Spring leaves it at wall time; a caller with its own clock passes it.
+    private val now: () -> Long = System::currentTimeMillis,
 ) {
     data class Decision(
         val allowed: Boolean,
@@ -49,11 +52,42 @@ class InMemoryRequestRateLimiter(
         maxRequests: Int,
         window: Duration,
     ): Decision {
+        val retryAfterMillis = acquire(key, maxRequests, window)
+        if (retryAfterMillis == 0L) return Decision(allowed = true)
+        return Decision(allowed = false, retryAfterSeconds = ceil(retryAfterMillis / MILLIS_PER_SECOND).toLong())
+    }
+
+    /**
+     * Takes a slot under [key], pausing until one frees up; false where that wait would outlast
+     * [patience], with nothing taken.
+     */
+    fun awaitTurn(
+        key: String,
+        maxRequests: Int,
+        window: Duration,
+        patience: Duration,
+        pause: (Duration) -> Unit = { Thread.sleep(it) },
+    ): Boolean {
+        val giveUp = now() + patience.toMillis()
+        while (true) {
+            val wait = acquire(key, maxRequests, window)
+            if (wait == 0L) return true
+            if (now() + wait >= giveUp) return false
+            pause(Duration.ofMillis(wait))
+        }
+    }
+
+    // A slot taken is 0; otherwise the milliseconds until the oldest one in the window frees up.
+    private fun acquire(
+        key: String,
+        maxRequests: Int,
+        window: Duration,
+    ): Long {
         require(maxRequests > 0) { "maxRequests must be positive" }
         val windowMillis = window.toMillis()
         require(windowMillis > 0) { "window must be positive" }
 
-        val now = System.currentTimeMillis()
+        val now = now()
         maybeCleanup(now)
         val bucket = getOrCreateBucket(key, now)
 
@@ -62,14 +96,11 @@ class InMemoryRequestRateLimiter(
             pruneExpiredTimestamps(bucket, now, windowMillis)
 
             if (bucket.timestamps.size >= maxRequests) {
-                val oldest = bucket.timestamps.first()
-                val retryAfterMillis = (windowMillis - (now - oldest)).coerceAtLeast(1)
-                val retryAfterSeconds = ceil(retryAfterMillis / 1000.0).toLong()
-                return Decision(allowed = false, retryAfterSeconds = retryAfterSeconds)
+                return (windowMillis - (now - bucket.timestamps.first())).coerceAtLeast(1)
             }
 
             bucket.timestamps.addLast(now)
-            return Decision(allowed = true)
+            return 0
         }
     }
 

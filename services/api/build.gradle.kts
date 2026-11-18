@@ -213,6 +213,9 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("boot
                 listOf(
                     "-XX:MaxRAM=2g",
                     "-XX:+UseG1GC",
+                    // CVE-2026-114938 sits in the Base64 decode intrinsic; keep it off until the
+                    // builder ships a patched JRE. Training and runtime flags must agree.
+                    "-XX:-UseBASE64Intrinsics",
                     // Cached adapters are machine code for the build runner's CPU; on a host
                     // without its instructions every start dies with SIGILL (#2594).
                     "-XX:+UnlockDiagnosticVMOptions",
@@ -226,7 +229,7 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("boot
                 ).joinToString(" "),
             // Must match the training run, or the cache is ignored.
             "BPE_DELIM_JAVA_TOOL_OPTIONS" to " ",
-            "BPE_APPEND_JAVA_TOOL_OPTIONS" to "-XX:+UseG1GC",
+            "BPE_APPEND_JAVA_TOOL_OPTIONS" to "-XX:+UseG1GC -XX:-UseBASE64Intrinsics",
             "BPE_DEFAULT_SPRING_PROFILES_ACTIVE" to "prod",
             "BPE_DEFAULT_BPL_JAVA_NMT_ENABLED" to "false",
         ),

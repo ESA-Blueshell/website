@@ -10,6 +10,8 @@ import LoadingSpinner from "@/components/island/LoadingSpinner.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
 import StateTag from "@/components/island/StateTag.vue"
 import TaskLayout from "@/components/island/TaskLayout.vue"
+import Timeline from "@/components/island/Timeline.vue"
+import type {Stop} from "@/components/island/stripAxis"
 import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardSongs from "@/domains/vote/island/BoardSongs.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
@@ -35,6 +37,7 @@ import {
   type VoteKindPage,
   type VoteState,
 } from "@/domains/vote"
+import {BRAND_ACCENT} from "@/utils/brand"
 import {ASSOCIATION_ZONE, yearIn} from "@/utils/datetime"
 import {latestWins} from "@/utils/latestWins"
 import {loginHref} from "@/utils/loginRedirect"
@@ -60,6 +63,17 @@ const latest = ref<AnnualVote | null>(null)
 const years = ref<number[]>([])
 const loaded = ref(false)
 /** Whether the year shown is the current one, the only one the board's band acts on. */
+// The vote's three dates as stops on a line, lit up to the one it has reached; "Now" marks it.
+const PHASE_OF: Record<VoteState, number | null> = {UPCOMING: null, VOTING: 1, CLOSED: 2, REVEALED: 3}
+const phase = computed<number | null>(() => (vote.value ? PHASE_OF[vote.value.state] : null))
+const phases = computed<Stop[]>(() => {
+  const shown = vote.value
+  if (!shown) return []
+  const stop = (id: number, label: string, at: string): Stop =>
+    ({id, name: `${label}, ${said(at)}`, label, sublabel: saidShort(at), mark: id === phase.value ? "Now" : ""})
+  return [stop(1, "Voting opens", shown.opensAt), stop(2, "Voting closes", shown.closesAt), stop(3, "Results", shown.revealAt)]
+})
+
 const showingLatest = computed<boolean>(() => !vote.value || vote.value.year === latest.value?.year)
 const yearHref = (year: number): string => (year === latest.value?.year ? props.page.path : `${props.page.path}/${year}`)
 const ballot = ref<Ballot | null>(null)
@@ -247,6 +261,20 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
           </nav>
         </template>
       </header-band>
+
+      <!-- The vote's dates as a line, lit up to where it stands: a slice of its own under the head. -->
+      <section
+        v-if="vote"
+        class="w-full"
+        data-testid="vote-timeline"
+      >
+        <timeline
+          :accent="BRAND_ACCENT"
+          :selected-id="phase"
+          :stops="phases"
+          testid-prefix="vote-phase"
+        />
+      </section>
 
       <band-rule testid="vote-rule" />
 
@@ -441,6 +469,12 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
             :year="THIS_YEAR"
             @changed="onChanged"
           />
+        </lead-band>
+        <band-rule testid="vote-songs-rule" />
+        <lead-band
+          class="vote-songs-band"
+          testid="vote-songs-band"
+        >
           <board-songs />
         </lead-band>
       </template>
@@ -451,7 +485,7 @@ watch(() => [props.page.kind, props.year] as const, async ([kind, year]) => {
 <style scoped>
 /* The top stands on a ground of its own, tinted blue, so its rows read as bars laid on it. */
 .vote-band {
-  --band-ground: color-mix(in oklab, var(--color-brand) 10%, var(--color-ground));
+  --band-ground: color-mix(in oklab, var(--color-brand) 5%, var(--color-ground));
 }
 
 /* The top takes the room, the aside a reading column beside it, and the band's own padding is the

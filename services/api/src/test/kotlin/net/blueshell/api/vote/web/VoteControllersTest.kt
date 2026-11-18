@@ -101,7 +101,7 @@ class VoteControllersTest {
     fun `games, covers, tracks, adding and merging go through the game use cases`() {
         whenever(games.search("cel", ost, 2026)).thenReturn(listOf(CatalogueGame(26226, "Celeste", "co1", 2018)))
         whenever(games.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
-        whenever(games.candidate(26226, ost, 2026)).thenReturn(celeste)
+        whenever(games.storeCandidate(26226, ost, 2026)).thenReturn(celeste)
         whenever(games.tracksOf(26226)).thenReturn(listOf(resurrections))
         whenever(games.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026)).thenReturn(resurrections)
         whenever(games.merge(12, 11)).thenReturn(resurrections)

@@ -9,4 +9,4 @@ fun igdbCoverUrl(
 ): String? = if (IGDB_IMAGE_ID.matches(imageId)) "https://images.igdb.com/igdb/image/upload/$size/$imageId.jpg" else null
 
 /** IGDB's image host, YouTube's thumbnail host and Spotify's image hosts. */
-fun pictureHost(host: String): Boolean = host in setOf("images.igdb.com", "i.ytimg.com", "i.scdn.co") || host.endsWith(".spotifycdn.com")
+fun isPictureHost(host: String): Boolean = host in setOf("images.igdb.com", "i.ytimg.com", "i.scdn.co") || host.endsWith(".spotifycdn.com")

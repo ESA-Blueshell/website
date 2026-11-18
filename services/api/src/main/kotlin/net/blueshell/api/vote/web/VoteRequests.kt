@@ -16,7 +16,6 @@ private const val LAST_YEAR = 2100L
 private const val LINK_MAX = 512
 
 // The most picks any kind's ballot holds; each kind's own limit is the vote's to enforce.
-private const val PICKS_MAX = 10
 
 @Schema(name = "CreateAnnualVoteRequest")
 data class CreateAnnualVoteRequest(
@@ -50,7 +49,7 @@ data class VotePickRequest(
 /** The picks best first; [version] is the ballot as last read, null for a first ballot. */
 @Schema(name = "CastVoteBallotRequest")
 data class CastVoteBallotRequest(
-    @field:Valid @field:Size(min = 1, max = PICKS_MAX)
+    @field:Valid @field:Size(min = 1)
     val picks: List<VotePickRequest>,
     val version: Long? = null,
 )

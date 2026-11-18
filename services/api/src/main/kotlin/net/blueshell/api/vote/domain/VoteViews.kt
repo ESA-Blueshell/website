@@ -9,7 +9,7 @@ import net.blueshell.api.vote.persistence.VoteCandidate
 import net.blueshell.api.vote.persistence.VoteKind
 import java.time.Instant
 
-/** A game as a page draws it. [cover] is our stored copy, never IGDB's. */
+/** A game as a vote reads it. [cover] is our stored copy, never IGDB's. */
 data class CandidateSummary(
     val id: Long,
     val igdbId: Long,
@@ -18,7 +18,7 @@ data class CandidateSummary(
     val cover: Image?,
 )
 
-/** A track as a page draws it. [thumbnail] is our stored copy, never theirs. */
+/** A track as a vote reads it. [thumbnail] is our stored copy, never theirs. */
 data class TrackSummary(
     val id: Long,
     val candidate: CandidateSummary,

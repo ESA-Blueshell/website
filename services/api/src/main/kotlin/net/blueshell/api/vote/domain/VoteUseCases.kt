@@ -36,7 +36,7 @@ class VoteUseCases(
     private val clock: Clock,
 ) {
     /**
-     * The vote of [kind] the public page shows: the one that opened last, so a vote the board sets
+     * The vote of [kind] that anybody reads: the one that opened last, so a vote the board sets
      * up early for next year does not hide this year's voting or results. Before any has opened,
      * the one that opens first.
      */
@@ -171,7 +171,7 @@ class VoteUseCases(
         val picked = tracks.byIds(cast.mapNotNull { it.trackId })
         val standings =
             Tally.count(
-                cast.groupBy { it.ballotId }.values.map { ballot -> ballot.map { CountedPick(it.position, it.candidateId, it.trackId) } },
+                cast.groupBy { it.ballotId }.values.toList(),
                 vote.kind.points,
                 canonical = { id -> picked[id]?.canonical()?.id ?: id },
             )

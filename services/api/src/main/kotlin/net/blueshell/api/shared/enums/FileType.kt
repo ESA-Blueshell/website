@@ -44,7 +44,7 @@ private val PLAYER_ICON_WIDTHS = listOf(128, 256)
  */
 private val PORTRAIT_WIDTHS = listOf(160, 320, 640)
 
-// A cover or a thumbnail is drawn small, beside a name, on every annual vote page.
+/** The widths a vote cover or thumbnail is stored at: both are read small, beside a name. */
 private val VOTE_PICTURE_WIDTHS = listOf(160, 320)
 
 /**

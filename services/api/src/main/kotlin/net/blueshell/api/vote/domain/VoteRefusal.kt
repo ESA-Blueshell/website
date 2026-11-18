@@ -44,7 +44,7 @@ class WrongVoteState(
 class BallotSize(
     picks: Int,
     max: Int,
-) : VoteRefusal(HttpStatus.BAD_REQUEST, "BallotSize", "A ballot holds one to $max picks.", mapOf("picks" to picks, "max" to max))
+) : VoteRefusal(HttpStatus.BAD_REQUEST, "BallotSize", "A ballot holds too few or too many picks.", mapOf("picks" to picks, "max" to max))
 
 /** Two picks name one game, which a ballot may name only once. */
 class GamePickedTwice(
@@ -100,4 +100,4 @@ class TrackMergeInvalid(
 
 class GameSearchUnavailable : VoteRefusal(HttpStatus.SERVICE_UNAVAILABLE, "GameSearchUnavailable", "Game search is unavailable.")
 
-class CoverNotFound : VoteRefusal(HttpStatus.NOT_FOUND, "CoverNotFound", "That cover could not be fetched.")
+class CoverUnfetchable : VoteRefusal(HttpStatus.NOT_FOUND, "CoverUnfetchable", "That cover could not be fetched.")

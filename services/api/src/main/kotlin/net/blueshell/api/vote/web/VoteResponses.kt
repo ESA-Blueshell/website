@@ -7,7 +7,7 @@ import net.blueshell.api.vote.persistence.TrackSource
 import net.blueshell.api.vote.persistence.VoteKind
 import java.time.Instant
 
-/** A search result. Its cover is [coverImageId], fetched through `/vote-games/covers`. */
+/** A search result. Its cover is [coverImageId], fetched through `/vote-candidates/covers/{imageId}`. */
 @Schema(name = "CatalogueGameResponse")
 data class CatalogueGameResponse(
     val igdbId: Long,

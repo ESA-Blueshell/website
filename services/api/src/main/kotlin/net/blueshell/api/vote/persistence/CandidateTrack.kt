@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import jakarta.persistence.Version
+import org.hibernate.annotations.ColumnDefault
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AutoIdEntity
 import java.time.Instant
@@ -49,7 +50,9 @@ class CandidateTrack(
     var mergedInto: CandidateTrack? = null
 
     // Raised by every merge that reads the track, so two merges touching one track cannot both commit.
+    // Declared here rather than through VersionedEntity, which would cost AutoIdEntity's id equality.
     @Version
     @Column(name = "version", nullable = false)
+    @ColumnDefault("0")
     var version: Long = 0L
 }

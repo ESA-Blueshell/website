@@ -1,5 +1,6 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.vote.persistence.CastPick
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -10,9 +11,9 @@ class TallyTest {
         position: Int,
         game: Long,
         track: Long? = game * 10,
-    ) = CountedPick(position, game, track)
+    ) = CastPick(0, position, game, track)
 
-    private fun count(vararg ballots: List<CountedPick>) = Tally.count(ballots.toList(), points)
+    private fun count(vararg ballots: List<CastPick>) = Tally.count(ballots.toList(), points)
 
     private fun places(standings: List<Standing>) = standings.map { it.candidateId to it.place }
 

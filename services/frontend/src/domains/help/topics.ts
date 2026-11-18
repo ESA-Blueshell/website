@@ -411,7 +411,7 @@ export const HELP: HelpSection[] = [
         title: "Run the OST Top 50",
         audience: "board",
         body: [
-          "Open OST Top 50 under Events. Press the plus at the end of the years, or Start a vote under Board. The dates are filled in for December in Amsterdam time; press the Start button, which names the year, to start it.",
+          "Open OST Top 50 under Events. Press the plus at the end of the years, or Start a vote under Board. The dates are filled in for December in Amsterdam time. Press the Start button, which names the year, to start it.",
           "To move the dates, press the pencil on a year, or Dates and picks under Board, change them and press Save. Until the first vote is cast you can also change Picks per vote, how many games each member ranks.",
           "The board sees the standings while voting is open. Open a game to see its tracks, and press Merge into the leading track to fold a duplicate into the leading one.",
           "Press a song's title, in the standings or in your own top, to rename it. The board can rename any song.",

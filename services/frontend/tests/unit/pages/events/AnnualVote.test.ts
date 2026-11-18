@@ -10,6 +10,7 @@ import type {StoredLogin} from "@/plugins/store"
 import AnnualVote from "@/pages/events/AnnualVote.vue"
 import BallotList from "@/domains/vote/island/BallotList.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
+import Timeline from "@/components/island/Timeline.vue"
 import {GAME_OF_THE_YEAR, OST_TOP_50, type VoteKindPage} from "@/domains/vote"
 import {boardLogin, mountPage} from "../../helpers/mountPage"
 import {answer, refusal} from "../../helpers/sdkAnswers"
@@ -321,6 +322,22 @@ describe("annual vote page", () => {
     expect(past.get("[data-testid=vote-year-2025]").attributes("aria-current")).toBe("page")
     expect(past.findAll("[data-testid=vote-result]")).toHaveLength(1)
     expect(past.findComponent(BoardTools).exists()).toBe(false)
+  })
+
+  it("draws the vote's dates as a line lit up to where it stands, and marks that stop now", async () => {
+    voteIs(aVote("CLOSED"))
+    const closed = await mount(null)
+    const line = closed.findComponent(Timeline)
+    expect(line.props("selectedId")).toBe(2)
+    expect(line.props("stops").map((stop: {label: string; mark: string}) => [stop.label, stop.mark])).toEqual([
+      ["Voting opens", ""], ["Voting closes", "Now"], ["Results", ""],
+    ])
+    expect(line.props("stops")[1].sublabel).toBe("21 Dec, 23:59")
+
+    voteIs(aVote("UPCOMING"))
+    expect((await mount(null)).findComponent(Timeline).props("selectedId")).toBeNull()
+    voteIs(null)
+    expect((await mount(null)).findComponent(Timeline).exists()).toBe(false)
   })
 
   it("shows no years to move between where a kind has one", async () => {

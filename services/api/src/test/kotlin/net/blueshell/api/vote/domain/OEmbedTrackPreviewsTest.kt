@@ -6,10 +6,10 @@ import net.blueshell.api.vote.persistence.TrackSource
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 import java.net.InetSocketAddress
 import java.net.ServerSocket
-import java.net.http.HttpClient
 
 class OEmbedTrackPreviewsTest {
     private val server: HttpServer = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).also { it.start() }
@@ -31,7 +31,7 @@ class OEmbedTrackPreviewsTest {
 
     private fun previews(endpoint: String = "$base/oembed") =
         OEmbedTrackPreviews(
-            HttpClient.newHttpClient(),
+            RestClient.create(),
             JsonMapper.builder().build(),
             mapOf(
                 TrackSource.YOUTUBE to endpoint,
@@ -75,7 +75,7 @@ class OEmbedTrackPreviewsTest {
 
     @Test
     fun `asks YouTube's and Spotify's own endpoints by default`() {
-        assertThat(OEmbedTrackPreviews(HttpClient.newHttpClient(), JsonMapper.builder().build())).isNotNull
+        assertThat(OEmbedTrackPreviews(RestClient.create(), JsonMapper.builder().build())).isNotNull
     }
 
     private fun HttpExchange.answer(

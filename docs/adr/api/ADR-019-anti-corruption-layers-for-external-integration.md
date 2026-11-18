@@ -102,6 +102,7 @@ stand-in naming the same properties as its real twin.
 | `GoogleCalendarAdapter` | `MockCalendarAdapter` | `google.calendar.id`, `google.calendar.serviceAccountJson` |
 | `ImapBouncePollingService` | none: the bounce mailbox goes unread | `email.bounce.imap.host`, `.username`, `.password` |
 | the Discord beans | none: each reader copes with the bot's absence | `discord.botToken` |
+| the throttled `IgdbGameCatalogue` | `OfflineGameCatalogue` where `app.vote.offline-games` is on, else a catalogue that refuses every search | `app.vote.igdb.client-id`, `app.vote.igdb.client-secret` |
 
 `BrevoTargetStrategy`, the Brevo cohort target, needs no credentials of its own: it is written
 against `ContactListAdapter`, so it runs over Brevo or over `MockContactAdapter`. In dev and in

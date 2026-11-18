@@ -2,14 +2,16 @@ package net.blueshell.api.vote.domain
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import net.blueshell.api.shared.credentials.RotatingSecret
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
+import org.springframework.mock.env.MockEnvironment
+import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 import java.net.InetSocketAddress
 import java.net.ServerSocket
-import java.net.http.HttpClient
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
@@ -36,12 +38,14 @@ class IgdbGameCatalogueTest {
         exchange.answer(200, """{"access_token":"$issued","expires_in":3600,"token_type":"bearer"}""")
     }
     private var gamesAnswer: (HttpExchange) -> Unit = { it.answer(200, CELESTE) }
+    private val environment = MockEnvironment().withProperty("igdb.id", "client").withProperty("igdb.secret", "secret")
+    private val clientIds = mutableListOf<String>()
 
     init {
         server.createContext("/token") { tokenAnswer(it) }
         server.createContext("/v4/games") { exchange ->
             queries += exchange.requestHeaders.getFirst("Authorization") to exchange.requestBody.readAllBytes().decodeToString()
-            check(exchange.requestHeaders.getFirst("Client-ID") == "client")
+            clientIds += exchange.requestHeaders.getFirst("Client-ID")
             gamesAnswer(exchange)
         }
     }
@@ -50,7 +54,15 @@ class IgdbGameCatalogueTest {
     fun stop() = server.stop(0)
 
     private fun catalogue(api: String = "$base/v4") =
-        IgdbGameCatalogue("client", "secret", HttpClient.newHttpClient(), JsonMapper.builder().build(), clock, "$base/token", api)
+        IgdbGameCatalogue(
+            RotatingSecret(environment, "igdb.id"),
+            RotatingSecret(environment, "igdb.secret"),
+            RestClient.create(),
+            JsonMapper.builder().build(),
+            clock,
+            "$base/token",
+            api,
+        )
 
     @Test
     fun `a search asks for main games by name, with a token from the client-credentials flow`() {
@@ -59,6 +71,7 @@ class IgdbGameCatalogueTest {
         assertThat(found).containsExactly(CatalogueGame(26226, "Celeste", "co3byy", 2018))
         assertThat(tokensIssued.single()).isEqualTo("client_id=client&client_secret=secret&grant_type=client_credentials")
         assertThat(queries.single().first).isEqualTo("Bearer token1")
+        assertThat(clientIds.single()).isEqualTo("client")
         assertThat(queries.single().second).isEqualTo(
             "search \"Cel\\\"este\"; fields name,first_release_date,cover.image_id; where version_parent = null; limit 10;",
         )
@@ -95,6 +108,19 @@ class IgdbGameCatalogueTest {
         igdb.search("a", 1, null)
 
         assertThat(queries.map { it.first }).containsExactly("Bearer token1", "Bearer token1", "Bearer token2")
+    }
+
+    @Test
+    fun `rotated credentials are used on the next search, with a token issued for them`() {
+        val igdb = catalogue()
+        igdb.search("a", 1, null)
+        environment.setProperty("igdb.id", "rotated")
+        environment.setProperty("igdb.secret", "fresh")
+        igdb.search("a", 1, null)
+
+        assertThat(tokensIssued.last()).isEqualTo("client_id=rotated&client_secret=fresh&grant_type=client_credentials")
+        assertThat(clientIds).containsExactly("client", "rotated")
+        assertThat(queries.map { it.first }).containsExactly("Bearer token1", "Bearer token2")
     }
 
     @Test

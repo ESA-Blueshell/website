@@ -1,14 +1,15 @@
 package net.blueshell.api.vote.domain
 
+import net.blueshell.api.security.InMemoryRequestRateLimiter
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
 /**
  * Keeps every member's lookups together under IGDB's four requests a second, which is per client
- * rather than per member, and answers a search asked again within [remember] from memory. The api
- * runs as one process (Flagger scales it between none and one), so a limit held here is the whole
- * site's. A lookup that cannot get a turn within [patience] is refused as unavailable.
+ * rather than per member, and answers a search asked again within [remember] from memory. The limit
+ * is held per process: while a rollout runs two api pods, together they may reach twice that. A
+ * lookup that cannot get a turn within [patience] is refused as unavailable.
  */
 class ThrottledGameCatalogue(
     private val catalogue: GameCatalogue,
@@ -29,7 +30,7 @@ class ThrottledGameCatalogue(
         val until: Instant,
     )
 
-    private val sent = ArrayDeque<Instant>()
+    private val limiter = InMemoryRequestRateLimiter(maxBuckets = 1, now = clock::millis)
     private val answers =
         object : LinkedHashMap<Asked, Answer>(REMEMBERED, LOAD_FACTOR, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Asked, Answer>) = size > REMEMBERED
@@ -49,27 +50,13 @@ class ThrottledGameCatalogue(
 
     override fun byId(igdbId: Long): CatalogueGame? = turn { catalogue.byId(igdbId) }
 
-    // Waits for a free slot in the last second, then runs [lookup]; refused where the wait would use up [patience].
     private fun <T> turn(lookup: () -> T): T {
-        val giveUp = clock.instant().plus(patience)
-        while (true) {
-            val wait =
-                synchronized(sent) {
-                    val now = clock.instant()
-                    while (sent.isNotEmpty() && !sent.first().isAfter(now.minusSeconds(1))) sent.removeFirst()
-                    if (sent.size < perSecond) {
-                        sent.addLast(now)
-                        null
-                    } else {
-                        Duration.between(now, sent.first().plusSeconds(1))
-                    }
-                } ?: return lookup()
-            if (!clock.instant().plus(wait).isBefore(giveUp)) throw GameSearchUnavailable()
-            pause(wait)
-        }
+        if (!limiter.awaitTurn(KEY, perSecond, Duration.ofSeconds(1), patience, pause)) throw GameSearchUnavailable()
+        return lookup()
     }
 
     private companion object {
+        const val KEY = "igdb"
         const val IGDB_REQUESTS_PER_SECOND = 4
         const val REMEMBER_MINUTES = 10L
         const val REMEMBERED = 500

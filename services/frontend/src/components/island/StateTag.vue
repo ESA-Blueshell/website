@@ -3,7 +3,7 @@
 defineOptions({name: "StateTag"})
 
 const {tone = "accent", testid = undefined} = defineProps<{
-  tone?: "accent" | "ok" | "warn" | "quiet"
+  tone?: "accent" | "ok" | "warn" | "brand" | "quiet"
   testid?: string
 }>()
 </script>
@@ -38,6 +38,10 @@ const {tone = "accent", testid = undefined} = defineProps<{
 
 .state-tag--warn {
   color: var(--color-warning);
+}
+
+.state-tag--brand {
+  color: var(--color-brand-ink);
 }
 
 .state-tag--quiet {

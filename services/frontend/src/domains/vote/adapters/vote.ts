@@ -44,6 +44,8 @@ export interface VoteSchedule {
   opensAt: string
   closesAt: string
   revealAt: string
+  /** How many picks a ballot holds; left out, a new vote takes its kind's number and a saved one keeps its own. */
+  picks?: number
 }
 
 /** The latest year's vote of [kind], or null when there is none yet. */
@@ -96,7 +98,7 @@ export const loadStandings = (kind: VoteKind, year: number): Promise<Placing[] |
 export const createVote = (kind: VoteKind, year: number, dates: VoteSchedule): Promise<Saved<AnnualVote> | Refused> =>
   refusable(createAnnualVote({path: {kind}, body: {year, ...dates}}), "The vote could not be started.")
 
-/** Moves the vote's dates; [version] is the vote as the form read it, so a second board member's save is not lost. */
+/** Moves the vote's dates and sets its number of picks until the first vote; [version] is the vote as the form read it, so a second board member's save is not lost. */
 export const rescheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule, version: number): Promise<Saved<AnnualVote> | Refused> =>
   refusable(rescheduleAnnualVote({path: {kind, year}, body: {...dates, version}}), "The dates could not be saved.")
 

@@ -48,7 +48,6 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
           :game="placing.candidate.name"
           lazy
           :place="placing.place"
-          :podium="placing.place <= 3"
           :points="placing.points"
           :track="placing.track?.title"
           :track-href="placing.track?.url"
@@ -108,8 +107,14 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
 }
 
 @media (max-width: 600px) {
-  .results :deep(.pick-row__points) {
-    display: none;
+  /* The play button wraps under the game, so the row and its cut grow by its height. */
+  .results :deep(.pick-row:has(.pick-row__end)) {
+    --row-h: calc(2.5rem * 4 / 3 + 1rem + 2.25rem);
+    grid-template-columns: 2.4rem 2.5rem minmax(0, 1fr) auto;
+  }
+
+  .results :deep(.pick-row__end) {
+    grid-column: 3 / -1;
   }
 }
 </style>

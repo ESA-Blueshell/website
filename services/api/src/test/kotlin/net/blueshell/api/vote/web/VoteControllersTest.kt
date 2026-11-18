@@ -13,6 +13,7 @@ import net.blueshell.api.vote.domain.RemotePicture
 import net.blueshell.api.vote.domain.TrackSummary
 import net.blueshell.api.vote.domain.VoteBallotUseCases
 import net.blueshell.api.vote.domain.VoteCandidateUseCases
+import net.blueshell.api.vote.domain.VoteFixtures
 import net.blueshell.api.vote.domain.VoteState
 import net.blueshell.api.vote.domain.VoteSummary
 import net.blueshell.api.vote.domain.VoteUseCases
@@ -23,22 +24,21 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.http.MediaType
-import java.time.Instant
 
 class VoteControllersTest {
     private val votes = mock<VoteUseCases>()
     private val ballots = mock<VoteBallotUseCases>()
-    private val games = mock<VoteCandidateUseCases>()
+    private val candidates = mock<VoteCandidateUseCases>()
     private val member = UserPrincipal(7, "member", "h", true, setOf(Role.MEMBER), null, null)
 
     private val voteController = AnnualVoteController(votes)
     private val ballotController = VoteBallotController(ballots)
-    private val gameController = VoteCandidateController(games)
+    private val candidateController = VoteCandidateController(candidates)
 
     private val ost = VoteKind.OST_TOP_50
-    private val opens = Instant.parse("2026-12-01T00:00:00Z")
-    private val closes = Instant.parse("2026-12-21T23:00:00Z")
-    private val reveal = Instant.parse("2026-12-28T19:00:00Z")
+    private val opens = VoteFixtures.OPENS
+    private val closes = VoteFixtures.CLOSES
+    private val reveal = VoteFixtures.REVEAL
     private val cover = Image(url = "/files/public/vote-covers/c.webp", path = "vote-covers/c.webp", width = 264, height = 352)
     private val celeste = CandidateSummary(1, 26226, "Celeste", 2018, cover)
     private val resurrections =
@@ -116,26 +116,26 @@ class VoteControllersTest {
     }
 
     @Test
-    fun `games, covers, tracks, adding and merging go through the game use cases`() {
-        whenever(games.search("cel", ost, 2026)).thenReturn(listOf(CatalogueGame(26226, "Celeste", "co1", 2018)))
-        whenever(games.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
-        whenever(games.storeCandidate(26226, ost, 2026)).thenReturn(celeste)
-        whenever(games.tracksOf(26226)).thenReturn(listOf(resurrections))
-        whenever(games.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026)).thenReturn(resurrections)
-        whenever(games.merge(12, 11)).thenReturn(resurrections)
+    fun `candidates, covers, tracks, adding and merging go through the candidate use cases`() {
+        whenever(candidates.search("cel", ost, 2026)).thenReturn(listOf(CatalogueGame(26226, "Celeste", "co1", 2018)))
+        whenever(candidates.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
+        whenever(candidates.storeCandidate(26226, ost, 2026)).thenReturn(celeste)
+        whenever(candidates.tracksOf(26226)).thenReturn(listOf(resurrections))
+        whenever(candidates.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026)).thenReturn(resurrections)
+        whenever(candidates.merge(12, 11)).thenReturn(resurrections)
 
-        assertThat(gameController.searchVoteCandidates("cel", ost, 2026))
+        assertThat(candidateController.searchVoteCandidates("cel", ost, 2026))
             .containsExactly(CatalogueGameResponse(26226, "Celeste", 2018, "co1"))
-        val cover = gameController.voteCandidateCover("co1")
-        assertThat(cover.body).containsExactly(1, 2)
-        assertThat(cover.headers.contentType).isEqualTo(MediaType.IMAGE_JPEG)
-        assertThat(cover.headers.cacheControl).contains("max-age=604800")
-        assertThat(gameController.storeVoteCandidate(StoreVoteCandidateRequest(26226, ost, 2026))).isEqualTo(celesteResponse)
-        assertThat(gameController.voteCandidateTracks(26226)).containsExactly(resurrectionsResponse)
+        val fetched = candidateController.voteCandidateCover("co1")
+        assertThat(fetched.body).containsExactly(1, 2)
+        assertThat(fetched.headers.contentType).isEqualTo(MediaType.IMAGE_JPEG)
+        assertThat(fetched.headers.cacheControl).contains("max-age=604800")
+        assertThat(candidateController.storeVoteCandidate(StoreVoteCandidateRequest(26226, ost, 2026))).isEqualTo(celesteResponse)
+        assertThat(candidateController.voteCandidateTracks(26226)).containsExactly(resurrectionsResponse)
         assertThat(
-            gameController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026)),
+            candidateController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026)),
         ).isEqualTo(resurrectionsResponse)
-        assertThat(gameController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
+        assertThat(candidateController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
     }
 
     @Test

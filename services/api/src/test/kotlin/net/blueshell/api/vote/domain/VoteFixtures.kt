@@ -16,7 +16,7 @@ import java.time.Instant
 internal object VoteFixtures {
     val NOW: Instant = Instant.parse("2026-12-10T18:00:00Z")
     val OPENS: Instant = Instant.parse("2026-12-01T00:00:00Z")
-    val CLOSES: Instant = Instant.parse("2026-12-21T23:00:00Z")
+    val CLOSES: Instant = Instant.parse("2026-12-21T22:59:00Z")
     val REVEAL: Instant = Instant.parse("2026-12-28T19:00:00Z")
 
     fun stored(path: String) = Entities.file(path = path)

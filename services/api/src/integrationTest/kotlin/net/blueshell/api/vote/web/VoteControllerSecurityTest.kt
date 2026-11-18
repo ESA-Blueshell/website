@@ -109,7 +109,7 @@ class VoteControllerSecurityTest : UserTestSupport() {
     }
 
     companion object {
-        private const val DATES = """"opensAt":"2026-12-01T00:00:00Z","closesAt":"2026-12-21T22:59:00Z","revealAt":"2026-12-28T19:00:00Z""""
+        private val DATES = VoteDates.JSON
 
         @JvmStatic
         fun endpoints(): List<Arguments> =

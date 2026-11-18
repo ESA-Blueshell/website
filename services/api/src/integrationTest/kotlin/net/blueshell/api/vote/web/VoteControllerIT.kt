@@ -39,9 +39,9 @@ class VoteControllerIT : UserTestSupport() {
     @Autowired
     private lateinit var votes: VoteUseCases
 
-    private val opens = Instant.parse("2026-12-01T00:00:00Z")
-    private val closes = Instant.parse("2026-12-21T22:59:00Z")
-    private val reveal = Instant.parse("2026-12-28T19:00:00Z")
+    private val opens = VoteDates.OPENS
+    private val closes = VoteDates.CLOSES
+    private val reveal = VoteDates.REVEAL
 
     @BeforeEach
     fun duringVoting() {
@@ -57,16 +57,22 @@ class VoteControllerIT : UserTestSupport() {
                 post("/annual-votes/OST_TOP_50")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"year":2026,"opensAt":"$opens","closesAt":"$closes","revealAt":"$reveal"}"""),
+                    .content("""{"year":2026,${VoteDates.JSON}}"""),
             ).andExpect(status().isCreated)
             .andExpect(jsonPath("$.state").value("VOTING"))
             .andExpect(jsonPath("$.opensAt").value("2026-12-01T00:00:00Z"))
+
+    // A pick as a ballot names it: the game's id and the track's.
+    private data class Pick(
+        val candidateId: Int,
+        val trackId: Int,
+    )
 
     private fun track(
         member: User,
         igdbId: Long,
         url: String,
-    ): Pair<Int, Int> {
+    ): Pick {
         val added =
             json(
                 mvc
@@ -77,21 +83,19 @@ class VoteControllerIT : UserTestSupport() {
                             .content("""{"igdbId":$igdbId,"url":"$url","kind":"OST_TOP_50","year":2026}"""),
                     ).andExpect(status().isCreated),
             )
-        return JsonPath.read<Int>(added, "$.candidate.id") to JsonPath.read(added, "$.id")
+        return Pick(JsonPath.read(added, "$.candidate.id"), JsonPath.read(added, "$.id"))
     }
 
     private fun cast(
         member: User,
-        picks: List<Pair<Int, Int>>,
+        picks: List<Pick>,
         version: Long?,
     ) = mvc.perform(
         put("/annual-votes/OST_TOP_50/2026/ballot")
             .with(signedIn(member))
             .contentType(MediaType.APPLICATION_JSON)
             .content(
-                """{"picks":[${picks.joinToString { (game, track) ->
-                    """{"candidateId":$game,"trackId":$track}"""
-                }}],"version":$version}""",
+                """{"picks":[${picks.joinToString { """{"candidateId":${it.candidateId},"trackId":${it.trackId}}""" }}],"version":$version}""",
             ),
     )
 
@@ -125,7 +129,7 @@ class VoteControllerIT : UserTestSupport() {
         val elsewhere = track(member, 1942, "https://youtu.be/sharedlink1")
 
         assertThat(again).isEqualTo(first)
-        assertThat(elsewhere.second).isNotEqualTo(first.second)
+        assertThat(elsewhere.trackId).isNotEqualTo(first.trackId)
         mvc
             .perform(get("/vote-candidates/26226/tracks").with(signedIn(member)))
             .andExpect(jsonPath("$", hasSize<Any>(1)))
@@ -143,24 +147,24 @@ class VoteControllerIT : UserTestSupport() {
 
         mvc
             .perform(
-                post("/vote-tracks/{id}/merge", duplicate.second)
+                post("/vote-tracks/{id}/merge", duplicate.trackId)
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"intoId":${kept.second}}"""),
+                    .content("""{"intoId":${kept.trackId}}"""),
             ).andExpect(status().isOk)
-            .andExpect(jsonPath("$.id").value(kept.second))
+            .andExpect(jsonPath("$.id").value(kept.trackId))
         mvc
             .perform(
-                post("/vote-tracks/{id}/merge", kept.second)
+                post("/vote-tracks/{id}/merge", kept.trackId)
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"intoId":${duplicate.second}}"""),
+                    .content("""{"intoId":${duplicate.trackId}}"""),
             ).andExpect(status().isBadRequest)
 
         mvc
             .perform(get("/annual-votes/OST_TOP_50/2026/standings").with(signedIn(board)))
-            .andExpect(jsonPath("$[0].track.id").value(kept.second))
-        assertThat(third.second).isNotIn(kept.second, duplicate.second)
+            .andExpect(jsonPath("$[0].track.id").value(kept.trackId))
+        assertThat(third.trackId).isNotIn(kept.trackId, duplicate.trackId)
     }
 
     @Test
@@ -214,7 +218,7 @@ class VoteControllerIT : UserTestSupport() {
                 post("/annual-votes/OST_TOP_50")
                     .with(signedIn(board))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("""{"year":2026,"opensAt":"$opens","closesAt":"$closes","revealAt":"$reveal"}"""),
+                    .content("""{"year":2026,${VoteDates.JSON}}"""),
             ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.code").value("AnnualVoteExists"))
     }

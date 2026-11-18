@@ -94,15 +94,11 @@ class TallyTest {
     @Test
     fun `a merged track counts as the track it was merged into`() {
         val standings =
-            Tally.count(listOf(listOf(pick(1, 1, track = 11)), listOf(pick(1, 1, track = 12))), points, canonical = {
-                if (it ==
-                    11L
-                ) {
-                    12
-                } else {
-                    it
-                }
-            })
+            Tally.count(
+                listOf(listOf(pick(1, 1, track = 11)), listOf(pick(1, 1, track = 12))),
+                points,
+                canonical = { id -> if (id == 11L) 12 else id },
+            )
 
         assertThat(standings.single().trackId).isEqualTo(12)
         assertThat(standings.single().points).isEqualTo(24)

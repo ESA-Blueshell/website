@@ -16,13 +16,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Instant
 
 class VoteLookupTest {
     private val votes = mock<VoteRepository>()
-    private val opens = Instant.parse("2026-12-01T00:00:00Z")
-    private val closes = Instant.parse("2026-12-21T23:00:00Z")
-    private val vote = Vote(VoteKind.OST_TOP_50, 2026, opens, closes, Instant.parse("2026-12-28T19:00:00Z"))
+    private val opens = VoteFixtures.OPENS
+    private val closes = VoteFixtures.CLOSES
+    private val vote = Vote(VoteKind.OST_TOP_50, 2026, opens, closes, VoteFixtures.REVEAL)
 
     @Test
     fun `a vote is found by kind and year, and a missing one is refused`() {

@@ -24,6 +24,7 @@ data class Standing(
  * candidate's tracks still counts for the candidate. Ties break on more first places, then more voters, then
  * more second places, third, and so on; candidates still level share a place, and the next place skips
  * as many as shared it. A merged track counts as the track [canonical] resolves it to.
+ * TWIN: `pointsAt` in the frontend's `ballot.ts` says what a position is worth while a member ranks.
  */
 object Tally {
     fun count(

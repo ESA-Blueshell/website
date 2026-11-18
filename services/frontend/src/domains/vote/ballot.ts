@@ -3,12 +3,13 @@ import type {VotePickResponse} from "@/services/api"
 /** One pick as the page holds it: a game, and its track where the vote's kind picks one. */
 export type BallotPick = VotePickResponse
 
-/** What the pick at [index] (0 for first) is worth under [points]. */
+/** What the pick at [index] (0 for first) is worth under [points]. TWIN: the api's `Tally`. */
 export const pointsAt = (points: number[], index: number): number => points[index] ?? 0
 
 /**
  * The picks with [pick] added: in place of a pick of the same game, so a ballot names a game once,
  * or at the end. A ballot already holding [max] picks takes no new game.
+ * TWIN: the api's `GamePickedTwice` and `BallotSize` refusals in `VoteBallotUseCases.cast`.
  */
 export function withPick(picks: BallotPick[], pick: BallotPick, max: number): BallotPick[] {
   const same = picks.findIndex(one => one.candidate.id === pick.candidate.id)

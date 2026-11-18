@@ -1,4 +1,5 @@
 import type {Image} from "@/services/api"
+import {decemberDates, isoOf} from "@/domains/vote"
 import type {AnnualVote, BallotPick, CatalogueGame, VoteCandidate, Placing, Track} from "@/domains/vote"
 
 export const aVotePicture = (path: string, renditions: {url: string; width: number}[] = []): Image =>
@@ -26,17 +27,23 @@ export const aPick = (track: Track): BallotPick => ({candidate: track.candidate,
 export const aPlacing = (place: number, game: VoteCandidate, track: Track | null, points = 12, voters = 1): Placing =>
   ({place, candidate: game, track, points, voters})
 
+/** The api's five ranked picks, as the OST Top 50 counts them. */
+export const FIVE_RANKED = [12, 10, 8, 6, 4]
+
+// The board's default December, as the api hands it back.
+const december = decemberDates(2026)
+
 export const aVote = (state: AnnualVote["state"], overrides: Partial<AnnualVote> = {}): AnnualVote => ({
   kind: "OST_TOP_50",
   year: 2026,
   version: 2,
   state,
-  opensAt: "2026-11-30T23:00:00Z",
-  closesAt: "2026-12-21T22:59:00Z",
-  revealAt: "2026-12-28T19:00:00Z",
+  opensAt: isoOf(december.opensAt)!,
+  closesAt: isoOf(december.closesAt)!,
+  revealAt: isoOf(december.revealAt)!,
   ballots: 3,
   results: [],
-  points: [12, 10, 8, 6, 4],
+  points: FIVE_RANKED,
   picksTrack: true,
   releasedInYear: false,
   ...overrides,

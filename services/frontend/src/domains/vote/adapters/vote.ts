@@ -25,7 +25,7 @@ import {
 } from "@/services/api"
 import {srcsetOf, type Picture} from "@/components/island/pictures"
 import type {Refused} from "@/types/api"
-import {readOr} from "@/utils/answers"
+import {readOr, type Answer} from "@/utils/answers"
 import type {Saved} from "@/utils/refusals"
 import type {BallotPick} from "../ballot"
 import {refusable} from "../refusals"
@@ -35,7 +35,7 @@ export type VoteKind = AnnualVoteResponse["kind"]
 export type VoteState = AnnualVoteResponse["state"]
 export type Ballot = VoteBallotResponse
 export type CatalogueGame = CatalogueGameResponse
-export type Candidate = VoteCandidateResponse
+export type VoteCandidate = VoteCandidateResponse
 export type Track = CandidateTrackResponse
 export type Placing = VotePlacingResponse
 
@@ -46,15 +46,25 @@ export interface VoteSchedule {
   revealAt: string
 }
 
-/** A member's ballot before they have voted. */
-export const EMPTY_BALLOT: Ballot = {version: null, submittedAt: null, picks: []}
-
 /** The latest year's vote of [kind], or null when there is none yet. */
 export const loadVote = async (kind: VoteKind): Promise<AnnualVote | null> => readOr(currentAnnualVote({path: {kind}}), null)
 
-/** The signed-in member's own ballot, empty until they vote. */
-export const loadBallot = async (kind: VoteKind, year: number): Promise<Ballot> =>
-  readOr(myVoteBallot({path: {kind, year}}), EMPTY_BALLOT)
+/**
+ * A read the page says it could not make, as null. A lapsed sign-in also reaches the network
+ * handler, whose message offers to sign in again.
+ */
+async function readOrSay<T>(call: Promise<Answer<T> & {response?: {status?: number}}>): Promise<T | null> {
+  const answer = await call
+  if (answer.response?.status === 401) {
+    // Loaded when needed: the handler imports the router, which imports this domain's pages.
+    const {$handleNetworkError} = await import("@/plugins/handleNetworkError")
+    $handleNetworkError({response: answer.response})
+  }
+  return readOr(Promise.resolve(answer), null)
+}
+
+/** The signed-in member's own ballot, without picks until they vote, or null where it could not be read. */
+export const loadBallot = (kind: VoteKind, year: number): Promise<Ballot | null> => readOrSay(myVoteBallot({path: {kind, year}}))
 
 /** Saves the member's picks, best first, at the [version] they last read. */
 export const castBallot = (kind: VoteKind, year: number, picks: BallotPick[], version: number | null): Promise<Saved<Ballot> | Refused> =>
@@ -68,7 +78,7 @@ export const findGames = (query: string, kind: VoteKind, year: number): Promise<
   refusable(searchVoteCandidates({query: {query, kind, year}}), "Game search did not answer. Try again in a moment.")
 
 /** The game with that IGDB id as a pick names it, stored the first time anybody picks it. */
-export const storeGame = (igdbId: number, vote: AnnualVote): Promise<Saved<Candidate> | Refused> =>
+export const storeGame = (igdbId: number, vote: AnnualVote): Promise<Saved<VoteCandidate> | Refused> =>
   refusable(storeVoteCandidate({body: {igdbId, kind: vote.kind, year: vote.year}}), "That game could not be picked.")
 
 /** The tracks members already picked for a game, first added first. */
@@ -78,15 +88,14 @@ export const tracksOf = async (igdbId: number): Promise<Track[]> => readOr(voteC
 export const addTrack = (igdbId: number, url: string, vote: AnnualVote): Promise<Saved<Track> | Refused> =>
   refusable(addVoteTrack({body: {igdbId, url, kind: vote.kind, year: vote.year}}), "That link could not be added.")
 
-/** Every game's standing so far, which only the board may read before the results are out. */
-export const loadStandings = async (kind: VoteKind, year: number): Promise<Placing[]> =>
-  readOr(annualVoteStandings({path: {kind, year}}), [])
+/** Every game's standing so far, which only the board may read before the reveal, or null where it could not be read. */
+export const loadStandings = (kind: VoteKind, year: number): Promise<Placing[] | null> =>
+  readOrSay(annualVoteStandings({path: {kind, year}}))
 
 /** Starts a [kind] vote for [year] on [dates]. */
 export const createVote = (kind: VoteKind, year: number, dates: VoteSchedule): Promise<Saved<AnnualVote> | Refused> =>
   refusable(createAnnualVote({path: {kind}, body: {year, ...dates}}), "The vote could not be started.")
 
-/** Moves a vote's dates. */
 /** Moves the vote's dates; [version] is the vote as the form read it, so a second board member's save is not lost. */
 export const rescheduleVote = (kind: VoteKind, year: number, dates: VoteSchedule, version: number): Promise<Saved<AnnualVote> | Refused> =>
   refusable(rescheduleAnnualVote({path: {kind, year}, body: {...dates, version}}), "The dates could not be saved.")

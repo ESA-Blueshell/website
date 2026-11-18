@@ -1,9 +1,10 @@
 import {DateTime} from "luxon"
 import {ref} from "vue"
 import {AnnounceChoice} from "@/services/api"
+import {ASSOCIATION_ZONE} from "@/utils/datetime"
 
 /* The api's AnnounceMorning makes the same morning; the two name each other. */
-const ZONE = "Europe/Amsterdam"
+const ZONE = ASSOCIATION_ZONE
 const MORNING_HOUR = 8
 
 /** Today's 08:00 Amsterdam time while it is still before it, tomorrow's from 08:00 on. */

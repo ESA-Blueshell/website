@@ -2,7 +2,6 @@
 import {ref} from "vue"
 import CutButton from "@/components/island/CutButton.vue"
 import {imageAttrs, type Placing} from "../adapters/vote"
-import {embedUrl} from "../ballot"
 
 defineOptions({name: "VoteResultList"})
 
@@ -87,7 +86,7 @@ const SERVICE = {YOUTUBE: "YouTube", SPOTIFY: "Spotify"} as const
           :class="{'result__player--spotify': placing.track.source === 'SPOTIFY'}"
           data-testid="vote-player"
           loading="lazy"
-          :src="embedUrl(placing.track)"
+          :src="placing.track.embedUrl"
           :title="`${placing.track.title}, from ${placing.candidate.name}`"
         />
       </li>

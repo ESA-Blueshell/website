@@ -87,7 +87,7 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
       {label: "Past events", to: "/events/past"},
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
       ...(SNTPINGS_ENABLED ? [{label: "SNTPings", to: SNTPINGS_PATH}] : []),
-      ...VOTE_KIND_PAGES.filter(page => page.enabled).map(page => ({label: page.title, to: page.path})),
+      ...VOTE_KIND_PAGES.filter(page => page.offered).map(page => ({label: page.title, to: page.path})),
     ],
   },
   {

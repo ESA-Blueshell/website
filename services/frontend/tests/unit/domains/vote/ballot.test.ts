@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {embedUrl, moved, pointsAt, samePicks, without, withPick} from "@/domains/vote"
+import {moved, pointsAt, samePicks, without, withPick} from "@/domains/vote"
 import {aGame, aPick, aTrack} from "./fixtures"
 
 describe("a vote ballot", () => {
@@ -42,10 +42,5 @@ describe("a vote ballot", () => {
     expect(samePicks([one], [one, two])).toBe(false)
     expect(samePicks([one], [aPick(aTrack(9, hollow))])).toBe(false)
     expect(samePicks([{candidate: hollow, track: null}], [{candidate: hollow}])).toBe(true)
-  })
-
-  it("plays a YouTube track in the privacy-enhanced player and a Spotify track in Spotify's", () => {
-    expect(embedUrl({source: "YOUTUBE", externalId: "dQw4w9WgXcQ"})).toBe("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")
-    expect(embedUrl({source: "SPOTIFY", externalId: "4cOd"})).toBe("https://open.spotify.com/embed/track/4cOd")
   })
 })

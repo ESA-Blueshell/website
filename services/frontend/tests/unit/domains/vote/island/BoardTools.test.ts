@@ -98,6 +98,11 @@ describe("the board's vote tools", () => {
     vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(answer(api.annualVoteStandings, []))
     expect((await tools(aVote("CLOSED"))).text()).toContain("No ballots yet.")
 
+    vi.mocked(api.annualVoteStandings).mockResolvedValueOnce(refusal(api.annualVoteStandings, null, 500))
+    const unread = await tools(aVote("CLOSED"))
+    expect(unread.get("[data-testid=vote-standings-unread]").text()).toContain("could not be read")
+    expect(unread.text()).not.toContain("No ballots yet.")
+
     await wrapper.setProps({vote: aVote("REVEALED")})
     await flushPromises()
     expect(wrapper.find("[data-testid=vote-standings]").exists()).toBe(false)

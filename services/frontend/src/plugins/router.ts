@@ -1,7 +1,7 @@
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router"
 import {SECURITY_PAGES} from "@/domains/auth/securityPages"
 import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger/sntpings"
-import {VOTE_KIND_PAGES} from "@/domains/vote/kinds"
+import {VOTE_KIND_PAGES} from "@/domains/vote"
 import store from "./store"
 import {tabTitle} from "./tabTitle"
 
@@ -545,7 +545,7 @@ const routes: RouteRecordRaw[] = [
     : []),
   // One page per kind of annual vote, each behind its own flag like SNTPings: a kind switched off
   // loses this route and its nav entry together.
-  ...VOTE_KIND_PAGES.filter(page => page.enabled).map(page => ({
+  ...VOTE_KIND_PAGES.filter(page => page.offered).map(page => ({
     path: page.path,
     name: page.routeName,
     component: () => import("@/pages/events/AnnualVote.vue"),

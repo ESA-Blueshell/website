@@ -30,6 +30,7 @@ class VoteControllersTest {
     private val ballots = mock<VoteBallotUseCases>()
     private val candidates = mock<VoteCandidateUseCases>()
     private val member = UserPrincipal(7, "member", "h", true, setOf(Role.MEMBER), null, null)
+    private val board = UserPrincipal(9, "board", "h", true, setOf(Role.BOARD, Role.MEMBER), null, null)
 
     private val voteController = AnnualVoteController(votes)
     private val ballotController = VoteBallotController(ballots)
@@ -119,11 +120,11 @@ class VoteControllersTest {
         whenever(ballots.mine(ost, 2026, 7)).thenReturn(null)
         whenever(
             ballots.cast(ost, 2026, 7, listOf(PickChoice(1, 11)), 2),
-        ).thenReturn(BallotSummary(3, closes, listOf(PickSummary(celeste, resurrections))))
+        ).thenReturn(BallotSummary(3, closes, listOf(PickSummary(celeste, resurrections)), listOf(11)))
 
-        assertThat(ballotController.myVoteBallot(ost, 2026, member)).isEqualTo(VoteBallotResponse(null, null, emptyList()))
+        assertThat(ballotController.myVoteBallot(ost, 2026, member)).isEqualTo(VoteBallotResponse(null, null, emptyList(), emptyList()))
         assertThat(ballotController.castVoteBallot(ost, 2026, CastVoteBallotRequest(listOf(VotePickRequest(1, 11)), 2), member))
-            .isEqualTo(VoteBallotResponse(3, closes, listOf(VotePickResponse(celesteResponse, resurrectionsResponse))))
+            .isEqualTo(VoteBallotResponse(3, closes, listOf(VotePickResponse(celesteResponse, resurrectionsResponse)), listOf(11)))
     }
 
     @Test
@@ -132,7 +133,9 @@ class VoteControllersTest {
         whenever(candidates.coverPreview("co1")).thenReturn(RemotePicture(byteArrayOf(1, 2), "image/jpeg"))
         whenever(candidates.storeCandidate(26226, ost, 2026)).thenReturn(celeste)
         whenever(candidates.tracksOf(26226)).thenReturn(listOf(resurrections))
-        whenever(candidates.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026)).thenReturn(resurrections)
+        whenever(candidates.addTrack(26226, "https://open.spotify.com/track/x", ost, 2026, 7)).thenReturn(resurrections)
+        whenever(candidates.rename(11, "Resurrections", 7, mayRenameAny = false)).thenReturn(resurrections)
+        whenever(candidates.rename(11, "Resurrections", 9, mayRenameAny = true)).thenReturn(resurrections)
         whenever(candidates.merge(12, 11)).thenReturn(resurrections)
 
         assertThat(candidateController.searchVoteCandidates("cel", ost, 2026))
@@ -144,8 +147,11 @@ class VoteControllersTest {
         assertThat(candidateController.storeVoteCandidate(StoreVoteCandidateRequest(26226, ost, 2026))).isEqualTo(celesteResponse)
         assertThat(candidateController.voteCandidateTracks(26226)).containsExactly(resurrectionsResponse)
         assertThat(
-            candidateController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026)),
+            candidateController.addVoteTrack(AddVoteTrackRequest(26226, "https://open.spotify.com/track/x", ost, 2026), member),
         ).isEqualTo(resurrectionsResponse)
+        val renamed = RenameVoteTrackRequest("Resurrections")
+        assertThat(candidateController.renameVoteTrack(11, renamed, member)).isEqualTo(resurrectionsResponse)
+        assertThat(candidateController.renameVoteTrack(11, renamed, board)).isEqualTo(resurrectionsResponse)
         assertThat(candidateController.mergeVoteTrack(12, MergeVoteTrackRequest(11))).isEqualTo(resurrectionsResponse)
     }
 

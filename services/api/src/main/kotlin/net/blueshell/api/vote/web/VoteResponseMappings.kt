@@ -39,4 +39,5 @@ fun BallotSummary?.asResponse() =
         version = this?.version,
         submittedAt = this?.submittedAt,
         picks = this?.picks.orEmpty().map { it.asResponse() },
+        renamableTrackIds = this?.renamableTrackIds.orEmpty(),
     )

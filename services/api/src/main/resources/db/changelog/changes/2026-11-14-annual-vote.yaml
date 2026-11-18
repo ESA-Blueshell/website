@@ -4,7 +4,8 @@
 # many picks a ballot holds.
 # vote_candidates are the IGDB games somebody picked, each with our copy of its cover.
 # vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link for one game is
-# one row, and a duplicate the board merges points at the track it was merged into.
+# one row, and a duplicate the board merges points at the track it was merged into. added_by_id
+# names who added the link, only so they may rename it.
 # vote_ballots and vote_ballot_picks hold how each member voted; the reveal writes vote_placings
 # and keeps the ballots, which only their own member reads.
 databaseChangeLog:
@@ -81,6 +82,7 @@ databaseChangeLog:
               - column: {name: merged_into_id, type: BIGINT}
               - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
               - column: {name: added_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: added_by_id, type: BIGINT}
         - addUniqueConstraint:
             tableName: vote_candidate_tracks
             columnNames: candidate_id, source, external_id
@@ -91,6 +93,13 @@ databaseChangeLog:
             baseColumnNames: candidate_id
             referencedTableName: vote_candidates
             referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidate_tracks_added_by_id
+            baseTableName: vote_candidate_tracks
+            baseColumnNames: added_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
         - addForeignKeyConstraint:
             constraintName: fk_vote_candidate_tracks_thumbnail_file_id
             baseTableName: vote_candidate_tracks

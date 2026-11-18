@@ -135,6 +135,7 @@ class VoteControllerSecurityTest : UserTestSupport() {
                     """{"igdbId":26226,"url":"https://youtu.be/dQw4w9WgXcQ","kind":"OST_TOP_50","year":2026}""",
                     Who.MEMBERS,
                 ),
+                Endpoint(HttpMethod.PUT, "/vote-tracks/1/title", """{"title":"Resurrections"}""", Who.MEMBERS),
                 Endpoint(HttpMethod.POST, "/vote-tracks/1/merge", """{"intoId":2}""", Who.BOARD),
             ).map { Arguments.of(it) }
     }

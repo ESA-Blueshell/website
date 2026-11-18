@@ -44,6 +44,9 @@ class CandidateTrack(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "thumbnail_file_id")
     var thumbnail: File?,
+    /** The member who added the link, who may rename it as the board may; null once they are gone. */
+    @Column(name = "added_by_id")
+    val addedById: Long? = null,
 ) : AutoIdEntity() {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merged_into_id")

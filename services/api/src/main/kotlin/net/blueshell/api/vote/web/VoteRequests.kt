@@ -14,6 +14,7 @@ import java.time.Instant
 private const val FIRST_YEAR = 2000L
 private const val LAST_YEAR = 2100L
 private const val LINK_MAX = 512
+private const val TITLE_MAX = 255
 
 // The most picks any kind's ballot holds; each kind's own limit is the vote's to enforce.
 
@@ -76,6 +77,13 @@ data class AddVoteTrackRequest(
     /** The vote the track is picked for, which must be open. */
     val kind: VoteKind,
     val year: Int,
+)
+
+/** A track's title as a member writes it, in place of the one its service gave. */
+@Schema(name = "RenameVoteTrackRequest")
+data class RenameVoteTrackRequest(
+    @field:NotBlank @field:Size(max = TITLE_MAX)
+    val title: String,
 )
 
 @Schema(name = "MergeVoteTrackRequest")

@@ -21,23 +21,28 @@ import java.time.Duration
  * catalogue that refuses every search elsewhere, so production never offers made-up games.
  */
 @Configuration
-class VoteClientConfig {
+class VoteClientConfig(
+    // No bean has this type, so Spring leaves it at its default; a test passes a shorter one.
+    private val readTimeout: Duration = Duration.ofSeconds(READ_TIMEOUT_SECONDS),
+) {
     private val http: HttpClient =
         HttpClient
             .newBuilder()
             .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
             .build()
 
-    private fun rest(builder: RestClient.Builder): RestClient =
+    /** IGDB's and oEmbed's client: the shared builder, giving up on an answer after [readTimeout]. */
+    @Bean
+    fun voteRestClient(builder: RestClient.Builder): RestClient =
         builder
             .clone()
-            .requestFactory(JdkClientHttpRequestFactory(http).apply { setReadTimeout(Duration.ofSeconds(READ_TIMEOUT_SECONDS)) })
+            .requestFactory(JdkClientHttpRequestFactory(http).apply { setReadTimeout(readTimeout) })
             .build()
 
     @Bean
     @WhenCredentialsSet(Credentials.IGDB_CLIENT_ID, Credentials.IGDB_CLIENT_SECRET)
     fun igdbGameCatalogue(
-        builder: RestClient.Builder,
+        voteRestClient: RestClient,
         environment: Environment,
         json: ObjectMapper,
         clock: Clock,
@@ -46,7 +51,7 @@ class VoteClientConfig {
             IgdbGameCatalogue(
                 RotatingSecret(environment, Credentials.IGDB_CLIENT_ID),
                 RotatingSecret(environment, Credentials.IGDB_CLIENT_SECRET),
-                rest(builder),
+                voteRestClient,
                 json,
                 clock,
             ),
@@ -56,14 +61,14 @@ class VoteClientConfig {
     @Bean
     @WhenCredentialsMissing(Credentials.IGDB_CLIENT_ID, Credentials.IGDB_CLIENT_SECRET)
     fun standInGameCatalogue(
-        @Value($$"${app.vote.offline-games}") offlineGames: Boolean,
+        @Value($$"${app.vote.offline-games:false}") offlineGames: Boolean,
     ): GameCatalogue = if (offlineGames) OfflineGameCatalogue() else UnavailableGameCatalogue
 
     @Bean
     fun trackPreviews(
-        builder: RestClient.Builder,
+        voteRestClient: RestClient,
         json: ObjectMapper,
-    ): TrackPreviews = OEmbedTrackPreviews(rest(builder), json)
+    ): TrackPreviews = OEmbedTrackPreviews(voteRestClient, json)
 
     @Bean
     fun remotePictures(): RemotePictures = HostBoundRemotePictures(http, ::isPictureHost)

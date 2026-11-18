@@ -26,8 +26,8 @@ data class CreateAnnualVoteRequest(
     val revealAt: Instant,
 )
 
-@Schema(name = "ScheduleAnnualVoteRequest")
-data class ScheduleAnnualVoteRequest(
+@Schema(name = "RescheduleAnnualVoteRequest")
+data class RescheduleAnnualVoteRequest(
     val opensAt: Instant,
     val closesAt: Instant,
     val revealAt: Instant,

@@ -920,3 +920,14 @@ named, so a vote split across a game's tracks still counts in full for the game.
 
 The moment a vote's results are counted, stored for good and made public, and
 its ballots deleted. It happens on its own shortly after the reveal date.
+
+### Placing
+
+A game's place in a vote, with its points, how many ballots named it and its
+representative track. The **results** are the placings stored at the reveal and
+shown to everyone; the **standings** are the placings counted from the ballots so
+far, which only the board sees before the reveal. The code calls the stored row
+`VotePlacing` and the count's own row `Standing`.
+
+**Not a candidate for the board.** A vote's candidate is a game; the boards' word
+"candidate" means a board that has not taken office.

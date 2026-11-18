@@ -11,7 +11,7 @@ import {
   loadStandings,
   loadVote,
   mergeTrack,
-  scheduleVote,
+  rescheduleVote,
   imageAttrs,
   storeGame,
   tracksOf,
@@ -28,7 +28,7 @@ vi.mock("@/services/api", async importOriginal => ({
   currentAnnualVote: vi.fn(),
   mergeVoteTrack: vi.fn(),
   myVoteBallot: vi.fn(),
-  scheduleAnnualVote: vi.fn(),
+  rescheduleAnnualVote: vi.fn(),
   searchVoteCandidates: vi.fn(),
   storeVoteCandidate: vi.fn(),
   voteCandidateTracks: vi.fn(),
@@ -101,9 +101,9 @@ describe("the vote adapter", () => {
     expect(await createVote("OST_TOP_50", 2026, dates)).toMatchObject({ok: true})
     expect(api.createAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50"}, body: {year: 2026, ...dates}})
 
-    vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(answer(api.scheduleAnnualVote, aVote("VOTING")))
-    await scheduleVote("OST_TOP_50", 2026, dates, 2)
-    expect(api.scheduleAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}, body: {...dates, version: 2}})
+    vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(answer(api.rescheduleAnnualVote, aVote("VOTING")))
+    await rescheduleVote("OST_TOP_50", 2026, dates, 2)
+    expect(api.rescheduleAnnualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2026}, body: {...dates, version: 2}})
 
     vi.mocked(api.mergeVoteTrack).mockResolvedValueOnce(answer(api.mergeVoteTrack, track))
     expect(await mergeTrack(2, 1)).toEqual({ok: true, saved: track})

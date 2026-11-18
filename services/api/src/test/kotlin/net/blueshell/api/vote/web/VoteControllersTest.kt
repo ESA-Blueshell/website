@@ -98,7 +98,7 @@ class VoteControllersTest {
             voteController.createAnnualVote(ost, CreateAnnualVoteRequest(2026, opens, closes, reveal)).state,
         ).isEqualTo(VoteState.UPCOMING)
         assertThat(
-            voteController.scheduleAnnualVote(ost, 2026, ScheduleAnnualVoteRequest(opens, closes, reveal, 3)).state,
+            voteController.rescheduleAnnualVote(ost, 2026, RescheduleAnnualVoteRequest(opens, closes, reveal, 3)).state,
         ).isEqualTo(VoteState.VOTING)
         assertThat(voteController.annualVoteStandings(ost, 2026).single().track).isNull()
     }

@@ -12,7 +12,7 @@ vi.mock("@/services/api", async importOriginal => ({
   annualVoteStandings: vi.fn(),
   createAnnualVote: vi.fn(),
   mergeVoteTrack: vi.fn(),
-  scheduleAnnualVote: vi.fn(),
+  rescheduleAnnualVote: vi.fn(),
   voteCandidateTracks: vi.fn(),
 }))
 
@@ -61,14 +61,14 @@ describe("the board's vote tools", () => {
 
   it("moves an unrevealed vote's dates at the version it read, shown in Amsterdam time", async () => {
     const vote = aVote("VOTING")
-    vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(answer(api.scheduleAnnualVote, vote))
+    vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(answer(api.rescheduleAnnualVote, vote))
     const wrapper = await tools(vote)
 
     expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Save the dates")
     await wrapper.get("form").trigger("submit")
     await flushPromises()
 
-    expect(api.scheduleAnnualVote).toHaveBeenCalledWith({
+    expect(api.rescheduleAnnualVote).toHaveBeenCalledWith({
       path: {kind: "OST_TOP_50", year: 2026},
       body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2},
     })
@@ -80,9 +80,9 @@ describe("the board's vote tools", () => {
     fields(wrapper)[0]!.vm.$emit("update:modelValue", "")
     await wrapper.get("form").trigger("submit")
     expect(wrapper.get("[data-testid=vote-board-problem]").text()).toBe("Fill in all three dates.")
-    expect(api.scheduleAnnualVote).not.toHaveBeenCalled()
+    expect(api.rescheduleAnnualVote).not.toHaveBeenCalled()
 
-    vi.mocked(api.scheduleAnnualVote).mockResolvedValueOnce(refusal(api.scheduleAnnualVote, {code: "VoteDatesOutOfOrder"}))
+    vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(refusal(api.rescheduleAnnualVote, {code: "VoteDatesOutOfOrder"}))
     fields(wrapper)[0]!.vm.$emit("update:modelValue", "2026-12-25T00:00")
     await wrapper.get("form").trigger("submit")
     await flushPromises()

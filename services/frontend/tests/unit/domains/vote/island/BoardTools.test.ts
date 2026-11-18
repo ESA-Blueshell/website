@@ -1,19 +1,16 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import * as api from "@/services/api"
-import DateTimeInput from "@/components/island/DateTimeInput.vue"
 import BoardTools from "@/domains/vote/island/BoardTools.vue"
-import {isoOf, type AnnualVote} from "@/domains/vote"
+import type {AnnualVote} from "@/domains/vote"
 import {answer, refusal} from "../../../helpers/sdkAnswers"
 import {aGame, aGamesVote, aPlacing, aTrack, aVote} from "../fixtures"
 
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
   annualVoteStandings: vi.fn(),
-  createAnnualVote: vi.fn(),
   mergeVoteTrack: vi.fn(),
   renameVoteTrack: vi.fn(),
-  rescheduleAnnualVote: vi.fn(),
   voteCandidateTracks: vi.fn(),
 }))
 
@@ -28,92 +25,22 @@ describe("the board's vote tools", () => {
     vi.mocked(api.voteCandidateTracks).mockResolvedValue(answer(api.voteCandidateTracks, [leading, duplicate]))
   })
 
-  const tools = async (vote: AnnualVote | null, year = 2026) => {
-    const wrapper = mount(BoardTools, {props: {kind: vote?.kind ?? "OST_TOP_50", vote, year}})
+  const tools = async (vote: AnnualVote | null) => {
+    const wrapper = mount(BoardTools, {props: {vote}})
     await flushPromises()
     return wrapper
   }
 
-  const fields = (wrapper: Awaited<ReturnType<typeof tools>>) => wrapper.findAllComponents(DateTimeInput)
+  it("asks to start a vote where there is none or the last is revealed, and to change the current one otherwise", async () => {
+    const none = await tools(null)
+    await none.get("[data-testid=vote-board-start]").trigger("click")
+    expect(none.emitted("start")).toHaveLength(1)
+    expect(none.find("[data-testid=vote-standings]").exists()).toBe(false)
 
-  it("starts this year's vote before the first, on December's dates unless changed", async () => {
-    const started = aVote("UPCOMING")
-    vi.mocked(api.createAnnualVote).mockResolvedValueOnce(answer(api.createAnnualVote, started))
-    const wrapper = await tools(null)
-
-    expect(fields(wrapper).map(field => field.props("modelValue"))).toEqual(["2026-12-01T00:00", "2026-12-21T23:59", "2026-12-28T20:00"])
-    expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Start the 2026 vote")
-    expect(wrapper.find("[data-testid=vote-standings]").exists()).toBe(false)
-    fields(wrapper)[2]!.vm.$emit("update:modelValue", "2026-12-30T20:00")
-    await wrapper.get("form").trigger("submit")
-    await flushPromises()
-
-    expect(api.createAnnualVote).toHaveBeenCalledWith({
-      path: {kind: "OST_TOP_50"},
-      body: {year: 2026, opensAt: isoOf("2026-12-01T00:00"), closesAt: isoOf("2026-12-21T23:59"), revealAt: isoOf("2026-12-30T20:00"), picks: 5},
-    })
-    expect(wrapper.emitted("changed")).toEqual([[started]])
-  })
-
-  it("starts a new year's vote once last year's is revealed, and not before", async () => {
-    expect((await tools(aVote("REVEALED", {year: 2025}))).get("[data-testid=vote-board-save]").text()).toBe("Start the 2026 vote")
-    expect((await tools(aVote("REVEALED"))).find("[data-testid=vote-board-dates]").exists()).toBe(false)
-  })
-
-  it("sets the number of picks until the first vote is cast, and sends none when it is emptied", async () => {
-    const vote = aVote("UPCOMING", {ballots: 0, points: [8, 6, 4]})
-    vi.mocked(api.rescheduleAnnualVote).mockResolvedValue(answer(api.rescheduleAnnualVote, vote))
-    const wrapper = await tools(vote)
-    const picks = wrapper.get("[data-testid=vote-board-picks]")
-
-    expect((picks.element as HTMLInputElement).value).toBe("3")
-    await picks.setValue("7")
-    await wrapper.get("form").trigger("submit")
-    await flushPromises()
-    expect(api.rescheduleAnnualVote).toHaveBeenLastCalledWith({
-      path: {kind: "OST_TOP_50", year: 2026},
-      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2, picks: 7},
-    })
-
-    await picks.setValue("")
-    await wrapper.get("form").trigger("submit")
-    await flushPromises()
-    expect(api.rescheduleAnnualVote).toHaveBeenLastCalledWith({
-      path: {kind: "OST_TOP_50", year: 2026},
-      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2},
-    })
-  })
-
-  it("moves an unrevealed vote's dates at the version it read, shown in Amsterdam time", async () => {
-    const vote = aVote("VOTING", {ballots: 3})
-    vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(answer(api.rescheduleAnnualVote, vote))
-    const wrapper = await tools(vote)
-
-    expect(wrapper.get("[data-testid=vote-board-save]").text()).toBe("Save")
-    expect(wrapper.find("[data-testid=vote-board-picks]").exists()).toBe(false)
-    await wrapper.get("form").trigger("submit")
-    await flushPromises()
-
-    expect(api.rescheduleAnnualVote).toHaveBeenCalledWith({
-      path: {kind: "OST_TOP_50", year: 2026},
-      body: {opensAt: vote.opensAt, closesAt: vote.closesAt, revealAt: vote.revealAt, version: 2},
-    })
-    expect(wrapper.emitted("changed")).toEqual([[vote]])
-  })
-
-  it("asks for all three dates, and says why a save was refused", async () => {
-    const wrapper = await tools(aVote("UPCOMING"))
-    fields(wrapper)[0]!.vm.$emit("update:modelValue", "")
-    await wrapper.get("form").trigger("submit")
-    expect(wrapper.get("[data-testid=vote-board-problem]").text()).toBe("Fill in all three dates.")
-    expect(api.rescheduleAnnualVote).not.toHaveBeenCalled()
-
-    vi.mocked(api.rescheduleAnnualVote).mockResolvedValueOnce(refusal(api.rescheduleAnnualVote, {code: "VoteDatesOutOfOrder"}))
-    fields(wrapper)[0]!.vm.$emit("update:modelValue", "2026-12-25T00:00")
-    await wrapper.get("form").trigger("submit")
-    await flushPromises()
-    expect(wrapper.get("[data-testid=vote-board-problem]").text()).toContain("opens before it closes")
-    expect(wrapper.emitted("changed")).toBeUndefined()
+    expect((await tools(aVote("REVEALED"))).find("[data-testid=vote-board-start]").exists()).toBe(true)
+    const open = await tools(aVote("VOTING"))
+    await open.get("[data-testid=vote-board-edit]").trigger("click")
+    expect(open.emitted("edit")).toHaveLength(1)
   })
 
   it("shows the standings so far, and none once revealed", async () => {

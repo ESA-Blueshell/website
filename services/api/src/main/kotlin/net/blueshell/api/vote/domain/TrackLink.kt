@@ -2,6 +2,8 @@ package net.blueshell.api.vote.domain
 
 import net.blueshell.api.vote.persistence.TrackSource
 import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 /** A link reduced to what identifies it, so every spelling of one video or track is one track. */
 data class TrackLink(
@@ -70,5 +72,6 @@ data class TrackLink(
                 ?.map { it.split('=', limit = 2) }
                 ?.firstOrNull { it.first() == name }
                 ?.getOrNull(1)
+                ?.let { runCatching { URLDecoder.decode(it, StandardCharsets.UTF_8) }.getOrNull() }
     }
 }

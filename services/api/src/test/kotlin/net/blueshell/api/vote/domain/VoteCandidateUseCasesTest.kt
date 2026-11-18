@@ -176,6 +176,15 @@ class VoteCandidateUseCasesTest {
         }
 
         @Test
+        fun `a game with as many live tracks as it may takes no new one`() {
+            whenever(games.findByIgdbId(100)).thenReturn(celeste)
+            whenever(tracks.countByCandidateIdAndMergedIntoIsNull(1)).thenReturn(30)
+
+            assertThatThrownBy { service.addTrack(100, link, ost, 2026) }.isInstanceOf(GameTrackLimit::class.java)
+            verify(previews, never()).of(any())
+        }
+
+        @Test
         fun `a link already added for another game becomes this game's own track`() {
             whenever(games.findByIgdbId(100)).thenReturn(celeste)
             whenever(tracks.findByCandidateIdAndSourceAndExternalId(2, TrackSource.YOUTUBE, "dQw4w9WgXcQ")).thenReturn(track(21, hades))

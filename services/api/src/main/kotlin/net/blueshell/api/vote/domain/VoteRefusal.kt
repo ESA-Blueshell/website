@@ -16,6 +16,10 @@ class VoteKindNotOffered(
     kind: VoteKind,
 ) : VoteRefusal(HttpStatus.NOT_FOUND, "VoteKindNotOffered", "That kind of vote is not running yet.", mapOf("kind" to kind.name))
 
+class GameTrackLimit(
+    max: Int,
+) : VoteRefusal(HttpStatus.CONFLICT, "GameTrackLimit", "That game has as many tracks as it may.", mapOf("max" to max))
+
 class NoVoteOpen : VoteRefusal(HttpStatus.CONFLICT, "NoVoteOpen", "No vote is open.")
 
 class NoAnnualVote(

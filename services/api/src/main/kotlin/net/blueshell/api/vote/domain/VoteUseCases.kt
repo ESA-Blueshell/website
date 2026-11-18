@@ -99,8 +99,8 @@ class VoteUseCases(
 
     /**
      * Reveals every vote whose reveal is due and that nobody has revealed, each in a transaction of
-     * its own, and answers how many. A second pod revealing the same vote fails on the vote's
-     * version and stores nothing; a vote that fails otherwise is logged and left for the next run,
+     * its own, and answers how many. A second pod revealing the same vote waits on the first's lock
+     * and then finds it revealed; a vote that fails otherwise is logged and left for the next run,
      * without undoing the others.
      */
     @Suppress("TooGenericExceptionCaught") // One vote's failure must not stop the reveal of the rest.
@@ -118,10 +118,7 @@ class VoteUseCases(
         }
     }
 
-    /**
-     * Opens, then closes, then the reveal after the close: a ballot checks the vote is open and
-     * commits without touching the vote, so a reveal at the close could count before it lands.
-     */
+    /** Opens, then closes, then the reveal after the close. */
     private fun requireInOrder(
         opensAt: Instant,
         closesAt: Instant,
@@ -130,12 +127,12 @@ class VoteUseCases(
         if (!opensAt.isBefore(closesAt) || !closesAt.isBefore(revealAt)) throw VoteDatesOutOfOrder()
     }
 
-    // Read again inside the transaction: the vote may have been revealed since it was found.
+    // Read again, locked, inside the transaction: the vote may have been revealed since it was found.
     private fun revealIfDue(
         id: Long,
         now: Instant,
     ): Boolean {
-        val vote = votes.findById(id).orElse(null)?.takeIf { it.revealedAt == null } ?: return false
+        val vote = votes.findForReveal(id)?.takeIf { it.revealedAt == null } ?: return false
         reveal(vote, now)
         return true
     }

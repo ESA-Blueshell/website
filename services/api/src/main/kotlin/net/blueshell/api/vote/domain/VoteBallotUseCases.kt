@@ -46,7 +46,7 @@ class VoteBallotUseCases(
         choices: List<PickChoice>,
         version: Long?,
     ): BallotSummary {
-        val vote = votes.of(kind, year)
+        val vote = votes.lockedOf(kind, year)
         val now = clock.instant()
         vote.requireVoting(now)
         if (choices.isEmpty() || choices.size > kind.picksPerBallot) throw BallotSize(choices.size, kind.picksPerBallot)

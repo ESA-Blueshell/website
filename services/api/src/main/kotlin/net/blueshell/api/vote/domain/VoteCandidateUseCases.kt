@@ -100,6 +100,7 @@ class VoteCandidateUseCases(
         val link = TrackLink.parse(pasted)
         val candidate = storedCandidate(igdbId)
         existingTrack(link, candidate)?.let { return it }
+        requireRoomForTrack(candidate)
         val preview = previews.of(link) ?: throw TrackLinkUnreadable()
         val thumbnailName = "${link.source.name.lowercase()}-${link.externalId}.jpg"
         val thumbnail = preview.thumbnailUrl?.let { copy(it, thumbnailName, FileType.VOTE_THUMBNAIL) }
@@ -137,6 +138,10 @@ class VoteCandidateUseCases(
         tracks.findAllByMergedIntoId(trackId).forEach { it.mergedInto = into }
         tracks.flush()
         return into.summary()
+    }
+
+    private fun requireRoomForTrack(candidate: VoteCandidate) {
+        if (tracks.countByCandidateIdAndMergedIntoIsNull(candidate.id!!) >= TRACKS_PER_GAME) throw GameTrackLimit(TRACKS_PER_GAME)
     }
 
     // The link's track for [candidate], as the track it was merged into, where somebody already added it.
@@ -180,5 +185,8 @@ class VoteCandidateUseCases(
 
     private companion object {
         const val TITLE_MAX = 255
+
+        // Each new track asks YouTube or Spotify about it, and every ballot form lists them all.
+        const val TRACKS_PER_GAME = 30
     }
 }

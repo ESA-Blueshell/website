@@ -3605,6 +3605,93 @@ export type CurrentAnnualVoteResponses = {
 
 export type CurrentAnnualVoteResponse = CurrentAnnualVoteResponses[keyof CurrentAnnualVoteResponses];
 
+export type AnnualVoteYearsData = {
+    body?: never;
+    path: {
+        kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
+    };
+    query?: never;
+    url: '/annual-votes/{kind}/years';
+};
+
+export type AnnualVoteYearsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AnnualVoteYearsError = AnnualVoteYearsErrors[keyof AnnualVoteYearsErrors];
+
+export type AnnualVoteYearsResponses = {
+    /**
+     * OK
+     */
+    200: Array<number>;
+};
+
+export type AnnualVoteYearsResponse = AnnualVoteYearsResponses[keyof AnnualVoteYearsResponses];
+
+export type AnnualVoteData = {
+    body?: never;
+    path: {
+        kind: 'OST_TOP_50' | 'GAME_OF_THE_YEAR';
+        year: number;
+    };
+    query?: never;
+    url: '/annual-votes/{kind}/{year}';
+};
+
+export type AnnualVoteErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AnnualVoteError = AnnualVoteErrors[keyof AnnualVoteErrors];
+
+export type AnnualVoteResponses = {
+    /**
+     * OK
+     */
+    200: AnnualVoteResponse;
+};
+
+export type AnnualVoteResponse2 = AnnualVoteResponses[keyof AnnualVoteResponses];
+
 export type RescheduleAnnualVoteData = {
     body: RescheduleAnnualVoteRequest;
     path: {
@@ -13473,6 +13560,49 @@ export type VoteCandidateTracksResponses = {
 };
 
 export type VoteCandidateTracksResponse = VoteCandidateTracksResponses[keyof VoteCandidateTracksResponses];
+
+export type VoteSongsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        query?: string;
+    };
+    url: '/vote-tracks';
+};
+
+export type VoteSongsErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type VoteSongsError = VoteSongsErrors[keyof VoteSongsErrors];
+
+export type VoteSongsResponses = {
+    /**
+     * OK
+     */
+    200: Array<CandidateTrackResponse>;
+};
+
+export type VoteSongsResponse = VoteSongsResponses[keyof VoteSongsResponses];
 
 export type AddVoteTrackData = {
     body: AddVoteTrackRequest;

@@ -18,7 +18,10 @@ import {aGame, aGamesVote, aPick, aPlacing, aTrack, aVote} from "../../domains/v
 
 vi.mock("@/services/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/services/api")>()),
+  annualVote: vi.fn(),
   annualVoteStandings: vi.fn(),
+  annualVoteYears: vi.fn(),
+  voteSongs: vi.fn(),
   castVoteBallot: vi.fn(),
   currentAnnualVote: vi.fn(),
   myVoteBallot: vi.fn(),
@@ -38,8 +41,8 @@ describe("annual vote page", () => {
   const hollow = aTrack(1, aGame(1, "Hollow Knight"))
   const portal = aTrack(2, aGame(2, "Portal 2"))
 
-  const mount = async (signedIn: StoredLogin | null, page: VoteKindPage = OST_TOP_50) => {
-    const Page = defineComponent({render: () => h(AnnualVote, {page})})
+  const mount = async (signedIn: StoredLogin | null, page: VoteKindPage = OST_TOP_50, year?: number) => {
+    const Page = defineComponent({render: () => h(AnnualVote, {page, year})})
     const wrapper = await mountPage(Page, {path: page.path, login: signedIn})
     wrappers.push(wrapper)
     await settle()
@@ -57,6 +60,8 @@ describe("annual vote page", () => {
       answer(api.myVoteBallot, {version: 1, submittedAt: "2026-12-02T18:00:00Z", picks: [aPick(hollow), aPick(portal)]}),
     )
     vi.mocked(api.annualVoteStandings).mockResolvedValue(answer(api.annualVoteStandings, []))
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026]))
+    vi.mocked(api.voteSongs).mockResolvedValue(answer(api.voteSongs, []))
   })
 
   afterEach(() => unmountAll(wrappers, "AnnualVote"))
@@ -296,6 +301,33 @@ describe("annual vote page", () => {
     const wrapper = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]})
 
     expect(wrapper.findComponent(BallotList).props("renamable")).toEqual(expect.arrayContaining([1, 2]))
+  })
+
+  it("moves between a kind's years, the current one at the kind's own address, and shows a past year's results", async () => {
+    voteIs(aVote("VOTING"))
+    vi.mocked(api.annualVoteYears).mockResolvedValue(answer(api.annualVoteYears, [2026, 2025]))
+    const now = await mount(null)
+
+    expect(now.get("[data-testid=vote-year-2026]").attributes("to")).toBe("/events/ost-top-50")
+    expect(now.get("[data-testid=vote-year-2026]").attributes("aria-current")).toBe("page")
+    expect(now.get("[data-testid=vote-year-2025]").attributes("to")).toBe("/events/ost-top-50/2025")
+
+    vi.mocked(api.annualVote).mockResolvedValue(
+      answer(api.annualVote, aVote("REVEALED", {year: 2025, ballots: 9, results: [aPlacing(1, hollow.candidate, hollow, 40, 4)]})),
+    )
+    const past = await mount({...boardLogin, roles: ["BOARD", "MEMBER"] as StoredLogin["roles"]}, OST_TOP_50, 2025)
+    expect(api.annualVote).toHaveBeenCalledWith({path: {kind: "OST_TOP_50", year: 2025}})
+    expect(past.text()).toContain("OST Top 50 · 2025")
+    expect(past.get("[data-testid=vote-year-2025]").attributes("aria-current")).toBe("page")
+    expect(past.findAll("[data-testid=vote-result]")).toHaveLength(1)
+    expect(past.findComponent(BoardTools).exists()).toBe(false)
+  })
+
+  it("shows no years to move between where a kind has one", async () => {
+    voteIs(aVote("VOTING"))
+    const wrapper = await mount(null)
+
+    expect(wrapper.find("[data-testid=vote-years]").exists()).toBe(false)
   })
 
   it("gives the board its tools, and reads the member's ballot again once the board's change opens voting", async () => {

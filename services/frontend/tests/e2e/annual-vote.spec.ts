@@ -54,6 +54,11 @@ async function standInVote(page: Page) {
     if (method !== "GET") sent.push({method, path, body})
 
     if (path === "/annual-votes/OST_TOP_50/current") return json(route, vote)
+    if (path === "/annual-votes/OST_TOP_50/years") return json(route, [2026, 2025])
+    if (path === "/annual-votes/OST_TOP_50/2025" && method === "GET") {
+      return json(route, {...vote, year: 2025, state: "REVEALED", ballots: 9, results: [{place: 1, candidate: hollow, track: greenpath, points: 40, voters: 4}]})
+    }
+    if (path === "/vote-tracks" && method === "GET") return json(route, [resurrections, firstSteps, greenpath])
     if (path === "/annual-votes/OST_TOP_50/2026" && method === "PUT") return json(route, {...vote, ...body, version: vote.version + 1})
     if (path === "/annual-votes/OST_TOP_50/2026/standings") {
       return json(route, [{place: 1, candidate: celeste, track: resurrections, points: 22, voters: 2}])
@@ -79,6 +84,7 @@ async function standInVote(page: Page) {
     if (path === "/vote-candidates/14593/tracks") return json(route, [])
     if (path === "/vote-tracks" && method === "POST") return json(route, greenpath, 201)
     if (path === "/vote-tracks/12/merge") return json(route, resurrections)
+    if (path === "/vote-tracks/12/title") return json(route, {...firstSteps, ...body})
     return json(route, {title: `No stand-in for ${method} ${path}`, status: 501}, 501)
   })
   return sent

@@ -4,7 +4,9 @@
  */
 import {
   addVoteTrack,
+  annualVote,
   annualVoteStandings,
+  annualVoteYears,
   apiUrl,
   castVoteBallot,
   createAnnualVote,
@@ -16,6 +18,7 @@ import {
   searchVoteCandidates,
   storeVoteCandidate,
   voteCandidateTracks,
+  voteSongs,
   type AnnualVoteResponse,
   type CatalogueGameResponse,
   type VoteBallotResponse,
@@ -48,6 +51,15 @@ export interface VoteSchedule {
   /** How many picks a ballot holds; left out, a new vote takes its kind's number and a saved one keeps its own. */
   picks?: number
 }
+
+/** The years [kind] has a vote for, newest first; none where they could not be read. */
+export const loadYears = async (kind: VoteKind): Promise<number[]> => readOr(annualVoteYears({path: {kind}}), [])
+
+/** The vote of [kind] for [year], or null where there is none. */
+export const loadYearVote = async (kind: VoteKind, year: number): Promise<AnnualVote | null> => readOr(annualVote({path: {kind, year}}), null)
+
+/** Every live song whose title or game holds [query], game by game, for the board; null where they could not be read. */
+export const loadSongs = async (query: string): Promise<Track[] | null> => readOr(voteSongs({query: {query}}), null)
 
 /** The latest year's vote of [kind], or null when there is none yet. */
 export const loadVote = async (kind: VoteKind): Promise<AnnualVote | null> => readOr(currentAnnualVote({path: {kind}}), null)

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.28.2](https://github.com/ESA-Blueshell/website/compare/v1.28.1...v1.28.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ci:** pin the date picker test's clock, build imaging on Go 1.26.11 ([#2668](https://github.com/ESA-Blueshell/website/issues/2668)) ([098ec2c](https://github.com/ESA-Blueshell/website/commit/098ec2cb504b05d2d22fd70093f87c0a79b2c7ea))
+* **deps:** update dependency com.microsoft.playwright:playwright to v1.63.0 ([#2162](https://github.com/ESA-Blueshell/website/issues/2162)) ([06542a3](https://github.com/ESA-Blueshell/website/commit/06542a3ef0de90ea89c3d28b690ec366857dfe1f))
+* **frontend:** build on nginx 1.30.7 from the nginx/nginx-unprivileged namespace ([#2672](https://github.com/ESA-Blueshell/website/issues/2672)) ([#2673](https://github.com/ESA-Blueshell/website/issues/2673)) ([b6d78dc](https://github.com/ESA-Blueshell/website/commit/b6d78dc6845dec750937553829af561ae719afa1))
+
 ## [1.28.1](https://github.com/ESA-Blueshell/website/compare/v1.28.0...v1.28.1) (2026-11-18)
 
 

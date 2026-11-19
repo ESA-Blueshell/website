@@ -23,7 +23,7 @@ ENV NODE_ENV=production
 ARG APP_VERSION=""
 RUN yarn build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:442753882674b49ae2c1de83ed67896131c0777f56df5005e356e62bc3f7e7ce AS runtime
+FROM nginx/nginx-unprivileged:stable-alpine@sha256:0c53a1f2890c3526bfd201440f0fd3970e5b78f80630f58284aad0d34b5ec7bd AS runtime
 
 # Shipped as a template, not as conf.d/default.conf: the image entrypoint runs
 # envsubst over /etc/nginx/templates and writes the result into conf.d. That is

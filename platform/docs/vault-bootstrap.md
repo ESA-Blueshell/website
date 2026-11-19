@@ -76,8 +76,8 @@ of them blocks at least one downstream Secret.
   `platform/bootstrap/secrets.sh --from-env <file>` takes missing values from
   dotenv-style files named like the repo's examples, and asks for the rest:
   - `services/api/.api.env`: `JWT_SECRET` (Base64, ≥64 bytes),
-    `TWO_FACTOR_ENCRYPTION_KEY`, the Brevo, Google Calendar and Discord keys
-    and `VAULT_OIDC_CLIENT_SECRET`.
+    `TWO_FACTOR_ENCRYPTION_KEY`, the Brevo, Google Calendar, Discord and IGDB
+    keys and `VAULT_OIDC_CLIENT_SECRET`.
   - An extra file for the platform paths: `CF_DNS_API_TOKEN`,
     `GHCR_USERNAME`/`GHCR_TOKEN`, `STALWART_ADMIN_USER`/`STALWART_ADMIN_PASSWORD`
     and `EMAIL_BOUNCE_IMAP_USERNAME`/`EMAIL_BOUNCE_IMAP_PASSWORD`. The script
@@ -120,7 +120,7 @@ their own. No manual `kubectl create secret` pre-seed is needed.
 
 `platform/bootstrap/secrets.sh` writes every path below, one section each, and
 checks each value it can against its service (Cloudflare, ghcr.io, Brevo,
-Discord). The commands below are what it does, for reference.
+Discord, IGDB). The commands below are what it does, for reference.
 
 ### Cloudflare DNS token (cert-manager + external-dns)
 
@@ -183,6 +183,8 @@ vault kv put secret/api \
   google.calendar.serviceAccountJson=<raw-single-line-service-account-json> \
   discord.botToken=<discord-bot-token> \
   discord.guildId=<discord-guild-id> \
+  app.vote.igdb.client-id=<twitch-app-client-id> \
+  app.vote.igdb.client-secret=<twitch-app-client-secret> \
   auth.clients.vault.secret=$(openssl rand -hex 32)
 ```
 
@@ -418,6 +420,15 @@ none of these needs `kubectl rollout restart`. Write each rotation as one
   vault kv patch secret/api google.calendar.serviceAccountJson=@service-account.json
   ```
 
+- **IGDB client id and secret.** Patch both in one `vault kv patch`; the next
+  uncached game search asks Twitch for a token with the new pair. A pair set where none
+  was before needs a restart, since the IGDB client only exists when the api
+  starts with one.
+
+  ```bash
+  vault kv patch secret/api app.vote.igdb.client-id=<id> app.vote.igdb.client-secret=<secret>
+  ```
+
 - **Discord bot token.** The REST client sends it on its next call and the
   gateway connects again under it; pages fall back as when Discord is down
   until the new session is up. A token set where none was before needs a
@@ -511,7 +522,7 @@ Same shape, narrower blast radius:
 | `secret/platform/edge` | cert-manager + external-dns | restarts not usually needed; VSO refreshes the Secret in place |
 | `secret/platform/ghcr` | `imagePullSecrets` plus the Flux registry scan | next image pull picks up the new auth; a scan recovers on its own interval |
 
-For the api's third-party tokens (Brevo, Google Calendar, Discord),
+For the api's third-party tokens (Brevo, Google Calendar, Discord, IGDB),
 `platform/bootstrap/secrets.sh --only api --rotate` checks each new value against
 its service before writing it, and restarts the api when an integration gets its
 first key.

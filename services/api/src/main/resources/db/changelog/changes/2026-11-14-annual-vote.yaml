@@ -1,0 +1,222 @@
+# The annual votes: the OST Top 50, Game of the Year, and any later kind run the same way.
+#
+# votes is one row per kind and year, with the three dates the vote runs on by itself and how
+# many picks a ballot holds.
+# vote_candidates are the IGDB games somebody picked, each with our copy of its cover.
+# vote_candidate_tracks are the YouTube or Spotify links picked for a game; one link for one game is
+# one row, and a duplicate the board merges points at the track it was merged into. added_by_id
+# names who added the link, only so they may rename it.
+# vote_ballots and vote_ballot_picks hold how each member voted; the reveal writes vote_placings
+# and keeps the ballots, which only their own member reads.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-11-14-annual-vote.yaml
+      id: annual-vote
+      author: blueshell
+      changes:
+        - createTable:
+            tableName: votes
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: kind, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: year, type: INT, constraints: {nullable: false}}
+              - column: {name: opens_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: closes_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: reveal_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: picks, type: INT, constraints: {nullable: false}}
+              - column: {name: ballot_count, type: INT}
+              - column: {name: revealed_at, type: DATETIME}
+              - column: {name: deleted_at, type: DATETIME, defaultValue: "9999-12-31 23:59:59", constraints: {nullable: false}}
+              - column: {name: created_at, type: DATETIME, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: updated_at, type: DATETIME, defaultValueComputed: CURRENT_TIMESTAMP, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: created_by_id, type: BIGINT}
+              - column: {name: updated_by_id, type: BIGINT}
+        - addUniqueConstraint:
+            tableName: votes
+            columnNames: kind, year, deleted_at
+            constraintName: uk_votes_kind_year_deleted_at
+        - createIndex:
+            tableName: votes
+            indexName: idx_votes_reveal_at
+            columns:
+              - column: {name: reveal_at}
+        - addForeignKeyConstraint:
+            constraintName: fk_votes_on_created_by
+            baseTableName: votes
+            baseColumnNames: created_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_votes_on_updated_by
+            baseTableName: votes
+            baseColumnNames: updated_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+
+        - createTable:
+            tableName: vote_candidates
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: igdb_id, type: BIGINT, constraints: {nullable: false, unique: true, uniqueConstraintName: uk_vote_candidates_igdb_id}}
+              - column: {name: name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: cover_file_id, type: BIGINT}
+              - column: {name: first_release_year, type: INT}
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidates_cover_file_id
+            baseTableName: vote_candidates
+            baseColumnNames: cover_file_id
+            referencedTableName: files
+            referencedColumnNames: id
+            onDelete: SET NULL
+
+        - createTable:
+            tableName: vote_candidate_tracks
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: candidate_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: source, type: VARCHAR(16), constraints: {nullable: false}}
+              - column: {name: external_id, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: title, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: thumbnail_file_id, type: BIGINT}
+              - column: {name: merged_into_id, type: BIGINT}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+              - column: {name: added_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: added_by_id, type: BIGINT}
+        - addUniqueConstraint:
+            tableName: vote_candidate_tracks
+            columnNames: candidate_id, source, external_id
+            constraintName: uk_vote_candidate_tracks_candidate_link
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidate_tracks_candidate_id
+            baseTableName: vote_candidate_tracks
+            baseColumnNames: candidate_id
+            referencedTableName: vote_candidates
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidate_tracks_added_by_id
+            baseTableName: vote_candidate_tracks
+            baseColumnNames: added_by_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidate_tracks_thumbnail_file_id
+            baseTableName: vote_candidate_tracks
+            baseColumnNames: thumbnail_file_id
+            referencedTableName: files
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_candidate_tracks_merged_into_id
+            baseTableName: vote_candidate_tracks
+            baseColumnNames: merged_into_id
+            referencedTableName: vote_candidate_tracks
+            referencedColumnNames: id
+
+        - createTable:
+            tableName: vote_ballots
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: vote_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: user_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: submitted_at, type: DATETIME, constraints: {nullable: false}}
+              - column: {name: version, type: BIGINT, defaultValueNumeric: 0, constraints: {nullable: false}}
+        - addUniqueConstraint:
+            tableName: vote_ballots
+            columnNames: vote_id, user_id
+            constraintName: uk_vote_ballots_vote_id_user_id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_ballots_vote_id
+            baseTableName: vote_ballots
+            baseColumnNames: vote_id
+            referencedTableName: votes
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_ballots_user_id
+            baseTableName: vote_ballots
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            onDelete: CASCADE
+
+        - createTable:
+            tableName: vote_ballot_picks
+            columns:
+              - column: {name: ballot_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: position, type: INT, constraints: {nullable: false}}
+              - column: {name: candidate_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: track_id, type: BIGINT}
+        - addPrimaryKey:
+            tableName: vote_ballot_picks
+            columnNames: ballot_id, position
+            constraintName: pk_vote_ballot_picks
+        - addUniqueConstraint:
+            tableName: vote_ballot_picks
+            columnNames: ballot_id, candidate_id
+            constraintName: uk_vote_ballot_picks_ballot_id_candidate_id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_ballot_picks_ballot_id
+            baseTableName: vote_ballot_picks
+            baseColumnNames: ballot_id
+            referencedTableName: vote_ballots
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_ballot_picks_candidate_id
+            baseTableName: vote_ballot_picks
+            baseColumnNames: candidate_id
+            referencedTableName: vote_candidates
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_ballot_picks_track_id
+            baseTableName: vote_ballot_picks
+            baseColumnNames: track_id
+            referencedTableName: vote_candidate_tracks
+            referencedColumnNames: id
+
+        - createTable:
+            tableName: vote_placings
+            columns:
+              - column: {name: id, type: BIGINT, autoIncrement: true, constraints: {primaryKey: true, nullable: false}}
+              - column: {name: vote_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: place, type: INT, constraints: {nullable: false}}
+              - column: {name: candidate_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: track_id, type: BIGINT}
+              - column: {name: points, type: INT, constraints: {nullable: false}}
+              - column: {name: voters, type: INT, constraints: {nullable: false}}
+        - addUniqueConstraint:
+            tableName: vote_placings
+            columnNames: vote_id, candidate_id
+            constraintName: uk_vote_placings_vote_id_candidate_id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_placings_vote_id
+            baseTableName: vote_placings
+            baseColumnNames: vote_id
+            referencedTableName: votes
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_placings_candidate_id
+            baseTableName: vote_placings
+            baseColumnNames: candidate_id
+            referencedTableName: vote_candidates
+            referencedColumnNames: id
+        - addForeignKeyConstraint:
+            constraintName: fk_vote_placings_track_id
+            baseTableName: vote_placings
+            baseColumnNames: track_id
+            referencedTableName: vote_candidate_tracks
+            referencedColumnNames: id
+      rollback:
+        - dropTable:
+            tableName: vote_placings
+        - dropTable:
+            tableName: vote_ballot_picks
+        - dropTable:
+            tableName: vote_ballots
+        - dropTable:
+            tableName: vote_candidate_tracks
+        - dropTable:
+            tableName: vote_candidates
+        - dropTable:
+            tableName: votes

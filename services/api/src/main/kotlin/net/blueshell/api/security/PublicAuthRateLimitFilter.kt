@@ -70,6 +70,8 @@ class PublicAuthRateLimitFilter(
     private val rules =
         listOf(
             Rule(HttpMethod.POST.name(), "/auth", maxRequests = 10, window = Duration.ofMinutes(1)),
+            // Each one makes the api fetch a picture from IGDB; a search shows ten.
+            Rule(HttpMethod.GET.name(), "/vote-candidates/covers/*", maxRequests = 120, window = Duration.ofMinutes(1)),
             // Beside the five tries per challenge and the ten wrong codes per account.
             Rule(HttpMethod.POST.name(), "/auth/two-factor", maxRequests = 10, window = Duration.ofMinutes(1)),
             Rule(HttpMethod.POST.name(), "/recovery/two-factor/re-enrol", maxRequests = 10, window = Duration.ofMinutes(10)),

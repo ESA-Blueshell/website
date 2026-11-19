@@ -1,5 +1,6 @@
 import {SOCIAL_GLYPHS} from "@/components/island/socialGlyphs"
 import {SNTPINGS_ENABLED, SNTPINGS_PATH} from "@/domains/pinger"
+import {VOTE_KIND_PAGES} from "@/domains/vote"
 
 /** A game, as the bar needs it: the esports domain owns the record this is read from. */
 export interface NavGame {
@@ -86,6 +87,7 @@ export const sectionsFor = (games: NavGame[], committees: NavCommittee[] = [], c
       {label: "Past events", to: "/events/past"},
       {label: "Circuit Showdown", to: "/events/circuitShowdown"},
       ...(SNTPINGS_ENABLED ? [{label: "SNTPings", to: SNTPINGS_PATH}] : []),
+      ...VOTE_KIND_PAGES.filter(page => page.offered).map(page => ({label: page.title, to: page.path})),
     ],
   },
   {

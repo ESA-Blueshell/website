@@ -265,6 +265,15 @@ Granting one to somebody without two-factor signs them out everywhere. For ten m
 after their next sign-in, setting up two-factor starts at the phone rather than with the
 password they have just given.
 
+### Service account
+
+The user the site itself acts as: what it stores on its own, such as the art it ships or
+a cover it copies, is credited to this account. It holds the internal service role, which
+is how the api tells it apart, and nobody ever signs in to it.
+
+**Not a person.** Lists of people, mailings and role changes leave it out. "Site account"
+and "system user" are not used for it.
+
 ## Two-factor
 
 ### Sign-in
@@ -846,3 +855,83 @@ Blueshell won three years in a row.
 
 Neither name is a synonym for the other, and neither is "the league". The site
 says nothing about whether either competition is still running.
+
+## Annual votes
+
+### Annual vote
+
+A vote members cast once a year, usually in December, of a given **kind**: the
+**OST Top 50** or **Game of the Year**. A kind has at most one vote a year, and the
+code calls the module `vote`. A vote runs on three dates the board sets: it
+**opens**, it **closes**, and its results are **revealed**. Nobody presses
+anything on the day.
+
+### OST Top 50
+
+The fifty game soundtracks members love most in a year, each shown with one
+track. "Of 2026" means voted in 2026, not released in it: any game can be on it.
+Games still tied at fiftieth after every tie-break are all kept, so the list can
+run a game or two past fifty rather than drop one by a rule nobody voted on.
+
+### Game of the Year
+
+The games members love most among those first released in the vote's year. A
+pick names a game alone, without a track.
+
+### Ballot
+
+One member's ranked picks in one vote, best first. The board sets how many picks a
+ballot holds for each vote, five unless it says otherwise, and can change that
+until the first ballot is cast. The places are worth two points apart, down to 4 for
+the last, so five picks score 12, 10, 8, 6 and 4. Only members cast one, and a
+member has one per vote, which they change until voting closes. Ballots are kept
+after the reveal, so a member can look back on their own over the years; nobody
+else reads one, and the board sees only the standings.
+The page calls a ballot the member's "top" and counts ballots as "votes".
+
+### Pick
+
+One place on a ballot: a game, together with one of its tracks where the kind
+picks tracks. A ballot names a game once; picking another track for a game
+already on it replaces that pick.
+
+### Candidate
+
+A game somebody picked in a vote, copied from IGDB with our own copy of its cover.
+It is not a **Game**: the association need not play it, and the board does not edit
+it. The code calls it `VoteCandidate`, and the page still says "game" to members.
+
+### Track
+
+A YouTube video or a Spotify track picked for a game, identified by its link
+within that game, so two members who paste the same link for a game pick the same
+track. A track belongs to one game; the same link picked for another game is that
+game's own track. The code calls it `CandidateTrack`.
+
+### Merged track
+
+A track the board has said is the same song as another track of the same game,
+such as one on YouTube and one on Spotify. A merged track's points count toward
+the track it was merged into.
+
+### Representative track
+
+The track shown for a game in the OST Top 50: the one of its tracks that earned
+the most points. A game's place counts every pick of it, whichever track the pick
+named, so a vote split across a game's tracks still counts in full for the game.
+
+### Reveal
+
+The moment a vote's results are counted, stored for good and made public. The
+ballots are kept. It happens on its own shortly after the reveal date.
+
+### Placing
+
+A game's place in a vote, with its points, how many ballots named it and its
+representative track. The **results** are the placings stored at the reveal and
+shown to everyone; the **standings** are the placings counted from the ballots so
+far, which only the board sees before the reveal. The code calls the stored row
+`VotePlacing` and the count's own row `Standing`.
+
+**Not a candidate for the board.** A vote's candidate is a game; the boards' word
+"candidate" means a board that has not taken office.

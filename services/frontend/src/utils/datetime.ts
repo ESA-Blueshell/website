@@ -1,5 +1,26 @@
 import {DateTime} from "luxon"
 
+/**
+ * The association's own time: a date it sets, such as a vote's December, means Amsterdam wherever
+ * the reader is. The api's AnnounceMorning reads the same zone; the two name each other.
+ */
+export const ASSOCIATION_ZONE = "Europe/Amsterdam"
+
+/** [iso] as [fmt] in [zone], or "" where it is not a moment. */
+export function formatISOIn(iso: string, fmt: string, zone: string): string {
+  const dt = DateTime.fromISO(iso || "", {zone})
+  return dt.isValid ? dt.toFormat(fmt) : ""
+}
+
+/** [text] in [fmt], read as a moment in [zone], as the api takes it, or null where it is not one. */
+export function isoFrom(text: string, fmt: string, zone: string): string | null {
+  const moment = DateTime.fromFormat(text, fmt, {zone})
+  return moment.isValid ? moment.toUTC().toISO({suppressMilliseconds: true}) : null
+}
+
+/** The year it is now in [zone]. */
+export const yearIn = (zone: string): number => DateTime.now().setZone(zone).year
+
 export function safeFormatISO(iso: string, fmt: string) {
   const dt = DateTime.fromISO(iso || "")
   return dt.isValid ? dt.toFormat(fmt) : ""

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest"
-import {resolveLoginRedirect} from "@/utils/loginRedirect"
+import {loginHref, resolveLoginRedirect} from "@/utils/loginRedirect"
 
 const ORIGIN = "https://esa-blueshell.nl"
 
@@ -45,5 +45,11 @@ describe("resolveLoginRedirect", () => {
 
   it.each([undefined, null, ""])("falls back home for an absent redirect (%s)", (raw) => {
     expect(resolveLoginRedirect(raw, ORIGIN)).toEqual({target: "/", offSpa: false})
+  })
+})
+
+describe("loginHref", () => {
+  it("sends the reader back to the page they were on, encoded", () => {
+    expect(loginHref("/events/ost-top-50?tab=a&b=c")).toBe("/login?redirect=%2Fevents%2Fost-top-50%3Ftab%3Da%26b%3Dc")
   })
 })

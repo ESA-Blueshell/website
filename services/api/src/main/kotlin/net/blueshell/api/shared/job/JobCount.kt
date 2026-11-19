@@ -17,6 +17,7 @@ enum class JobTally {
     COHORTS_FAILED,
     VALUES_SEALED,
     VALUES_REWRAPPED,
+    VOTES_REVEALED,
 }
 
 /**

@@ -116,6 +116,13 @@ app:
     require-https: false
     # Who a locked-out or worried person is told to contact, beside the Discord channels.
     contact-email: ${SECURITY_CONTACT_EMAIL:board@blueshell.utwente.nl}
+  vote:
+    # The Twitch app the annual votes search IGDB with; production reads both from Vault.
+    igdb:
+      client-id: ""
+      client-secret: ""
+    # Without IGDB credentials, offer the short fixed game list instead of refusing every search.
+    offline-games: false
   # The AES-256 key two-factor secrets are sealed with, base64; production reads it from Vault.
   # A rotated-out key moves to retired-keys as `id:key`, so what it sealed still opens.
   two-factor:

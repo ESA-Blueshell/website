@@ -82,6 +82,7 @@ describe("job reading", () => {
     expect([said(JobTally.VALUES_SEALED, 1), said(JobTally.VALUES_SEALED, 3)]).toEqual(["Sealed 1 address", "Sealed 3 addresses"])
     expect([said(JobTally.VALUES_REWRAPPED, 1), said(JobTally.VALUES_REWRAPPED, 2)])
       .toEqual(["Moved 1 sealed value to the newest key", "Moved 2 sealed values to the newest key"])
+    expect([said(JobTally.VOTES_REVEALED, 1), said(JobTally.VOTES_REVEALED, 2)]).toEqual(["Revealed 1 vote", "Revealed 2 votes"])
   })
 
   it("lists the names a report holds as shortcodes, under the count that names them", () => {

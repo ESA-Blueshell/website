@@ -4,7 +4,7 @@ import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.EsportsSeedFixture
-import net.blueshell.api.user.api.UserService
+import net.blueshell.api.user.api.ServiceAccount
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -26,14 +26,14 @@ class ShippedPicturesTest {
             }
             on { findPublicImage(any(), eq(FileType.TEAM_BANNER)) } doAnswer { stored[it.getArgument(0)] }
         }
-    private val users = mock<UserService> { on { findByUsername("system") } doReturn Entities.user() }
+    private val account = mock<ServiceAccount> { on { orNull(any()) } doReturn Entities.user() }
     private val transactions =
         mock<TransactionTemplate> {
             on { execute(any<TransactionCallback<Boolean>>()) } doAnswer {
                 it.getArgument<TransactionCallback<Boolean>>(0).doInTransaction(mock())
             }
         }
-    private val pictures = ShippedPictures(files, users, transactions)
+    private val pictures = ShippedPictures(files, account, transactions)
 
     /** The fixture's teams: Nomads twice and Settlers once name art, Settlers sharing Nomads's; Drifters names none. */
     private fun ship(place: (Map<String, String>, () -> File) -> Boolean) =
@@ -77,7 +77,7 @@ class ShippedPicturesTest {
 
     @Test
     fun `places nothing when there is no account to credit the art to`() {
-        val nobody = ShippedPictures(files, mock<UserService>(), transactions)
+        val nobody = ShippedPictures(files, mock<ServiceAccount>(), transactions)
 
         assertThat(nobody.ship(EsportsSeedFixture.files, "teams.csv", "banner", FileType.TEAM_BANNER) { _, _ -> true }).isZero()
         verifyNoInteractions(files)

@@ -46,4 +46,23 @@ class InMemoryRequestRateLimiterTest {
 
         assertThat(boundedLimiter.trackedBucketCount()).isLessThanOrEqualTo(3)
     }
+
+    @Test
+    fun `waits for the oldest slot to free up, and gives up where that would outlast its patience`() {
+        var now = 0L
+        val waits = mutableListOf<Duration>()
+        val timed = InMemoryRequestRateLimiter(cleanupInterval = 1, now = { now })
+        val pause = { wait: Duration ->
+            waits += wait
+            now += wait.toMillis()
+        }
+
+        assertThat(timed.awaitTurn("igdb", 1, Duration.ofSeconds(1), Duration.ofSeconds(2), pause)).isTrue()
+        now += 400
+        assertThat(timed.awaitTurn("igdb", 1, Duration.ofSeconds(1), Duration.ofSeconds(2), pause)).isTrue()
+        assertThat(waits).containsExactly(Duration.ofMillis(600))
+
+        assertThat(timed.awaitTurn("igdb", 1, Duration.ofSeconds(1), Duration.ofMillis(1000), pause)).isFalse()
+        assertThat(waits).hasSize(1)
+    }
 }

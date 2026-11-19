@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.28.3](https://github.com/ESA-Blueshell/website/compare/v1.28.2...v1.28.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* **platform:** frontend reaches the api by its full Service name, so link previews load ([#2675](https://github.com/ESA-Blueshell/website/issues/2675)) ([#2676](https://github.com/ESA-Blueshell/website/issues/2676)) ([c2f6211](https://github.com/ESA-Blueshell/website/commit/c2f6211af37709bc272be20397ac19dad2fef557))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2671](https://github.com/ESA-Blueshell/website/issues/2671)) ([ef249ee](https://github.com/ESA-Blueshell/website/commit/ef249ee13bdb1a093a26513b27a0711d8fd560a8))
+
 ## [1.28.2](https://github.com/ESA-Blueshell/website/compare/v1.28.1...v1.28.2) (2026-11-19)
 
 

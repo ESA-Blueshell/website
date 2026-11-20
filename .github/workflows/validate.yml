@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload the pull request number
         if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: pr-report-meta
           path: pr-report-meta/pr-number
@@ -271,7 +271,7 @@ jobs:
             --cache-from type=gha,scope=imaging-test --cache-to type=gha,mode=max,scope=imaging-test .
 
       - name: Upload imaging unit coverage
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: imaging-unit-coverage
           path: |
@@ -336,7 +336,7 @@ jobs:
         run: yarn build
 
       - name: Upload the bundle for the test jobs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: frontend-dist
           path: services/frontend/dist
@@ -374,7 +374,7 @@ jobs:
             :services:api:bootJar
 
       - name: Upload the jar for the test jobs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: api-jar
           # `bootJar` carries the `boot` classifier here; the plain `jar` next
@@ -429,7 +429,7 @@ jobs:
 
       - name: Upload it for the report
         if: hashFiles('changeset-sql/changeset.sql') != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: changeset-sql
           path: changeset-sql/
@@ -529,7 +529,7 @@ jobs:
 
       - name: Upload API unit test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: api-unit-test-reports
           path: |
@@ -617,7 +617,7 @@ jobs:
 
       - name: Upload this shard's coverage execution data
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: api-integration-exec-${{ matrix.shard }}
           path: services/api/build/jacoco/integrationTest.exec
@@ -626,7 +626,7 @@ jobs:
 
       - name: Upload API integration test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: api-integration-test-reports-shard-${{ matrix.shard }}
           path: services/api/build/reports/tests/integrationTest
@@ -667,7 +667,7 @@ jobs:
 
       - name: Upload API integration coverage report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: api-integration-coverage
           path: |
@@ -834,7 +834,7 @@ jobs:
 
       - name: Upload system-test reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           # Per-shard artifact name so parallel jobs don't collide.
           name: system-test-reports-shard-${{ matrix.shard }}
@@ -920,7 +920,7 @@ jobs:
 
       - name: Upload acceptance report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: acceptance-feature-report
           path: |
@@ -948,7 +948,7 @@ jobs:
 
       - name: Upload frontend unit coverage artifacts
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: frontend-unit-coverage
           path: |
@@ -1120,7 +1120,7 @@ jobs:
 
       - name: Upload the blob report
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: frontend-e2e-blob-${{ matrix.name }}-${{ matrix.shard }}
           path: services/frontend/blob-report
@@ -1129,7 +1129,7 @@ jobs:
 
       - name: Upload frontend e2e traces
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           # Per-job artifact name so parallel jobs don't collide.
           name: frontend-e2e-traces-${{ matrix.name }}-${{ matrix.shard }}
@@ -1165,7 +1165,7 @@ jobs:
         run: yarn playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload the HTML report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: frontend-e2e-report
           path: services/frontend/playwright-report
@@ -1210,7 +1210,7 @@ jobs:
 
       - name: Upload OpenAPI generation logs
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: openapi-sync-logs
           path: |

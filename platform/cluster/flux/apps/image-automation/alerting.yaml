@@ -46,7 +46,7 @@ spec:
 # Every Kustomization, since a failure in any one of them blocks the ones
 # behind it. HelmReleases are listed per namespace because an Alert matches
 # sources in its own namespace unless told otherwise.
-apiVersion: notification.toolkit.fluxcd.io/v1beta3
+apiVersion: notification.toolkit.fluxcd.io/v1
 kind: Alert
 metadata:
   name: failures

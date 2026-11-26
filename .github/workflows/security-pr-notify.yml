@@ -8,10 +8,10 @@ name: Security PR notify
 # pull_request_target, so the secret reaches PRs from bots. Nothing from the PR
 # is checked out or executed; only its title, body and labels are read.
 #
-# Posts through the one Discord webhook every notice uses, the
-# `DISCORD_RELEASE_WEBHOOK` organisation secret. A run started by Dependabot sees
-# only Dependabot secrets, so the same secret must exist there too. Without it
-# the job warns and exits.
+# Posts through the one Discord webhook every notice uses. A run started by
+# Dependabot sees only Dependabot secrets, where it is `DISCORD_WEBHOOK`; any
+# other run reads the `DISCORD_RELEASE_WEBHOOK` organisation secret. Without
+# either the job warns and exits.
 
 on:
   pull_request_target:
@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Decide and post
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -66,7 +66,7 @@ jobs:
             exit 0
           fi
           if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "::warning::DISCORD_RELEASE_WEBHOOK is unset; skipping the notification."
+            echo "::warning::No Discord webhook secret is set; skipping the notification."
             exit 0
           fi
 

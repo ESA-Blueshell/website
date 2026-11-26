@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.28.4](https://github.com/ESA-Blueshell/website/compare/v1.28.3...v1.28.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* **api:** the AOT cache check reads the code region under JDK 25.0.5, and the builder moves to 0.0.218 ([#2706](https://github.com/ESA-Blueshell/website/issues/2706)) ([#2707](https://github.com/ESA-Blueshell/website/issues/2707)) ([dbf2780](https://github.com/ESA-Blueshell/website/commit/dbf27803fd9b4b43223672d7dd724b3224a40834))
+* **deps:** update dependency org.mariadb.jdbc:mariadb-java-client to v3.5.11 [security] ([#2699](https://github.com/ESA-Blueshell/website/issues/2699)) ([6aa38dd](https://github.com/ESA-Blueshell/website/commit/6aa38dda4a3d23053203e6db15124c5e968c953c))
+* **deps:** update kotlin monorepo to v2.4.20 ([#2154](https://github.com/ESA-Blueshell/website/issues/2154)) ([f7d61ef](https://github.com/ESA-Blueshell/website/commit/f7d61efe1ac7de96c65525c02afcef4e1ef59520))
+* **frontend:** Marketing Maatwerk is listed as a past partner only ([#2688](https://github.com/ESA-Blueshell/website/issues/2688)) ([#2689](https://github.com/ESA-Blueshell/website/issues/2689)) ([53a073b](https://github.com/ESA-Blueshell/website/commit/53a073bb69fe8264e161b042c393d888d12a57e4))
+* **frontend:** marking a member paid rereads their membership and role ([#2715](https://github.com/ESA-Blueshell/website/issues/2715)) ([c843d85](https://github.com/ESA-Blueshell/website/commit/c843d8517f76333e6bbb13b3f33ae4e0f9b0120f))
+* **platform:** Flux Alert and Provider go back to v1beta3, the only version the cluster serves (2693) ([#2694](https://github.com/ESA-Blueshell/website/issues/2694)) ([459ab1e](https://github.com/ESA-Blueshell/website/commit/459ab1ee229fb019ba74f8b65c3b79a087c09f92))
+* **platform:** Flux stops posting transient GitHub fetch failures; Gatus reports a lasting outage ([#2690](https://github.com/ESA-Blueshell/website/issues/2690)) ([#2691](https://github.com/ESA-Blueshell/website/issues/2691)) ([7e1b2e6](https://github.com/ESA-Blueshell/website/commit/7e1b2e672c92ed81794279328d40681ccd486052))
+
 ## [1.28.3](https://github.com/ESA-Blueshell/website/compare/v1.28.2...v1.28.3) (2026-11-19)
 
 

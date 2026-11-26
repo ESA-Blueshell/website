@@ -67,9 +67,12 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
    * The client resolves with an `error` instead of throwing, so the refusal has to be read
    * off the result: a `catch` here never runs, and a payment that was never recorded would
    * otherwise stay green and be booked against.
+   *
+   * Resolves true when the server took the change: a payment can also move the user's
+   * membership and roles, which the caller then rereads.
    */
-  async function togglePaid(userId: number) {
-    if (isDisabled.value) return
+  async function togglePaid(userId: number): Promise<boolean> {
+    if (isDisabled.value) return false
     saveFailure.value = null
 
     const periodId = selectedPeriodId.value
@@ -102,12 +105,14 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
         : "That payment could not be recorded, so it is not booked."
     }
 
+    let accepted = false
     try {
       const resp = wasPaid
         ? await deleteContribution({path: {contributionPeriodId: periodId, userId}})
         : await createContribution({body: {userId, contributionPeriodId: periodId}})
 
       if (resp.error) undo()
+      else accepted = true
     } catch {
       // The client resolves rather than throws today, so this is the belt to that
       // brace: an interceptor or a future `throwOnError` must not skip the undo.
@@ -117,6 +122,7 @@ export function usePaidToggle(paidUserIds: Ref<Set<number>>) {
       savingClean.delete(userId)
       saving.value = savingClean
     }
+    return accepted
   }
 
   function isSaving(userId: number): boolean {

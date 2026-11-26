@@ -80,6 +80,27 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         pageable: Pageable,
     ): List<JobExecution>
 
+    // Null dedup keys are not twins: createQueued never folds jobs that carry none.
+    @Query(
+        """
+        select j from JobExecution j
+        where j.status = :status
+          and j.jobType like concat(:prefix, '%')
+          and (j.nextAttemptAt is null or j.nextAttemptAt <= :now)
+          and (j.dedupKey is null or not exists (
+              select r.id from JobExecution r
+              where r.status = :running and r.jobType = j.jobType and r.dedupKey = j.dedupKey))
+        order by j.queuedAt asc, j.id asc
+        """,
+    )
+    fun findDueEmailJobs(
+        @Param("prefix") prefix: String,
+        @Param("status") status: JobExecutionStatus,
+        @Param("running") running: JobExecutionStatus,
+        @Param("now") now: Instant,
+        pageable: Pageable,
+    ): List<JobExecution>
+
     @Modifying
     @Query(
         """

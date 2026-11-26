@@ -3,7 +3,9 @@ package net.blueshell.api.jobs.domain
 import io.micrometer.core.instrument.MeterRegistry
 import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
+import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
+import net.blueshell.api.shared.job.EmailJobs
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.core.task.TaskRejectedException
@@ -22,6 +24,7 @@ import java.time.temporal.ChronoUnit
 class StaleJobRecovery(
     private val jobExecutionService: JobExecutionService,
     private val jobExecutor: JobExecutor,
+    private val emailJobWorker: EmailJobWorker,
     private val properties: JobQueueProperties,
     private val meterRegistry: MeterRegistry,
 ) {
@@ -43,10 +46,12 @@ class StaleJobRecovery(
                 execution.startedAt,
             )
             jobExecutionService.resetRunningToQueued(execution)
-            if (!dispatch(execution.id!!)) break
+            if (!dispatch(execution)) break
         }
 
-        val staleQueued = jobExecutionService.findStaleQueued(queuedThreshold, pageable)
+        // The email worker polls its own rows.
+        val staleQueued =
+            jobExecutionService.findStaleQueued(queuedThreshold, pageable).filterNot { EmailJobs.isEmailJob(it.jobType) }
         for (execution in staleQueued) {
             logger.warn(
                 "Recovering stale QUEUED job execution {}. jobType={}, queuedAt={}",
@@ -54,7 +59,7 @@ class StaleJobRecovery(
                 execution.jobType,
                 execution.queuedAt,
             )
-            if (!dispatch(execution.id!!)) break
+            if (!dispatch(execution)) break
         }
 
         val totalRecovered = staleRunning.size + staleQueued.size
@@ -68,7 +73,7 @@ class StaleJobRecovery(
     fun dispatchDueRetries() {
         val now = Instant.now()
         val pageable = PageRequest.of(0, properties.staleRecoveryBatchSize)
-        val due = jobExecutionService.findDueScheduledRetries(now, pageable)
+        val due = jobExecutionService.findDueScheduledRetries(now, pageable).filterNot { EmailJobs.isEmailJob(it.jobType) }
         for (execution in due) {
             logger.info(
                 "Dispatching scheduled retry for job execution {}. jobType={}, attempts={}, nextAttemptAt={}",
@@ -77,19 +82,24 @@ class StaleJobRecovery(
                 execution.attempts,
                 execution.nextAttemptAt,
             )
-            if (!dispatch(execution.id!!)) break
+            if (!dispatch(execution)) break
         }
         if (due.isNotEmpty()) {
             meterRegistry.counter("job.retry.dispatched.count").increment(due.size.toDouble())
         }
     }
 
-    private fun dispatch(executionId: Long): Boolean =
-        try {
-            jobExecutor.executeAsync(executionId)
+    private fun dispatch(execution: JobExecution): Boolean {
+        if (EmailJobs.isEmailJob(execution.jobType)) {
+            emailJobWorker.nudge()
+            return true
+        }
+        return try {
+            jobExecutor.executeAsync(execution.id!!)
             true
         } catch (ex: TaskRejectedException) {
-            logger.warn("Job execution {} could not be dispatched; leaving later rows for the next tick.", executionId, ex)
+            logger.warn("Job execution {} could not be dispatched; leaving later rows for the next tick.", execution.id, ex)
             false
         }
+    }
 }

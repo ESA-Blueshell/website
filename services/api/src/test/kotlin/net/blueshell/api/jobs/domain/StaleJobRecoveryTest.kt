@@ -25,7 +25,8 @@ class StaleJobRecoveryTest {
             every { undispatchedGraceSeconds } returns 120
             every { staleRecoveryBatchSize } returns 5
         }
-    private val recovery = StaleJobRecovery(executions, executor, properties, SimpleMeterRegistry())
+    private val worker: EmailJobWorker = mockk(relaxUnitFun = true)
+    private val recovery = StaleJobRecovery(executions, executor, worker, properties, SimpleMeterRegistry())
 
     @Test
     fun `a rejected recovery dispatch stops the loop without throwing`() {
@@ -75,6 +76,33 @@ class StaleJobRecoveryTest {
 
         verify { executor.executeAsync(21L) }
         verify { executor.executeAsync(22L) }
+    }
+
+    @Test
+    fun `email retries are left to the batch worker`() {
+        every { executions.findStaleRunning(any(), any()) } returns emptyList()
+        every { executions.findStaleQueued(any(), any()) } returns emptyList()
+        val email = JobExecution(jobType = "email.signup").apply { id = 21 }
+        every { executions.findDueScheduledRetries(any(), any()) } returns listOf(email)
+
+        recovery.dispatchDueRetries()
+
+        verify(exactly = 0) { executor.executeAsync(any()) }
+        verify(exactly = 0) { worker.nudge() }
+    }
+
+    @Test
+    fun `a stale running email job is requeued and the worker is nudged`() {
+        val email = JobExecution(jobType = "email.signup").apply { id = 22 }
+        every { executions.findStaleRunning(any(), any()) } returns listOf(email)
+        every { executions.findStaleQueued(any(), any()) } returns emptyList()
+        every { executions.resetRunningToQueued(any()) } answers { firstArg() }
+
+        recovery.recoverStaleJobs()
+
+        verify { executions.resetRunningToQueued(email) }
+        verify { worker.nudge() }
+        verify(exactly = 0) { executor.executeAsync(any()) }
     }
 
     private fun execution(id: Long) = JobExecution(jobType = "test.job").apply { this.id = id }

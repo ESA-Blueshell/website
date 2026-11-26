@@ -497,6 +497,17 @@ class JobExecutionServiceTest {
         assertThat(service.findStaleQueued(now, page)).containsExactly(stale)
     }
 
+    @Test
+    fun `due email jobs are looked up by the email prefix`() {
+        val due = JobExecution(jobType = "email.signup").apply { id = 32 }
+        val page = PageRequest.of(0, 50)
+        whenever(
+            repository.findDueEmailJobs("email.", JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, now, page),
+        ).thenReturn(listOf(due))
+
+        assertThat(service.findDueEmailJobs(now, page)).containsExactly(due)
+    }
+
     private fun injectEntityManager(service: JobExecutionService) {
         val field: Field = service.javaClass.getDeclaredField("em")
         field.isAccessible = true

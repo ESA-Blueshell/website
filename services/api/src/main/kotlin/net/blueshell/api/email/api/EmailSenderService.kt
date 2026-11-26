@@ -3,7 +3,9 @@ package net.blueshell.api.email.api
 import net.blueshell.api.email.domain.EmailService
 import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
+import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.shared.job.NonRetryableJobException
 import net.blueshell.api.shared.util.PersonalDetails
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -63,11 +65,22 @@ class EmailSenderService(
                 )
             log.info("Sent email id={} type={}", outbox.id, emailType)
             emailService.markSent(outbox, messageId)
+        } catch (e: NonRetryableJobException) {
+            recordFailure(outbox, emailType, e)
+            throw e
         } catch (e: Exception) {
-            log.error("Failed to send email id={} type={}", outbox.id, emailType, e)
-            emailService.markFailed(outbox, e.javaClass.simpleName, PersonalDetails.scrub(e.message ?: "Send error"))
+            recordFailure(outbox, emailType, e)
             throw IllegalStateException("Failed to send email", e)
         }
+    }
+
+    private fun recordFailure(
+        outbox: Email,
+        emailType: String,
+        e: Exception,
+    ) {
+        log.error("Failed to send email id={} type={}", outbox.id, emailType, e)
+        emailService.markFailed(outbox, e.javaClass.simpleName, PersonalDetails.scrub(e.message ?: "Send error"))
     }
 
     companion object {

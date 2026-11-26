@@ -4,6 +4,7 @@ import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.platform.config.JobQueueProperties
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
@@ -26,6 +27,7 @@ class JobDispatcher(
     private val jobExecutionService: JobExecutionService,
     private val actorProvider: ActorProvider,
     private val jobExecutor: JobExecutor,
+    private val emailJobWorker: EmailJobWorker,
     private val properties: JobQueueProperties,
 ) : JobQueue {
     private val logger = LoggerFactory.getLogger(JobDispatcher::class.java)
@@ -72,22 +74,26 @@ class JobDispatcher(
                 TransactionSynchronizationManager.registerSynchronization(
                     object : TransactionSynchronization {
                         override fun afterCommit() {
-                            dispatch(executionId)
+                            dispatch(enqueued.execution)
                         }
                     },
                 )
             } else {
-                dispatch(executionId)
+                dispatch(enqueued.execution)
             }
         }
         return enqueued.execution
     }
 
-    private fun dispatch(executionId: Long) {
+    private fun dispatch(execution: JobExecution) {
+        if (EmailJobs.isEmailJob(execution.jobType)) {
+            emailJobWorker.nudge()
+            return
+        }
         try {
-            jobExecutor.executeAsync(executionId)
+            jobExecutor.executeAsync(execution.id!!)
         } catch (ex: TaskRejectedException) {
-            logger.warn("Job execution {} could not be dispatched; it stays QUEUED.", executionId, ex)
+            logger.warn("Job execution {} could not be dispatched; it stays QUEUED.", execution.id, ex)
         }
     }
 }

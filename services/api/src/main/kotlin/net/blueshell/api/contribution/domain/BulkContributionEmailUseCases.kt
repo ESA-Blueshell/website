@@ -18,7 +18,8 @@ import java.time.LocalDate
  * Sending a period's payment emails to a selection. One confirmation, two statements: the
  * direct-debit members are told what will be taken, the rest are asked to transfer.
  *
- * Each send writes its own records, so chasing a member twice leaves two asks. A refusal's
+ * Each payment request writes its own record, so chasing a member twice leaves two asks. A
+ * pre-notification is not written twice for the same member, period and debit date. A refusal's
  * `message` is fixed per code and interpolates nothing (ADR-026), being what a log or a direct
  * caller reads; the browser composes its own from the code, in `COMPOSED_MESSAGES` in
  * `services/frontend/src/utils/bulkRejection.ts`.
@@ -59,6 +60,7 @@ class BulkContributionEmailUseCases(
         val sentAt = Instant.now()
         var remindersSent = 0
         var notificationsSent = 0
+        var notificationsSkipped = 0
 
         for (row in recipients) {
             // Only an honorary member has no fee type, and honorary is a hard exclusion.
@@ -82,17 +84,22 @@ class BulkContributionEmailUseCases(
                 }
 
                 ContributionEmailKind.INCASSO_NOTIFICATION -> {
-                    preNotifications.record(
-                        IncassoNotification(
-                            user = member,
-                            contributionPeriod = period,
-                            feeType = feeType,
-                            amount = amount,
-                            debitDate = requireNotNull(debitDate),
-                            askedAt = sentAt,
-                        ),
-                    )
-                    notificationsSent++
+                    val notificationDate = requireNotNull(debitDate)
+                    if (preNotifications.alreadyNotified(row.userId, contributionPeriodId, notificationDate)) {
+                        notificationsSkipped++
+                    } else {
+                        preNotifications.record(
+                            IncassoNotification(
+                                user = member,
+                                contributionPeriod = period,
+                                feeType = feeType,
+                                amount = amount,
+                                debitDate = notificationDate,
+                                askedAt = sentAt,
+                            ),
+                        )
+                        notificationsSent++
+                    }
                 }
             }
         }
@@ -100,6 +107,7 @@ class BulkContributionEmailUseCases(
         return ContributionEmailResult(
             remindersSent = remindersSent,
             incassoNotificationsSent = notificationsSent,
+            incassoNotificationsSkipped = notificationsSkipped,
             notWrittenTo = userIds.distinct().size - recipients.size,
         )
     }
@@ -267,4 +275,5 @@ data class ContributionEmailResult(
     val remindersSent: Int,
     val incassoNotificationsSent: Int,
     val notWrittenTo: Int,
+    val incassoNotificationsSkipped: Int = 0,
 )

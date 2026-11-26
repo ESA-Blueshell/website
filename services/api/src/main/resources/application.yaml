@@ -112,6 +112,10 @@ springdoc:
 
 app:
   url: ${APP_URL:http://localhost:8080}
+  contribution:
+    # Days before the debit a pre-notification must go out by; later runs fail for good. 0 only
+    # stops a notice for a debit already past; set it to the notice period agreed with the bank.
+    incasso-notice-days: ${INCASSO_NOTICE_DAYS:0}
   security:
     require-https: false
     # Who a locked-out or worried person is told to contact, beside the Discord channels.

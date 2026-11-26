@@ -103,4 +103,5 @@ private fun ContributionEmailResult.asResponse() =
         remindersSent = remindersSent,
         incassoNotificationsSent = incassoNotificationsSent,
         notWrittenTo = notWrittenTo,
+        incassoNotificationsSkipped = incassoNotificationsSkipped,
     )

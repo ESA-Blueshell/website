@@ -4316,6 +4316,10 @@ components:
         incassoNotificationsSent:
           format: int32
           type: integer
+        incassoNotificationsSkipped:
+          description: Members who already had a pre-notification for this period and debit date.
+          format: int32
+          type: integer
         notWrittenTo:
           description: Members in the selection who were not written to.
           format: int32
@@ -4325,6 +4329,7 @@ components:
           type: integer
       required:
       - incassoNotificationsSent
+      - incassoNotificationsSkipped
       - notWrittenTo
       - remindersSent
       type: object

@@ -104,6 +104,34 @@ class BulkContributionEmailUseCasesTest {
     }
 
     @Nested
+    inner class OnePreNotificationPerDebitDate {
+        @Test
+        fun `a member already notified for this period and debit date is skipped`() {
+            plan(
+                row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION),
+                row(2L, "Ben Debit", ContributionEmailKind.INCASSO_NOTIFICATION),
+            )
+            every { preNotifications.alreadyNotified(1L, periodId, debitDate) } returns true
+
+            val result = send()
+
+            assertThat(result.incassoNotificationsSent).isEqualTo(1)
+            assertThat(result.incassoNotificationsSkipped).isEqualTo(1)
+            verify(exactly = 0) { preNotifications.record(match { written -> written.userId == 1L }) }
+            verify(exactly = 1) { preNotifications.record(match { written -> written.userId == 2L }) }
+        }
+
+        @Test
+        fun `a notification for another period or debit date does not skip this one`() {
+            plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
+            every { preNotifications.alreadyNotified(1L, periodId, debitDate.minusDays(1)) } returns true
+
+            assertThat(send().incassoNotificationsSent).isEqualTo(1)
+            verify(exactly = 1) { preNotifications.record(any()) }
+        }
+    }
+
+    @Nested
     inner class MovingAMemberOntoTheOtherEmail {
         @Test
         fun `a switched member gets the statement the treasurer chose`() {

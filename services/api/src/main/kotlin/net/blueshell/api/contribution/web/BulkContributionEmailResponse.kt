@@ -53,4 +53,6 @@ data class PaymentEmailsResultResponse(
     val incassoNotificationsSent: Int,
     @field:Schema(description = "Members in the selection who were not written to.")
     val notWrittenTo: Int,
+    @field:Schema(description = "Members who already had a pre-notification for this period and debit date.")
+    val incassoNotificationsSkipped: Int,
 )

@@ -2191,6 +2191,10 @@ export type PasswordResetRequest = {
 export type PaymentEmailsResultResponse = {
     incassoNotificationsSent: number;
     /**
+     * Members who already had a pre-notification for this period and debit date.
+     */
+    incassoNotificationsSkipped: number;
+    /**
      * Members in the selection who were not written to.
      */
     notWrittenTo: number;

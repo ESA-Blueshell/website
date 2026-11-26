@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import java.time.LocalDate
 
 /** A pre-notification is recorded before it is sent, so a send failure leaves a record. */
 @Service
@@ -36,6 +37,13 @@ class IncassoNotificationService(
         periodService.findById(contributionPeriodId)
         return repository.findByContributionPeriod_Id(contributionPeriodId)
     }
+
+    @Transactional(readOnly = true)
+    fun alreadyNotified(
+        userId: Long,
+        contributionPeriodId: Long,
+        debitDate: LocalDate,
+    ): Boolean = repository.existsByUser_IdAndContributionPeriod_IdAndDebitDate(userId, contributionPeriodId, debitDate)
 
     /**
      * Writes the pre-notification and queues its email, in that order and in one transaction.

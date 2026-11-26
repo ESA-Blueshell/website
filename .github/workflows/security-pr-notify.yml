@@ -1,6 +1,8 @@
 name: Security PR notify
 
-# Posts to Discord when a pull request opens that fixes a known vulnerability:
+# Posts to Discord when a pull request that fixes a known vulnerability opens,
+# and again when it merges, since that fix is then available in the pending
+# release pull request and reaches production once that release is cut. A fix:
 # a Renovate vulnerability-alert PR (title ends in [SECURITY]), a Dependabot
 # security update (it bumps a package with an open Dependabot alert), or any PR
 # whose body cites a CVE or GHSA id.
@@ -15,7 +17,7 @@ name: Security PR notify
 
 on:
   pull_request_target:
-    types: [opened, reopened]
+    types: [opened, reopened, closed]
 
 permissions:
   contents: read
@@ -23,10 +25,12 @@ permissions:
 jobs:
   notify:
     name: Notify Discord of a security fix
+    if: github.event.action != 'closed' || github.event.pull_request.merged
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
+      pull-requests: read
       security-events: read
     steps:
       - name: Decide and post
@@ -40,6 +44,7 @@ jobs:
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
           URL: ${{ github.event.pull_request.html_url }}
           NUMBER: ${{ github.event.pull_request.number }}
+          ACTION: ${{ github.event.action }}
         run: |
           set -euo pipefail
           ids=$(printf '%s' "$BODY" | grep -oE 'CVE-[0-9]{4}-[0-9]+|GHSA(-[0-9a-z]{4}){3}' | sort -u | head -5 | paste -sd ' ' - || true)
@@ -52,7 +57,8 @@ jobs:
           if [ "$security" = false ] && [ "$AUTHOR" = "dependabot[bot]" ]; then
             pkg=$(printf '%s' "$TITLE" | sed -nE 's/.*[Bb]ump ([^ ]+) from .*/\1/p')
             if [ -n "$pkg" ]; then
-              hits=$(gh api "repos/$REPO/dependabot/alerts?state=open&per_page=100" \
+              # Fixed as well as open: the alert closes as soon as the merge lands.
+              hits=$(gh api "repos/$REPO/dependabot/alerts?state=open,fixed&per_page=100" \
                 | jq -r --arg pkg "$pkg" '[.[] | select(.dependency.package.name == $pkg) | (.security_advisory.cve_id // .security_advisory.ghsa_id)] | unique | join(" ")' || true)
               if [ -n "$hits" ]; then
                 security=true
@@ -72,6 +78,12 @@ jobs:
 
           desc="$TITLE"
           [ -n "$ids" ] && desc="$desc"$'\n'"Fixes: $ids"
-          jq -n --arg title "Security fix opened: #$NUMBER" --arg url "$URL" --arg desc "$desc" \
+          heading="Security fix opened: #$NUMBER"
+          if [ "$ACTION" = closed ]; then
+            heading="Security fix merged: #$NUMBER"
+            release=$(gh pr list -R "$REPO" --state open --label 'autorelease: pending' --json url --jq '.[0].url // empty')
+            desc="$desc"$'\n'"A release with this fix is available: ${release:-the release pull request opens within minutes}"
+          fi
+          jq -n --arg title "$heading" --arg url "$URL" --arg desc "$desc" \
             '{username: "Blueshell security", embeds: [{title: $title, url: $url, description: $desc, color: 15158332}]}' \
             | curl -fsS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"

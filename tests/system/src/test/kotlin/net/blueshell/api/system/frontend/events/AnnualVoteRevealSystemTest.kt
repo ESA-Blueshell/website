@@ -49,9 +49,13 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
         assertThat(enqueued.status()).isEqualTo(200)
         val jobId = Regex("\"id\":(\\d+)").find(enqueued.text())!!.groupValues[1].toLong()
 
-        pollForValue("the reveal job $jobId to succeed") { TestHelper.findJobExecution(jobId)?.takeIf { it.status == "SUCCESS" } }
+        // The scheduler runs the same job every few minutes and may count the vote first, which
+        // leaves this run nothing due: either way the job ends, and the vote is revealed once.
+        pollForValue("the reveal job $jobId to finish", JOB_WAIT_MS) {
+            TestHelper.findJobExecution(jobId)?.takeIf { it.status == "SUCCESS" || it.status == "SKIPPED" }
+        }
+        pollForValue("vote $voteId to be revealed", JOB_WAIT_MS) { TestHelper.voteRows("vote_placings", voteId).takeIf { it == 2 } }
         assertThat(TestHelper.voteRows("vote_ballots", voteId)).isEqualTo(2)
-        assertThat(TestHelper.voteRows("vote_placings", voteId)).isEqualTo(2)
 
         // The band draws its words in capitals, which innerText reads as drawn.
         page.navigate("$frontendUrl/events/ost-top-50")
@@ -61,5 +65,10 @@ class AnnualVoteRevealSystemTest : PlaywrightTestBase() {
             { assertThat(it).containsIgnoringCase(first) },
             { assertThat(it).containsIgnoringCase(second) },
         )
+    }
+
+    private companion object {
+        /** A queued job waits for the executor's next pass before it runs. */
+        const val JOB_WAIT_MS = 20_000L
     }
 }

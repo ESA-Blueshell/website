@@ -137,6 +137,8 @@ test.describe("the annual vote", () => {
   })
 
   test("a member on a phone drags a pick to the top by its handle @phone", async ({page, context}) => {
+    // A phone's width whichever project runs it: the step buttons only stand aside below 600px.
+    await page.setViewportSize({width: 412, height: 915})
     await installApiMocks(page)
     const sent = await standInVote(page)
     await loginAsMember(context)

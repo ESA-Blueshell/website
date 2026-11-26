@@ -86,6 +86,8 @@ class VoteControllerIT : UserTestSupport() {
         return Pick(JsonPath.read(added, "$.candidate.id"), JsonPath.read(added, "$.id"))
     }
 
+    private fun pickJson(pick: Pick) = """{"candidateId":${pick.candidateId},"trackId":${pick.trackId}}"""
+
     private fun cast(
         member: User,
         picks: List<Pick>,
@@ -94,9 +96,7 @@ class VoteControllerIT : UserTestSupport() {
         put("/annual-votes/OST_TOP_50/2026/ballot")
             .with(signedIn(member))
             .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                """{"picks":[${picks.joinToString { """{"candidateId":${it.candidateId},"trackId":${it.trackId}}""" }}],"version":$version}""",
-            ),
+            .content("""{"picks":[${picks.joinToString(transform = ::pickJson)}],"version":$version}"""),
     )
 
     @Test
@@ -141,7 +141,7 @@ class VoteControllerIT : UserTestSupport() {
         startVote(board)
         val adder = createUserWithRole(Role.MEMBER)
         val other = createUserWithRole(Role.MEMBER)
-        val added = track(adder, 26226, "https://youtu.be/renameme01")
+        val added = track(adder, 26226, "https://youtu.be/renameme012")
         val rename = { who: User, title: String ->
             mvc.perform(
                 put("/vote-tracks/${added.trackId}/title")

@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
-import {defineComponent, nextTick, ref} from "vue"
+import {defineComponent, nextTick, reactive, ref} from "vue"
 import {flushPromises, mount} from "@vue/test-utils"
 import UserForm from "@/components/form/UserForm.vue"
 import type {EditableUser} from "@/utils/editableUser"
@@ -57,8 +57,9 @@ const DiscordMemberPicker = {
 }
 const stubs = {DiscordMemberPicker}
 
+// reactive: the form writes into the model it is handed, and a plain prop is no longer deeply reactive
 function baseModel(overrides: Record<string, unknown> = {}) {
-  return {
+  return reactive({
     id: undefined,
     initials: "",
     firstName: "",
@@ -73,7 +74,7 @@ function baseModel(overrides: Record<string, unknown> = {}) {
     photoConsent: false,
     password: "",
     ...overrides,
-  }
+  })
 }
 
 /** Everything a new applicant must give, given. */

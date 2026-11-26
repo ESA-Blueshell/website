@@ -82,7 +82,10 @@ const paidActionLabel = () => {
     </td>
 
     <!-- Role -->
-    <td class="text-right">
+    <td
+      class="text-right"
+      :data-testid="`member-manager-role-${row.id}`"
+    >
       <v-chip
         v-if="row.role"
         class="text-capitalize"

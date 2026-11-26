@@ -375,6 +375,13 @@ async function onMembershipChanged() {
   if (found) updateUser(toEditableUser(found))
 }
 
+// A first payment activates a pending membership, which grants the member role (api ADR-036).
+async function onTogglePaid(userId: number) {
+  if (!(await togglePaid(userId))) return
+  const [, found] = await Promise.all([getMemberships(), readUser(userId)])
+  if (found) updateUser(toEditableUser(found))
+}
+
 onMounted(async () => {
   try {
     await Promise.all([getUsers(), getMemberships()])
@@ -598,7 +605,7 @@ async function confirmDeleteUser() {
                   :may-edit-roles="mayEditRoles"
                   :toggle-disabled="toggleDisabled"
                   @toggle-selection="toggleSelected"
-                  @toggle-paid="togglePaid"
+                  @toggle-paid="onTogglePaid"
                   @manage-membership="openManageMembership"
                   @edit-roles="openEditRoles"
                   @account-security="openAccountSecurity"
@@ -659,7 +666,7 @@ async function confirmDeleteUser() {
                     :selected="isSelected(row.id)"
                     :toggle-disabled="toggleDisabled"
                     @toggle-selection="toggleSelected"
-                    @toggle-paid="togglePaid"
+                    @toggle-paid="onTogglePaid"
                     @manage-membership="openManageMembership"
                     @edit-profile="openEditProfile"
                     @delete="openDeleteRow"

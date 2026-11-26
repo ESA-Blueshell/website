@@ -106,6 +106,47 @@ describe("UserManager paid toggle", () => {
     expect(paidStatus(wrapper)).toBe("Paid")
   })
 
+  it("shows the member the first contribution made of a pending applicant", async () => {
+    const applicant = {
+      id: 1, fullName: "Alice Smith", username: "alice", roles: ["GUEST"], email: "alice@test.com", enabled: true,
+      firstName: "Alice", lastName: "Smith", initials: "AS", newsletter: false, photoConsent: false,
+      createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z", version: 0,
+    }
+    const membership = {
+      id: 90, userId: 1, startDate: "2024-01-01", memberType: MemberType.REGULAR, incasso: false,
+      version: 1, createdAt: "2025-01-01T00:00:00.000Z", updatedAt: "2025-01-01T00:00:00.000Z",
+    }
+    mockFindUsers.mockResolvedValue({status: 200, data: {content: [applicant]}})
+    mockFindMemberships.mockResolvedValue({data: [{...membership, pending: true}]})
+    const wrapper = await mount()
+    await choosePeriod(wrapper)
+    expect(wrapper.get('[data-testid="member-manager-status-1"]').text()).toBe("Pending")
+
+    // Paying activates the membership server-side, which grants the member role.
+    mockFindUserById.mockResolvedValue({data: {...applicant, roles: ["MEMBER"], version: 1}})
+    mockFindMemberships.mockResolvedValue({data: [{...membership, pending: false, activatedOn: "2025-02-01"}]})
+    await toggleButton(wrapper).trigger("click")
+    await settle()
+
+    expect(wrapper.get('[data-testid="member-manager-status-1"]').text()).toBe("Current")
+    expect(wrapper.get('[data-testid="member-manager-role-1"]').text().toLowerCase()).toBe("member")
+  })
+
+  it("keeps the row as it was when the payment is refused", async () => {
+    mockCreateContribution.mockResolvedValue({error: {status: 409}})
+    const wrapper = await mount()
+    await choosePeriod(wrapper)
+    mockFindMemberships.mockClear()
+    mockFindUserById.mockClear()
+
+    await toggleButton(wrapper).trigger("click")
+    await settle()
+
+    expect(paidStatus(wrapper)).toBe("Unpaid")
+    expect(mockFindUserById).not.toHaveBeenCalled()
+    expect(mockFindMemberships).not.toHaveBeenCalled()
+  })
+
   it("takes a paid member back to unpaid", async () => {
     mockFindContributionsByPeriodId.mockResolvedValue({data: [{userId: 1, contributionPeriodId: 5}]})
     const wrapper = await mount()

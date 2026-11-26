@@ -16,3 +16,15 @@ configure<KtlintExtension> {
         exclude("**/build/**")
     }
 }
+
+// Spring dependency management pins ktlint's embedded Kotlin compiler to the project's Kotlin
+// version, and ktlint 1.5.0 cannot parse with 2.4.21. Move this with the ktlint version.
+afterEvaluate {
+    configurations.named("ktlint") {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-compiler-embeddable") {
+                useVersion("2.4.10")
+            }
+        }
+    }
+}

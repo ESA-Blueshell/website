@@ -27,7 +27,7 @@ spec:
           text: '{{- get .Secrets "discord.webhook_url" -}}'
   refreshAfter: 1h
 ---
-apiVersion: notification.toolkit.fluxcd.io/v1
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Provider
 metadata:
   name: discord
@@ -46,7 +46,7 @@ spec:
 # Every Kustomization, since a failure in any one of them blocks the ones
 # behind it. The sources that reach GitHub have their own Alert below. HelmReleases are listed per namespace because an Alert matches
 # sources in its own namespace unless told otherwise.
-apiVersion: notification.toolkit.fluxcd.io/v1
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Alert
 metadata:
   name: failures

@@ -37,6 +37,13 @@ spec:
         app.kubernetes.io/name: api
     spec:
       serviceAccountName: api
+      # External names (the mail host, Vault, Discord) resolve without the
+      # cluster search domains first; every in-cluster host here is a full
+      # *.svc.cluster.local name.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       # ghcr.io/esa-blueshell/api is a private package; the pull secret
       # is materialised by VSO from Vault (secret/platform/ghcr) — see
       # platform/cluster/flux/apps/vso-secrets/ghcr.yaml.
@@ -83,14 +90,11 @@ spec:
             # admits this pod and no other.
             - name: IMAGING_URL
               value: http://imaging.default.svc.cluster.local:8080
-            # SMTP transport — relay through Stalwart via its public
-            # mail hostname. The traffic still terminates on the same
-            # Frankfurt VPS (hairpin through the public IP) but the
-            # JavaMail client validates the cert SAN against the
-            # connect host, and the wildcard ACME cert covers
-            # `mail.esa-blueshell.nl` while in-cluster Service DNS is
-            # not in the cert. Using the public name keeps strict
-            # TLS verification on without bypass flags.
+            # SMTP transport — the public mail hostname resolves in-cluster
+            # to the Stalwart Service via the CoreDNS rewrite in
+            # apps/core/coredns, without a hairpin through the public IP.
+            # The public name is kept because the wildcard cert covers
+            # `mail.esa-blueshell.nl`, not in-cluster Service DNS.
             - name: SMTP_HOST
               value: mail.esa-blueshell.nl
             - name: SMTP_PORT
@@ -105,6 +109,8 @@ spec:
               value: sitecie@esa-blueshell.nl
             # The bounce mailbox: the api sends and polls as it, with its
             # password from Vault, so undelivered mail comes back here (#1868).
+            # Its host is rewritten to Stalwart in-cluster and stays public
+            # for the certificate.
             - name: EMAIL_BOUNCE_IMAP_HOST
               value: mail.esa-blueshell.nl
             - name: EMAIL_BOUNCE_IMAP_PORT

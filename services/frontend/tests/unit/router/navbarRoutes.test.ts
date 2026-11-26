@@ -22,7 +22,6 @@ const navbarPaths = [
   "/competition/geoguessr",
   "/partners/become-a-partner",
   "/partners/el-nino",
-  "/partners/marketing-maatwerk",
   "/contact",
   "/sntpings",
   "/login",

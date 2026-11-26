@@ -51,7 +51,7 @@ const OFFERS = [
 
 const PARTNERS: Partner[] = [
   {name: "El Niño", href: "/partners/el-nino", light: elnino, dark: elnino, invertInDark: true},
-  {name: "Marketing Maatwerk", href: "/partners/marketing-maatwerk", light: maatwerk, dark: maatwerk, invertInDark: true},
+  {name: "Marketing Maatwerk", href: null, light: maatwerk, dark: maatwerk, invertInDark: true},
   {name: "Talent IT", href: null, light: talentitLight, dark: talentitDark},
   {name: "Connectworks", href: null, light: connectworksLight, dark: connectworksDark},
 ]

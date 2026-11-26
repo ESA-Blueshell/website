@@ -7,6 +7,26 @@ const mountPartner = (content: PartnerContent) => mount(PartnerPage, {props: {co
 const hrefsOf = (wrapper: ReturnType<typeof mountPartner>) =>
   wrapper.findAll("a").map(link => link.attributes("href"))
 
+/** A partner with linked facts, offers and no tagline: shapes no shipped page has today. */
+const SAMPLE: PartnerContent = {
+  name: "Sample Partner",
+  logo: {src: "/sample.webp", alt: "Sample Partner logo", invertInDark: false},
+  site: "https://sample.example/",
+  facts: {
+    heading: "Contact",
+    items: [{label: "Email", value: "info@sample.example", href: "mailto:info@sample.example"}],
+  },
+  sections: [
+    {heading: "About", paragraphs: ["What the partner is."]},
+    {
+      heading: "What they do",
+      paragraphs: ["Their services:"],
+      offers: [{title: "Websites", body: "Built to order.", href: "https://sample.example/websites/"}],
+    },
+  ],
+  actions: [{label: "Visit website", href: "https://sample.example/"}],
+}
+
 describe("PartnerPage", () => {
   it("heads the page with the partner's name and its second line", () => {
     const heading = mountPartner(PARTNER_PAGES["el-nino"]).get("h1").text()
@@ -16,9 +36,9 @@ describe("PartnerPage", () => {
   })
 
   it("leads from the logo to the partner's own site, in a new tab", () => {
-    const logo = mountPartner(PARTNER_PAGES["marketing-maatwerk"]).get("a[aria-label='Visit Marketing Maatwerk']")
+    const logo = mountPartner(PARTNER_PAGES["el-nino"]).get("a[aria-label='Visit El Niño']")
 
-    expect(logo.attributes()).toMatchObject({href: "https://marketingmaatwerk.nl/", target: "_blank"})
+    expect(logo.attributes()).toMatchObject({href: "https://www.elnino.tech/", target: "_blank"})
     expect(logo.get("img").classes()).toContain("partner__logo--inverted")
   })
 
@@ -27,29 +47,25 @@ describe("PartnerPage", () => {
     expect(wrapper.find("dl a").exists()).toBe(false)
     expect(wrapper.get("dl").text()).toContain("Kuipersdijk 6C")
 
-    const mail = mountPartner(PARTNER_PAGES["marketing-maatwerk"]).get("a[href='mailto:info@marketingmaatwerk.nl']")
+    const mail = mountPartner(SAMPLE).get("a[href='mailto:info@sample.example']")
     expect(mail.attributes("target")).toBeUndefined()
   })
 
-  it("keeps every outbound link the two hand-built pages had", () => {
+  it("keeps every outbound link the hand-built page had", () => {
     expect(hrefsOf(mountPartner(PARTNER_PAGES["el-nino"]))).toEqual(expect.arrayContaining([
       "https://www.elnino.tech/vacatures", "https://www.elnino.tech/getajob", "https://wa.me/31626978392",
-    ]))
-    expect(hrefsOf(mountPartner(PARTNER_PAGES["marketing-maatwerk"]))).toEqual(expect.arrayContaining([
-      "https://marketingmaatwerk.nl/", "mailto:info@marketingmaatwerk.nl", "tel:+31634218964",
-      "https://marketingmaatwerk.nl/contact/", "https://marketingmaatwerk.nl/website-maatwerk/",
-      "https://marketingmaatwerk.nl/seo/", "https://marketingmaatwerk.nl/webhosting/",
     ]))
   })
 
   it("draws a section's offers only where it has them", () => {
-    const sections = mountPartner(PARTNER_PAGES["marketing-maatwerk"]).findAll(".partner__section")
+    const sections = mountPartner(SAMPLE).findAll(".partner__section")
 
-    expect(sections.map(section => section.find(".partner__offers").exists())).toEqual([false, true, false, false])
+    expect(sections.map(section => section.find(".partner__offers").exists())).toEqual([false, true])
+    expect(hrefsOf(mountPartner(SAMPLE))).toContain("https://sample.example/websites/")
   })
 
   it("leaves the heading one line for a partner without a tagline", () => {
-    const heading = mountPartner(PARTNER_PAGES["marketing-maatwerk"]).get("h1")
+    const heading = mountPartner(SAMPLE).get("h1")
 
     expect(heading.find("br").exists()).toBe(false)
   })

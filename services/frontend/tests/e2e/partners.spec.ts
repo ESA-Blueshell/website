@@ -18,20 +18,5 @@ test.describe("partners pages", () => {
     await expect(page.locator("a[href='https://www.elnino.tech/vacatures']")).toBeAttached()
     await expect(page.locator("a[href='https://www.elnino.tech/getajob']")).toBeAttached()
     await expect(page.locator("a[href='https://wa.me/31626978392']")).toBeAttached()
-
-    await page.goto("/partners/marketing-maatwerk")
-    await expect(page.getByRole("heading", {level: 1})).toContainText(/Marketing Maatwerk/i)
-    await expect(page.getByRole("link", {name: "Visit Marketing Maatwerk"})).toHaveAttribute(
-      "href",
-      "https://marketingmaatwerk.nl/",
-    )
-    await expect(page.getByRole("link", {name: /visit website/i})).toHaveAttribute(
-      "href",
-      "https://marketingmaatwerk.nl/",
-    )
-    await expect(page.getByRole("link", {name: /go to contact form/i})).toHaveAttribute(
-      "href",
-      "https://marketingmaatwerk.nl/contact/",
-    )
   })
 })

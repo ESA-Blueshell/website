@@ -125,6 +125,8 @@ describe("SearchPicker's search", () => {
     await wrapper.setProps({selectedKey: "803"})
 
     expect(wrapper.find('[data-testid="pick-avatar"]').attributes("src")).toBe("https://cdn/nelly.png")
+    // Fetched without credentials, so the picture's host leaves no cookie behind.
+    expect(wrapper.find('[data-testid="pick-avatar"]').attributes("crossorigin")).toBe("anonymous")
     wrapper.unmount()
   })
 

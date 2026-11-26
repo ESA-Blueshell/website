@@ -16,8 +16,6 @@ platform:
   - '!platform/docs/**'
   - 'scripts/check-flux-manifests.sh'
   - 'scripts/regenerate-flux-components.sh'
-  - 'scripts/seed-vault-from-env.sh'
-  - 'scripts/seed-backup-credentials.sh'
 
 # The api suites, and the system tests, which drive the api.
 api:
@@ -36,6 +34,11 @@ frontend:
 # The system tests and acceptance features alone.
 system:
   - 'tests/**'
+
+# The imaging job, the compile jobs and the system tests tagged `imaging`.
+imaging:
+  - 'services/imaging/**'
+  - '!services/imaging/docker-compose.yml'
 
 # What no suite reads. `Workflow checks` runs on every pull request, so a
 # workflow other than validate.yml needs no bucket of its own.
@@ -72,4 +75,3 @@ ignore:
   - 'services/stalwart/**'
   - '.env'
   - 'dev-setup.sh'
-  - 'scripts/seed-stalwart-accounts.sh'

@@ -8,7 +8,7 @@ import tools.jackson.databind.ObjectMapper
 /**
  * The widths of one picture, derived away from whatever asked for them.
  *
- * Queued for an animation, which costs a converter run per frame per width: on the startup path
+ * Queued for an animation, which costs a decode and an encode per frame per width: on the startup path
  * that is a start held open, and on the upload path a request held open. One job per picture, so
  * a banner the converter will not take fails on its own row and is retried and read there
  * instead of taking a whole sweep down with it.

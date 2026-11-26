@@ -33,16 +33,15 @@ spec:
             - name: migrate
               image: ghcr.io/esa-blueshell/api
               imagePullPolicy: IfNotPresent
-              command:
-                - java
-                - -XX:MaxRAMPercentage=75
-                - -jar
-                - /app/app.jar
+              # The image's entrypoint, as the api runs it, so the Job boots from the AOT cache too.
               env:
                 - name: SPRING_PROFILES_ACTIVE
                   # prod first: the Job runs the configuration production runs,
                   # and migrate only changes what it does with it.
                   value: prod,migrate
+                # Must fit the limit, as in the Deployment.
+                - name: JAVA_TOOL_OPTIONS
+                  value: -Xmx640M -XX:MaxDirectMemorySize=64M
                 - name: VAULT_ADDR
                   value: http://vault-v2.data-system.svc.cluster.local:8200
                 - name: MYSQL_HOST

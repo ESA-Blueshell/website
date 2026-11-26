@@ -1,12 +1,16 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.contact.api.ContactJobs
+import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doThrow
@@ -34,8 +38,9 @@ class SyncAllContactsJobTest {
         val users = mutableListOf(userWithId(1L), userWithId(2L))
         whenever(userService.findAll()).thenReturn(users)
 
-        job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
+        val outcome = job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload())) as JobOutcome.Done
 
+        assertThat(outcome.counts).containsExactly(JobCount(JobTally.USERS_QUEUED, 2))
         verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
         verify(jobs).runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(2L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
     }
@@ -57,7 +62,9 @@ class SyncAllContactsJobTest {
             .whenever(jobs)
             .runAsync(eq(ContactJobs.SyncContact), eq(ContactJobs.SyncContactPayload(1L)), eq(JobTrigger.ANOTHER_JOB), anyOrNull())
 
-        job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload()))
+        val outcome = job.runJob(objectMapper.writeValueAsString(ContactJobs.SyncAllContactsPayload())) as JobOutcome.Done
+
+        assertThat(outcome.counts).containsExactly(JobCount(JobTally.USERS_QUEUED, 1))
 
         verify(
             jobs,

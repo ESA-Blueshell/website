@@ -13,6 +13,9 @@ spring:
       max-request-size: 50MB
   main:
     web-application-type: servlet
+  # A rollout waits on the old pod; its graceful drain need not take Spring's default 30s.
+  lifecycle:
+    timeout-per-shutdown-phase: 10s
 
   cloud:
     vault:
@@ -132,16 +135,11 @@ app:
     idle: 14d
     rotate-after: 5m
     grace: 60s
-  files:
-    # The libwebp encoder every public page image is converted with. The api refuses to start
-    # when it does not answer, so a packaging mistake surfaces at deploy rather than at
-    # somebody's first upload.
-    cwebp-path: ${CWEBP_PATH:cwebp}
-    # The decoder and the muxer, which only an animation needs: a banner that moves is taken
-    # apart frame by frame to be resized and put back together, and neither converter above
-    # will resize one. All three ship in the same libwebp package.
-    dwebp-path: ${DWEBP_PATH:dwebp}
-    webpmux-path: ${WEBPMUX_PATH:webpmux}
+  imaging:
+    # The imaging service every uploaded picture is converted by (architecture ADR-014). The
+    # default is its name on the compose network and in the cluster's namespace; a native run
+    # points it at the container it started, and the tests at theirs.
+    url: ${IMAGING_URL:http://imaging:8080}
   jobs:
     max-retries: ${JOB_MAX_RETRIES:3}
     initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}
@@ -273,6 +271,8 @@ logging:
         hibernate: INFO
         security: INFO
         liquibase: INFO
+      # Its HHH10001005 start-up line prints the JDBC URL, which the MariaDB driver writes the login into.
+      hibernate.orm.connections.pooling: WARN
 
 management:
   server:

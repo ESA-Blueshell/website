@@ -36,6 +36,11 @@ spec:
           # Tag comes from the images block in ../kustomization.yaml.
           image: ghcr.io/esa-blueshell/frontend
           imagePullPolicy: IfNotPresent
+          env:
+            # Fully qualified: nginx's resolver skips resolv.conf's search
+            # domains, so the image's default `api` never resolves here.
+            - name: API_UPSTREAM
+              value: http://api.default.svc.cluster.local:8080
           ports:
             - containerPort: 3000
               name: http

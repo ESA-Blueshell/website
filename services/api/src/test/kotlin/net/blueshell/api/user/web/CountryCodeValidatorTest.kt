@@ -28,4 +28,11 @@ class CountryCodeValidatorTest {
         assertThat(validator.isValid(null, context)).isTrue()
         assertThat(validator.isValid("", context)).isTrue()
     }
+
+    @Test
+    fun `refuses in words a member understands`() {
+        val message = ValidCountryCode::class.java.getMethod("message").defaultValue
+
+        assertThat(message).isEqualTo("Pick a country from the list")
+    }
 }

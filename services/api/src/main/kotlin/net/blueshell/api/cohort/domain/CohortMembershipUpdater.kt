@@ -95,8 +95,8 @@ class CohortMembershipUpdater(
             }
         memberships.save(TargetMember(target = target, userId = userId, cohort = cohort))
         jobs.runAsync(
-            CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, target.id!!, SyncCohortMembershipIntent.ADD),
+            CohortJobs.AddMember,
+            CohortJobs.CohortMemberPayload(userId, target.id!!),
             JobTrigger.MEMBERSHIP_CHANGED,
         )
     }
@@ -106,8 +106,8 @@ class CohortMembershipUpdater(
         val targetId = member.target.id ?: return
         memberships.delete(member) // soft delete: the row is kept for historical statistics
         jobs.runAsync(
-            CohortJobs.SyncCohortMembership,
-            CohortJobs.SyncCohortMembershipPayload(userId, targetId, SyncCohortMembershipIntent.REMOVE, member.externalUserId),
+            CohortJobs.RemoveMember,
+            CohortJobs.CohortMemberPayload(userId, targetId, member.externalUserId),
             JobTrigger.MEMBERSHIP_CHANGED,
         )
     }

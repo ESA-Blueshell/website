@@ -50,7 +50,7 @@ describe("Home page", () => {
     const partners = mountHome().findComponent({name: "PartnerWall"}).props("partners") as Array<{href: string}>
 
     expect(partners.map(one => one.href)).toEqual([
-      "/partners/el-nino", "/partners/marketing-maatwerk", "https://esportsteamtwente.nl/",
+      "/partners/el-nino", "https://esportsteamtwente.nl/",
     ])
     for (const href of partners.map(one => one.href).filter(one => one.startsWith("/"))) {
       expect(router.resolve(href).matched.length).toBeGreaterThan(0)

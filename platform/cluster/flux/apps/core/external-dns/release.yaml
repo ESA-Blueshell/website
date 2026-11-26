@@ -8,7 +8,10 @@ spec:
   chart:
     spec:
       chart: external-dns
-      version: "1.22.0"
+      # 1.21.1 runs external-dns 0.21.0. 0.22.0 makes no records from any
+      # IngressRoute (#2635), so a newer chart waits until a release is shown
+      # to publish a route created after it starts.
+      version: "1.21.1"
       sourceRef:
         kind: HelmRepository
         name: external-dns
@@ -37,8 +40,7 @@ spec:
     remediation:
       retries: -1
   values:
-    # Chart 1.22.0 makes `policy` a required string rather than defaulting it,
-    # so the value the running release already passes is named here. Upsert-only
+    # Named, not defaulted: from chart 1.22.0 `policy` is required. Upsert-only
     # never deletes: apex records managed outside the cluster — old-VPS apex
     # A/AAAA, MX/SPF/DKIM — stay untouched even if a source disappears.
     policy: upsert-only

@@ -12,7 +12,7 @@ class CohortJobPayloadsTest {
         val written =
             listOf(
                 CohortJobs.CreateCohortTargetPayload(4L),
-                CohortJobs.SyncCohortMembershipPayload(1L, 4L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.CohortMemberPayload(1L, 4L),
                 CohortJobs.RemoveExternalMemberPayload(4L, "ext"),
                 CohortJobs.ReconcileListPayload(4L),
                 CohortJobs.MaterializeCohortTargetPayload(4L),
@@ -35,7 +35,7 @@ class CohortJobPayloadsTest {
         assertThat(json.readValue("""{"cohortId":4,"externalUserId":"x"}""", CohortJobs.RemoveExternalMemberPayload::class.java).targetId)
             .isEqualTo(4L)
         val sync = """{"userId":1,"cohortId":4,"intent":"ADD"}"""
-        assertThat(json.readValue(sync, CohortJobs.SyncCohortMembershipPayload::class.java).targetId)
+        assertThat(json.readValue(sync, CohortJobs.CohortMemberPayload::class.java).targetId)
             .isEqualTo(4L)
     }
 

@@ -49,8 +49,8 @@ class DriftResolutions(
                 .filter { it.userId in userIds && it.state in OURS_ONLY }
         oursOnly.forEach { row ->
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(row.userId!!, targetId, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(row.userId!!, targetId),
                 JobTrigger.SITE_ACTION,
             )
         }

@@ -1,0 +1,24 @@
+# Only the api (canary and primary) reaches the imaging service, which reaches nothing, DNS included.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: imaging
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["api", "api-primary"]
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress: []

@@ -89,7 +89,9 @@ vi.mock("@/plugins/handleNetworkError", () => ({
   $handleNetworkError: mockHandleNetworkError,
 }))
 
-vi.mock("@/services/api", () => ({
+// Partial, because the bar loads whole domains and each reads its sdk calls when it loads.
+vi.mock("@/services/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/api")>()),
   findUserById: mockFindUserById,
   twoFactorStanding: vi.fn(async () => ({data: null})),
   findCasualGames: vi.fn(async () => ({data: []})),
@@ -151,9 +153,12 @@ const managementDestinations = (wrapper: ReturnType<typeof mount>) =>
     .filter((to): to is string => Boolean(to?.startsWith("/management")))
 
 describe("App navbar behavior", () => {
-  // Two cases count a toast's time down on fake timers.
+  // Two cases count a toast's time down on fake timers. The matchMedia stub goes too: once
+  // mockReset empties it, the resize the setup file sends would reach Vuetify's breakpoints
+  // through a matchMedia that answers undefined.
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   beforeEach(() => {

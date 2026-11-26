@@ -156,7 +156,7 @@ class AccountSecurity(
         user.pendingEmail = address
         users.update(user)
         val token = tokenFactory.issue(user, TokenPurpose.EMAIL_CHANGE, EMAIL_CHANGE_TTL)
-        jobs.runAsync(AuthJobs.Recovery, AuthJobs.RecoveryPayload(userId, token, TokenPurpose.EMAIL_CHANGE), JobTrigger.SITE_ACTION)
+        jobs.runAsync(AuthJobs.EmailChange, AuthJobs.RecoveryPayload(userId, token), JobTrigger.SITE_ACTION)
         events.record(userId, SecurityEventKind.EMAIL_CHANGE_REQUESTED, note = address)
     }
 
@@ -315,8 +315,8 @@ class AccountSecurity(
     private fun sendReenrolmentLink(user: User) {
         val token = tokenFactory.issue(user, TokenPurpose.TWO_FACTOR_REENROLMENT, REENROLMENT_TTL)
         jobs.runAsync(
-            AuthJobs.Recovery,
-            AuthJobs.RecoveryPayload(requireNotNull(user.id), token, TokenPurpose.TWO_FACTOR_REENROLMENT),
+            AuthJobs.TwoFactorReenrolment,
+            AuthJobs.RecoveryPayload(requireNotNull(user.id), token),
             JobTrigger.SITE_ACTION,
         )
     }

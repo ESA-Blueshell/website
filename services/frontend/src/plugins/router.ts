@@ -219,13 +219,6 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "El Niño"},
   },
   {
-    path: "/partners/marketing-maatwerk",
-    name: "marketingmaatwerk",
-    component: () => import("@/pages/partners/Partner.vue"),
-    props: {slug: "marketing-maatwerk"},
-    meta: {title: "Marketing Maatwerk"},
-  },
-  {
     // Login / forgot-password / account-create render inside the full
     // site chrome by default: they're regular pages a logged-out user
     // navigates between. App.vue flips them to a bare layout only when
@@ -362,6 +355,18 @@ const routes: RouteRecordRaw[] = [
     name: "accountGames",
     component: () => import("@/pages/login/AccountGames.vue"),
     meta: {title: "Esports Teams", requiresAuth: true},
+  },
+  {
+    path: "/account/payment-details",
+    name: "accountPaymentDetails",
+    component: () => import("@/pages/login/PaymentDetails.vue"),
+    meta: {title: "Payment details", requiresAuth: true},
+  },
+  {
+    path: "/account/help",
+    name: "accountHelp",
+    component: () => import("@/pages/login/Help.vue"),
+    meta: {title: "Help", requiresAuth: true},
   },
   {
     path: "/account/create",

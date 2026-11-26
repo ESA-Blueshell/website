@@ -268,6 +268,12 @@ vault policy write backup /tmp/backup.hcl
 vault policy write backup-mail /tmp/backup-mail.hcl
 vault policy write backup-gatus /tmp/backup-gatus.hcl
 
+# Overwrites all of Vault, so only the restore OIDC role carries it, never an everyday admin token.
+cat <<'EOF' >/tmp/restore.hcl
+path "sys/storage/raft/snapshot-force" { capabilities = ["update", "sudo"] }
+EOF
+vault policy write restore /tmp/restore.hcl
+
 # What this script itself writes. Writing policies can grant any access, so only the bootstrap
 # Job's service account may hold it.
 cat <<'EOF' >/tmp/bootstrap.hcl
@@ -470,6 +476,20 @@ if vault kv get -field=auth.clients.vault.secret secret/api >/dev/null 2>&1; the
   "token_policies": "admin"
 }
 JSON
+    # scripts/restore.sh signs in with this role to put a backup back over production.
+    vault write auth/oidc/role/restore - <<'JSON'
+{
+  "bound_audiences": "vault",
+  "allowed_redirect_uris": "http://localhost:8250/oidc/callback",
+  "user_claim": "sub",
+  "groups_claim": "groups",
+  "oidc_scopes": "openid,profile,email,groups",
+  "bound_claims": {"roles": ["ADMIN"]},
+  "token_policies": "admin,restore",
+  "token_ttl": "2h",
+  "token_max_ttl": "2h"
+}
+JSON
   else
     echo "auth/oidc/config write failed (api OIDC discovery URL likely not"
     echo "reachable yet — fresh cluster, apps-stateless not Ready). Skipping"
@@ -479,7 +499,7 @@ JSON
   unset OIDC_CLIENT_SECRET
 else
   echo "secret/api:auth.clients.vault.secret not seeded yet; skipping OIDC auth method."
-  echo "Seed with: scripts/seed-vault-from-env.sh --apply <env-files...> (then re-run this Job via flux reconcile kustomization apps-data)."
+  echo "Seed it with platform/bootstrap/secrets.sh --only api, which runs this Job again."
 fi
 
 if [ "$signed_in" = true ]; then

@@ -3,8 +3,9 @@ import type {VueWrapper} from "@vue/test-utils"
 import JobDetail from "@/pages/management/JobDetail.vue"
 import {mountInApp, settle, unmountAll} from "../helpers"
 
-const {mockFindJob, mockRetry, mockStore, address} = vi.hoisted(() => ({
+const {mockFindJob, mockNameMentions, mockRetry, mockStore, address} = vi.hoisted(() => ({
   mockFindJob: vi.fn(),
+  mockNameMentions: vi.fn(),
   mockRetry: vi.fn(),
   mockStore: {commit: vi.fn(), getters: {isAdmin: true}},
   address: {route: {params: {id: "12"}}},
@@ -18,6 +19,11 @@ vi.mock("vue-router", async (importOriginal) => {
 })
 
 vi.mock("@/plugins/store", () => ({default: mockStore}))
+
+vi.mock("@/domains/discord", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/domains/discord")>()),
+  nameMentions: mockNameMentions,
+}))
 
 vi.mock("@/services/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/api")>()
@@ -139,6 +145,25 @@ describe("JobDetail page", () => {
     expect(wrapper.get('[data-testid="job-detail-folded-0"]').text()).toContain("Jane Doe (@jdoe)")
     expect(wrapper.get('[data-testid="job-detail-folded-1"]').text()).toContain("Also queued by (2)")
     expect(wrapper.get('[data-testid="job-detail-effect-link"]').attributes("href")).toBe("https://discord.com/channels/1/2/3")
+  })
+
+  it("says what a run counted, with the channels it read by name and the names it left", async () => {
+    mockNameMentions.mockResolvedValue((_kind: string, id: string) => ({said: id === "1001" ? "#general" : "#memes"}))
+    mockFindJob.mockResolvedValue({status: 200, data: {
+      ...failed, status: "SUCCESS", errorType: null, errorMessage: null, stackTrace: null, jobType: "discord.read-seen-emoji-pass",
+      report: [
+        {tally: "PLACES_READ", count: 2, channels: ["1001", "1002"], names: []},
+        {tally: "MESSAGES_READ", count: 1902, channels: [], names: []},
+        {tally: "SHORTCODES_LEFT", count: 1, channels: [], names: ["nope"]},
+      ],
+    }})
+    const wrapper = await mountDetail()
+    await settle()
+
+    expect(wrapper.get('[data-testid="job-report"]').text()).toBe("Read 2 channels · 1,902 messages · 1 shortcode left as text")
+    expect(wrapper.get('[data-testid="job-report-channels"]').text()).toBe("#general, #memes")
+    expect(wrapper.text()).toContain("1 shortcode left as text: :nope:")
+    expect(mockNameMentions).toHaveBeenCalledWith({users: [], roles: [], channels: ["1001", "1002"]})
   })
 
   it("says there is no such job when the api has none", async () => {

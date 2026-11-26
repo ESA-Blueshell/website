@@ -20,11 +20,11 @@ spec:
   # Matches the Deployment: a cold Spring Boot start on a fresh image pull.
   progressDeadlineSeconds: 900
   analysis:
-    # Blue/green, not weighted traffic shifting: iterations without stepWeight.
-    # Four 30s rounds of acceptance tests against api-canary before promotion.
-    interval: 30s
+    # Blue/green: iterations without stepWeight. Every phase waits for the next interval, so a
+    # short one is most of a fast release; the threshold keeps about 50s of tolerance.
+    interval: 10s
     iterations: 4
-    threshold: 3
+    threshold: 5
     metrics:
       - name: error-rate
         templateRef:
@@ -64,24 +64,23 @@ spec:
       - name: warm-the-canary
         type: pre-rollout
         url: http://flagger-loadtester.flagger-system/
-        timeout: 90s
-        metadata:
-          type: bash
-          cmd: >-
-            for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
-            hey -z 8s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
-            done
-
-      - name: read-only-load
-        type: rollout
-        url: http://flagger-loadtester.flagger-system/
-        # Six paths, so each run has to fit six times over inside the timeout.
         timeout: 60s
         metadata:
           type: bash
           cmd: >-
             for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
-            hey -z 3s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
+            hey -z 5s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
+            done
+
+      - name: read-only-load
+        type: rollout
+        url: http://flagger-loadtester.flagger-system/
+        timeout: 30s
+        metadata:
+          type: bash
+          cmd: >-
+            for p in /health /boards /esports/games /esports/teams /blogs /contributionPeriods/current; do
+            hey -z 2s -q 3 -c 2 -H 'X-Forwarded-Proto: https' "http://api-canary.default:8080${p}";
             done
 
       - name: canary-answers-http
@@ -96,8 +95,10 @@ spec:
 
       # The rendezvous: each side holds until the other is waiting on this gate or
       # past it. An image the other side has not promoted yet also holds: the
-      # api's first migrate call runs before Flagger leaves Succeeded. A failing
-      # gate parks rather than burning the threshold.
+      # api's first migrate call runs before Flagger leaves Succeeded. So does an
+      # older release on the other side, whose own image is not published yet; as
+      # versions rather than for equality, so rolling one side back is not held.
+      # A failing gate parks rather than burning the threshold.
       - name: wait-for-frontend
         type: confirm-promotion
         url: http://flagger-loadtester.flagger-system/
@@ -108,7 +109,12 @@ spec:
             phase=$(kubectl -n default get canary frontend -o jsonpath='{.status.phase}');
             want=$(kubectl -n default get deploy frontend -o jsonpath='{.spec.template.spec.containers[0].image}');
             have=$(kubectl -n default get deploy frontend-primary -o jsonpath='{.spec.template.spec.containers[0].image}');
-            echo "frontend=$phase canary=$want primary=$have";
+            mine=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}');
+            tag() { echo "${1%%@*}" | sed 's/.*://'; };
+            theirs=$(tag "$want"); ours=$(tag "$mine");
+            echo "frontend=$phase canary=$want primary=$have api=$ours";
+            if [ "$theirs" != "$ours" ] && [ "$(printf '%s\n%s\n' "$theirs" "$ours" | sort -V | head -1)" = "$theirs" ]; then
+            echo "frontend is still on $theirs, older than $ours: waiting for its image"; exit 1; fi;
             case "$phase" in
             Waiting|Progressing|Failed) exit 1;;
             WaitingPromotion|Promoting|Finalising) exit 0;;

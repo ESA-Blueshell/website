@@ -47,16 +47,16 @@ class CohortProviderTransactionBoundaryIT : UserTestSupport() {
     @Autowired private lateinit var objectMapper: ObjectMapper
 
     @Test
-    fun `membership-sync ADD calls the provider outside any transaction`() {
+    fun `adding a member calls the provider outside any transaction`() {
         val user = createUserWithRole(Role.MEMBER)
         val target = newTarget(newCohort())
         val contact = port.createContact(user.toContactData())
         externalIds.saveAndFlush(ExternalIdMapping(USER_AGGREGATE, user.id!!, TargetSystem.BREVO.name, contact.toString()))
         port.transactionActiveDuringCalls.clear()
 
-        handler(CohortJobs.SyncCohortMembership.type).runJob(
+        handler(CohortJobs.AddMember.type).runJob(
             objectMapper.writeValueAsString(
-                CohortJobs.SyncCohortMembershipPayload(user.id!!, target.id!!, SyncCohortMembershipIntent.ADD),
+                CohortJobs.CohortMemberPayload(user.id!!, target.id!!),
             ),
             executionId = null,
         )

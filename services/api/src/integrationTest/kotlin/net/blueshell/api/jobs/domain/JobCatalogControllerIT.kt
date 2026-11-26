@@ -29,7 +29,7 @@ class JobCatalogControllerIT : UserTestSupport() {
                 .perform(get("/management/jobs/types").with(signedIn(admin)))
                 .andExpect(status().isOk)
                 .andExpect(jsonPath("$[*].type").value(hasItem("contact.sync")))
-                .andExpect(jsonPath("$[*].type").value(hasItem("email.recovery")))
+                .andExpect(jsonPath("$[*].type").value(hasItem("email.password-reset")))
                 // The payload fields must actually be reflected, not empty: a
                 // CGLIB-proxied handler with a final payloadType getter regressed
                 // this to [] for every type.

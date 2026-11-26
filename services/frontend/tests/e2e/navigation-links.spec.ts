@@ -105,7 +105,6 @@ test.describe("navbar route integrity", () => {
       "/blogs",
       "/partners/become-a-partner",
       "/partners/el-nino",
-      "/partners/marketing-maatwerk",
       "/esports/geoguessr",
       "/esports/trackmania",
       "/events/circuitShowdown",

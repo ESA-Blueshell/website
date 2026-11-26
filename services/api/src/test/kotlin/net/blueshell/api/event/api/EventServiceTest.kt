@@ -3,11 +3,13 @@ package net.blueshell.api.event.api
 import jakarta.persistence.EntityManager
 import net.blueshell.api.event.domain.EventNotFoundException
 import net.blueshell.api.event.persistence.Event
+import net.blueshell.api.event.persistence.EventDescription
 import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.shared.tracking.Actor
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -118,5 +120,18 @@ class EventServiceTest {
         val service = EventService(repository, mock(), mock(), mock(), mock(), mock())
 
         assertThat(service.idsEndingFrom(from)).containsExactly(3L)
+    }
+
+    @Test
+    fun `reads the descriptions that could hold a shortcode by event id`() {
+        val held =
+            object : EventDescription {
+                override val id = 3L
+                override val description = "Carve :pumpkin:"
+            }
+        val repository: EventRepository = mock { on { findDescriptionsWithColons() } doReturn listOf(held) }
+        val service = EventService(repository, mock(), mock(), mock(), mock(), mock())
+
+        assertThat(service.descriptionsWithColons()).containsExactly(entry(3L, "Carve :pumpkin:"))
     }
 }

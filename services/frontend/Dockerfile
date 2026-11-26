@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.27
 
-FROM node:26.10.0-bookworm-slim@sha256:662933cf47f013bc8e4beb31a6116448427a82057ba7c42c97e4c5ba766504c2 AS deps
+FROM node:26.10.0-bookworm-slim@sha256:3ffc19ea878019d9e9ae8971732ad4a03cda44f167107173174b60ed7c65bed3 AS deps
 WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc.yml ./
@@ -23,7 +23,7 @@ ENV NODE_ENV=production
 ARG APP_VERSION=""
 RUN yarn build
 
-FROM nginxinc/nginx-unprivileged:stable-alpine@sha256:442753882674b49ae2c1de83ed67896131c0777f56df5005e356e62bc3f7e7ce AS runtime
+FROM nginx/nginx-unprivileged:stable-alpine@sha256:0c53a1f2890c3526bfd201440f0fd3970e5b78f80630f58284aad0d34b5ec7bd AS runtime
 
 # Shipped as a template, not as conf.d/default.conf: the image entrypoint runs
 # envsubst over /etc/nginx/templates and writes the result into conf.d. That is

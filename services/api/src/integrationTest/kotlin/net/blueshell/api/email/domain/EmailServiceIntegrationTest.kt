@@ -1,7 +1,7 @@
 package net.blueshell.api.email.domain
 
 import net.blueshell.api.auth.domain.AuthJobs
-import net.blueshell.api.auth.domain.RecoveryEmailJob
+import net.blueshell.api.auth.domain.RecoveryEmailHandler
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
@@ -36,7 +36,7 @@ import java.time.temporal.ChronoUnit
  */
 class EmailServiceIntegrationTest : ServiceTestSupport() {
     @Autowired
-    private lateinit var recoveryEmailJob: RecoveryEmailJob
+    private lateinit var recoveryEmailJobs: List<RecoveryEmailHandler>
 
     @Autowired
     private lateinit var eventSignupEmailJob: EventSignupEmailJob
@@ -62,7 +62,9 @@ class EmailServiceIntegrationTest : ServiceTestSupport() {
         userId: Long,
         token: String,
         purpose: TokenPurpose,
-    ) = recoveryEmailJob.runJob(objectMapper.writeValueAsString(AuthJobs.RecoveryPayload(userId, token, purpose)))
+    ) = recoveryEmailJobs
+        .single { it.jobType == AuthJobs.recoveryEmailFor(purpose).type }
+        .runJob(objectMapper.writeValueAsString(AuthJobs.RecoveryPayload(userId, token)))
 
     private fun sendContributionReminder(reminderId: Long) =
         contributionReminderEmailJob.runJob(

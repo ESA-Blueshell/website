@@ -20,11 +20,15 @@ import {
   statusTitle,
   successRate,
   titleCase,
+  countLabel,
   effectLabel,
   foldedTriggerLabel,
+  reportChannels,
+  reportLabel,
+  reportNames,
   triggerLabel,
 } from "@/domains/jobs"
-import {ActionActorType, JobEffect, JobExecutionCategory, JobExecutionStatus, JobTrigger} from "@/services/api"
+import {ActionActorType, JobEffect, JobExecutionCategory, JobExecutionStatus, JobTally, JobTrigger} from "@/services/api"
 
 const job = (fields: Partial<Job>): Job => fields as Job
 
@@ -58,6 +62,46 @@ describe("job reading", () => {
     expect(effectLabel(job({jobType: "discord.event", effect: JobEffect.MADE}))).toBe("Put up the Discord event")
     expect(effectLabel(job({jobType: "contact.sync", effect: JobEffect.EDITED}))).toBe("Edited what it keeps")
     expect(effectLabel(job({jobType: "discord.post"}))).toBe("")
+  })
+
+  it("puts what a run counted in words, one and many alike", () => {
+    expect(countLabel({tally: JobTally.PLACES_READ, count: 1, channels: ["1"], names: []})).toBe("Read 1 channel")
+    expect(countLabel({tally: JobTally.MESSAGES_READ, count: 1, channels: [], names: []})).toBe("1 message")
+    expect(countLabel({tally: JobTally.MESSAGES_READ, count: 12345, channels: [], names: []})).toBe("12,345 messages")
+    expect(countLabel({tally: JobTally.EMOJI_SEEN, count: 0, channels: [], names: []})).toBe("0 emoji found")
+    expect(countLabel({tally: JobTally.PLACES_LEFT, count: 3, channels: [], names: []})).toBe("3 channels left")
+    expect(countLabel({tally: JobTally.SHORTCODES_RESOLVED, count: 1, channels: [], names: []})).toBe("Wrote 1 shortcode as emoji")
+    expect(countLabel({tally: JobTally.SHORTCODES_RESOLVED, count: 2, channels: [], names: []})).toBe("Wrote 2 shortcodes as emoji")
+    expect(countLabel({tally: JobTally.SHORTCODES_LEFT, count: 1, channels: [], names: []})).toBe("1 shortcode left as text")
+    expect(countLabel({tally: JobTally.SHORTCODES_LEFT, count: 4, channels: [], names: []})).toBe("4 shortcodes left as text")
+    expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 1, channels: [], names: []})).toBe("Queued 1 event")
+    expect(countLabel({tally: JobTally.EVENTS_QUEUED, count: 12, channels: [], names: []})).toBe("Queued 12 events")
+    const said = (tally: JobTally, count: number) => countLabel({tally, count, channels: [], names: []})
+    expect([said(JobTally.USERS_QUEUED, 1), said(JobTally.USERS_QUEUED, 40)]).toEqual(["Queued 1 member", "Queued 40 members"])
+    expect([said(JobTally.COHORTS_RECOMPUTED, 1), said(JobTally.COHORTS_RECOMPUTED, 5)]).toEqual(["Recomputed 1 cohort", "Recomputed 5 cohorts"])
+    expect(said(JobTally.COHORTS_FAILED, 1)).toBe("1 could not be recomputed")
+    expect([said(JobTally.VALUES_SEALED, 1), said(JobTally.VALUES_SEALED, 3)]).toEqual(["Sealed 1 address", "Sealed 3 addresses"])
+    expect([said(JobTally.VALUES_REWRAPPED, 1), said(JobTally.VALUES_REWRAPPED, 2)])
+      .toEqual(["Moved 1 sealed value to the newest key", "Moved 2 sealed values to the newest key"])
+  })
+
+  it("lists the names a report holds as shortcodes, under the count that names them", () => {
+    expect(reportNames(job({report: [
+      {tally: JobTally.SHORTCODES_RESOLVED, count: 2, channels: [], names: ["datboythinK", "smile"]},
+      {tally: JobTally.SHORTCODES_LEFT, count: 0, channels: [], names: []},
+    ]}))).toEqual([{label: "Wrote 2 shortcodes as emoji", names: ":datboythinK: :smile:"}])
+    expect(reportNames(job({}))).toEqual([])
+  })
+
+  it("reads a run's report as one line, naming each channel once", () => {
+    const reported = job({report: [
+      {tally: JobTally.PLACES_READ, count: 2, channels: ["1", "2"], names: []},
+      {tally: JobTally.PLACES_LEFT, count: 1, channels: ["2"], names: []},
+    ]})
+    expect(reportLabel(reported)).toBe("Read 2 channels · 1 channel left")
+    expect(reportChannels(reported)).toEqual(["1", "2"])
+    expect(reportLabel(job({}))).toBe("")
+    expect(reportChannels(job({}))).toEqual([])
   })
 
   it("titles a status and a snake-cased type", () => {

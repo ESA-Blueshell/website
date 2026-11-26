@@ -281,8 +281,8 @@ class CohortRemediationService(
                 if (strategy.makesMemberIds) strategy.makeMemberId(row.userId!!)
             } else if (extId !in remoteExtIds) {
                 jobs.runAsync(
-                    CohortJobs.SyncCohortMembership,
-                    CohortJobs.SyncCohortMembershipPayload(row.userId!!, plan.targetId, SyncCohortMembershipIntent.ADD),
+                    CohortJobs.AddMember,
+                    CohortJobs.CohortMemberPayload(row.userId!!, plan.targetId),
                     JobTrigger.ANOTHER_JOB,
                 )
             }

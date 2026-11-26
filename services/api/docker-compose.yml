@@ -85,6 +85,8 @@ services:
       - EMAIL_SENDING_INTERNAL_HOSTS=stalwart,mail.dev.local
       - VALKEY_HOST=valkey
       - VALKEY_PORT=6379
+      # Uploaded pictures are converted by the imaging service, as in production.
+      - IMAGING_URL=http://imaging:8080
     depends_on:
       db:
         condition: service_healthy

@@ -1,11 +1,15 @@
 package net.blueshell.api.sync.domain
 
 import net.blueshell.api.event.api.EventService
+import net.blueshell.api.jobs.api.JobOutcome
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobQueue
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.sync.api.ExternalIdMappingService
 import net.blueshell.api.sync.persistence.ExternalIdMapping
 import net.blueshell.api.testsupport.runJob
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -47,7 +51,9 @@ class CalendarSweepTest {
         whenever(mappings.findBatch("EVENT", listOf(1L, 2L), "GOOGLE_CALENDAR"))
             .thenReturn(listOf(ExternalIdMapping("EVENT", 1L, "GOOGLE_CALENDAR", "g1")))
 
-        sweep.runJob(objectMapper.writeValueAsString(CalendarJobs.SyncUnsyncedEventsPayload()))
+        val outcome = sweep.runJob(objectMapper.writeValueAsString(CalendarJobs.SyncUnsyncedEventsPayload())) as JobOutcome.Done
+
+        assertThat(outcome.counts).containsExactly(JobCount(JobTally.EVENTS_QUEUED, 1))
 
         verify(jobs).runAsync(
             eq(CalendarJobs.SyncCalendarEvent),

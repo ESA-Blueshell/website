@@ -15,7 +15,7 @@ import ManagementRow from "@/components/management/ManagementRow.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import MiniButton from "@/components/management/MiniButton.vue"
 import {loadJob, loadJobPage, loadJobStats, retryJob} from "@/domains/jobs"
-import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, payloadChips, previewActorDisplay, previewTitle, retryLabel, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
+import {type Job, type JobStats, JobExecutionCategory, JobExecutionStatus, canRetry, categoryOptions as jobCategoryOptions, effectLabel, errorSummary, payloadChips, previewActorDisplay, previewTitle, reportLabel, retryLabel, statusOptions as jobStatusOptions, statusTitle, successRate as rateOf, titleCase, triggerLabel} from "@/domains/jobs"
 import {usePagedTable, type PageQuery} from "@/composables/usePagedTable"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
@@ -315,6 +315,11 @@ onMounted(async () => {
           class="mg-sub"
           :data-testid="`job-row-effect-${row.id}`"
         >{{ effectLabel(row) }}</span>
+        <span
+          v-if="reportLabel(row)"
+          class="mg-sub"
+          :data-testid="`job-row-report-${row.id}`"
+        >{{ reportLabel(row) }}</span>
       </template>
       <template #by="{row}">
         <span :data-testid="`job-row-trigger-${row.id}`">{{ startedBy(row) }}</span>

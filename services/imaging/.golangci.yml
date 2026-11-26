@@ -1,0 +1,41 @@
+version: "2"
+
+run:
+  build-tags:
+    - integration
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - perfsprint
+    - revive
+    - testifylint
+    - unconvert
+    - unparam
+    - usestdlibvars
+  settings:
+    gosec:
+      excludes:
+        # G103: handing a slice to libwebp is what cgo is for.
+        - G103
+  exclusions:
+    rules:
+      # gocritic reads cgo's rewrite.
+      - path: internal/libwebp/libwebp\.go
+        linters: [gocritic]
+      - path: _test\.go
+        text: "G204|G304"
+        linters: [gosec]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -5,9 +5,9 @@ import net.blueshell.api.shared.job.JobDefinition
 /**
  * A picture's own widths, derived away from whatever asked for them.
  *
- * Only an animation is queued. A still costs one converter run per width and is written where
- * it was asked for; an animation costs one per frame per width, which is not something a start
- * or a request should wait on.
+ * Only an animation is queued. A still costs one conversion per width and is written where it
+ * was asked for; an animation costs a decode and an encode per frame per width, which is not
+ * something a start or a request should wait on.
  */
 object ImageJobs {
     object DeriveRenditions : JobDefinition<DeriveRenditionsPayload> {

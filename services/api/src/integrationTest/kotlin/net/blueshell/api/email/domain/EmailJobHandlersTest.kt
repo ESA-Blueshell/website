@@ -1,7 +1,7 @@
 package net.blueshell.api.email.domain
 
 import net.blueshell.api.auth.domain.AuthJobs
-import net.blueshell.api.auth.domain.RecoveryEmailJob
+import net.blueshell.api.auth.domain.RecoveryEmailHandler
 import net.blueshell.api.committee.persistence.Committee
 import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.contribution.domain.ContributionReminderEmailJob
@@ -14,7 +14,6 @@ import net.blueshell.api.event.persistence.EventSignUp
 import net.blueshell.api.event.persistence.Guest
 import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.shared.enums.Role
-import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.testsupport.ServiceTestSupport
 import net.blueshell.api.testsupport.runJob
 import net.blueshell.api.user.persistence.User
@@ -36,7 +35,9 @@ import java.time.temporal.ChronoUnit
  */
 class EmailJobHandlersTest : ServiceTestSupport() {
     @Autowired
-    private lateinit var recoveryEmailJob: RecoveryEmailJob
+    private lateinit var recoveryEmailJobs: List<RecoveryEmailHandler>
+
+    private fun recoveryEmailJob(email: AuthJobs.RecoveryEmail) = recoveryEmailJobs.single { it.jobType == email.type }
 
     @Autowired
     private lateinit var eventSignupEmailJob: EventSignupEmailJob
@@ -59,7 +60,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     }
 
     @Nested
-    inner class RecoveryEmailJobTest {
+    inner class RecoveryEmailHandlerTest {
         @Test
         fun `processes password reset job and sends email`() {
             val user = createAndSaveUser("john.doe", "john@example.com")
@@ -67,11 +68,10 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "reset-token-123",
-                    tokenPurpose = TokenPurpose.PASSWORD_RESET,
                 )
-            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.PasswordReset.type, payload)
 
-            recoveryEmailJob.runJob(jobExecution.payload)
+            recoveryEmailJob(AuthJobs.PasswordReset).runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -86,11 +86,10 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "activation-token-456",
-                    tokenPurpose = TokenPurpose.USER_ACTIVATION,
                 )
-            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.AccountActivation.type, payload)
 
-            recoveryEmailJob.runJob(jobExecution.payload)
+            recoveryEmailJob(AuthJobs.AccountActivation).runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -104,11 +103,10 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 AuthJobs.RecoveryPayload(
                     userId = user.id!!,
                     token = "member-token-789",
-                    tokenPurpose = TokenPurpose.MEMBER_ACTIVATION,
                 )
-            val jobExecution = createJobExecution(AuthJobs.Recovery.type, payload)
+            val jobExecution = createJobExecution(AuthJobs.MemberActivation.type, payload)
 
-            recoveryEmailJob.runJob(jobExecution.payload)
+            recoveryEmailJob(AuthJobs.MemberActivation).runJob(jobExecution.payload)
 
             val emails = emailClient.sentEmails
             assertThat(emails).hasSize(1)
@@ -116,8 +114,8 @@ class EmailJobHandlersTest : ServiceTestSupport() {
         }
 
         @Test
-        fun `job type matches Recovery type`() {
-            assertThat(recoveryEmailJob.jobType).isEqualTo(AuthJobs.Recovery.type)
+        fun `there is one job for each email a link goes out in`() {
+            assertThat(recoveryEmailJobs.map { it.jobType }).containsExactlyInAnyOrderElementsOf(AuthJobs.recoveryEmails.map { it.type })
         }
     }
 
@@ -176,7 +174,7 @@ class EmailJobHandlersTest : ServiceTestSupport() {
     @Nested
     inner class JobPayloadParsing {
         @Test
-        fun `RecoveryEmailJob parses JSON payload correctly`() {
+        fun `RecoveryEmailHandler parses JSON payload correctly, reading past a tokenPurpose an older row holds`() {
             val user = createAndSaveUser("parse.test", "parse@example.com")
             val payloadJson =
                 """
@@ -188,12 +186,12 @@ class EmailJobHandlersTest : ServiceTestSupport() {
                 """.trimIndent()
             val jobExecution =
                 JobExecution().apply {
-                    this.jobType = AuthJobs.Recovery.type
+                    this.jobType = AuthJobs.PasswordReset.type
                     this.payload = payloadJson
                 }
             persist(jobExecution)
 
-            recoveryEmailJob.runJob(jobExecution.payload)
+            recoveryEmailJob(AuthJobs.PasswordReset).runJob(jobExecution.payload)
 
             assertThat(emailClient.sentEmails).hasSize(1)
         }

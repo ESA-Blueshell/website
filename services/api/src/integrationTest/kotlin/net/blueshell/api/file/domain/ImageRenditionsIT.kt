@@ -12,6 +12,7 @@ import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.AnimatedGifs
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.testsupport.WebpFrames
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
@@ -27,7 +28,6 @@ import java.awt.image.BufferedImage
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
 /**
@@ -51,12 +51,6 @@ class ImageRenditionsIT : UserTestSupport() {
 
     @Autowired
     private lateinit var imageRenditions: ImageRenditions
-
-    @Autowired
-    private lateinit var webpEncoder: WebpEncoder
-
-    @Autowired
-    private lateinit var scratch: ScratchSpace
 
     @Autowired
     private lateinit var blobs: BlobStore
@@ -101,32 +95,8 @@ class ImageRenditionsIT : UserTestSupport() {
         return mapper.readTree(result.response.contentAsString)["path"].asString()
     }
 
-    /** What a browser would get back, decoded, so a width that lies about itself fails here. */
-    private fun servedWidth(url: String): Int {
-        val bytes =
-            mvc
-                .perform(get(url))
-                .andExpect(status().isOk)
-                .andReturn()
-                .response.contentAsByteArray
-        val webp = Files.createTempFile("rendition-served-", ".webp")
-        val png = Files.createTempFile("rendition-served-", ".png")
-        try {
-            Files.write(webp, bytes)
-            val process =
-                ProcessBuilder(listOf("dwebp", "-quiet", webp.toString(), "-o", png.toString()))
-                    .redirectErrorStream(true)
-                    .start()
-            val finished = process.waitFor(10, TimeUnit.SECONDS)
-            val output = process.inputStream.bufferedReader().readText()
-            assertThat(finished).describedAs(output).isTrue()
-            assertThat(process.exitValue()).describedAs(output).isEqualTo(0)
-            return (ImageIO.read(png.toFile()) ?: throw AssertionError("dwebp produced a file ImageIO could not read")).width
-        } finally {
-            Files.deleteIfExists(webp)
-            Files.deleteIfExists(png)
-        }
-    }
+    /** The width a browser would be told, read from the served header, so a width that lies about itself fails here. */
+    private fun servedWidth(url: String): Int = WebpDimensions.of(served(url))?.width ?: throw AssertionError("$url is not a WebP")
 
     private fun widthsOf(path: String): List<Int> =
         fileRepository
@@ -228,19 +198,17 @@ class ImageRenditionsIT : UserTestSupport() {
         val path = uploadGif(AnimatedGifs.patched(1000, 400))
         val source = fileRepository.findByPath(path).orElseThrow()
 
-        assertThat(storedAnimation(source.path)?.durationsMillis).containsExactly(120, 80, 200, 40)
+        assertThat(storedDurations(source.path)).containsExactly(120, 80, 200, 40)
 
         renditions.derive(source)
 
         // 1280 and up are wider than the picture, and nothing is upscaled.
         assertThat(widthsOf(path)).containsExactly(160, 320, 480, 640, 960)
         fileRepository.findByPath(path).orElseThrow().renditions.forEach { copy ->
-            // Read from the served container rather than decoded: `dwebp` refuses an animation
-            // outright, which is the whole reason a width of one is assembled frame by frame.
             val served = served(PublicFileUrls.of(copy))
             assertThat(WebpDimensions.isAnimated(served)).describedAs("%s moves", copy.path).isTrue()
             assertThat(WebpDimensions.of(served)?.width).isEqualTo(copy.renditionWidth)
-            assertThat(storedAnimation(copy.path)?.durationsMillis)
+            assertThat(storedDurations(copy.path))
                 .describedAs("the frames of %s", copy.path)
                 .containsExactly(120, 80, 200, 40)
         }
@@ -272,7 +240,7 @@ class ImageRenditionsIT : UserTestSupport() {
         val source = fileRepository.findByPath(path).orElseThrow()
 
         assertThat(source.mediaType).isEqualTo("image/webp")
-        assertThat(storedAnimation(source.path)).isNull()
+        assertThat(storedDurations(source.path)).isNull()
 
         renditions.derive(source)
 
@@ -330,8 +298,8 @@ class ImageRenditionsIT : UserTestSupport() {
         )
     }
 
-    /** What the stored bytes at [key] say about their own frames, or nothing where they are a still. */
-    private fun storedAnimation(key: String): WebpAnimation? = scratch.hold(blobs.open(key)).use(webpEncoder::animationOf)
+    /** How long each frame stored at [key] is shown, or nothing where it is a still. */
+    private fun storedDurations(key: String): List<Int>? = blobs.open(key).use { WebpFrames.durationsOf(it.readAllBytes()) }
 
     private fun uploadGif(bytes: ByteArray): String {
         val admin = createUserWithRole(Role.ADMIN)

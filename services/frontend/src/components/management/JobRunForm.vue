@@ -4,6 +4,7 @@
 import {computed, nextTick, onMounted, ref, watch} from "vue"
 import {$handleNetworkError} from "@/plugins/handleNetworkError"
 import {enqueueJob, type JobPayloadField, type JobTypeDescriptor, listJobTypes} from "@/domains/jobs"
+import CheckBox from "@/components/island/CheckBox.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import FormField from "@/components/island/FormField.vue"
 import NoticeBox from "@/components/island/NoticeBox.vue"
@@ -54,6 +55,7 @@ const selectedDescription = computed<string>(() =>
 const NUMERIC_TYPES = new Set(["Long", "Int", "Integer", "Short", "Double", "Float", "BigDecimal", "BigInteger"])
 const isNumeric = (field: JobPayloadField): boolean => NUMERIC_TYPES.has(field.type)
 const isEnum = (field: JobPayloadField): boolean => field.kind === "ENUM"
+const isBoolean = (field: JobPayloadField): boolean => field.type === "Boolean"
 
 const numberValue = (name: string): number | undefined => {
   const v = fieldValues.value[name]
@@ -81,7 +83,7 @@ const pickerForField = (field: JobPayloadField): PickerKind => {
 const blank = (value: unknown): boolean => value == null || (typeof value === "string" && value.trim() === "")
 
 const requiredMissing = computed<boolean>(() =>
-  (selectedDescriptor.value?.payloadFields ?? []).some((field) => field.required && blank(fieldValues.value[field.name])),
+  (selectedDescriptor.value?.payloadFields ?? []).some((field) => field.required && !isBoolean(field) && blank(fieldValues.value[field.name])),
 )
 
 const loadTypes = async () => {
@@ -97,7 +99,7 @@ const loadTypes = async () => {
 
 /** A text field holds what was typed, so a preset's number or flag goes in as its text. */
 const presetValue = (field: JobPayloadField, value: unknown): unknown =>
-  pickerForField(field) !== null || isEnum(field) ? value : String(value)
+  pickerForField(field) !== null || isEnum(field) || isBoolean(field) ? value : String(value)
 
 const applyPreset = async (next: JobPreset | null) => {
   if (!next) return
@@ -125,16 +127,17 @@ watch(selectedType, () => {
 
 /** What a field sends: a picker's value as it is, typed text as the field's own type. */
 const sent = (field: JobPayloadField, value: unknown): unknown => {
+  if (isBoolean(field)) return value === true
   if (typeof value !== "string") return value
   const typed = value.trim()
-  if (field.type === "Boolean") return typed.toLowerCase() === "true"
   return isNumeric(field) ? Number(typed) : typed
 }
 
 const buildPayload = (): Record<string, unknown> =>
   Object.fromEntries(
     (selectedDescriptor.value?.payloadFields ?? [])
-      .filter((field) => !blank(fieldValues.value[field.name]))
+      // A switch always sends its yes or no, so a flag left off still says false.
+      .filter((field) => isBoolean(field) || !blank(fieldValues.value[field.name]))
       .map((field) => [field.name, sent(field, fieldValues.value[field.name])]),
   )
 
@@ -229,6 +232,13 @@ const submit = async () => {
           :required="field.required"
           :values="field.enumValues ?? []"
           @update:model-value="fieldValues[field.name] = $event"
+        />
+        <check-box
+          v-else-if="isBoolean(field)"
+          :label="humanizeJobType(field.name)"
+          :model-value="fieldValues[field.name] === true"
+          :testid="`job-run-field-${field.name}`"
+          @update:model-value="fieldValues[field.name] = $event === true"
         />
         <form-field
           v-else

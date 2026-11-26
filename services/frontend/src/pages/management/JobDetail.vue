@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import {computed, ref, watch} from "vue"
 import {useRoute} from "vue-router"
+import JobReportChannels from "@/components/common/panels/JobReportChannels.vue"
 import CutButton from "@/components/island/CutButton.vue"
 import ListHead from "@/components/management/ListHead.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import PairList from "@/components/management/PairList.vue"
-import {type Job, canRetry, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewTitle, readJob, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
+import {type Job, canRetry, effectLabel, errorSummary, foldedTriggerLabel, hasStackTrace, jobDescription, payloadChips, previewTitle, readJob, relatedEntityLabel, relatedEntityLink, relatedEntityTypeLabel, reportChannels, reportLabel, reportNames, retryJob, retryLabel, stackTrace, statusTitle, titleCase, triggerLabel, actorDisplay} from "@/domains/jobs"
 import store from "@/plugins/store"
 import {attemptsLabel} from "@/utils/jobAttempts"
 import {formatDate} from "@/utils/timestamps"
@@ -176,6 +177,30 @@ watch(id, load, {immediate: true})
           rel="noopener"
           target="_blank"
         >Open in Discord</a>
+      </p>
+    </template>
+
+    <template v-if="reportLabel(job)">
+      <list-head title="What it did" />
+      <p
+        class="job-detail__line"
+        data-testid="job-report"
+      >
+        {{ reportLabel(job) }}
+      </p>
+      <p
+        v-if="reportChannels(job).length"
+        class="job-detail__line"
+      >
+        Channels read:
+        <job-report-channels :channels="reportChannels(job)" />
+      </p>
+      <p
+        v-for="named in reportNames(job)"
+        :key="named.label"
+        class="job-detail__line"
+      >
+        {{ named.label }}: {{ named.names }}
       </p>
     </template>
 

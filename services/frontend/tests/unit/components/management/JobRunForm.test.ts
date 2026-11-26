@@ -115,12 +115,26 @@ describe("JobRunForm", () => {
     const wrapper = await mountForm({type: "cohort.reconcile", payload: {targetId: 4, limit: 20, dryRun: true, intent: "ADD", stray: 1}})
 
     expect((wrapper.vm as any).selectedType).toBe("cohort.reconcile")
-    // Pickers keep the id or enum value; text fields hold what would have been typed.
-    expect((wrapper.vm as any).fieldValues).toEqual({targetId: 4, limit: "20", dryRun: "true", intent: "ADD"})
+    // Pickers keep the id or enum value, a switch its yes or no; text fields hold what would have been typed.
+    expect((wrapper.vm as any).fieldValues).toEqual({targetId: 4, limit: "20", dryRun: true, intent: "ADD"})
     expect(mockEnqueueJob).not.toHaveBeenCalled()
 
     await (wrapper.vm as any).submit()
     expect(mockEnqueueJob).toHaveBeenCalledWith("cohort.reconcile", {targetId: 4, limit: 20, dryRun: true, intent: "ADD"})
+  })
+
+  it("draws a yes/no field as a switch that always sends its answer, and never holds the job for it", async () => {
+    const wrapper = await mountForm({type: "cohort.reconcile", payload: {targetId: 4, intent: "ADD"}})
+
+    const flag = wrapper.findComponent({name: "CheckBox"})
+    expect(flag.props("modelValue")).toBe(false)
+    expect((wrapper.vm as any).requiredMissing).toBe(false)
+    await (wrapper.vm as any).submit()
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("cohort.reconcile", {targetId: 4, intent: "ADD", dryRun: false})
+
+    await flag.vm.$emit("update:modelValue", true)
+    await (wrapper.vm as any).submit()
+    expect(mockEnqueueJob).toHaveBeenLastCalledWith("cohort.reconcile", {targetId: 4, intent: "ADD", dryRun: true})
   })
 
   it("takes a later preset in place of the fields it had", async () => {

@@ -2786,6 +2786,12 @@ components:
       - id
       - name
       type: object
+    DiscordEmojiKind:
+      enum:
+      - SERVER
+      - APPLICATION
+      - SEEN
+      type: string
     DiscordEmojiResponse:
       description: A picture uploaded to the Discord server, which a description writes as <:name:id>
       properties:
@@ -2794,11 +2800,21 @@ components:
           type: boolean
         id:
           type: string
+        kind:
+          $ref: '#/components/schemas/DiscordEmojiKind'
+          description: Uploaded to the server or to the bot's Discord application, or seen used in the server
         name:
           type: string
+        uses:
+          description: How many messages in the server used a seen emoji; null for the others
+          format: int64
+          type:
+          - integer
+          - 'null'
       required:
       - animated
       - id
+      - kind
       - name
       type: object
     DiscordLiveResponse:
@@ -4549,6 +4565,27 @@ components:
       - MANDATE_RECORDED
       - ON_INCASSO_WITHOUT_BANK_DETAILS
       type: string
+    JobCount:
+      properties:
+        channels:
+          items:
+            type: string
+          type: array
+        count:
+          format: int64
+          type: integer
+        names:
+          items:
+            type: string
+          type: array
+        tally:
+          $ref: '#/components/schemas/JobTally'
+      required:
+      - channels
+      - count
+      - names
+      - tally
+      type: object
     JobEffect:
       enum:
       - MADE
@@ -4666,6 +4703,10 @@ components:
           items:
             $ref: '#/components/schemas/JobExecutionRelatedEntity'
           type: array
+        report:
+          items:
+            $ref: '#/components/schemas/JobCount'
+          type: array
         skipReason:
           type:
           - string
@@ -4702,6 +4743,7 @@ components:
       - forced
       - jobType
       - relatedEntities
+      - report
       - status
       type: object
     JobExecutionCategory:
@@ -4835,6 +4877,21 @@ components:
       - successCount
       - totalCount
       type: object
+    JobTally:
+      enum:
+      - PLACES_READ
+      - MESSAGES_READ
+      - EMOJI_SEEN
+      - PLACES_LEFT
+      - SHORTCODES_RESOLVED
+      - SHORTCODES_LEFT
+      - EVENTS_QUEUED
+      - USERS_QUEUED
+      - COHORTS_RECOMPUTED
+      - COHORTS_FAILED
+      - VALUES_SEALED
+      - VALUES_REWRAPPED
+      type: string
     JobTrigger:
       enum:
       - EVENT_CREATED
@@ -16240,7 +16297,7 @@ paths:
           description: Server error
         '503':
           description: The bot is not set up, or Discord did not answer
-      summary: The Discord server's own emoji, by name
+      summary: The Discord server's own emoji, the bot's application emoji and the emoji seen used in the server, by name
       tags:
       - Discord
   /discord/game-channels:

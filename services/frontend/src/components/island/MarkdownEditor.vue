@@ -6,9 +6,8 @@ import {Compartment, EditorState} from "@codemirror/state"
 import {drawSelection, EditorView, placeholder as showPlaceholder} from "@codemirror/view"
 import {markdownEditing, replaceFromOutside} from "@/components/island/markdownEditing"
 import {CODE_FONT} from "@/components/island/markdownLive"
-import {loadDiscordEmoji, loadServerEmoji} from "@/components/island/discordEmoji"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
-import {emojiCompletion, emojiOption} from "@/components/island/markdownEmoji"
+import {emojiCompletion, emojiOnArrival, emojiOption, outsideEmoji} from "@/components/island/markdownEmoji"
 import {channelCompletion, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
 import {DESCRIPTION_CAP} from "@/plugins/descriptions"
 import {TIME_STYLES, timestampText, type TimeStyle} from "@/plugins/discordTime"
@@ -165,13 +164,14 @@ const dress = EditorView.theme({
     borderRadius: "3px",
     backgroundColor: "color-mix(in oklab, var(--color-chalk) 10%, transparent)",
   },
-  // Drawn at the size the page draws an emoji in a line of text.
+  // Drawn at the size the page draws an emoji in a line of text, a wide one kept to its shape.
   ".cm-emoji": {
     display: "inline-block",
     width: "1.375em",
     height: "1.375em",
     margin: "0 0.05em",
     verticalAlign: "-0.3em",
+    objectFit: "contain",
   },
   ".cm-quote": {
     borderLeft: "4px solid color-mix(in oklab, var(--color-chalk) 30%, transparent)",
@@ -195,9 +195,10 @@ const dress = EditorView.theme({
   ".cm-scroller": {fontFamily: "inherit"},
 })
 
-/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits.
-   A change that does not lengthen the text always goes through, so text over the cap can be
-   cut down. */
+/* Held at the cap while it is typed, as a textarea's maxlength holds it: a paste keeps what fits,
+   never half of a character or of a custom emoji. A completion, a picked suggestion or a closing
+   colon, goes in whole or not at all, since part of `<:name:id>` names nothing. A change that does
+   not lengthen the text always goes through, so text over the cap can be cut down. */
 const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   if (!tr.docChanged || tr.newDoc.length <= Math.max(cap, tr.startState.doc.length)) return tr
   const spans: {from: number, to: number, insert: string}[] = []
@@ -208,13 +209,13 @@ const capped = (cap: number) => EditorState.transactionFilter.of((tr) => {
   if (spans.length !== 1 || !only) return []
   const {from, to, insert} = only
   const room = cap - (tr.startState.doc.length - (to - from))
-  if (room <= 0) return []
-  return {changes: {from, to, insert: insert.slice(0, room)}, selection: {anchor: from + room}}
+  if (room <= 0 || tr.isUserEvent("input.complete")) return []
+  const cut = insert.slice(0, outsideEmoji(insert, room))
+  const kept = /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut
+  return {changes: {from, to, insert: kept}, selection: {anchor: from + kept.length}}
 })
 
 onMounted(() => {
-  void loadDiscordEmoji()
-  void loadServerEmoji()
   view = new EditorView({
     parent: host.value as HTMLElement,
     state: EditorState.create({
@@ -250,6 +251,7 @@ onMounted(() => {
       ],
     }),
   })
+  void emojiOnArrival(view)
 })
 
 /* A value set from outside replaces the document; one typed here is already in it. */
@@ -515,6 +517,7 @@ onBeforeUnmount(() => {
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-emoji) {
   width: 1.3rem;
   height: 1.3rem;
+  object-fit: contain;
 }
 
 .island-markdown :deep(.cm-tooltip-autocomplete .cm-avatar) {

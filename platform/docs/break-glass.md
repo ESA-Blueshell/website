@@ -23,17 +23,19 @@ A locked account with two-factor usually needs both, `UNLOCK` first.
 
 The api image runs the action and stops when it is given the `break-glass` profile. Run it
 inside a live api pod, whose ServiceAccount is what the prod profile logs in to Vault as, with
-a small heap and no web server so it leaves the pod's own process alone:
+a small heap and its servers on ports of their own, so it leaves the pod's own process alone.
+
+The image has no shell, so `java` starts through the buildpack launcher (architecture ADR-015):
 
 ```bash
 POD=$(kubectl -n default get pods -l app.kubernetes.io/name=api -o jsonpath='{.items[0].metadata.name}')
-kubectl -n default exec "$POD" -c api -- /bin/sh -ec '
-  SPRING_PROFILES_ACTIVE=prod,break-glass exec java -XX:MaxRAMPercentage=20 -jar /app/app.jar \
-    --spring.main.web-application-type=none \
+kubectl -n default exec "$POD" -c api -- /cnb/lifecycle/launcher -- \
+  java -Xmx400M -cp runner.jar net.blueshell.api.ApiApplicationKt \
+    --spring.profiles.active=prod,break-glass \
+    --server.port=0 --management.server.port=0 \
     --break-glass.action=RESET_TWO_FACTOR \
     --break-glass.username=<username> \
     --break-glass.reason="<why, and how you heard from them>"
-'
 ```
 
 It exits `0` once the action is written and `1` if it was refused, with the reason in its

@@ -33,6 +33,14 @@ class PersonalDetailsTest {
     }
 
     @Test
+    fun `a password parameter is masked up to the next parameter`() {
+        assertThat(PersonalDetails.scrub("[jdbc:mariadb://db/blueshell?user=v-api-0P9a&password=pW]n;Z3&useSSL=false]"))
+            .isEqualTo("[jdbc:mariadb://db/blueshell?user=v-api-0P9a&password=[secret]&useSSL=false]")
+        assertThat(PersonalDetails.scrub("jdbc:mariadb://db/blueshell?trustStorePassword=s3cret keyPassword=k3y"))
+            .isEqualTo("jdbc:mariadb://db/blueshell?trustStorePassword=[secret] keyPassword=[secret]")
+    }
+
+    @Test
     fun `text without personal details is left as it is`() {
         val plain = "Job execution 42 failed (attempt 1/4). errorType=java.lang.IllegalStateException, ts=2026-10-02T10:00:00Z"
 

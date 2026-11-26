@@ -8,6 +8,7 @@ import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.shared.enums.TargetSystem
+import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
@@ -38,6 +39,8 @@ data class JobExecutionDTO(
     /** What a successful run did to the thing it keeps, and where that is; null where it keeps none. */
     val effect: JobEffect?,
     val effectLink: String?,
+    /** What a successful run counted about its work; empty where it reports nothing. */
+    val report: List<JobCount>,
     /** The triggers that met this job already queued and were folded into it, oldest first. */
     val foldedTriggers: List<JobFoldedTriggerDTO>,
     /**

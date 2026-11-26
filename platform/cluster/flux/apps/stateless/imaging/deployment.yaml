@@ -1,0 +1,83 @@
+# Decodes uploads away from the api; it reads, calls and writes nothing (architecture ADR-014).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: imaging
+  namespace: default
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: imaging
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: imaging
+    spec:
+      serviceAccountName: imaging
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: imaging
+          # Tag comes from the images block in ../kustomization.yaml.
+          image: ghcr.io/esa-blueshell/imaging
+          imagePullPolicy: IfNotPresent
+          env:
+            # Below the limit, so GC tightens before an OOM kill.
+            - name: GOMEMLIMIT
+              value: 768MiB
+          ports:
+            - containerPort: 8080
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            failureThreshold: 6
+          # One conversion at a time keeps a 50 megapixel picture inside the limit.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: imaging
+  namespace: default
+spec:
+  selector:
+    app.kubernetes.io/name: imaging
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

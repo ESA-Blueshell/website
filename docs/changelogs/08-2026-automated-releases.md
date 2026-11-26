@@ -1,5 +1,254 @@
 # Changelog
 
+## [1.28.3](https://github.com/ESA-Blueshell/website/compare/v1.28.2...v1.28.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* **platform:** frontend reaches the api by its full Service name, so link previews load ([#2675](https://github.com/ESA-Blueshell/website/issues/2675)) ([#2676](https://github.com/ESA-Blueshell/website/issues/2676)) ([c2f6211](https://github.com/ESA-Blueshell/website/commit/c2f6211af37709bc272be20397ac19dad2fef557))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2671](https://github.com/ESA-Blueshell/website/issues/2671)) ([ef249ee](https://github.com/ESA-Blueshell/website/commit/ef249ee13bdb1a093a26513b27a0711d8fd560a8))
+
+## [1.28.2](https://github.com/ESA-Blueshell/website/compare/v1.28.1...v1.28.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ci:** pin the date picker test's clock, build imaging on Go 1.26.11 ([#2668](https://github.com/ESA-Blueshell/website/issues/2668)) ([098ec2c](https://github.com/ESA-Blueshell/website/commit/098ec2cb504b05d2d22fd70093f87c0a79b2c7ea))
+* **deps:** update dependency com.microsoft.playwright:playwright to v1.63.0 ([#2162](https://github.com/ESA-Blueshell/website/issues/2162)) ([06542a3](https://github.com/ESA-Blueshell/website/commit/06542a3ef0de90ea89c3d28b690ec366857dfe1f))
+* **frontend:** build on nginx 1.30.7 from the nginx/nginx-unprivileged namespace ([#2672](https://github.com/ESA-Blueshell/website/issues/2672)) ([#2673](https://github.com/ESA-Blueshell/website/issues/2673)) ([b6d78dc](https://github.com/ESA-Blueshell/website/commit/b6d78dc6845dec750937553829af561ae719afa1))
+
+## [1.28.1](https://github.com/ESA-Blueshell/website/compare/v1.28.0...v1.28.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **api:** disable the Base64 intrinsic against Java4Shell (CVE-2026-114938) ([#2665](https://github.com/ESA-Blueshell/website/issues/2665)) ([#2666](https://github.com/ESA-Blueshell/website/issues/2666)) ([ede6770](https://github.com/ESA-Blueshell/website/commit/ede6770999243d017c1290ff7aa3db17f36c3633))
+* **platform:** bounce@ forwards a copy of its mail to sitecie@ ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2647](https://github.com/ESA-Blueshell/website/issues/2647)) ([b1661eb](https://github.com/ESA-Blueshell/website/commit/b1661eba153a39361df1dc9d2a084440c1afaa33))
+* **platform:** DNS zone stops carrying the mail records Stalwart publishes ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2644](https://github.com/ESA-Blueshell/website/issues/2644)) ([bf3dbdd](https://github.com/ESA-Blueshell/website/commit/bf3dbddb0eb5fbe6b31d937a2a7985ab2d209c7c))
+* **platform:** mail.sh reads the catch-all from the full Domain and lets Microsoft's block through to the delisting ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2643](https://github.com/ESA-Blueshell/website/issues/2643)) ([4752598](https://github.com/ESA-Blueshell/website/commit/4752598cc91af3bbdd66497161140e19cf4dc50a))
+* **platform:** stop advertising IPv6 until the server can serve it ([#2638](https://github.com/ESA-Blueshell/website/issues/2638)) ([#2641](https://github.com/ESA-Blueshell/website/issues/2641)) ([846267b](https://github.com/ESA-Blueshell/website/commit/846267bb73c049dd24ec7ba47aee9fe2276c930a))
+
+## [1.28.0](https://github.com/ESA-Blueshell/website/compare/v1.27.1...v1.28.0) (2026-10-27)
+
+
+### Features
+
+* **platform:** bootstrap scripts walk a full cluster setup, check each step and fix what is missing ([#2629](https://github.com/ESA-Blueshell/website/issues/2629)) ([#2630](https://github.com/ESA-Blueshell/website/issues/2630)) ([8e9a4cb](https://github.com/ESA-Blueshell/website/commit/8e9a4cbeb076826edf1136de6e2b11dcd1e09b6d))
+
+
+### Bug Fixes
+
+* **platform:** external-dns goes back to 0.21.0, which publishes IngressRoutes ([#2636](https://github.com/ESA-Blueshell/website/issues/2636)) ([6ff4b03](https://github.com/ESA-Blueshell/website/commit/6ff4b03919cae1b13b0e0ca705af6629d3c35a79))
+* **platform:** mail has postmaster, abuse and catch-all addresses, Stalwart logs to stdout and serves its MTA-STS policy ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2628](https://github.com/ESA-Blueshell/website/issues/2628)) ([b0e66c4](https://github.com/ESA-Blueshell/website/commit/b0e66c4268a402edca08144dc5bfa6b4ce9c02f5))
+* **platform:** mail.sh finds why the MTA-STS policy is not served and fixes it ([#2634](https://github.com/ESA-Blueshell/website/issues/2634)) ([b4addf1](https://github.com/ESA-Blueshell/website/commit/b4addf1ee22539ac68db39c7f302c10092cdb035))
+* **platform:** mail.sh says the flux CLI is missing instead of reporting a Flux failure ([#2627](https://github.com/ESA-Blueshell/website/issues/2627)) ([#2637](https://github.com/ESA-Blueshell/website/issues/2637)) ([8736daf](https://github.com/ESA-Blueshell/website/commit/8736daf94d3b7bdcaf0320d7190b13eab653592f))
+* **platform:** role addresses deliver to board@, and board@ and sitecie@ forward to blueshell.utwente.nl ([#2633](https://github.com/ESA-Blueshell/website/issues/2633)) ([77d4acd](https://github.com/ESA-Blueshell/website/commit/77d4acd1da31db9a2810c2d1d6f95962b5aa8f60))
+
+## [1.27.1](https://github.com/ESA-Blueshell/website/compare/v1.27.0...v1.27.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **frontend:** an @ mention keeps matching a name past a space ([#2625](https://github.com/ESA-Blueshell/website/issues/2625)) ([#2626](https://github.com/ESA-Blueshell/website/issues/2626)) ([a0e8c2f](https://github.com/ESA-Blueshell/website/commit/a0e8c2f51f69759730e127e3c0d5abff9e1d77d2))
+* **frontend:** the editor's cursor lands after a mention or emoji, and a picked mention can be mended ([#2623](https://github.com/ESA-Blueshell/website/issues/2623)) ([#2624](https://github.com/ESA-Blueshell/website/issues/2624)) ([9280427](https://github.com/ESA-Blueshell/website/commit/928042729fdedbf6a747e2f700b7b8d85ae08625))
+* **platform:** the api and frontend canaries wait for each other's release image ([#2620](https://github.com/ESA-Blueshell/website/issues/2620)) ([#2621](https://github.com/ESA-Blueshell/website/issues/2621)) ([1dd2a12](https://github.com/ESA-Blueshell/website/commit/1dd2a12ff60176b474dc7d6f43db17eb5ef7b886))
+
+## [1.27.0](https://github.com/ESA-Blueshell/website/compare/v1.26.1...v1.27.0) (2026-10-26)
+
+
+### Features
+
+* **auth:** the recovery email job is one job per email ([#2600](https://github.com/ESA-Blueshell/website/issues/2600)) ([#2615](https://github.com/ESA-Blueshell/website/issues/2615)) ([c20cbac](https://github.com/ESA-Blueshell/website/commit/c20cbacbd60b66c05cc43b942415abba17ba6186))
+* **cohort:** cohort membership sync is two jobs, add and remove ([#2601](https://github.com/ESA-Blueshell/website/issues/2601)) ([#2616](https://github.com/ESA-Blueshell/website/issues/2616)) ([e802ec5](https://github.com/ESA-Blueshell/website/commit/e802ec5c11d726f3503b8f7b48ead46247f61567))
+* **discord:** the seen emoji backfill is two jobs, start a pass and read the next part ([#2598](https://github.com/ESA-Blueshell/website/issues/2598)) ([#2611](https://github.com/ESA-Blueshell/website/issues/2611)) ([7942338](https://github.com/ESA-Blueshell/website/commit/7942338f3221c4f6406f2f1b370cfc34755058ea))
+* **frontend:** a custom emoji in the editor is one picture, deleted whole ([#2617](https://github.com/ESA-Blueshell/website/issues/2617)) ([#2618](https://github.com/ESA-Blueshell/website/issues/2618)) ([c661b1c](https://github.com/ESA-Blueshell/website/commit/c661b1c40188cd4f41b3afe81c354f7eb0827641))
+* **frontend:** a paste into the editor turns known :name: shortcodes into emoji ([#2604](https://github.com/ESA-Blueshell/website/issues/2604)) ([#2609](https://github.com/ESA-Blueshell/website/issues/2609)) ([6c5d891](https://github.com/ESA-Blueshell/website/commit/6c5d89145f791c817564db4900aad92c4ada5db9))
+* **frontend:** the job form shows a yes/no payload field as a switch ([#2596](https://github.com/ESA-Blueshell/website/issues/2596)) ([#2603](https://github.com/ESA-Blueshell/website/issues/2603)) ([574e63b](https://github.com/ESA-Blueshell/website/commit/574e63ba818afb7dc6d806bdf47d93cb323966f1))
+* **jobs:** a job run records what it worked on and what it found ([#2597](https://github.com/ESA-Blueshell/website/issues/2597)) ([#2610](https://github.com/ESA-Blueshell/website/issues/2610)) ([e038cf5](https://github.com/ESA-Blueshell/website/commit/e038cf53c5b8f93b6fe688e63e694e949e508ebd))
+* **jobs:** jobs that name no subject report what they did ([#2599](https://github.com/ESA-Blueshell/website/issues/2599)) ([#2614](https://github.com/ESA-Blueshell/website/issues/2614)) ([0891d69](https://github.com/ESA-Blueshell/website/commit/0891d6970c836be8690c7b84482becd1b8d9287a))
+* **sync:** a job resolves the :name: shortcodes left in one event's description ([#2605](https://github.com/ESA-Blueshell/website/issues/2605)) ([#2612](https://github.com/ESA-Blueshell/website/issues/2612)) ([09bc4ea](https://github.com/ESA-Blueshell/website/commit/09bc4eaddb610bd06ce49db601f6f19efa6bc49a))
+* **sync:** a job resolves the emoji shortcodes in every event ([#2606](https://github.com/ESA-Blueshell/website/issues/2606)) ([#2613](https://github.com/ESA-Blueshell/website/issues/2613)) ([c1931be](https://github.com/ESA-Blueshell/website/commit/c1931be351cf0707a1e5fb479117197c9f46ecff))
+
+## [1.26.1](https://github.com/ESA-Blueshell/website/compare/v1.26.0...v1.26.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **api:** the api image's AOT cache holds no CPU-specific code ([#2594](https://github.com/ESA-Blueshell/website/issues/2594)) ([#2595](https://github.com/ESA-Blueshell/website/issues/2595)) ([73b5d42](https://github.com/ESA-Blueshell/website/commit/73b5d429f65d8bb0b277dcaa78844973f6d26eba))
+* **deps:** update dependency org.commonmark:commonmark-ext-gfm-tables to v0.30.1 ([#2590](https://github.com/ESA-Blueshell/website/issues/2590)) ([5dacbd8](https://github.com/ESA-Blueshell/website/commit/5dacbd8ca98f6ec646be448de08af6844718cf4b))
+
+## [1.26.0](https://github.com/ESA-Blueshell/website/compare/v1.25.0...v1.26.0) (2026-10-26)
+
+
+### Features
+
+* **discord:** seen emoji backfill job over the server's history ([#2562](https://github.com/ESA-Blueshell/website/issues/2562)) ([#2571](https://github.com/ESA-Blueshell/website/issues/2571)) ([acb81b8](https://github.com/ESA-Blueshell/website/commit/acb81b8f1c6146901019601db9d854964f3df695))
+* **discord:** seen emoji, indexing the emoji used in the Discord server ([#2561](https://github.com/ESA-Blueshell/website/issues/2561)) ([#2570](https://github.com/ESA-Blueshell/website/issues/2570)) ([b52930c](https://github.com/ESA-Blueshell/website/commit/b52930cee91079316203e6864d13c637d4d9b8d9))
+* **discord:** the editor suggests the bot's application emoji ([#2560](https://github.com/ESA-Blueshell/website/issues/2560)) ([#2569](https://github.com/ESA-Blueshell/website/issues/2569)) ([aee984c](https://github.com/ESA-Blueshell/website/commit/aee984c8c0a9141622e1cea29fe74ffba55f25e5))
+
+
+### Bug Fixes
+
+* **deps:** update dependency io.github.classgraph:classgraph to v4.8.199 ([#2587](https://github.com/ESA-Blueshell/website/issues/2587)) ([0f17d1a](https://github.com/ESA-Blueshell/website/commit/0f17d1ae506b6dbf9d6ba51c5b150ea763074173))
+* **deps:** update dependency org.commonmark:commonmark to v0.30.1 ([#2588](https://github.com/ESA-Blueshell/website/issues/2588)) ([bba6502](https://github.com/ESA-Blueshell/website/commit/bba65027935e0e891e2b769dc1d21fecd1e0fa4a))
+* **deps:** update dependency org.commonmark:commonmark-ext-gfm-strikethrough to v0.30.1 ([#2589](https://github.com/ESA-Blueshell/website/issues/2589)) ([e6c0fa3](https://github.com/ESA-Blueshell/website/commit/e6c0fa391b7fb21cec09fc314b681255f605561b))
+* **deps:** update jackson monorepo ([#2591](https://github.com/ESA-Blueshell/website/issues/2591)) ([3212792](https://github.com/ESA-Blueshell/website/commit/321279243bf715b65dd1e83ed0cd5c9b8eca7a79))
+* **discord:** Discord answers with new enum values keep reading ([#2559](https://github.com/ESA-Blueshell/website/issues/2559)) ([#2572](https://github.com/ESA-Blueshell/website/issues/2572)) ([99dbcf2](https://github.com/ESA-Blueshell/website/commit/99dbcf2de7bbd7dff40b0339c0aeb442bb9a57e5))
+* **discord:** Discord events keep every emoji they may hold, and get them back ([#2573](https://github.com/ESA-Blueshell/website/issues/2573)) ([#2578](https://github.com/ESA-Blueshell/website/issues/2578)) ([c6e6ba9](https://github.com/ESA-Blueshell/website/commit/c6e6ba94eebe473a0442756ef6ab0e0485638e1b))
+* **discord:** Discord events leave out emoji the bot may not use ([#2556](https://github.com/ESA-Blueshell/website/issues/2556)) ([#2568](https://github.com/ESA-Blueshell/website/issues/2568)) ([def7b5c](https://github.com/ESA-Blueshell/website/commit/def7b5cad66bc138f19791a25be71a6a7a3b3ff3))
+* **discord:** recording seen emoji never holds up the Discord gateway ([#2575](https://github.com/ESA-Blueshell/website/issues/2575)) ([#2580](https://github.com/ESA-Blueshell/website/issues/2580)) ([1157afc](https://github.com/ESA-Blueshell/website/commit/1157afc51d5698def2f63b4f93eee40c64719c68))
+* **discord:** server emoji show in the editor's suggestions again ([#2558](https://github.com/ESA-Blueshell/website/issues/2558)) ([#2566](https://github.com/ESA-Blueshell/website/issues/2566)) ([1dea4bc](https://github.com/ESA-Blueshell/website/commit/1dea4bcd7858d30ba439b987c84e7b3190683fd8))
+* **discord:** the seen emoji backfill reads every channel and needs Message Content ([#2574](https://github.com/ESA-Blueshell/website/issues/2574)) ([#2579](https://github.com/ESA-Blueshell/website/issues/2579)) ([5b497b9](https://github.com/ESA-Blueshell/website/commit/5b497b9f1fd9890775c14932907c5cb62f0afff1))
+* **frontend:** near the cap, a picked emoji or mention goes in whole or not at all ([#2576](https://github.com/ESA-Blueshell/website/issues/2576)) ([#2581](https://github.com/ESA-Blueshell/website/issues/2581)) ([a724ca4](https://github.com/ESA-Blueshell/website/commit/a724ca404579749cf3048ad1f2f6d6476ffd189b))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2564](https://github.com/ESA-Blueshell/website/issues/2564)) ([02f6962](https://github.com/ESA-Blueshell/website/commit/02f69629c50e30eb1804d881e8ddecc08b905074))
+
+## [1.25.0](https://github.com/ESA-Blueshell/website/compare/v1.24.1...v1.25.0) (2026-10-23)
+
+
+### Features
+
+* **platform:** a production restore puts back Vault without a root token ([#2539](https://github.com/ESA-Blueshell/website/issues/2539)) ([fda5823](https://github.com/ESA-Blueshell/website/commit/fda5823ea0a96cdeeec95ed3ced5ab9bfdb3b3bd)), closes [#2537](https://github.com/ESA-Blueshell/website/issues/2537)
+* **platform:** a script unseals Vault after a restart ([#2517](https://github.com/ESA-Blueshell/website/issues/2517)) ([d743580](https://github.com/ESA-Blueshell/website/commit/d74358019e696c33bb7804de0dd63953348c9778))
+* **platform:** close NixOS scan findings only on evidence that the host has the fix ([#2552](https://github.com/ESA-Blueshell/website/issues/2552)) ([deb395a](https://github.com/ESA-Blueshell/website/commit/deb395a3dd1ce7bb1a13a06863497b6b24b79651))
+* **platform:** scan the NixOS host into code scanning and let Renovate move the flake ([#2550](https://github.com/ESA-Blueshell/website/issues/2550)) ([091caa0](https://github.com/ESA-Blueshell/website/commit/091caa01ab35e1d87ce6895a2de2a1414f5559e7))
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.googlecode.libphonenumber:libphonenumber to v9.0.41 ([#2532](https://github.com/ESA-Blueshell/website/issues/2532)) ([f9fbe6a](https://github.com/ESA-Blueshell/website/commit/f9fbe6a13901f0bb27505db7818b1addbe2a0da2))
+* **frontend:** country and nationality selects send the matched code ([#2555](https://github.com/ESA-Blueshell/website/issues/2555)) ([28f7032](https://github.com/ESA-Blueshell/website/commit/28f70329e18795da369a0d53fd692bd46392089a))
+* **platform:** the restore rehearsal opens a Vault 2.0 snapshot ([#2536](https://github.com/ESA-Blueshell/website/issues/2536)) ([ad3192e](https://github.com/ESA-Blueshell/website/commit/ad3192e9cce9ad525baf53faa534899eabdd2e54)), closes [#2535](https://github.com/ESA-Blueshell/website/issues/2535)
+
+
+### Performance
+
+* **platform:** a published release reaches Flagger within a minute ([#2514](https://github.com/ESA-Blueshell/website/issues/2514)) ([1bdee88](https://github.com/ESA-Blueshell/website/commit/1bdee882ed3dae5565f135468e1823e44e735795))
+
+
+### Build and Dependencies
+
+* **deps:** bump follow-redirects ([#2546](https://github.com/ESA-Blueshell/website/issues/2546)) ([63a2c45](https://github.com/ESA-Blueshell/website/commit/63a2c4531fb09642ef838f231bf93ed16cb79f6c))
+
+## [1.24.1](https://github.com/ESA-Blueshell/website/compare/v1.24.0...v1.24.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **platform:** the api has no CPU limit, which stretched every start ([#2509](https://github.com/ESA-Blueshell/website/issues/2509)) ([bc0b533](https://github.com/ESA-Blueshell/website/commit/bc0b533950cbf07012a34010081446ccf00f951d))
+
+
+### Performance
+
+* **platform:** Flagger checks every 10s and the api drains in 10s, so a release promotes faster ([#2511](https://github.com/ESA-Blueshell/website/issues/2511)) ([0ce68f8](https://github.com/ESA-Blueshell/website/commit/0ce68f80171b7f884d7659966b944b791977d865))
+
+## [1.24.0](https://github.com/ESA-Blueshell/website/compare/v1.23.2...v1.24.0) (2026-10-15)
+
+
+### Features
+
+* a separate imaging service converts uploaded stills ([#2473](https://github.com/ESA-Blueshell/website/issues/2473)) ([608ad43](https://github.com/ESA-Blueshell/website/commit/608ad43d6a267a6563eed40859e7b255c44f1e06))
+* animated banners are converted by the imaging service ([#2494](https://github.com/ESA-Blueshell/website/issues/2494)) ([993a878](https://github.com/ESA-Blueshell/website/commit/993a87894354bc8dde42fb3fc544c8b0690f2b52))
+* **api:** the api image carries only the JRE ([#2496](https://github.com/ESA-Blueshell/website/issues/2496)) ([9f90bc7](https://github.com/ESA-Blueshell/website/commit/9f90bc73497fa176d1e904fd76d7d1e3d90ba75d))
+
+
+### Bug Fixes
+
+* **frontend:** on a phone an agenda row's actions take the whole row, and the organiser's actions wrap as one ([#2482](https://github.com/ESA-Blueshell/website/issues/2482)) ([a6800bb](https://github.com/ESA-Blueshell/website/commit/a6800bb7a3851c4b067104c1e93c13abf8e239aa))
+
+
+### Documentation
+
+* keep LICENSE plain MIT so it is recognised, and say what it covers in the README ([#2507](https://github.com/ESA-Blueshell/website/issues/2507)) ([2e79f24](https://github.com/ESA-Blueshell/website/commit/2e79f249650ad488de3753a2acb869437f811fce))
+* license the code under MIT, and keep images, identity, documents and data reserved ([#2506](https://github.com/ESA-Blueshell/website/issues/2506)) ([a7919e3](https://github.com/ESA-Blueshell/website/commit/a7919e397fb0392afe69e074b031066d67eeb2c3))
+
+
+### Build and Dependencies
+
+* **api:** the api image is built by Cloud Native Buildpacks, with no shell and no Dockerfile ([#2501](https://github.com/ESA-Blueshell/website/issues/2501)) ([9bd5dea](https://github.com/ESA-Blueshell/website/commit/9bd5dea619880d851bc9e44385545ff6ec7f2f52))
+
+## [1.23.2](https://github.com/ESA-Blueshell/website/compare/v1.23.1...v1.23.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* **frontend:** the sign-up button sits before the organiser's actions, so those line up across agenda rows ([#2472](https://github.com/ESA-Blueshell/website/issues/2472)) ([d5df007](https://github.com/ESA-Blueshell/website/commit/d5df00746e9f1685e9884dd7c8f1702ad6b54858))
+
+
+### Performance
+
+* the api, its canary and the migrate Job boot from an AOT cache ([#2457](https://github.com/ESA-Blueshell/website/issues/2457)) ([5421174](https://github.com/ESA-Blueshell/website/commit/54211744fa36c8c65a394d19f380bf7f1444bf4c))
+
+## [1.23.1](https://github.com/ESA-Blueshell/website/compare/v1.23.0...v1.23.1) (2026-10-14)
+
+
+### Bug Fixes
+
+* production logs no longer print the database login ([#2453](https://github.com/ESA-Blueshell/website/issues/2453)) ([7d3643e](https://github.com/ESA-Blueshell/website/commit/7d3643e8a3833afe60b5bf818e01cfd2cdbdd162))
+
+
+### Refactoring
+
+* image conversion sits behind one port in the api ([#2454](https://github.com/ESA-Blueshell/website/issues/2454)) ([55c9359](https://github.com/ESA-Blueshell/website/commit/55c9359e6a09475399b038950605a34ea52ea548))
+
+## [1.23.0](https://github.com/ESA-Blueshell/website/compare/v1.22.0...v1.23.0) (2026-10-14)
+
+
+### Features
+
+* a Payment details tab shows a member's contributions, what is unpaid and how to pay ([#2435](https://github.com/ESA-Blueshell/website/issues/2435)) ([42315f5](https://github.com/ESA-Blueshell/website/commit/42315f545235fa5e3fdcb1bc6085a7f0b7bf9a62))
+
+## [1.22.0](https://github.com/ESA-Blueshell/website/compare/v1.21.1...v1.22.0) (2026-10-14)
+
+
+### Features
+
+* **frontend:** a Help tab on the account pages explains the site by role, with a search ([#2429](https://github.com/ESA-Blueshell/website/issues/2429)) ([84bc8e1](https://github.com/ESA-Blueshell/website/commit/84bc8e11ba5ab5be2ae3373521565da2d012a9bc))
+
+## [1.21.1](https://github.com/ESA-Blueshell/website/compare/v1.21.0...v1.21.1) (2026-10-13)
+
+
+### Bug Fixes
+
+* **deps:** update dependency com.tngtech.archunit:archunit-junit5 to v1.5.1 ([#2150](https://github.com/ESA-Blueshell/website/issues/2150)) ([2500415](https://github.com/ESA-Blueshell/website/commit/2500415b5c6d9f5c364a4df5d49283834ee6aee8))
+
+## [1.21.0](https://github.com/ESA-Blueshell/website/compare/v1.20.5...v1.21.0) (2026-10-12)
+
+
+### Features
+
+* **frontend:** membership sign-up is built from island parts, without the Vuetify stepper ([#2398](https://github.com/ESA-Blueshell/website/issues/2398)) ([759a140](https://github.com/ESA-Blueshell/website/commit/759a1407af0b7471173fefc593dcdf5eb3d304f1))
+* **frontend:** sign-in and sign-up pages are island task pages, form buttons sit right ([#2413](https://github.com/ESA-Blueshell/website/issues/2413)) ([08fdcf6](https://github.com/ESA-Blueshell/website/commit/08fdcf608b143ab50f454cdb634d26d4d58c829b))
+* **frontend:** six loading pages show an island spinner instead of Vuetify's ([#2390](https://github.com/ESA-Blueshell/website/issues/2390)) ([2c72c9f](https://github.com/ESA-Blueshell/website/commit/2c72c9ff754424a716abcbe58a89811c49f1c6af))
+* **frontend:** six public pages and the documents table are built from island parts, not Vuetify's ([#2397](https://github.com/ESA-Blueshell/website/issues/2397)) ([55b017f](https://github.com/ESA-Blueshell/website/commit/55b017fcdc23126984c04f04ce7441f88477dd8e))
+* **frontend:** status messages, the cookie notice and the backup codes warning show as island toasts ([#2394](https://github.com/ESA-Blueshell/website/issues/2394)) ([76697a8](https://github.com/ESA-Blueshell/website/commit/76697a8e77902ddabe52d1def78de85efc86d555))
+* **platform:** one restore script rehearses or restores every store ([#2404](https://github.com/ESA-Blueshell/website/issues/2404)) ([079716e](https://github.com/ESA-Blueshell/website/commit/079716eee14d286085e3e734e30b98aa943a3b5d))
+* **platform:** restore rehearsal script, reading from vault-v2 ([#2401](https://github.com/ESA-Blueshell/website/issues/2401)) ([b3f2aa6](https://github.com/ESA-Blueshell/website/commit/b3f2aa6b81e132577764bb523392378b1e8edcd2))
+* **platform:** Vault clients move to vault-v2, bootstrap keeps no root token ([#2396](https://github.com/ESA-Blueshell/website/issues/2396)) ([1d37452](https://github.com/ESA-Blueshell/website/commit/1d37452e743ce23f7bac718a3d73eeeb6e7ecd18))
+* **platform:** vault-v2 and a script that copies the old Vault into it ([#2395](https://github.com/ESA-Blueshell/website/issues/2395)) ([87b3659](https://github.com/ESA-Blueshell/website/commit/87b3659c755e96375f58e1651aaa0d2a79a9ad23))
+
+
+### Bug Fixes
+
+* **platform:** emergency export skips bank details when the backup has none ([#2388](https://github.com/ESA-Blueshell/website/issues/2388)) ([b02675a](https://github.com/ESA-Blueshell/website/commit/b02675adcd4483fcee6bc3128a818c2ed8be94d3))
+* **platform:** the bootstrap Job mounts the cluster CA again ([#2400](https://github.com/ESA-Blueshell/website/issues/2400)) ([96cb6c7](https://github.com/ESA-Blueshell/website/commit/96cb6c71f9a1d64728e8a4dfebb5e21b7785d316))
+* **platform:** the restore rehearsal starts from an empty scratch database ([#2403](https://github.com/ESA-Blueshell/website/issues/2403)) ([16680e3](https://github.com/ESA-Blueshell/website/commit/16680e37bc66b8ad1a36ffe6ae56b155d36341fe))
+
+
+### Refactoring
+
+* **frontend:** every page stands in the site's own main area, not Vuetify's ([#2399](https://github.com/ESA-Blueshell/website/issues/2399)) ([cf31889](https://github.com/ESA-Blueshell/website/commit/cf3188981524596ad923a5887a166f22231c8608))
+* **frontend:** pages outside Management use no Vuetify classes, theme variables or .v- style rules ([#2405](https://github.com/ESA-Blueshell/website/issues/2405)) ([79a6c08](https://github.com/ESA-Blueshell/website/commit/79a6c08677441972420ce931d556908e6efb7cb1))
+* **frontend:** the page banner sets its height and title size in CSS, without Vuetify's breakpoints ([#2393](https://github.com/ESA-Blueshell/website/issues/2393)) ([5426139](https://github.com/ESA-Blueshell/website/commit/542613980769365348ae81bd2950dfef50d2b419))
+* **frontend:** the site stores and switches the dark/light theme, Vuetify's theme follows it ([#2387](https://github.com/ESA-Blueshell/website/issues/2387)) ([8a69606](https://github.com/ESA-Blueshell/website/commit/8a6960686060d8ea841d748cf4f048e543de9cc2))
+
 ## [1.20.5](https://github.com/ESA-Blueshell/website/compare/v1.20.4...v1.20.5) (2026-10-12)
 
 

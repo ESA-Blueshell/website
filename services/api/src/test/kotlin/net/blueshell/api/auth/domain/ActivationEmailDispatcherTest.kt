@@ -22,8 +22,8 @@ class ActivationEmailDispatcherTest {
         ActivationEmailDispatcher(jobs, activation).dispatchFor(UserCreated(7, createdByBoard = true, actor = board))
 
         verify(jobs).runAsync(
-            AuthJobs.Recovery,
-            AuthJobs.RecoveryPayload(7, "sel.ver", TokenPurpose.USER_ACTIVATION),
+            AuthJobs.AccountActivation,
+            AuthJobs.RecoveryPayload(7, "sel.ver"),
             JobTrigger.SITE_ACTION,
             board,
         )

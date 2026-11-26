@@ -70,6 +70,7 @@ const nameOf = (entry: StarboardEntryResponse): string => entry.authorNickname ?
           v-if="entry.avatar"
           alt=""
           class="starboard__avatar"
+          crossorigin="anonymous"
           height="40"
           loading="lazy"
           :src="entry.avatar"

@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 @MustBeDocumented
 @Constraint(validatedBy = [CountryCodeValidator::class])
 annotation class ValidCountryCode(
-    val message: String = "Country must be a valid ISO 3166-1 alpha-2 code",
+    val message: String = "Pick a country from the list",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = [],
 )

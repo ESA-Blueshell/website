@@ -2,6 +2,8 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.jobs.api.JobOutcome
 import net.blueshell.api.shared.job.ExplainedJobFailure
+import net.blueshell.api.shared.job.JobCount
+import net.blueshell.api.shared.job.JobTally
 import net.blueshell.api.user.api.RewrapReport
 import net.blueshell.api.user.api.SealedValueRewrap
 import net.blueshell.api.user.api.UserJobs
@@ -22,7 +24,8 @@ class RewrapSealedValuesJobTest {
     fun `is done when it moved values, and skipped when every value was on the newest version`() {
         whenever(rewrap.rewrapEvery()).thenReturn(RewrapReport(3, emptyList()), RewrapReport(0, emptyList()))
 
-        assertThat(job.handle(payload, 5, forced = false)).isInstanceOf(JobOutcome.Done::class.java)
+        assertThat((job.handle(payload, 5, forced = false) as JobOutcome.Done).counts)
+            .containsExactly(JobCount(JobTally.VALUES_REWRAPPED, 3))
         assertThat(job.handle(payload, 6, forced = false)).isInstanceOf(JobOutcome.Skipped::class.java)
     }
 

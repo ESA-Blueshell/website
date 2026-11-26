@@ -185,6 +185,33 @@ data:
       alerts:
       - type: discord
 
+    # ---------- Upstream ----------
+    # Flux pulls this repository over SSH from github.com and scans images on
+    # ghcr.io. Flux's own alert drops network errors (apps/image-automation/
+    # alerting.yaml) because single failed fetches are common and harmless; these
+    # probes report an outage that lasts. They resolve through cluster DNS, as
+    # Flux does. Fifteen failed runs at 60s alert after about 15 minutes.
+    - name: "GitHub SSH"
+      group: "upstream"
+      url: "tcp://github.com:22"
+      interval: "60s"
+      conditions:
+      - "[CONNECTED] == true"
+      alerts:
+      - type: discord
+        failure-threshold: 15
+        description: "Flux cannot reach github.com, so no deploy lands"
+    - name: "GitHub Container Registry"
+      group: "upstream"
+      url: "tcp://ghcr.io:443"
+      interval: "60s"
+      conditions:
+      - "[CONNECTED] == true"
+      alerts:
+      - type: discord
+        failure-threshold: 15
+        description: "Flux cannot reach ghcr.io, so new images are not picked up"
+
     # A suite runs its endpoints in order with one shared context, which is how
     # Gatus compares two responses. Suites are alpha in Gatus: check this block on
     # a Gatus upgrade.

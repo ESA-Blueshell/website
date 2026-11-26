@@ -33,7 +33,7 @@ abstract class PlaywrightTestBase {
     protected val frontendUrl: String = TestEnvironment.frontendUrl
 
     private lateinit var playwright: Playwright
-    private lateinit var browser: Browser
+    protected lateinit var browser: Browser
     protected lateinit var context: BrowserContext
     protected lateinit var page: Page
 

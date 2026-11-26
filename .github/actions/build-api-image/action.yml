@@ -1,0 +1,50 @@
+name: Build the api image
+description: Build the api image with Cloud Native Buildpacks and boot it from its AOT cache.
+
+inputs:
+  image:
+    description: The name the image is built under, in the local Docker daemon.
+    required: true
+  jar:
+    description: A boot jar built already, to package instead of building one.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Read the builder's digest
+      id: builder
+      shell: bash
+      run: echo "digest=$(grep -oE '@sha256:[a-f0-9]{64}' services/api/build.gradle.kts | head -1 | cut -c2-)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the buildpack cache
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: ${{ runner.temp }}/buildpack-cache
+        key: buildpacks-api-${{ steps.builder.outputs.digest }}
+
+    # The builder writes as its own user.
+    - name: Open the cache to the builder
+      shell: bash
+      run: |
+        mkdir -p "$RUNNER_TEMP/buildpack-cache"
+        sudo chmod -R a+rwX "$RUNNER_TEMP/buildpack-cache"
+
+    - name: Build the image
+      shell: bash
+      env:
+        IMAGE: ${{ inputs.image }}
+        JAR: ${{ inputs.jar }}
+      run: |
+        set -euo pipefail
+        ./gradlew --no-daemon :services:api:bootBuildImage \
+          -PapiImage="$IMAGE" -PbuildpackCache="$RUNNER_TEMP/buildpack-cache" ${JAR:+-PapiJar="$JAR"}
+
+    - name: Hand the cache back to the runner
+      shell: bash
+      run: sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/buildpack-cache"
+
+    - name: Boot the image from its AOT cache
+      shell: bash
+      run: scripts/check-aot-cache.sh "${{ inputs.image }}"

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
  * so nothing here is cross-origin and a CORS rule cannot be what makes it pass or fail.
  */
 @Tag("system")
+@Tag("imaging")
 class BoardArtSystemTest : PlaywrightTestBase() {
     @Test
     fun `a seeded board photograph is stored, served and drawn`() {

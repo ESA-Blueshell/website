@@ -1,0 +1,22 @@
+services:
+  # Hardened as in the cluster; a host-run api uses localhost:8090.
+  imaging:
+    image: imaging:dev
+    pull_policy: never
+    build:
+      context: .
+    container_name: imaging
+    ports:
+      - "127.0.0.1:8090:8080"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - global_network
+    restart: unless-stopped
+
+networks:
+  global_network:
+    driver: bridge

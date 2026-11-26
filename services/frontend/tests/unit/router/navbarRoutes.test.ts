@@ -22,7 +22,6 @@ const navbarPaths = [
   "/competition/geoguessr",
   "/partners/become-a-partner",
   "/partners/el-nino",
-  "/partners/marketing-maatwerk",
   "/contact",
   "/sntpings",
   "/login",
@@ -35,6 +34,7 @@ const navbarPaths = [
   "/management/contributions/2/reminders",
   "/management/users",
   "/management/alerts",
+  "/account/help",
   "/management/jobs",
   "/management/exceptions",
 ]
@@ -50,6 +50,20 @@ describe("Navbar route targets", () => {
     const load = router.getRoutes().find(one => one.name === "sntpings")?.components?.default as () => Promise<unknown>
     await expect(load()).resolves.toBeDefined()
   }, 20_000)
+})
+
+describe("the Help and Payment details pages", () => {
+  it.each([["accountHelp", "/account/help"], ["accountPaymentDetails", "/account/payment-details"]])(
+    "%s loads, for somebody signed in only",
+    async (name, path) => {
+      const route = router.getRoutes().find(one => one.name === name)!
+
+      expect(route.path).toBe(path)
+      expect(route.meta.requiresAuth).toBe(true)
+      await expect((route.components?.default as () => Promise<unknown>)()).resolves.toBeDefined()
+    },
+    20_000,
+  )
 })
 
 describe("the account security pages", () => {

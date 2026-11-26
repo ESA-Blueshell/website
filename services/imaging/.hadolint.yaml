@@ -1,0 +1,3 @@
+ignored:
+  # Alpine drops old package versions, so pinning apk versions breaks the build.
+  - DL3018

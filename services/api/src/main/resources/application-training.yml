@@ -1,0 +1,14 @@
+# The AOT cache's training run, while the image is built: the context refreshes and the JVM
+# exits, with no database, Vault or Valkey to reach (architecture ADR-013). The keys the
+# hardening guard asks for are drawn at random by the build, so none of them ships.
+spring:
+  liquibase:
+    enabled: false
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    properties:
+      hibernate.boot.allow_jdbc_metadata_access: false
+
+app:
+  security:
+    require-https: true

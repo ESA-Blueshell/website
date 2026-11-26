@@ -15,7 +15,7 @@ the CSI provider, which nothing uses. Once Flux applies it, `vault-v2-0` runs bu
 it is uninitialised, and nothing talks to it yet.
 
 ```bash
-kubectl --context blueshell -n data-system get pod vault-v2-0
+kubectl --context blueshell-admin -n data-system get pod vault-v2-0
 ```
 
 ## 2. Copy the old Vault into it
@@ -59,7 +59,7 @@ Secret is gone, wipe it and start again. Nothing depends on it before the switch
 you stored for it become worthless:
 
 ```bash
-K="kubectl --context blueshell -n data-system"
+K="kubectl --context blueshell-admin -n data-system"
 $K scale statefulset vault-v2 --replicas=0
 $K delete pvc data-vault-v2-0 audit-vault-v2-0
 $K delete secret vault-v2-bootstrap-token --ignore-not-found
@@ -82,14 +82,14 @@ the bootstrap Job, Gatus, the ingress and the scripts at `vault-v2`. Flux applie
 canary rolls the new address out; restart VSO so it signs in again at once:
 
 ```bash
-kubectl --context blueshell -n vso-system rollout restart deployment
+kubectl --context blueshell-admin -n vso-system rollout restart deployment
 ```
 
 Then check:
 
 - the `vault` endpoint on the status page is green;
 - a member's address opens under Management, and you are still signed in;
-- `kubectl --context blueshell get vaultstaticsecrets -A` shows every secret synced;
+- `kubectl --context blueshell-admin get vaultstaticsecrets -A` shows every secret synced;
 - the `vault-bootstrap-auth` Job in `data-system` completed.
 
 Then take the root token away. `--finish` checks that the bootstrap Job can sign in and write
@@ -119,5 +119,5 @@ everything as it was at the last sync.
    it. The volumes stay behind, so delete them:
 
    ```bash
-   kubectl --context blueshell -n data-system delete pvc data-vault-0 audit-vault-0
+   kubectl --context blueshell-admin -n data-system delete pvc data-vault-0 audit-vault-0
    ```

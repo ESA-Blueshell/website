@@ -11,7 +11,7 @@ until they are done.
 ## 1. Initialize and unseal Vault
 
 ```bash
-kubectl --context blueshell exec -n data-system vault-v2-0 -- vault operator init \
+kubectl --context blueshell-admin exec -n data-system vault-v2-0 -- vault operator init \
   -key-shares=5 -key-threshold=3 \
   -format=json > /tmp/vault-init.json
 
@@ -20,7 +20,7 @@ kubectl --context blueshell exec -n data-system vault-v2-0 -- vault operator ini
 ROOT_TOKEN=$(jq -r '.root_token' /tmp/vault-init.json)
 
 for i in 0 1 2; do
-  kubectl --context blueshell exec -n data-system vault-v2-0 -- vault operator unseal \
+  kubectl --context blueshell-admin exec -n data-system vault-v2-0 -- vault operator unseal \
     "$(jq -r ".unseal_keys_b64[$i]" /tmp/vault-init.json)"
 done
 ```
@@ -308,7 +308,7 @@ authorize request before Vault sees it:
 Logging in from a terminal:
 
 ```bash
-kubectl --context blueshell -n data-system port-forward svc/vault-v2 8200:8200 &
+kubectl --context blueshell-admin -n data-system port-forward svc/vault-v2 8200:8200 &
 export VAULT_ADDR=http://127.0.0.1:8200
 vault login -method=oidc
 ```

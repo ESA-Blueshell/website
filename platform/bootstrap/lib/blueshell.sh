@@ -9,7 +9,7 @@ REPO="ESA-Blueshell/website"
 
 # Never kubectl's current context: on a machine with several clusters that is
 # whichever was used last, and every cluster may have a data-system Vault.
-CONTEXT=${KUBE_CONTEXT:-blueshell}
+CONTEXT=${KUBE_CONTEXT:-blueshell-admin}
 
 DOMAIN=esa-blueshell.nl
 MAIL_HOST=mail.esa-blueshell.nl
@@ -112,9 +112,13 @@ vault_forward() {
   k -n "$VAULT_NS" wait --for=jsonpath='{.status.phase}'=Running "pod/$VAULT_POD" --timeout=300s >/dev/null \
     || die "$VAULT_POD is not running"
   VAULT_PF_LOG=$(mktemp)
+  # A credential plugin with interactiveMode Always refuses to run unless stdin
+  # is a terminal, and a background job gets /dev/null unless told otherwise.
+  local pf_stdin=/dev/null
+  [[ -t 0 ]] && pf_stdin=/dev/tty
   # Local port 0: kubectl picks a free one and logs it, so the OIDC callback on
   # localhost:8250 never meets the forward.
-  k -n "$VAULT_NS" port-forward "pod/$VAULT_POD" 0:8200 </dev/null >"$VAULT_PF_LOG" 2>&1 &
+  k -n "$VAULT_NS" port-forward "pod/$VAULT_POD" 0:8200 <"$pf_stdin" >"$VAULT_PF_LOG" 2>&1 &
   VAULT_PF_PID=$!
   for _ in $(seq 1 30); do
     kill -0 "$VAULT_PF_PID" 2>/dev/null || die "the port-forward to $VAULT_POD exited: $(tr '\n' ' ' <"$VAULT_PF_LOG")"

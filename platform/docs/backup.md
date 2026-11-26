@@ -57,7 +57,7 @@ platform/bootstrap/secrets.sh --only backup
 ```
 
 It asks for your Scaleway secret key without showing it, and for the organization ID. It shows
-the `kubectl` context it is about to use, `blueshell` unless `KUBE_CONTEXT=<name>` says
+the `kubectl` context it is about to use, `blueshell-admin` unless `KUBE_CONTEXT=<name>` says
 otherwise, never the current one, and asks you to confirm it is Blueshell's. After you sign in it checks the Vault signs in through
 `esa-blueshell.nl`, and stops before reading or writing anything if not. It opens
 its own port-forward to Vault, since Vault's public host sits behind the site's sign-in, and
@@ -81,7 +81,7 @@ for it. To run them now rather than at night, with `blueshell` being your kubeco
 the Blueshell cluster (`kubectl config get-contexts`):
 
 ```bash
-K="kubectl --context blueshell"
+K="kubectl --context blueshell-admin"
 $K -n data-system create job --from=cronjob/backup backup-first
 $K -n data-system logs -f job/backup-first --all-containers
 # once that has finished:
@@ -107,7 +107,7 @@ Delete the manual Jobs afterwards with `$K -n <namespace> delete job backup-firs
 
 ## When it alerts
 
-Read the failed Job's logs: `kubectl --context blueshell -n <namespace> logs job/<job>
+Read the failed Job's logs: `kubectl --context blueshell-admin -n <namespace> logs job/<job>
 --all-containers`. The alert carries the line that failed.
 
 - **"secret/platform/backup has no …"**: the credentials are not seeded, or a field is missing.
@@ -124,11 +124,11 @@ Read the failed Job's logs: `kubectl --context blueshell -n <namespace> logs job
   store only; the rest of its Job carried on.
 - **"Stalwart's pod did not stop within two minutes"**, **"Stalwart could not be scaled
   down"**: no snapshot was taken and Stalwart was started again. Check
-  `kubectl --context blueshell -n mail-system get deploy stalwart`: it must show `1/1`.
+  `kubectl --context blueshell-admin -n mail-system get deploy stalwart`: it must show `1/1`.
 - **"Stalwart could not be started again"**: mail is down. Run
-  `kubectl --context blueshell -n mail-system scale deploy/stalwart --replicas=1` at once.
+  `kubectl --context blueshell-admin -n mail-system scale deploy/stalwart --replicas=1` at once.
 - **No report at all for 26 hours**: the CronJob did not start. Check
-  `kubectl --context blueshell -n <namespace> get cronjob backup` and the node.
+  `kubectl --context blueshell-admin -n <namespace> get cronjob backup` and the node.
 
 ## Restoring
 
@@ -206,7 +206,7 @@ while the live Vault still holds the key versions it was sealed under.
 The snapshot is Stalwart's whole volume, with its RocksDB store in `data/`. To restore it over the
 live one:
 
-1. `kubectl --context blueshell -n mail-system scale deploy/stalwart --replicas=0`, and wait for
+1. `kubectl --context blueshell-admin -n mail-system scale deploy/stalwart --replicas=0`, and wait for
    the pod to go.
 2. Restore the snapshot into the `stalwart-data` volume from a pod that mounts it, replacing
    what is there, owned by uid 2000.

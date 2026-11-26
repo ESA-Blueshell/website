@@ -9,7 +9,7 @@ import StateMark from "@/components/island/StateMark.vue"
 import ManagementPage from "@/components/management/ManagementPage.vue"
 import ManagementTable, {type TableColumn} from "@/components/management/ManagementTable.vue"
 import {driftMarksOf, followsOf, type ListedTarget, readTargetOverview, TargetSystem} from "@/domains/cohorts"
-import {type CataloguedChannel, DISCORD_TABS, listCatalogue, opensOf} from "@/domains/discord"
+import {type CataloguedChannel, DISCORD_TABS, listCatalogue, opensOf, RoleMatches} from "@/domains/discord"
 import {formatMoment} from "@/utils/timestamps"
 
 defineOptions({name: "DiscordRolesPage"})
@@ -29,12 +29,14 @@ const COLUMNS: TableColumn<ListedTarget>[] = [
 
 const sorted = computed(() => [...(roles.value ?? [])].sort((a, b) => a.label.localeCompare(b.label)))
 
-onMounted(async () => {
+const load = async () => {
   const [overview, catalogue] = await Promise.all([readTargetOverview(TargetSystem.DISCORD), listCatalogue()])
   roles.value = overview?.lists ?? null
   channels.value = catalogue
   loaded.value = true
-})
+}
+
+onMounted(load)
 </script>
 
 <template>
@@ -54,6 +56,8 @@ onMounted(async () => {
     <template #lede>
       The roles the site could keep on the Discord server, the cohort each one follows and whether its holders match that cohort.
     </template>
+
+    <role-matches @linked="load" />
 
     <p
       v-if="loaded && roles == null"

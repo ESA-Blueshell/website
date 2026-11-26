@@ -1,7 +1,10 @@
 package net.blueshell.api.cohort.web
 
 import jakarta.validation.Validation
+import net.blueshell.api.cohort.domain.AdoptionChoice
+import net.blueshell.api.cohort.domain.AdoptionOutcome
 import net.blueshell.api.cohort.domain.CohortDiscord
+import net.blueshell.api.cohort.domain.DiscordAdoption
 import net.blueshell.api.cohort.domain.DiscordChoice
 import net.blueshell.api.cohort.domain.DiscordPlace
 import org.assertj.core.api.Assertions.assertThat
@@ -11,7 +14,8 @@ import org.mockito.kotlin.whenever
 
 class DiscordPlaceControllerTest {
     private val discord = mock<CohortDiscord>()
-    private val controller = DiscordPlaceController(discord, "Committees", "Esports")
+    private val adoption = mock<DiscordAdoption>()
+    private val controller = DiscordPlaceController(discord, adoption, "Committees", "Esports")
     private val place = DiscordPlace(true, "900", "Sitecie", emptyList())
 
     @Test
@@ -32,6 +36,17 @@ class DiscordPlaceControllerTest {
 
         assertThat(controller.findTeamDiscord(3)).isEqualTo(place)
         assertThat(controller.setTeamDiscord(3, DiscordPlaceRequest(createRole = true))).isEqualTo(place)
+    }
+
+    @Test
+    fun `offers the matches by name and links the confirmed ones`() {
+        val outcome = AdoptionOutcome(1, emptyList())
+        whenever(adoption.proposals()).thenReturn(emptyList())
+        val seen = AdoptionChoice("COMMITTEE_MEMBERS:1", "901", emptyList())
+        whenever(adoption.adopt(listOf(seen))).thenReturn(outcome)
+
+        assertThat(controller.listDiscordMatches()).isEmpty()
+        assertThat(controller.adoptDiscordMatches(AdoptDiscordRequest(listOf(seen)))).isEqualTo(outcome)
     }
 
     @Test

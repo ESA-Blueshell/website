@@ -3,7 +3,7 @@ import type {VueWrapper} from "@vue/test-utils"
 import DiscordRoles from "@/pages/management/DiscordRoles.vue"
 import {mountInApp, settle, sortByEveryHead, unmountAll} from "../helpers"
 
-const api = vi.hoisted(() => ({findTargetOverview: vi.fn(), listCataloguedChannels: vi.fn()}))
+const api = vi.hoisted(() => ({findTargetOverview: vi.fn(), listCataloguedChannels: vi.fn(), listDiscordMatches: vi.fn()}))
 
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -28,6 +28,7 @@ describe("the Discord roles page", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    api.listDiscordMatches.mockResolvedValue({status: 200, data: []})
     api.findTargetOverview.mockResolvedValue({status: 200, data: {lists: [sitecie, loose], missing: [], lastReconciledAt: null}})
     api.listCataloguedChannels.mockResolvedValue({status: 200, data: [{id: "1", name: "sitecie", kind: "TEXT", category: "Committees", private: true, roleIds: ["900"]}]})
   })

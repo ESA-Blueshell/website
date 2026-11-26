@@ -19,6 +19,7 @@ export type {DescriptionNode, DescriptionTree, DiscordChannelResponse, DiscordEm
 export {default as PeopleList, type ListedPerson} from "./island/PeopleList.vue"
 export {default as DiscordPlaceFields} from "./island/DiscordPlaceFields.vue"
 export {listCatalogue, type CataloguedChannel} from "./adapters/catalogue"
+export {default as RoleMatches} from "./island/RoleMatches.vue"
 export {accessOf, belongsTo, channelGroups, opensOf, type ChannelGroup, type NamedRole} from "./catalogue"
 export type {DiscordPlace, DiscordPlaceRequest} from "@/services/api"
 export {BotChannelProblem, readBotStanding, type BotGrant, type BotStanding} from "./adapters/bot"

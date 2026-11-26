@@ -1756,6 +1756,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "findTargetOverview", {lists: [], missing: [], lastReconciledAt: null})
     }
     if (method === "GET" && path === "/management/discord/catalogue") return answer(route, "listCataloguedChannels", [])
+    if (method === "GET" && path === "/management/discord/adoption") return answer(route, "listDiscordMatches", [])
     if (method === "GET" && path === "/management/cohort-targets/BREVO/overview") {
       return answer(route, "findTargetOverview", {
         lists: [

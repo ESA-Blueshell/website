@@ -110,6 +110,33 @@ export enum AddresseeKind {
     PERSON = 'PERSON'
 }
 
+/**
+ * The matches the board confirmed, each as it saw it
+ */
+export type AdoptDiscord = {
+    matches: Array<AdoptionChoice>;
+};
+
+export type AdoptionChoice = {
+    channelIds: Array<string>;
+    key: string;
+    roleId: string;
+};
+
+export type AdoptionMatch = {
+    channels: Array<KeptChannel>;
+    key: string;
+    label: string;
+    roleId: string;
+    roleName: string;
+    type: CohortType;
+};
+
+export type AdoptionOutcome = {
+    linked: number;
+    refused: Array<RefusedMatch>;
+};
+
 export type Alert = {
     count: number;
     hidden: boolean;
@@ -3167,6 +3194,14 @@ export type ReenrolRequest = {
     password: string;
     token: string;
     username: string;
+};
+
+export type RefusedMatch = {
+    code?: string | null;
+    facts: {
+        [key: string]: unknown;
+    };
+    label: string;
 };
 
 /**
@@ -12030,6 +12065,88 @@ export type SetCommitteeDiscordResponses = {
 };
 
 export type SetCommitteeDiscordResponse = SetCommitteeDiscordResponses[keyof SetCommitteeDiscordResponses];
+
+export type ListDiscordMatchesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/management/discord/adoption';
+};
+
+export type ListDiscordMatchesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type ListDiscordMatchesError = ListDiscordMatchesErrors[keyof ListDiscordMatchesErrors];
+
+export type ListDiscordMatchesResponses = {
+    /**
+     * OK
+     */
+    200: Array<AdoptionMatch>;
+};
+
+export type ListDiscordMatchesResponse = ListDiscordMatchesResponses[keyof ListDiscordMatchesResponses];
+
+export type AdoptDiscordMatchesData = {
+    body: AdoptDiscord;
+    path?: never;
+    query?: never;
+    url: '/management/discord/adoption';
+};
+
+export type AdoptDiscordMatchesErrors = {
+    /**
+     * Validation error
+     */
+    400: ApiError;
+    /**
+     * Unauthorized
+     */
+    401: ApiError;
+    /**
+     * Forbidden (access denied)
+     */
+    403: ApiError;
+    /**
+     * Not Found
+     */
+    404: ApiError;
+    /**
+     * Server error
+     */
+    500: ApiError;
+};
+
+export type AdoptDiscordMatchesError = AdoptDiscordMatchesErrors[keyof AdoptDiscordMatchesErrors];
+
+export type AdoptDiscordMatchesResponses = {
+    /**
+     * OK
+     */
+    200: AdoptionOutcome;
+};
+
+export type AdoptDiscordMatchesResponse = AdoptDiscordMatchesResponses[keyof AdoptDiscordMatchesResponses];
 
 export type FindBotStandingData = {
     body?: never;

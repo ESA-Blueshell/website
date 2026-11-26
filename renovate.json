@@ -40,14 +40,18 @@
     ]
   },
   "vulnerabilityAlerts": {
-    "description": "A security fix skips the cooldown, so it never merges itself: a release that has not aged gets a person instead.",
+    "description": "A security fix skips the cooldown and the Monday schedule, so it opens the moment a fix is published. It never merges itself: a release that has not aged gets a person instead. osvVulnerabilityAlerts adds the OSV database, which also covers the Gradle and Go dependencies that GitHub's alerts miss. Transitive npm fixes come from Dependabot security updates and the weekly lock file maintenance.",
     "enabled": true,
     "automerge": false,
     "labels": [
       "dependencies",
       "security"
-    ]
+    ],
+    "minimumReleaseAge": null,
+    "schedule": [],
+    "prCreation": "immediate"
   },
+  "osvVulnerabilityAlerts": true,
   "customManagers": [
     {
       "customType": "regex",
@@ -310,6 +314,14 @@
       "addLabels": [
         "docker"
       ]
+    },
+    {
+      "description": "A Flux apiVersion moves with the Flux release that serves it (the flux manager regenerates gotk-components.yaml). Bumped on its own, it names a version the cluster's CRDs do not serve yet.",
+      "matchDatasources": [
+        "kubernetes-api"
+      ],
+      "matchCurrentValue": "/\\.toolkit\\.fluxcd\\.io\\//",
+      "enabled": false
     }
   ]
 }

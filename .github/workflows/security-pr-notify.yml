@@ -1,0 +1,76 @@
+name: Security PR notify
+
+# Posts to Discord when a pull request opens that fixes a known vulnerability:
+# a Renovate vulnerability-alert PR (title ends in [SECURITY]), a Dependabot
+# security update (it bumps a package with an open Dependabot alert), or any PR
+# whose body cites a CVE or GHSA id.
+#
+# pull_request_target, so the secret reaches PRs from bots. Nothing from the PR
+# is checked out or executed; only its title, body and labels are read.
+#
+# Needs a `DISCORD_SECURITY_WEBHOOK` secret holding the alerting channel's
+# webhook URL, in the Actions secrets and, for Dependabot's PRs, in the
+# Dependabot secrets. Without it the job warns and exits.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Notify Discord of a security fix
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      security-events: read
+    steps:
+      - name: Decide and post
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_SECURITY_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          URL: ${{ github.event.pull_request.html_url }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          ids=$(printf '%s' "$BODY" | grep -oE 'CVE-[0-9]{4}-[0-9]+|GHSA(-[0-9a-z]{4}){3}' | sort -u | head -5 | paste -sd ' ' - || true)
+          security=false
+          case "$TITLE" in *'[SECURITY]'*) security=true ;; esac
+          case " $LABELS " in *' security '*) security=true ;; esac
+          [ -n "$ids" ] && security=true
+
+          # A Dependabot security update names the package it bumps but cites no id.
+          if [ "$security" = false ] && [ "$AUTHOR" = "dependabot[bot]" ]; then
+            pkg=$(printf '%s' "$TITLE" | sed -nE 's/.*[Bb]ump ([^ ]+) from .*/\1/p')
+            if [ -n "$pkg" ]; then
+              hits=$(gh api "repos/$REPO/dependabot/alerts?state=open&per_page=100" \
+                | jq -r --arg pkg "$pkg" '[.[] | select(.dependency.package.name == $pkg) | (.security_advisory.cve_id // .security_advisory.ghsa_id)] | unique | join(" ")' || true)
+              if [ -n "$hits" ]; then
+                security=true
+                ids=$hits
+              fi
+            fi
+          fi
+
+          if [ "$security" = false ]; then
+            echo "Not a security fix."
+            exit 0
+          fi
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "::warning::DISCORD_SECURITY_WEBHOOK is unset; skipping the notification."
+            exit 0
+          fi
+
+          desc="$TITLE"
+          [ -n "$ids" ] && desc="$desc"$'\n'"Fixes: $ids"
+          jq -n --arg title "Security fix opened: #$NUMBER" --arg url "$URL" --arg desc "$desc" \
+            '{username: "Blueshell security", embeds: [{title: $title, url: $url, description: $desc, color: 15158332}]}' \
+            | curl -fsS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"

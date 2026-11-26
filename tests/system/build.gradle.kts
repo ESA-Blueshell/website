@@ -22,7 +22,7 @@ dependencies {
     // Spring Boot starters; just an HTTP client, JDBC, Playwright, and
     // IMAP/JSON helpers for assertions.
     testImplementation("org.springframework.security:spring-security-crypto:7.1.1")
-    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
     testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.4")
 
     testImplementation("io.rest-assured:rest-assured:6.0.1")

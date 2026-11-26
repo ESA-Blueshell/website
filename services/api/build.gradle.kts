@@ -109,7 +109,7 @@ dependencies {
     // BlogHtmlSanitizer's safelist. It arrived through flexmark until flexmark went; pinned where it resolved.
     implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("tools.jackson.module:jackson-module-kotlin")

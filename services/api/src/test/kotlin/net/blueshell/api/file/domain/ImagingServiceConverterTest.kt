@@ -30,6 +30,11 @@ class ImagingServiceConverterTest {
             sent = exchange.requestBody.readAllBytes()
             answer(exchange)
         }
+        server.createContext("/png") { exchange ->
+            asked = exchange.requestURI.path
+            sent = exchange.requestBody.readAllBytes()
+            answer(exchange)
+        }
     }
 
     @AfterEach
@@ -51,6 +56,20 @@ class ImagingServiceConverterTest {
         assertThat(sent).isEqualTo("png bytes".toByteArray())
         assertThat(master.size).isEqualTo(ImageDimensions.Size(2560, 1024))
         assertThat(Files.readString(master.bytes.path)).isEqualTo("RIFFwebp")
+    }
+
+    @Test
+    fun `a stored picture is drawn as PNG by the service, and a refusal is no picture`() {
+        answer = { it.answer(200, "png drawing", "Image-Width" to "30", "Image-Height" to "20") }
+        val output = scratch.cut(".png")
+
+        converter().png(picture("RIFF stored"), output)
+
+        assertThat(asked).isEqualTo("/png")
+        assertThat(sent).isEqualTo("RIFF stored".toByteArray())
+        assertThat(Files.readString(output.path)).isEqualTo("png drawing")
+        answer = { it.answer(422, "the picture could not be decoded") }
+        assertThatThrownBy { converter().png(picture("RIFF broken"), output) }.isInstanceOf(WebpConversionException::class.java)
     }
 
     @Test

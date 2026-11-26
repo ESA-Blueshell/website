@@ -98,6 +98,11 @@ class SeenEmojiPassJobsTest {
                 queued += job.type
                 return null
             }
+
+            override fun runAgain(
+                executionId: Long,
+                trigger: JobTrigger,
+            ): QueuedJob? = null
         }
 
     private fun backfill(history: DiscordHistory?): SeenEmojiBackfill {

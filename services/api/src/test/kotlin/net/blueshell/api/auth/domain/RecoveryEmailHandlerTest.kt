@@ -109,6 +109,6 @@ class RecoveryEmailHandlerTest {
 
     @Test
     fun `a recovery email is never made again, since its payload holds the link`() {
-        assertThat(job.resendable).isFalse()
+        assertThat(job(AuthJobs.PasswordReset).resendable).isFalse()
     }
 }

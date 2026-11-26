@@ -62,6 +62,39 @@ func TestMasterAnswersItsBytesAndSize(t *testing.T) {
 	}
 }
 
+func TestStoredPictureIsAnsweredAsPNGAtItsOwnSize(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/png", bytes.NewReader(pngBytes(t, 30, 20)))
+	New(roomy, 1, quiet).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusOK || recorder.Header().Get("Content-Type") != "image/png" ||
+		recorder.Header().Get("Image-Width") != "30" || recorder.Header().Get("Image-Height") != "20" {
+		t.Fatalf("answered %d %v", recorder.Code, recorder.Header())
+	}
+	if _, err := png.Decode(recorder.Body); err != nil {
+		t.Fatalf("not a PNG: %v", err)
+	}
+}
+
+func TestPNGOfWhatItWillNotDecodeIsUnprocessable(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/png", strings.NewReader("not a picture"))
+	New(roomy, 1, quiet).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("answered %d", recorder.Code)
+	}
+}
+
+func TestPNGOfABodyOverTheLimitIsTooLarge(t *testing.T) {
+	limits := roomy
+	limits.MaxBytes = 10
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/png", strings.NewReader(strings.Repeat("x", 11)))
+	New(limits, 1, quiet).ServeHTTP(recorder, request)
+	if recorder.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("answered %d", recorder.Code)
+	}
+}
+
 func TestRenditionIsLosslessWhereAskedFor(t *testing.T) {
 	recorder := post(New(roomy, 1, quiet), "width=10&height=5&lossless=true", bytes.NewReader(pngBytes(t, 100, 50)))
 	if recorder.Code != http.StatusOK || recorder.Header().Get("Image-Width") != "10" {

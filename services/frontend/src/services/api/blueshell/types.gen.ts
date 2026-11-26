@@ -1450,6 +1450,12 @@ export type DiscordChannelResponse = {
     name: string;
 };
 
+export enum DiscordEmojiKind {
+    SERVER = 'SERVER',
+    APPLICATION = 'APPLICATION',
+    SEEN = 'SEEN'
+}
+
 /**
  * A picture uploaded to the Discord server, which a description writes as <:name:id>
  */
@@ -1459,7 +1465,15 @@ export type DiscordEmojiResponse = {
      */
     animated: boolean;
     id: string;
+    /**
+     * Uploaded to the server or to the bot's Discord application, or seen used in the server
+     */
+    kind: DiscordEmojiKind;
     name: string;
+    /**
+     * How many messages in the server used a seen emoji; null for the others
+     */
+    uses?: number | null;
 };
 
 /**
@@ -2368,6 +2382,13 @@ export enum IncassoStanding {
     ON_INCASSO_WITHOUT_BANK_DETAILS = 'ON_INCASSO_WITHOUT_BANK_DETAILS'
 }
 
+export type JobCount = {
+    channels: Array<string>;
+    count: number;
+    names: Array<string>;
+    tally: JobTally;
+};
+
 export enum JobEffect {
     MADE = 'MADE',
     EDITED = 'EDITED',
@@ -2403,6 +2424,7 @@ export type JobExecution = {
     } | null;
     queuedAt?: string | null;
     relatedEntities: Array<JobExecutionRelatedEntity>;
+    report: Array<JobCount>;
     skipReason?: string | null;
     stackTrace?: string | null;
     startedAt?: string | null;
@@ -2471,6 +2493,21 @@ export type JobStatsDto = {
     successCount: number;
     totalCount: number;
 };
+
+export enum JobTally {
+    PLACES_READ = 'PLACES_READ',
+    MESSAGES_READ = 'MESSAGES_READ',
+    EMOJI_SEEN = 'EMOJI_SEEN',
+    PLACES_LEFT = 'PLACES_LEFT',
+    SHORTCODES_RESOLVED = 'SHORTCODES_RESOLVED',
+    SHORTCODES_LEFT = 'SHORTCODES_LEFT',
+    EVENTS_QUEUED = 'EVENTS_QUEUED',
+    USERS_QUEUED = 'USERS_QUEUED',
+    COHORTS_RECOMPUTED = 'COHORTS_RECOMPUTED',
+    COHORTS_FAILED = 'COHORTS_FAILED',
+    VALUES_SEALED = 'VALUES_SEALED',
+    VALUES_REWRAPPED = 'VALUES_REWRAPPED'
+}
 
 export enum JobTrigger {
     EVENT_CREATED = 'EVENT_CREATED',

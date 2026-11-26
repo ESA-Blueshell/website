@@ -21,7 +21,7 @@ class ImagingServiceConverter(
     @Value($$"${app.imaging.url}") url: String,
     private val scratch: ScratchSpace,
 ) : ImageConverter {
-    private val endpoint = url.trimEnd('/') + "/convert"
+    private val service = url.trimEnd('/')
     private val client =
         HttpClient
             .newBuilder()
@@ -69,6 +69,16 @@ class ImagingServiceConverter(
             override fun close() = Unit
         }
 
+    override fun png(
+        picture: ScratchFile,
+        output: ScratchFile,
+    ) {
+        exchange(picture, output, URI.create("$service/png")) { reason ->
+            log.warn("[pictures] the imaging service would not draw a stored picture: {}", reason)
+            WebpConversionException()
+        }
+    }
+
     private fun encodingOf(type: FileType): String =
         if (type.webpLossless) "lossless=true" else "quality=${type.webpQuality ?: DEFAULT_QUALITY}"
 
@@ -77,10 +87,17 @@ class ImagingServiceConverter(
         output: ScratchFile,
         query: String,
         refused: (String) -> RuntimeException,
+    ): ImageDimensions.Size = exchange(input, output, URI.create("$service/convert?$query"), refused)
+
+    private fun exchange(
+        input: ScratchFile,
+        output: ScratchFile,
+        uri: URI,
+        refused: (String) -> RuntimeException,
     ): ImageDimensions.Size {
         val request =
             HttpRequest
-                .newBuilder(URI.create("$endpoint?$query"))
+                .newBuilder(uri)
                 .timeout(REQUEST_TIMEOUT)
                 .header("Content-Type", "application/octet-stream")
                 .POST(HttpRequest.BodyPublishers.ofFile(input.path))

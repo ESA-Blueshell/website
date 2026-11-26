@@ -116,6 +116,11 @@ class EventShortcodesTest {
                     queued += (payload as EventTextJobs.EventShortcodesPayload).eventId
                     return null
                 }
+
+                override fun runAgain(
+                    executionId: Long,
+                    trigger: JobTrigger,
+                ): QueuedJob? = null
             }
         val all = ResolveAllEmojiShortcodesJob(mapper, shortcodes(), jobs)
 

@@ -1,4 +1,4 @@
-// Package server answers POST /convert with one picture's WebP.
+// Package server answers POST /convert with one picture's WebP, and POST /png with its PNG.
 package server
 
 import (
@@ -26,20 +26,22 @@ type server struct {
 	slots  chan struct{}
 	log    *slog.Logger
 	encode func([]byte, convert.Target, convert.Limits) (convert.Result, error)
+	draw   func([]byte, convert.Limits) (convert.Drawing, error)
 }
 
-// New serves GET /healthz and POST /convert.
+// New serves GET /healthz, POST /convert and POST /png.
 func New(limits Limits, concurrency int, log *slog.Logger) http.Handler {
 	return newServer(limits, concurrency, log, convert.Convert)
 }
 
 func newServer(limits Limits, concurrency int, log *slog.Logger, encode func([]byte, convert.Target, convert.Limits) (convert.Result, error)) http.Handler {
-	s := &server{limits: limits, slots: make(chan struct{}, concurrency), log: log, encode: encode}
+	s := &server{limits: limits, slots: make(chan struct{}, concurrency), log: log, encode: encode, draw: convert.PNG}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 	mux.HandleFunc("POST /convert", s.convert)
+	mux.HandleFunc("POST /png", s.png)
 	return mux
 }
 
@@ -50,39 +52,16 @@ func (s *server) convert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, s.limits.MaxBytes))
-	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			http.Error(w, "the picture is too large", http.StatusRequestEntityTooLarge)
-			return
-		}
-		http.Error(w, "the picture could not be read", http.StatusBadRequest)
+	body, release, ok := s.admit(w, r)
+	if !ok {
 		return
 	}
-
-	wait := time.NewTimer(s.limits.Wait)
-	defer wait.Stop()
-	select {
-	case s.slots <- struct{}{}:
-		defer func() { <-s.slots }()
-	case <-wait.C:
-		http.Error(w, "every conversion is busy", http.StatusServiceUnavailable)
-		return
-	case <-r.Context().Done():
-		return
-	}
+	defer release()
 
 	started := time.Now()
 	result, err := s.encode(body, target, s.limits.Picture)
 	if err != nil {
-		status := http.StatusUnprocessableEntity
-		if !errors.Is(err, convert.ErrUndecodable) && !errors.Is(err, convert.ErrTooManyPixels) &&
-			!errors.Is(err, convert.ErrTooManyFrames) {
-			status = http.StatusInternalServerError
-		}
-		s.log.Warn("refused a picture", "bytes", len(body), "status", status, "error", err)
-		http.Error(w, err.Error(), status)
+		s.refuse(w, len(body), err)
 		return
 	}
 	if result.Unanimated != nil {
@@ -98,6 +77,63 @@ func (s *server) convert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Image-Width", strconv.Itoa(result.Width))
 	w.Header().Set("Image-Height", strconv.Itoa(result.Height))
 	_, _ = w.Write(result.WebP)
+}
+
+// png answers a stored picture as PNG at its own size, for a document that cannot draw WebP.
+func (s *server) png(w http.ResponseWriter, r *http.Request) {
+	body, release, ok := s.admit(w, r)
+	if !ok {
+		return
+	}
+	defer release()
+
+	drawing, err := s.draw(body, s.limits.Picture)
+	if err != nil {
+		s.refuse(w, len(body), err)
+		return
+	}
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Content-Length", strconv.Itoa(len(drawing.PNG)))
+	w.Header().Set("Image-Width", strconv.Itoa(drawing.Width))
+	w.Header().Set("Image-Height", strconv.Itoa(drawing.Height))
+	_, _ = w.Write(drawing.PNG)
+}
+
+// admit reads the body and waits for a free slot. It answers false where it has answered the request itself.
+func (s *server) admit(w http.ResponseWriter, r *http.Request) ([]byte, func(), bool) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, s.limits.MaxBytes))
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			http.Error(w, "the picture is too large", http.StatusRequestEntityTooLarge)
+			return nil, nil, false
+		}
+		http.Error(w, "the picture could not be read", http.StatusBadRequest)
+		return nil, nil, false
+	}
+
+	wait := time.NewTimer(s.limits.Wait)
+	defer wait.Stop()
+	select {
+	case s.slots <- struct{}{}:
+		return body, func() { <-s.slots }, true
+	case <-wait.C:
+		http.Error(w, "every conversion is busy", http.StatusServiceUnavailable)
+		return nil, nil, false
+	case <-r.Context().Done():
+		return nil, nil, false
+	}
+}
+
+// refuse answers a picture the service will not decode as unprocessable, and anything else as its own failure.
+func (s *server) refuse(w http.ResponseWriter, size int, err error) {
+	status := http.StatusUnprocessableEntity
+	if !errors.Is(err, convert.ErrUndecodable) && !errors.Is(err, convert.ErrTooManyPixels) &&
+		!errors.Is(err, convert.ErrTooManyFrames) {
+		status = http.StatusInternalServerError
+	}
+	s.log.Warn("refused a picture", "bytes", size, "status", status, "error", err)
+	http.Error(w, err.Error(), status)
 }
 
 func targetOf(r *http.Request) (convert.Target, error) {

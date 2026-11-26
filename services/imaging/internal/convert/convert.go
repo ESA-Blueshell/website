@@ -1,4 +1,5 @@
-// Package convert turns an uploaded picture into WebP. Go decodes it, libwebp only encodes, and
+// Package convert turns an uploaded picture into WebP, or a stored one into PNG for a document
+// that cannot read WebP. Go decodes it, libwebp only encodes, and
 // every limit is checked from headers before a pixel is allocated (architecture ADR-014).
 package convert
 
@@ -75,20 +76,9 @@ func Convert(data []byte, target Target, limits Limits) (Result, error) {
 }
 
 func still(data []byte, target Target, maxPixels int64) (Result, error) {
-	config, _, err := image.DecodeConfig(bytes.NewReader(data))
+	picture, err := decodeStill(data, maxPixels)
 	if err != nil {
-		return Result{}, ErrUndecodable
-	}
-	if config.Width <= 0 || config.Height <= 0 {
-		return Result{}, ErrUndecodable
-	}
-	if int64(config.Width)*int64(config.Height) > maxPixels {
-		return Result{}, ErrTooManyPixels
-	}
-
-	picture, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return Result{}, ErrUndecodable
+		return Result{}, err
 	}
 	bounds := picture.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
@@ -104,6 +94,25 @@ func still(data []byte, target Target, maxPixels int64) (Result, error) {
 		return Result{}, err
 	}
 	return Result{WebP: webp, Width: targetWidth, Height: targetHeight, Frames: 1}, nil
+}
+
+// decodeStill checks the pixel limit from the header before it decodes a pixel.
+func decodeStill(data []byte, maxPixels int64) (image.Image, error) {
+	config, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, ErrUndecodable
+	}
+	if config.Width <= 0 || config.Height <= 0 {
+		return nil, ErrUndecodable
+	}
+	if int64(config.Width)*int64(config.Height) > maxPixels {
+		return nil, ErrTooManyPixels
+	}
+	picture, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, ErrUndecodable
+	}
+	return picture, nil
 }
 
 // fittedWithin rounds as the api's ImageDimensions.Size.fittedWithin does.

@@ -1,9 +1,9 @@
 package net.blueshell.api.file.api
 
+import net.blueshell.api.file.domain.ImageConverter
 import net.blueshell.api.file.domain.ScratchFile
 import net.blueshell.api.file.domain.ScratchSpace
 import net.blueshell.api.file.domain.WebpConversionException
-import net.blueshell.api.file.domain.WebpEncoder
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
@@ -25,8 +25,8 @@ class PictureBitmapsTest {
     lateinit var directory: Path
 
     private val files: FileService = mock()
-    private val webp: WebpEncoder = mock()
-    private val pictures by lazy { PictureBitmaps(files, ScratchSpace(directory.toString()), webp) }
+    private val converter: ImageConverter = mock()
+    private val pictures by lazy { PictureBitmaps(files, ScratchSpace(directory.toString()), converter) }
 
     private fun png(width: Int): ByteArray =
         ByteArrayOutputStream().also { ImageIO.write(BufferedImage(width, 10, BufferedImage.TYPE_INT_RGB), "png", it) }.toByteArray()
@@ -37,7 +37,7 @@ class PictureBitmapsTest {
         val scan = Entities.file(2, type = FileType.RECEIPT, name = "scan.png", mediaType = "image/png")
         whenever(files.openContent(photo)).thenReturn("RIFF".byteInputStream())
         whenever(files.openContent(scan)).thenReturn(png(30).inputStream())
-        doAnswer { Files.write((it.arguments[1] as ScratchFile).path, png(20)) }.whenever(webp).decode(any(), any())
+        doAnswer { Files.write((it.arguments[1] as ScratchFile).path, png(20)) }.whenever(converter).png(any(), any())
 
         assertThat(pictures.bitmapOf(photo)!!.width).isEqualTo(20)
         assertThat(pictures.bitmapOf(scan)!!.width).isEqualTo(30)
@@ -50,7 +50,7 @@ class PictureBitmapsTest {
         val bad = Entities.file(4, type = FileType.RECEIPT)
         whenever(files.openContent(text)).thenReturn("not a picture".byteInputStream())
         whenever(files.openContent(bad)).thenReturn("RIFF".byteInputStream())
-        doThrow(WebpConversionException()).whenever(webp).decode(any(), any())
+        doThrow(WebpConversionException()).whenever(converter).png(any(), any())
 
         assertThat(pictures.bitmapOf(text)).isNull()
         assertThat(pictures.bitmapOf(bad)).isNull()

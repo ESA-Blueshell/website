@@ -20,6 +20,15 @@ interface ImageConverter {
         name: String,
     ): Renditions
 
+    /**
+     * Writes a stored picture as PNG at its own size, for a document that cannot draw WebP; an
+     * undecodable one is a [WebpConversionException].
+     */
+    fun png(
+        picture: ScratchFile,
+        output: ScratchFile,
+    )
+
     class Converted(
         val bytes: ScratchFile,
         val size: ImageDimensions.Size,

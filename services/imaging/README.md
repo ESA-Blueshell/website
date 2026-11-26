@@ -34,6 +34,10 @@ and the service logs why.
 | 500 | libwebp refused to encode it |
 | 503 | No conversion came free within the wait |
 
+`POST /png` takes a stored picture's bytes and answers it as PNG at its own size, with that size
+in `Image-Width` and `Image-Height`, for a document that cannot draw WebP. It takes no query and
+answers the same statuses, without 400.
+
 `GET /healthz` answers 204.
 
 ## Settings

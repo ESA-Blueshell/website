@@ -193,6 +193,18 @@ describe("JobManager page", () => {
   })
 
   // Pressing Retry and being told nothing is indistinguishable from pressing nothing at all.
+  it("says what a run counted on its row, and nothing on a row that counted nothing", async () => {
+    mockList.mockResolvedValue(pageOf([
+      job({id: 8, report: [{tally: "PLACES_READ", count: 2, channels: [], names: []}, {tally: "EMOJI_SEEN", count: 1, channels: [], names: []}]}),
+      job({id: 10, report: []}),
+    ]))
+    const wrapper = mountJobManager()
+    await settle()
+
+    expect(wrapper.get('[data-testid="job-row-report-8"]').text()).toBe("Read 2 channels · 1 emoji found")
+    expect(wrapper.find('[data-testid="job-row-report-10"]').exists()).toBe(false)
+  })
+
   it("says why a retry was refused, in the api's own words", async () => {
     mockRetry.mockResolvedValueOnce({status: 409, error: {detail: "That job is already running."}})
 

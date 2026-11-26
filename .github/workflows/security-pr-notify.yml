@@ -1,31 +1,38 @@
 name: Security PR notify
 
-# Posts to Discord when a pull request that fixes a known vulnerability opens,
-# and again when it merges, since that fix is then available in the pending
-# release pull request and reaches production once that release is cut. A fix:
-# a Renovate vulnerability-alert PR (title ends in [SECURITY]), a Dependabot
-# security update (it bumps a package with an open Dependabot alert), or any PR
-# whose body cites a CVE or GHSA id.
+# Discord notices for pull requests that fix a known vulnerability: a Renovate
+# vulnerability-alert PR (title ends in [SECURITY]), a Dependabot security update
+# (it bumps a package with an open or fixed Dependabot alert), or any PR whose
+# body cites a CVE or GHSA id. The rules live in .github/scripts/security_pr_notice.sh.
 #
-# pull_request_target, so the secret reaches PRs from bots. Nothing from the PR
-# is checked out or executed; only its title, body and labels are read.
+# - opened: only for PRs that do not merge themselves (not Renovate's).
+# - merged: a release with the fix is available in the pending release PR.
+# - Validate failed: the PR will not merge itself.
+#
+# pull_request_target and workflow_run both run the default branch's files, so
+# nothing from the PR is checked out or executed; its text reaches the script
+# only through the environment.
 #
 # Posts through the one Discord webhook every notice uses. A run started by
 # Dependabot sees only Dependabot secrets, where it is `DISCORD_WEBHOOK`; any
-# other run reads the `DISCORD_RELEASE_WEBHOOK` organisation secret. Without
-# either the job warns and exits.
+# other run reads the `DISCORD_RELEASE_WEBHOOK` organisation secret.
 
 on:
   pull_request_target:
     types: [opened, reopened, closed]
+  workflow_run:
+    workflows: [Validate]
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
-  notify:
+  pull-request:
     name: Notify Discord of a security fix
-    if: github.event.action != 'closed' || github.event.pull_request.merged
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      (github.event.action != 'closed' || github.event.pull_request.merged)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -33,57 +40,59 @@ jobs:
       pull-requests: read
       security-events: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Decide and post
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          MODE: ${{ github.event.action == 'closed' && 'merged' || 'opened' }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
           URL: ${{ github.event.pull_request.html_url }}
           NUMBER: ${{ github.event.pull_request.number }}
-          ACTION: ${{ github.event.action }}
+        run: bash .github/scripts/security_pr_notice.sh
+
+  ci-failed:
+    name: Notify Discord of a failed security fix
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Decide and post
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: |
           set -euo pipefail
-          ids=$(printf '%s' "$BODY" | grep -oE 'CVE-[0-9]{4}-[0-9]+|GHSA(-[0-9a-z]{4}){3}' | sort -u | head -5 | paste -sd ' ' - || true)
-          security=false
-          case "$TITLE" in *'[SECURITY]'*) security=true ;; esac
-          case " $LABELS " in *' security '*) security=true ;; esac
-          [ -n "$ids" ] && security=true
-
-          # A Dependabot security update names the package it bumps but cites no id.
-          if [ "$security" = false ] && [ "$AUTHOR" = "dependabot[bot]" ]; then
-            pkg=$(printf '%s' "$TITLE" | sed -nE 's/.*[Bb]ump ([^ ]+) from .*/\1/p')
-            if [ -n "$pkg" ]; then
-              # Fixed as well as open: the alert closes as soon as the merge lands.
-              hits=$(gh api "repos/$REPO/dependabot/alerts?state=open,fixed&per_page=100" \
-                | jq -r --arg pkg "$pkg" '[.[] | select(.dependency.package.name == $pkg) | (.security_advisory.cve_id // .security_advisory.ghsa_id)] | unique | join(" ")' || true)
-              if [ -n "$hits" ]; then
-                security=true
-                ids=$hits
-              fi
-            fi
-          fi
-
-          if [ "$security" = false ]; then
-            echo "Not a security fix."
+          pr=$(gh pr list -R "$REPO" --state open --head "$HEAD_BRANCH" --json number,author,title,body,labels,url --jq '.[0] // empty')
+          if [ -z "$pr" ]; then
+            echo "No open pull request for this run."
             exit 0
           fi
-          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "::warning::No Discord webhook secret is set; skipping the notification."
-            exit 0
-          fi
-
-          desc="$TITLE"
-          [ -n "$ids" ] && desc="$desc"$'\n'"Fixes: $ids"
-          heading="Security fix opened: #$NUMBER"
-          if [ "$ACTION" = closed ]; then
-            heading="Security fix merged: #$NUMBER"
-            release=$(gh pr list -R "$REPO" --state open --label 'autorelease: pending' --json url --jq '.[0].url // empty')
-            desc="$desc"$'\n'"A release with this fix is available: ${release:-the release pull request opens within minutes}"
-          fi
-          jq -n --arg title "$heading" --arg url "$URL" --arg desc "$desc" \
-            '{username: "Blueshell security", embeds: [{title: $title, url: $url, description: $desc, color: 15158332}]}' \
-            | curl -fsS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"
+          NUMBER=$(jq -r .number <<<"$pr")
+          AUTHOR=$(jq -r '.author.login | if . == "app/renovate" or . == "renovate" then "renovate[bot]" elif . == "app/dependabot" or . == "dependabot" then "dependabot[bot]" else . end' <<<"$pr")
+          TITLE=$(jq -r .title <<<"$pr")
+          BODY=$(jq -r .body <<<"$pr")
+          LABELS=$(jq -r '[.labels[].name] | join(" ")' <<<"$pr")
+          URL=$(jq -r .url <<<"$pr")
+          MODE=ci-failed
+          export NUMBER AUTHOR TITLE BODY LABELS URL MODE
+          bash .github/scripts/security_pr_notice.sh

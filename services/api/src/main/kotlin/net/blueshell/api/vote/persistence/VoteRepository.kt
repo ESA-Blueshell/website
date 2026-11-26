@@ -1,7 +1,7 @@
 package net.blueshell.api.vote.persistence
 
-import net.blueshell.api.shared.repository.BaseRepository
 import jakarta.persistence.LockModeType
+import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

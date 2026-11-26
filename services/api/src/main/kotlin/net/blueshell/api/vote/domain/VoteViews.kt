@@ -50,7 +50,7 @@ data class BallotSummary(
     val submittedAt: Instant,
     val picks: List<PickSummary>,
     /** The tracks on the ballot its member added, and so may rename. */
-    val renamableTrackIds: List<Long> = emptyList(),
+    val renamableTrackIds: List<Long>,
 )
 
 /**

@@ -10,9 +10,9 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import jakarta.persistence.Version
-import org.hibernate.annotations.ColumnDefault
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.model.AutoIdEntity
+import org.hibernate.annotations.ColumnDefault
 import java.time.Instant
 
 /**

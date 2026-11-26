@@ -1,6 +1,5 @@
 package net.blueshell.api.file.api
 
-import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.testsupport.Entities
 import net.blueshell.api.user.api.ServiceAccount

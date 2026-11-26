@@ -33,11 +33,7 @@ class IgdbGameCatalogue(
         val id: String,
         val secret: String,
     ) {
-        override fun equals(other: Any?) = other is TwitchApp && other.id == id && other.secret == secret
-
-        override fun hashCode() = 31 * id.hashCode() + secret.hashCode()
-
-        override fun toString() = "TwitchApp($id)"
+        fun sameAs(other: TwitchApp) = other.id == id && other.secret == secret
     }
 
     private data class Token(
@@ -96,7 +92,7 @@ class IgdbGameCatalogue(
             app to tokenFor(app, fresh)
         } catch (refused: GameSearchUnavailable) {
             val again = currentApp()
-            if (again == app) throw refused
+            if (again.sameAs(app)) throw refused
             again to tokenFor(again, fresh = true)
         }
     }
@@ -119,9 +115,9 @@ class IgdbGameCatalogue(
 
     private fun tokenFor(
         app: TwitchApp,
-        fresh: Boolean = false,
+        fresh: Boolean,
     ): String {
-        val held = token?.takeIf { !fresh && it.issuedFor == app }
+        val held = token?.takeIf { !fresh && it.issuedFor.sameAs(app) }
         if (held != null && clock.instant().isBefore(held.expiresAt)) return held.value
         val form =
             LinkedMultiValueMap<String, String>().apply {

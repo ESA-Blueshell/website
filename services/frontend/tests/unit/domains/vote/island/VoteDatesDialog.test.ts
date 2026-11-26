@@ -33,6 +33,13 @@ describe("the board's dates dialog", () => {
 
   const fields = (wrapper: Awaited<ReturnType<typeof dialog>>) => wrapper.findAllComponents(DateTimeInput)
 
+  it("closes when the dialog asks to", async () => {
+    const wrapper = await dialog(null)
+    wrapper.findComponent({name: "ModalDialog"}).vm.$emit("update:open", false)
+
+    expect(wrapper.emitted("update:open")).toEqual([[false]])
+  })
+
   it("is titled for the year it starts or the vote it changes", async () => {
     expect((await dialog(null, 2027)).get("h2").text()).toBe("Start the 2027 vote")
     expect((await dialog(aVote("VOTING"))).get("h2").text()).toBe("The 2026 vote")

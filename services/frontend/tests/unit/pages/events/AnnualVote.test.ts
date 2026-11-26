@@ -46,7 +46,8 @@ describe("annual vote page", () => {
 
   const mount = async (signedIn: StoredLogin | null, page: VoteKindPage = OST_TOP_50, year?: number) => {
     const Page = defineComponent({render: () => h(AnnualVote, {page, year})})
-    const wrapper = await mountPage(Page, {path: page.path, login: signedIn})
+    // The page takes its kind as a prop; a kind switched off has no route, so it mounts at the one that has.
+    const wrapper = await mountPage(Page, {path: OST_TOP_50.path, login: signedIn})
     wrappers.push(wrapper)
     await settle()
     return wrapper

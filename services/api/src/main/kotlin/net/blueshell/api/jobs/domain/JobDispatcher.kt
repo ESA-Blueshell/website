@@ -9,17 +9,16 @@ import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.shared.tracking.Actor
 import net.blueshell.api.shared.tracking.ActorProvider
+import org.slf4j.LoggerFactory
+import org.springframework.core.task.TaskRejectedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import tools.jackson.databind.ObjectMapper
 
 /**
- * Async job dispatcher. Writes a DB row then calls JobExecutor.executeAsync().
- * No message broker required.
- *
- * When [JobQueueProperties.autoDispatch] is false (e.g. in tests), jobs are persisted
- * but not automatically executed. Tests can call [JobExecutor.execute] explicitly.
+ * Writes a queued row, then dispatches it after commit or at once outside a transaction.
+ * With [JobQueueProperties.autoDispatch] off, rows persist for a caller to execute.
  */
 @Service
 class JobDispatcher(
@@ -29,6 +28,8 @@ class JobDispatcher(
     private val jobExecutor: JobExecutor,
     private val properties: JobQueueProperties,
 ) : JobQueue {
+    private val logger = LoggerFactory.getLogger(JobDispatcher::class.java)
+
     override fun <T : Any> runAsync(
         job: JobDefinition<T>,
         payload: T,
@@ -71,14 +72,22 @@ class JobDispatcher(
                 TransactionSynchronizationManager.registerSynchronization(
                     object : TransactionSynchronization {
                         override fun afterCommit() {
-                            jobExecutor.executeAsync(executionId)
+                            dispatch(executionId)
                         }
                     },
                 )
             } else {
-                jobExecutor.executeAsync(executionId)
+                dispatch(executionId)
             }
         }
         return enqueued.execution
+    }
+
+    private fun dispatch(executionId: Long) {
+        try {
+            jobExecutor.executeAsync(executionId)
+        } catch (ex: TaskRejectedException) {
+            logger.warn("Job execution {} could not be dispatched; it stays QUEUED.", executionId, ex)
+        }
     }
 }

@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.EMAIL_RETRY_SCHEDULE
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
@@ -24,6 +25,8 @@ class ContributionReminderEmailJob(
         objectMapper,
         ContributionJobs.ContributionReminder,
     ) {
+    override val retrySchedule get() = EMAIL_RETRY_SCHEDULE
+
     override fun handlePayload(payload: ContributionJobs.ContributionReminderPayload) {
         val reminder = requireExists { reminders.findById(payload.contributionReminderId) }
         val stated = reminder.statedFee

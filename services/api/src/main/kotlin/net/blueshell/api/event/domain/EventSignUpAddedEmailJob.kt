@@ -2,6 +2,7 @@ package net.blueshell.api.event.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.EMAIL_RETRY_SCHEDULE
 import net.blueshell.api.shared.job.requireExists
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -17,6 +18,8 @@ class EventSignUpAddedEmailJob(
         objectMapper,
         EventJobs.EventSignUpAdded,
     ) {
+    override val retrySchedule get() = EMAIL_RETRY_SCHEDULE
+
     override fun handlePayload(payload: EventJobs.EventSignupPayload) {
         val eventSignUp = requireExists { eventSignUps.findById(payload.eventSignUpId) }
         emails.send(

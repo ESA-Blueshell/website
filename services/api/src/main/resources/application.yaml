@@ -141,10 +141,11 @@ app:
     # points it at the container it started, and the tests at theirs.
     url: ${IMAGING_URL:http://imaging:8080}
   jobs:
-    max-retries: ${JOB_MAX_RETRIES:3}
-    initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:1000}
+    max-retries: ${JOB_MAX_RETRIES:6}
+    initial-backoff-millis: ${JOB_INITIAL_BACKOFF_MILLIS:30000}
     backoff-multiplier: ${JOB_BACKOFF_MULTIPLIER:2.0}
     stale-threshold-minutes: ${JOB_STALE_THRESHOLD_MINUTES:30}
+    undispatched-grace-seconds: ${JOB_UNDISPATCHED_GRACE_SECONDS:120}
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:3000}

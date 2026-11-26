@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.EMAIL_RETRY_SCHEDULE
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.RoleChanges
 import net.blueshell.api.user.api.UserJobs
@@ -26,6 +27,8 @@ class RoleChangeEmailJob(
         objectMapper,
         UserJobs.RoleChange,
     ) {
+    override val retrySchedule get() = EMAIL_RETRY_SCHEDULE
+
     override fun handlePayload(payload: UserJobs.RoleChangePayload) {
         val change = requireExists { roleChanges.find(payload.roleChangeId) }
         emails.send(createRoleChangeEmail(change, frontendUrl), UserJobs.RoleChange.type, currentExecutionId)

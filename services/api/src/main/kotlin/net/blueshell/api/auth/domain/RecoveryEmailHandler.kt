@@ -2,6 +2,7 @@ package net.blueshell.api.auth.domain
 
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.EMAIL_RETRY_SCHEDULE
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.UserService
 import org.slf4j.LoggerFactory
@@ -22,6 +23,8 @@ open class RecoveryEmailHandler(
     private val frontendUrl: String,
     private val contacts: SecurityContacts,
 ) : AbstractJsonJobHandler<AuthJobs.RecoveryPayload>(objectMapper, email) {
+    override val retrySchedule get() = EMAIL_RETRY_SCHEDULE
+
     override fun handlePayload(payload: AuthJobs.RecoveryPayload) {
         val user = requireExists { users.findById(payload.userId) }
         log.info("Sending {} email for user={}", email.purpose, payload.userId)

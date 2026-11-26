@@ -12,3 +12,12 @@ data class RetrySchedule(
     val multiplier: Double,
     val maxBackoff: Duration,
 )
+
+/** A mail transport may be unavailable for a while, so email outlasts the queue's own budget. */
+val EMAIL_RETRY_SCHEDULE =
+    RetrySchedule(
+        maxRetries = 8,
+        initialBackoff = Duration.ofSeconds(30),
+        multiplier = 2.0,
+        maxBackoff = Duration.ofMinutes(15),
+    )

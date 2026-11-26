@@ -9,6 +9,7 @@ import net.blueshell.api.shared.enums.JobExecutionCategory
 import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.user.persistence.User
 import org.springframework.data.jpa.domain.Specification
+import java.time.Instant
 import java.util.Locale
 
 object JobExecutionSpecifications {
@@ -57,6 +58,26 @@ object JobExecutionSpecifications {
             value?.trim()?.lowercase(Locale.getDefault())?.takeIf { it.isNotBlank() }
                 ?: return Specification { _, _, cb -> cb.conjunction() }
         return contains("jobType", normalized)
+    }
+
+    /** Undispatched QUEUED rows older than [threshold], minus those waiting on a running twin. */
+    fun undispatchedQueuedBefore(threshold: Instant): Specification<JobExecution> = Specification { root, query, cb ->
+        // Equality with a null key matches nothing, which is right: a null key is no twin.
+        val runningTwin = query.subquery(Long::class.java)
+        val twin = runningTwin.from(JobExecution::class.java)
+        runningTwin
+            .select(cb.literal(1L))
+            .where(
+                cb.equal(twin.get<JobExecutionStatus>("status"), JobExecutionStatus.RUNNING),
+                cb.equal(twin.get<String>("jobType"), root.get<String>("jobType")),
+                cb.equal(twin.get<String>("dedupKey"), root.get<String>("dedupKey")),
+            )
+        cb.and(
+            cb.equal(root.get<JobExecutionStatus>("status"), JobExecutionStatus.QUEUED),
+            cb.isNull(root.get<Instant>("nextAttemptAt")),
+            cb.lessThan(root.get<Instant>("queuedAt"), threshold),
+            cb.not(cb.exists(runningTwin)),
+        )
     }
 
     fun search(value: String?): Specification<JobExecution> {

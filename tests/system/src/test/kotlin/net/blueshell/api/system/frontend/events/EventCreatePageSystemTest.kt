@@ -99,6 +99,7 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
+    @Tag("imaging")
     fun `events page fetches banner for newly created event`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeName = "Banner Committee ${TestHelper.uniqueSuffix()}"
@@ -126,7 +127,7 @@ class EventCreatePageSystemTest : PlaywrightTestBase() {
 
         // Fresh context to observe the events-page banner fetch
         // without cache / cookie interference.
-        val freshContext = context.browser().newContext()
+        val freshContext = browser.newContext()
         try {
             val freshPage = freshContext.newPage()
             val freshLoginStatus = AuthHelper.submitLogin(freshPage, frontendUrl, member.username, member.password)

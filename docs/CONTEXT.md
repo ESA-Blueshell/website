@@ -520,6 +520,13 @@ anchored to one, and there is nothing to act on without one.
 
 Not a "season" — that word belongs to esports and means something else.
 
+### Unpaid contribution
+
+A contribution period that overlaps one of a member's memberships and has no contribution
+recorded for them. It is what a member sees as still to pay. An announced incasso does not make
+it paid; it says when the money will be taken. A payment email does not make it owed; it is
+owed either way.
+
 ### Fee type
 
 Which of the period's three fees applies to a member: the **full-year fee**, the
@@ -822,13 +829,16 @@ additions, which Discord shows as they were typed.
 
 ### Emoji
 
-A small picture set in a description's text. Two kinds exist:
+A small picture set in a description's text. Three kinds exist:
 
-- **Standard emoji** — the Unicode emoji every device knows, drawn by the site in one
+- **Standard emoji**: the Unicode emoji every device knows, drawn by the site in one
   set of its own, so they look the same on every device
-- **Server emoji** — a picture uploaded to a Discord server. The association's server
+- **Server emoji**: a picture uploaded to a Discord server. The association's server
   offers its own while a description is written; one taken from any other server
   still shows
+- **Seen emoji**: a server emoji from any server that the bot has seen used in the
+  association's Discord server, in a message or as a reaction. Kept by its ID with its
+  newest name and how many messages used it, so it can be typed by name too
 
 An emoji is written by its Discord name between colons and becomes the emoji once the
 closing colon is typed, or as soon as it is pasted. The name is only how it is typed:

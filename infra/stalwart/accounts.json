@@ -6,26 +6,23 @@
   },
   {
     "localPart": "bounce",
-    "vaultKey": "account.bounce"
+    "vaultKey": "account.bounce",
+    "forwardTo": "sitecie@esa-blueshell.nl"
   },
   {
     "localPart": "board",
     "vaultKey": "account.board",
-    "aliases": ["bestuur"]
+    "aliases": ["bestuur", "secretary", "secretaris", "treasurer", "penningmeester", "events", "evenementen"],
+    "forwardTo": "board@blueshell.utwente.nl"
   },
   {
-    "localPart": "secretary",
-    "vaultKey": "account.secretary",
-    "aliases": ["secretaris"]
+    "localPart": "postmaster",
+    "vaultKey": "account.postmaster"
   },
   {
-    "localPart": "treasurer",
-    "vaultKey": "account.treasurer",
-    "aliases": ["penningmeester"]
-  },
-  {
-    "localPart": "events",
-    "vaultKey": "account.events",
-    "aliases": ["sitecie", "evenementen"]
+    "localPart": "sitecie",
+    "vaultKey": "account.sitecie",
+    "aliases": ["abuse"],
+    "forwardTo": "sitecie@blueshell.utwente.nl"
   }
 ]

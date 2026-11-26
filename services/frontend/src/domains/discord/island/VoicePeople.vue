@@ -57,6 +57,7 @@ const left = computed(() => people.length - visible.value.length)
         v-if="person.avatar"
         alt=""
         class="people__avatar"
+        crossorigin="anonymous"
         :src="person.avatar"
       >
       <span

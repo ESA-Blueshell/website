@@ -24,11 +24,35 @@ export type JobCatalogEntry = {
 }
 
 export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
-  "email.recovery": {
-    title: "Send recovery email",
+  "email.account-activation": {
+    title: "Send account activation email",
     description:
-      "Emails an account-recovery link to one user, carrying the supplied token. " +
-      "Used by both the forgotten-password and member-activation flows.",
+      "Emails the link that activates a new account to the member, carrying the supplied token. " +
+      "Queued when somebody signs up or asks for the link again.",
+  },
+  "email.member-activation": {
+    title: "Send member activation email",
+    description:
+      "Emails the link that activates an account the board made for a member, carrying the " +
+      "supplied token. Queued when the board adds a member or sends the link again.",
+  },
+  "email.password-reset": {
+    title: "Send password reset email",
+    description:
+      "Emails the link that sets a new password to the member who asked for it, carrying the " +
+      "supplied token.",
+  },
+  "email.email-change": {
+    title: "Send email change confirmation",
+    description:
+      "Emails the link that confirms a new address to that address, carrying the supplied " +
+      "token. The address changes once the link is opened.",
+  },
+  "email.two-factor-reenrolment": {
+    title: "Send two-factor re-enrolment email",
+    description:
+      "Emails the link that sets up two-factor sign-in again to the member, carrying the " +
+      "supplied token, and names who to contact if they did not expect it.",
   },
   "email.event-signup": {
     title: "Send event sign-up email",
@@ -178,6 +202,41 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "Once the event is over it is left alone, as Discord ends it by itself. An event already " +
       "running is listed from a minute on. Safe to re-run: the Discord event is made once.",
   },
+  "discord.start-seen-emoji-pass": {
+    title: "Find emoji used in the Discord server",
+    description:
+      "Starts a pass over the full history of every channel, thread and forum post the bot can " +
+      "see: marks each one to be read again from its newest message, then queues the first " +
+      "read. The reads add every server emoji used there, in a message or as a reaction, to the " +
+      "emoji the editor suggests. Safe to re-run: a message counts once.",
+  },
+  "discord.read-seen-emoji-pass": {
+    title: "Read the next part of the emoji pass",
+    description:
+      "Reads the next 20 pages of message history in the pass that finding emoji used in the " +
+      "Discord server started, records the emoji in them, and queues the next part while " +
+      "channels are left. Queued by the pass itself; a stopped read resumes where it was.",
+  },
+
+  "event.resolve-emoji-shortcodes": {
+    title: "Write an event's emoji shortcodes as emoji",
+    thing: "the event description",
+    description:
+      "Rewrites the event's description so each :name: shortcode that names an emoji becomes " +
+      "that emoji: the server's own custom emoji first, then the bot's, then the standard ones. " +
+      "Code, links and anything already written stay as they are, and names no emoji has stay " +
+      "as text. An edited description refreshes the event's Discord posts and calendar entry. " +
+      "Safe to re-run: a second run finds nothing to write.",
+  },
+
+  "event.resolve-all-emoji-shortcodes": {
+    title: "Write every event's emoji shortcodes as emoji",
+    description:
+      "Looks through the description of every event, past and upcoming, and queues a run of " +
+      "\"Write an event's emoji shortcodes as emoji\" for each one with a :name: shortcode that " +
+      "names an emoji. Events with nothing to write are left alone. Safe to re-run: once they " +
+      "have run, a second sweep queues nothing.",
+  },
 
   "calendar.sync-event": {
     title: "Sync calendar event",
@@ -194,12 +253,19 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
       "calendar; safe to re-run manually.",
   },
 
-  "cohort.membership-sync": {
-    title: "Sync cohort membership",
+  "cohort.add-member": {
+    title: "Add a member to a cohort's list",
     description:
-      "Pushes one (user, cohort) pair to the cohort's external system — Brevo list, " +
-      "Discord role, Google group, etc. The `intent` field decides whether the user is " +
-      "added or removed there. Idempotent and runs against a single external system.",
+      "Adds one member to the cohort's external system, such as its Brevo list, Discord role " +
+      "or Google group. Queued when the member joins the cohort; safe to re-run, as one " +
+      "already there stays there.",
+  },
+  "cohort.remove-member": {
+    title: "Remove a member from a cohort's list",
+    description:
+      "Removes one member from the cohort's external system, such as its Brevo list, Discord " +
+      "role or Google group. Queued when the member leaves the cohort; safe to re-run, as one " +
+      "already gone stays gone.",
   },
   "cohort.reconcile-contribution-periods": {
     title: "Reconcile contribution-period cohorts",
@@ -214,15 +280,15 @@ export const JOB_CATALOG: Record<string, JobCatalogEntry> = {
     description:
       "Fans out one Re-evaluate-user-cohorts job per active user. Each child job " +
       "recomputes that user's cohort memberships from current facts (role, committee " +
-      "membership, contribution payments, newsletter opt-in) and enqueues a per-member " +
-      "membership-sync job for any cohort the user joins or leaves.",
+      "membership, contribution payments, newsletter opt-in) and enqueues an add or remove " +
+      "job for any cohort the user joins or leaves.",
   },
   "cohort.evaluate-user": {
     title: "Re-evaluate one user's cohorts",
     description:
-      "Recomputes one user's desired cohort memberships locally, then enqueues a " +
-      "per-member membership-sync job (add or remove) for each cohort the user joins " +
-      "or leaves. Does not call external systems directly.",
+      "Recomputes one user's desired cohort memberships locally, then enqueues an add or " +
+      "remove job for each cohort the user joins or leaves. Does not call external systems " +
+      "directly.",
   },
   "cohort.remove-external-member": {
     title: "Remove from external list",

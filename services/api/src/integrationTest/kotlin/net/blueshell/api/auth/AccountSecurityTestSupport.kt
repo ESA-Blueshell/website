@@ -106,9 +106,9 @@ abstract class AccountSecurityTestSupport : UserTestSupport() {
         userId: Long,
         purpose: TokenPurpose,
     ): String =
-        findJobsByType(AuthJobs.Recovery.type)
+        findJobsByType(AuthJobs.recoveryEmailFor(purpose).type)
             .map { mapper.readTree(it.payload) }
-            .last { it.path("userId").asLong() == userId && it.path("tokenPurpose").asString() == purpose.name }
+            .last { it.path("userId").asLong() == userId }
             .path("token")
             .asString()
 }

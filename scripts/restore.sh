@@ -18,7 +18,7 @@
 #            downloads and checks the backup and prints every step it would take.
 #
 # It signs in to the live Vault through the site for the Kopia credentials, as
-# seed-backup-credentials.sh does. Shares are typed once and held in this process only; no secret
+# platform/bootstrap/secrets.sh does. Shares are typed once and held in this process only; no secret
 # reaches a command line or a file. Everything downloaded is deleted on exit, pass or fail.
 # platform/docs/backup.md describes what each mode does to each store.
 set -euo pipefail
@@ -126,6 +126,7 @@ cleanup() {
     kubectl --context "$context" -n flux-system patch kustomization "$entry" --type=merge \
       -p '{"spec":{"suspend":false}}' >/dev/null 2>&1 && echo "- Flux reconciles $entry again."
   done
+  kubectl --context "$context" -n default delete pod uploads-lister --ignore-not-found --wait=false >/dev/null 2>&1 || true
   if $apply; then
     for ns in default data-system mail-system utility-system; do
       kubectl --context "$context" -n "$ns" delete pod restore-helper --ignore-not-found --wait=false >/dev/null 2>&1 || true
@@ -172,8 +173,11 @@ forward() { # namespace target remote-port
 read -r port pid < <(forward data-system svc/vault-v2 8200) || die "No port-forward to Vault."
 forward_pids+=("$pid"); live_addr=http://127.0.0.1:$port
 
+# Only the restore role may overwrite Vault; everything else signs in as a plain admin.
+role="admin"
+[[ $mode == cluster ]] && wants database && role=restore
 echo "- A browser opens on the site's sign-in; sign in with an admin account."
-live_token=$(VAULT_ADDR=$live_addr vault login -method=oidc -no-store -token-only) ||
+live_token=$(VAULT_ADDR=$live_addr vault login -method=oidc -no-store -token-only role=$role) ||
   die "The Vault sign-in did not complete."
 live() { VAULT_ADDR=$live_addr VAULT_TOKEN=$live_token vault "$@"; }
 oidc=$(live read -field=oidc_discovery_url auth/oidc/config 2>/dev/null || true)
@@ -237,7 +241,7 @@ download() { # part
     die "Kopia could not restore the $1 snapshot."
 }
 
-# --- Shares and root tokens ---------------------------------------------------------------------
+# --- Unseal shares ------------------------------------------------------------------------------
 
 ask_shares() {
   ((${#shares[@]})) && return
@@ -259,22 +263,6 @@ unseal_with_shares() { # vault address
   unset share
   [[ $(VAULT_ADDR=$1 vault status -format=json 2>/dev/null | jq -r .sealed) == false ]]
 }
-# Prints a root token made from the shares, or nothing.
-root_from_shares() { # vault address
-  local init nonce otp share out encoded=""
-  VAULT_ADDR=$1 vault operator generate-root -cancel >/dev/null 2>&1 || true
-  init=$(VAULT_ADDR=$1 vault operator generate-root -init -format=json) || return 1
-  nonce=$(jq -r .nonce <<<"$init"); otp=$(jq -r .otp <<<"$init")
-  for share in "${shares[@]}"; do
-    out=$(printf '{"key":"%s","nonce":"%s"}' "$share" "$nonce" |
-      curl -sS -X PUT --data-binary @- "$1/v1/sys/generate-root/update")
-    encoded=$(jq -r '.encoded_token // empty' <<<"$out")
-  done
-  unset share
-  [[ -n $encoded ]] || return 1
-  printf '%s' "$encoded" | VAULT_ADDR=$1 vault operator generate-root -decode=- -otp="$otp" | tr -d '[:space:]'
-}
-
 # --- Rehearsals, one per store ------------------------------------------------------------------
 
 scratch_db_up() {
@@ -345,8 +333,10 @@ rehearse_database() {
   check ok "the Vault snapshot unseals with these shares"
   [[ $mode == rehearse ]] || return 0
 
-  restored_token=$(root_from_shares "$scratch_addr") || true
-  [[ $restored_token == hvs.* ]] || { check FAILED "no root token could be made for the restored Vault"; return; }
+  # Vault 2.0 refuses an unauthenticated generate-root; the restored admin policy reads both checks.
+  echo "- The browser opens again; sign in to the restored Vault with the same account."
+  restored_token=$(VAULT_ADDR=$scratch_addr vault login -method=oidc -no-store -token-only) || true
+  [[ $restored_token == hvs.* ]] || { check FAILED "the restored Vault did not sign you in"; return; }
   scratch() { VAULT_ADDR=$scratch_addr VAULT_TOKEN=$restored_token vault "$@"; }
   local shape='{version: .data.current_version, written: .data.updated_time}' a b
   a=$(scratch kv metadata get -format=json "$VAULT_PATH" | jq -c "$shape")
@@ -368,6 +358,8 @@ rehearse_database() {
     "SELECT u.id, a.sealed_address FROM addresses a JOIN users u ON u.address_id = a.id WHERE a.sealed_address IS NOT NULL")
   if ((opened > 0 && refused == 0)); then
     check ok "every sealed address opens: $opened"
+  elif ((opened + refused == 0)); then
+    check FAILED "the backup holds no sealed address to open; run the Seal addresses job"
   else
     check FAILED "sealed addresses: $opened open, $refused refused"
   fi
@@ -376,14 +368,27 @@ rehearse_database() {
 # "size path" for every file under a directory, sorted; run where the files are.
 LIST_FILES='cd "$1" && find . -type f -exec stat -c "%s %n" {} + | sort -k2'
 
+# The api image has no shell, so a read-only pod lists the live uploads.
+list_live_uploads() {
+  k -n default run uploads-lister --image=busybox:1.38-musl --restart=Never --overrides='{
+    "spec": {"containers": [{"name": "uploads-lister", "image": "busybox:1.38-musl", "command": ["sleep", "600"],
+      "volumeMounts": [{"name": "store", "mountPath": "/store", "readOnly": true}]}],
+      "volumes": [{"name": "store", "persistentVolumeClaim": {"claimName": "api-storage", "readOnly": true}}]}}' >/dev/null ||
+    return 1
+  local listed
+  k -n default wait --for=condition=Ready pod/uploads-lister --timeout=180s >/dev/null || return 1
+  listed=$(k -n default exec uploads-lister -- sh -c "$LIST_FILES" sh /store) || return 1
+  k -n default delete pod uploads-lister --wait=false >/dev/null
+  printf '%s\n' "$listed"
+}
+
 rehearse_uploads() {
   download uploads
   echo "uploads"
   local restored live_list missing=0 differ=0 size name count bytes
   restored=$(docker run --rm -v "$work/restore/uploads:/u:ro" busybox:1.38-musl sh -c "$LIST_FILES" sh /u)
   [[ -n $restored ]] || { check FAILED "the snapshot holds no files"; return; }
-  live_list=$(k -n default exec deploy/api-primary -c api -- sh -c "$LIST_FILES" sh /srv/storage) ||
-    die "The api pod did not list its uploads."
+  live_list=$(list_live_uploads) || die "The api's uploads could not be listed."
   declare -A live_size=()
   while read -r size name; do live_size[$name]=$size; done <<<"$live_list"
   while read -r size name; do
@@ -531,7 +536,7 @@ plan_database() {
   echo "  1. check the dump loads and the Vault snapshot unseals with three shares, in scratch"
   echo "  2. suspend Flux apps-stateless; scale default/api-primary and default/api to 0"
   echo "  3. MariaDB: drop the blueshell database and load the dump into a new one"
-  echo "  4. Vault: make a root token from the shares, restore the snapshot over vault-v2"
+  echo "  4. Vault: restore the snapshot over vault-v2 as the restore role"
   echo "  5. scale the api back up; resume Flux"
 }
 plan_uploads() {
@@ -564,6 +569,10 @@ preflight() {
   wants stalwart && { k -n mail-system get deployment/stalwart pvc/stalwart-data >/dev/null 2>&1 || missing+=("mail-system/stalwart"); }
   wants gatus && { k -n utility-system get deployment/gatus pvc/gatus-data >/dev/null 2>&1 || missing+=("utility-system/gatus"); }
   ((${#missing[@]} == 0)) || die "Not in the cluster: ${missing[*]}."
+  if wants database; then
+    live token capabilities sys/storage/raft/snapshot-force | grep -qw sudo ||
+      die "This sign-in may not restore Vault: the restore OIDC role is missing or lacks the restore policy."
+  fi
 }
 
 restore_database() {
@@ -579,13 +588,10 @@ restore_database() {
     die "MariaDB did not take the dump. The api stays down until this script exits; rerun once the cause is fixed."
   check ok "MariaDB holds the dump of $(taken mariadb)"
 
-  local root
-  root=$(root_from_shares "$live_addr") || true
-  [[ $root == hvs.* ]] || die "No root token could be made for the live Vault. MariaDB is restored; Vault is not."
-  # The snapshot replaces the token store, so this root token is gone afterwards by itself.
-  VAULT_ADDR=$live_addr VAULT_TOKEN=$root vault operator raft snapshot restore -force "$work/restore/vault/vault.snap" ||
+  live operator raft snapshot restore -force "$work/restore/vault/vault.snap" ||
     die "Vault did not take the snapshot. MariaDB is restored; Vault is not."
-  unset root
+  # The snapshot replaced the token store, so the sign-in is gone and has nothing to revoke.
+  live_token=""
   for _ in $(seq 1 60); do
     [[ $(VAULT_ADDR=$live_addr vault status -format=json 2>/dev/null | jq -r '.sealed') == false ]] && break
     sleep 2
@@ -600,7 +606,7 @@ restore_database() {
 
 restore_uploads() {
   step "uploads: the files come back beside the live ones."
-  helper default api-storage 100 101
+  helper default api-storage 1002 1001
   push default "$work/restore/uploads" || die "The uploads did not reach the cluster."
   helper_done default
   check ok "the uploads hold every file of $(taken uploads)"

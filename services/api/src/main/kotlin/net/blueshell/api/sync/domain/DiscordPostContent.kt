@@ -19,6 +19,9 @@ object DiscordPostContent {
     // Discord's limit on a Discord event's whole description, links included.
     private const val LISTING_DESCRIPTION = 1000
 
+    // Discord's limit on a Discord event's name and on its place; the site allows longer titles.
+    private const val LISTING_LINE = 100
+
     private const val PARAGRAPH = "\n\n"
 
     // About sixty mentions, so a full event leaves the description most of the post.
@@ -78,9 +81,9 @@ object DiscordPostContent {
     ): DiscordEventListing {
         val links = listingLinksOf(event, site)
         return DiscordEventListing(
-            name = event.title,
+            name = cut(event.title, LISTING_LINE),
             description = "${cut(event.description.orEmpty(), LISTING_DESCRIPTION - links.length - "\n\n…".length)}\n\n$links",
-            location = event.location?.takeIf { it.isNotBlank() }?.trim() ?: IN_THE_SERVER,
+            location = cut(event.location?.takeIf { it.isNotBlank() } ?: IN_THE_SERVER, LISTING_LINE),
             start = event.startTime,
             end = event.endTime,
             cover = cover,

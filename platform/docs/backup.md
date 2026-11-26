@@ -40,7 +40,7 @@ not reported for 26 hours, alerts Discord; the others still run and report.
 
 ## Seeding the credentials
 
-`scripts/seed-backup-credentials.sh` does it, run by an owner on their own machine. It makes the
+The `backup` section of `platform/bootstrap/secrets.sh` does it, run by an owner on their own machine. It makes the
 Kopia password and a `backup-writer` key itself and hands them straight to Vault and Secret
 Manager, so neither appears on screen, in a file or on a command line. No agent runs it.
 
@@ -49,11 +49,11 @@ Secret Manager disagree about the password, and never replaces a password the re
 opens with.
 
 **You need** `kubectl` with the cluster's kubeconfig, `vault`, `jq` and `openssl`
-(`brew install hashicorp/tap/vault jq`), your own Scaleway API key (the one OpenTofu uses), the
+(`brew install hashicorp/tap/vault jq`), bash 4 or newer (`brew install bash`), your own Scaleway API key (the one OpenTofu uses), the
 organization ID and an admin login to the site. Then:
 
 ```bash
-scripts/seed-backup-credentials.sh
+platform/bootstrap/secrets.sh --only backup
 ```
 
 It asks for your Scaleway secret key without showing it, and for the organization ID. It shows
@@ -71,7 +71,7 @@ writer key, delete that one in the console.
 The report tokens in `secret/platform/backup-report` are seeded on their own, by `bootstrap-auth.sh`.
 
 **Replacing the writer key** by hand, say after a suspected leak: run
-`scripts/seed-backup-credentials.sh --new-writer-key`. It makes a new key, puts it in Vault and
+`platform/bootstrap/secrets.sh --only backup --new-writer-key`. It makes a new key, puts it in Vault and
 deletes the old one. The rotation job (#2099) will do this every 30 days on its own.
 
 ## The first night
@@ -144,7 +144,8 @@ One script rehearses and restores every store, or the ones you name, while the c
 Vault are up. It signs in to Vault through the site for the Kopia credentials, takes the newest
 snapshots (or the newest at or before `--at 2026-10-12`), and deletes everything it downloaded
 when it ends. You need `kubectl`, `vault`, `jq`, `curl`, Docker and bash 4 or newer. The
-`database` store, MariaDB and Vault together, asks three share holders for their shares once.
+`database` store, MariaDB and Vault together, asks three share holders for their shares once,
+and its rehearsal signs in a second time, to the restored Vault.
 
 ```bash
 scripts/restore.sh rehearse                    # every store, into containers on this machine
@@ -172,8 +173,9 @@ asks for the backup's date, then:
 
 - **database:** first proves, in scratch, that the dump loads and that the shares unseal the Vault
   snapshot, so it never writes a snapshot production cannot open. It then scales the api to 0,
-  replaces the `blueshell` database with the dump, restores the snapshot over `vault-v2` with a
-  root token made from the shares (the snapshot's token store replaces it), and starts the api.
+  replaces the `blueshell` database with the dump, restores the snapshot over `vault-v2`, and
+  starts the api. For this store the script signs in with the `restore` OIDC role, the only one
+  whose tokens may overwrite Vault; the dry run checks the sign-in can before anything changes.
 - **uploads:** copies every file back beside the live ones, as the api's user. Files added since
   stay.
 - **valkey**, **stalwart**, **gatus:** scales the app to 0, replaces its files in the claim from a

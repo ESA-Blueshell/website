@@ -22,10 +22,11 @@ import org.springframework.transaction.support.TransactionTemplate
  * - Transaction management
  * - Application event recording
  * - Job execution tracking
+ * - The imaging service, which converts every upload
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(ValkeyTestContainerConfig::class)
+@Import(ValkeyTestContainerConfig::class, ImagingServiceConfig::class)
 @RecordApplicationEvents
 @TestExecutionListeners(
     listeners = [TestCleanUpListener::class],

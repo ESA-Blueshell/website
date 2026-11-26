@@ -127,6 +127,10 @@ class EventService
         @Transactional(readOnly = true)
         fun findByIdIncludingDeletedOrNull(id: Long): Event? = repository.findByIdIncludingDeleted(id)
 
+        /** The live events' descriptions that could hold a `:name:` shortcode, by event id. */
+        @Transactional(readOnly = true)
+        fun descriptionsWithColons(): Map<Long, String> = repository.findDescriptionsWithColons().associate { it.id to it.description }
+
         /** The live events that have not ended by [from]. */
         @Transactional(readOnly = true)
         fun idsEndingFrom(from: Instant): List<Long> = repository.findIdsEndingFrom(from)

@@ -33,7 +33,7 @@ class EmailQueuedIT : UserTestSupport() {
     fun `an email is in the log as queued with its job, and sent into the same record`() {
         val member = createUserWithRole(Role.MEMBER)
         mvc.perform(post("/recovery/password/reset/{username}", member.username)).andExpect(status().isNoContent)
-        val job = findJobsByType(AuthJobs.Recovery.type).single()
+        val job = findJobsByType(AuthJobs.PasswordReset.type).single()
 
         val queued = requireNotNull(emails.findTopByJobExecutionIdOrderByIdDesc(requireNotNull(job.id)))
         assertThat(queued.deliveryStatus).isEqualTo(EmailDeliveryStatus.QUEUED)
@@ -51,7 +51,7 @@ class EmailQueuedIT : UserTestSupport() {
         val member = createUserWithRole(Role.MEMBER)
         val board = createUserWithRole(Role.BOARD)
         mvc.perform(post("/recovery/password/reset/{username}", member.username)).andExpect(status().isNoContent)
-        val job = findJobsByType(AuthJobs.Recovery.type).single()
+        val job = findJobsByType(AuthJobs.PasswordReset.type).single()
         executor.execute(job)
         val sent = requireNotNull(emails.findTopByJobExecutionIdOrderByIdDesc(requireNotNull(job.id)))
         transactionTemplate.execute { userRepository.findById(member.id!!).orElseThrow().email = "moved-${member.email}" }
@@ -60,7 +60,7 @@ class EmailQueuedIT : UserTestSupport() {
         transactionTemplate.execute { emails.findById(sent.id!!).orElseThrow().deliveryStatus = EmailDeliveryStatus.BOUNCED }
         mvc.perform(post("/management/emails/${sent.id}/resend").with(signedIn(board))).andExpect(status().isConflict)
 
-        assertThat(findJobsByType(AuthJobs.Recovery.type)).hasSize(1)
+        assertThat(findJobsByType(AuthJobs.PasswordReset.type)).hasSize(1)
     }
 
     @Test

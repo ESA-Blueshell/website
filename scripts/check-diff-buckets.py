@@ -106,7 +106,7 @@ def unmatched(paths, buckets):
 
 
 # Buckets whose suites need neither the jar nor the bundle, so they do not turn `app` on.
-STANDALONE = {"platform"}
+STANDALONE = {"platform", "imaging"}
 
 
 # A path for every pattern in the filter, including the negations. A bucket
@@ -120,8 +120,7 @@ FIXTURES = [
     ("platform/docs/runbook.md", {"ignore"}),
     ("scripts/check-flux-manifests.sh", {"platform"}),
     ("scripts/regenerate-flux-components.sh", {"platform"}),
-    ("scripts/seed-vault-from-env.sh", {"platform"}),
-    ("scripts/seed-backup-credentials.sh", {"platform"}),
+    ("platform/bootstrap/secrets.sh", {"platform"}),
     # validate.yml, the actions it runs and this file change how every suite runs,
     # so they sit in no bucket, which runs everything.
     (".github/workflows/validate.yml", set()),
@@ -153,13 +152,15 @@ FIXTURES = [
     ("services/frontend/Dockerfile", {"frontend"}),
     ("services/frontend/docker-compose.yml", {"ignore"}),
     ("tests/system/src/test/kotlin/SignUpTest.kt", {"system"}),
+    ("services/imaging/internal/convert/convert.go", {"imaging"}),
+    ("services/imaging/Dockerfile", {"imaging"}),
+    ("services/imaging/docker-compose.yml", {"ignore"}),
     ("docker-compose.yml", {"ignore"}),
     ("docker-compose.oidc-e2e.yml", {"ignore"}),
     ("services/stalwart/entrypoint.sh", {"ignore"}),
     ("services/vault/docker-compose.yml", {"ignore"}),
     (".env", {"ignore"}),
     ("dev-setup.sh", {"ignore"}),
-    ("scripts/seed-stalwart-accounts.sh", {"ignore"}),
     ("docs/agents/ci.md", {"ignore"}),
     ("gameart/cs2-1.webp", {"ignore"}),
     ("infra/dns/esa-blueshell.nl.zone", {"ignore"}),
@@ -223,15 +224,33 @@ def self_test():
         print(f"self-test FAILED: no fixture exercises {pattern}")
     if unexercised(buckets):
         return 1
+    plans = [
+        ({"app": True, "imaging": True}, {"shards": [1, 2, 3, 4, 5, 6], "total": 6, "tags": "system"}),
+        ({"app": False, "imaging": True}, {"shards": [1], "total": 1, "tags": "system & imaging"}),
+    ]
+    for on, expected in plans:
+        if system_tests(on) != expected:
+            print(f"self-test FAILED: {on} plans {system_tests(on)}, expected {expected}")
+            return 1
     print(f"self-test ok: {len(FIXTURES)} fixtures place correctly")
     return 0
 
 
+def system_tests(on):
+    """All system tests on six shards, or only the `imaging` ones on one for an imaging-only change."""
+    if on["app"]:
+        return {"shards": [1, 2, 3, 4, 5, 6], "total": 6, "tags": "system"}
+    if on["imaging"]:
+        return {"shards": [1], "total": 1, "tags": "system & imaging"}
+    # Skipped, but a matrix still needs a shard.
+    return {"shards": [1], "total": 1, "tags": "system"}
+
+
 def decide(base, head):
     """
-    The `run` output the `changes` job publishes: each bucket, and `app`, as JSON.
+    The `run` output the `changes` job publishes: each bucket, and `app`, as JSON, plus `system-tests`.
 
-    `app` is any bucket but `platform`: what needs the jar and the bundle built.
+    `app` is any bucket but `platform` and `imaging`: what needs the jar and the bundle built.
     A path in no bucket turns every bucket on, and a run with no diff to read
     passes no base and runs everything.
     """
@@ -248,7 +267,7 @@ def decide(base, head):
                   + " ".join(stray))
             on = dict.fromkeys(gates, True)
     on["app"] = any(value for name, value in on.items() if name not in STANDALONE)
-    return "run=" + json.dumps(on)
+    return "run=" + json.dumps(on) + "\nsystem-tests=" + json.dumps(system_tests(on))
 
 
 def main():

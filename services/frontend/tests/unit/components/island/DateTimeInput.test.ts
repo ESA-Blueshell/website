@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it} from "vitest"
+import {afterEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
 import DateTimeInput from "@/components/island/DateTimeInput.vue"
 
@@ -7,6 +7,7 @@ const field = (props: Record<string, unknown> = {}) =>
 
 afterEach(() => {
   document.body.innerHTML = ""
+  vi.useRealTimers()
 })
 
 describe("a moment, a day and a time in one box", () => {
@@ -46,6 +47,7 @@ describe("a moment, a day and a time in one box", () => {
   })
 
   it("bars the days before the earliest moment, and hangs both panels from the shared box", async () => {
+    vi.useFakeTimers({now: new Date(2026, 9, 1, 12), toFake: ["Date"]})
     const wrapper = field({min: "2026-10-03T12:00"})
 
     await wrapper.find(".island-date__open").trigger("click")

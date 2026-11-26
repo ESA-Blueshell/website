@@ -16,11 +16,12 @@ services:
     image: hashicorp/vault:2.0
     # Production's audit log lives in /vault/audit. Vault refuses every request it cannot log, so
     # both volumes must belong to the vault user before it starts.
+    # As root, so the chown works; the entrypoint then drops to the vault user.
+    user: "0"
     entrypoint: ["/bin/sh", "-c", "chown -R vault:vault /vault/data /vault/audit && exec docker-entrypoint.sh server"]
-    cap_add:
-      - IPC_LOCK
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
+      SKIP_SETCAP: "true"
     volumes:
       - ./vault.hcl:/vault/config/vault.hcl:ro
       - ./restore:/restore:ro

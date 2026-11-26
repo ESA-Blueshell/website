@@ -65,6 +65,7 @@ jobs:
       # more than its caller grants, and the whole run fails to start if it
       # asks for more, so this has to match what that job declares.
       id-token: write
+      attestations: write
 
   announce:
     # After `publish`, so the announcement never points at a release whose images

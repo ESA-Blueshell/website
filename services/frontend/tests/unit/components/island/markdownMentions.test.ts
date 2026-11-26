@@ -1,11 +1,12 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
-import {type Completion, CompletionContext} from "@codemirror/autocomplete"
+import {autocompletion, type Completion, CompletionContext, completionStatus} from "@codemirror/autocomplete"
 import {EditorSelection, EditorState} from "@codemirror/state"
 import {EditorView} from "@codemirror/view"
+import {cursorCharRight} from "@codemirror/commands"
 import MarkdownEditor from "@/components/island/MarkdownEditor.vue"
 import {markdownEditing} from "@/components/island/markdownEditing"
-import {channelCompletion, forgetMentionLists, mentionCompletion, mentionOption, mentionOptionClass} from "@/components/island/markdownMentions"
+import {channelCompletion, forgetMentionLists, mentionCompletion, mentionOption, mentionOptionClass, reopenMention} from "@/components/island/markdownMentions"
 import {forgetMentionNames} from "@/domains/discord"
 import {listServerChannels, readMentionNames} from "@/domains/discord/adapters/mentions"
 import {searchServerMembers} from "@/domains/discord/adapters/members"
@@ -35,6 +36,32 @@ describe("a mention being typed", () => {
 
     expect(found?.options.map(one => [one.label, one.detail, one.apply])).toEqual([["The Old Man", "extratoast", "<@12>"]])
     expect(searchServerMembers).toHaveBeenCalledWith("ex")
+  })
+
+  it("keeps matching a name past a space, for as long as somebody answers to it", async () => {
+    vi.mocked(searchServerMembers).mockResolvedValue([{id: "12", name: "The Old Man - Joris", username: "extratoast", avatar: ""}])
+    const found = await mentionCompletion(asking("ask @The Old Ma"))
+
+    expect(found?.from).toBe("ask ".length)
+    expect(found?.options.map(one => one.label)).toEqual(["The Old Man - Joris"])
+    expect(searchServerMembers).toHaveBeenLastCalledWith("the old ma")
+  })
+
+  it("lets a sentence after a name go once nobody answers to it, and asks nothing past a nickname's length", async () => {
+    vi.mocked(searchServerMembers).mockResolvedValue([])
+    expect(await mentionCompletion(asking("ask @Anna said hi"))).toBeNull()
+    expect(searchServerMembers).toHaveBeenLastCalledWith("anna said hi")
+
+    vi.mocked(searchServerMembers).mockClear()
+    expect(await mentionCompletion(asking("@abcdefghij klmnopqrst uvwxyzabcd efgh"))).toBeNull()
+    expect(searchServerMembers).not.toHaveBeenCalled()
+  })
+
+  it("offers a role whose name has a space in it", async () => {
+    vi.mocked(listServerRoles).mockResolvedValue([{id: "903", name: "Events Gamenights!"}])
+    vi.mocked(searchServerMembers).mockResolvedValue([])
+
+    expect((await mentionCompletion(asking("for @events game")))?.options.map(one => one.apply)).toEqual(["<@&903>"])
   })
 
   it("offers roles alone before two letters, and asks the server for no members", async () => {
@@ -131,14 +158,68 @@ describe("a mention and a timestamp in the editor", () => {
     return view
   }
 
-  it("are drawn as pills, named once the api answers, and written out while the cursor touches one", async () => {
+  it("are drawn as pills, named once the api answers, and stay pills under the cursor", async () => {
     const doc = "hi <@123456789012345611> and <@&223456789012345901> at <t:1790000000:f>"
     const view = open(doc, 0)
     await flushPromises()
 
     expect(view.contentDOM.textContent).toBe(`hi @Anna and @Gamers at ${timestampText(1790000000, "f")}`)
     expect((view.contentDOM.querySelectorAll(".cm-mention")[1] as HTMLElement).style.getPropertyValue("--mention")).toBe("#3498db")
-    expect(open(doc, 5).contentDOM.textContent).toContain("<@123456789012345611>")
+    const touching = open(doc, 5)
+    await flushPromises()
+    expect(touching.contentDOM.textContent).toContain("@Anna")
+    expect(touching.contentDOM.textContent).not.toContain("<@123456789012345611>")
+  })
+
+  it("redraw the cursor once named, so it is drawn after the whole name", async () => {
+    const view = open("hi <#323456789012345602>", 0)
+    const redrawn = vi.spyOn(view, "dispatch")
+    await flushPromises()
+
+    expect(redrawn).toHaveBeenCalledWith({selection: view.state.selection})
+  })
+
+  it("are one step for the cursor", () => {
+    const doc = "hi <#323456789012345602> ok"
+    const view = open(doc, 3)
+
+    expect(cursorCharRight(view)).toBe(true)
+    expect(view.state.selection.main.head).toBe(doc.indexOf(" ok"))
+  })
+
+  it("turn back into what was typed, less a letter, on a backspace after one, and ask again", async () => {
+    vi.mocked(readMentionNames).mockResolvedValue({users: [{id: "123456789012345611", name: "Anna"}], roles: [], channels: [{id: "323456789012345602", name: "counter-strike-2"}]})
+    const doc = "in <#323456789012345602> with <@123456789012345611>"
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({
+        doc,
+        selection: EditorSelection.cursor(doc.indexOf(" with")),
+        extensions: [...markdownEditing, autocompletion({override: [mentionCompletion, channelCompletion]})],
+      }),
+    })
+    views.push(view)
+    await flushPromises()
+
+    expect(reopenMention(view)).toBe(true)
+    expect(view.state.doc.toString()).toBe("in #counter-strike- with <@123456789012345611>")
+    expect(view.state.selection.main.head).toBe("in #counter-strike-".length)
+    expect(completionStatus(view.state)).not.toBeNull()
+
+    view.dispatch({selection: EditorSelection.cursor(view.state.doc.length)})
+    expect(reopenMention(view)).toBe(true)
+    expect(view.state.doc.toString()).toBe("in #counter-strike- with @Ann")
+  })
+
+  it("leave a backspace to delete as ever where no mention ends at the cursor, or its name is not read yet", () => {
+    vi.mocked(readMentionNames).mockReturnValue(new Promise(() => {}))
+    const unnamed = "in <#323456789012345602>"
+    expect(reopenMention(open(unnamed, unnamed.length))).toBe(false)
+    expect(reopenMention(open("plain text", 5))).toBe(false)
+    expect(reopenMention(open("`<#323456789012345602>`", 23))).toBe(false)
+    const picked = open("ab cd", 0)
+    picked.dispatch({selection: EditorSelection.range(0, 2)})
+    expect(reopenMention(picked)).toBe(false)
   })
 
   it("draw a channel with its sign and a timestamp without a style as f", async () => {

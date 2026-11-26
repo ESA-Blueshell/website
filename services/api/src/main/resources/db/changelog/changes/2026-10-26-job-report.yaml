@@ -1,0 +1,16 @@
+# What a successful run counted about its work.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-26-job-report.yaml
+      id: job-report
+      author: blueshell
+      changes:
+        - addColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: report, type: LONGTEXT}
+      rollback:
+        - dropColumn:
+            tableName: job_executions
+            columns:
+              - column: {name: report}

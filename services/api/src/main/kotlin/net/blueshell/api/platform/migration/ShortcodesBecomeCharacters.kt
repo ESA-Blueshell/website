@@ -6,6 +6,7 @@ import liquibase.database.Database
 import liquibase.database.jvm.JdbcConnection
 import liquibase.exception.ValidationErrors
 import liquibase.resource.ResourceAccessor
+import net.blueshell.api.shared.text.Shortcodes
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 

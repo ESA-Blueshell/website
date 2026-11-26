@@ -69,7 +69,7 @@ class DriftResolutionsTest {
         val pushed = service.push(1L, 2L, listOf(5L, 6L, 7L))
 
         assertThat(pushed).isEqualTo(2)
-        verify(exactly = 2) { jobs.runAsync(CohortJobs.SyncCohortMembership, any(), any()) }
+        verify(exactly = 2) { jobs.runAsync(CohortJobs.AddMember, any(), any()) }
         assertThat(saved.captured.map { it.userId }).containsExactly(5L, 6L)
         assertThat(saved.captured.map { it.action }).containsOnly(DriftResolutionAction.PUSH)
         assertThat(saved.captured.map { it.resolvedBy }).containsOnly(9L)

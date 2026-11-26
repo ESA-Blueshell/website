@@ -2,6 +2,9 @@ package net.blueshell.api.discord.web
 
 import net.blueshell.api.discord.domain.DiscordEmoji
 import net.blueshell.api.discord.domain.DiscordEmojiDirectory
+import net.blueshell.api.discord.domain.DiscordEmojiKind.APPLICATION
+import net.blueshell.api.discord.domain.DiscordEmojiKind.SEEN
+import net.blueshell.api.discord.domain.DiscordEmojiKind.SERVER
 import net.blueshell.api.discord.domain.DiscordGameChannels
 import net.blueshell.api.discord.domain.DiscordMember
 import net.blueshell.api.discord.domain.DiscordMemberDirectory
@@ -31,7 +34,11 @@ class DiscordMemberControllerTest {
             on { offered(GameChannelCategory.GAMES) } doReturn listOf(TextRoom("11", "324", "valorant", "Games"))
             on { offered(GameChannelCategory.ESPORTS) } doReturn listOf(TextRoom("12", "324", "valorant-esports", "Esports"))
         }
-    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(DiscordEmoji("657", "ShellyStar", true)) }
+    private val shellyStar = DiscordEmoji("657", "ShellyStar", animated = true, available = true, roleIds = emptyList(), kind = SERVER)
+    private val shellyWave = DiscordEmoji("42", "shellywave", animated = false, available = true, roleIds = emptyList(), kind = APPLICATION)
+    private val spoopyKat =
+        DiscordEmoji("9001", "spoopykat", animated = false, available = true, roleIds = emptyList(), kind = SEEN, uses = 3)
+    private val emoji: DiscordEmojiDirectory = mock { on { all() } doReturn listOf(shellyStar, shellyWave, spoopyKat) }
     private val controller = DiscordMemberController(directory, roles, channels, emoji)
 
     @Test
@@ -86,9 +93,12 @@ class DiscordMemberControllerTest {
     }
 
     @Test
-    fun `answers the server's own emoji, or 503 without a bot`() {
-        val star = controller.emojis().body!!.single()
-        assertThat(listOf(star.id, star.name, star.animated)).containsExactly("657", "ShellyStar", true)
+    fun `answers every emoji with its kind and a seen emoji's uses, or 503 without a bot`() {
+        assertThat(controller.emojis().body!!.map { listOf(it.id, it.name, it.animated, it.kind, it.uses) }).containsExactly(
+            listOf("657", "ShellyStar", true, SERVER, null),
+            listOf("42", "shellywave", false, APPLICATION, null),
+            listOf("9001", "spoopykat", false, SEEN, 3L),
+        )
 
         val offline: DiscordEmojiDirectory = mock { on { all() } doReturn null }
         assertThat(DiscordMemberController(directory, roles, channels, offline).emojis().statusCode)

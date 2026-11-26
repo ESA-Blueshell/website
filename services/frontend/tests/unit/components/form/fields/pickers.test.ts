@@ -174,6 +174,19 @@ describe("NationalitySelect", () => {
     expect(wrapper.findComponent({name: "FormControl"}).props("modelValue")).toBe("NL")
   })
 
+  it("writes the matched code back, so a name is never saved again", () => {
+    const fromName = mount(NationalitySelect, {props: {modelValue: "Dutch"}, global: {stubs}})
+    const fromLowercase = mount(NationalitySelect, {props: {modelValue: "nl"}, global: {stubs}})
+
+    expect(fromName.emitted("update:modelValue")?.at(-1)?.[0]).toBe("NL")
+    expect(fromLowercase.emitted("update:modelValue")?.at(-1)?.[0]).toBe("NL")
+  })
+
+  it("leaves a code that is already right alone", () => {
+    expect(mount(NationalitySelect, {props: {modelValue: "BE"}, global: {stubs}})
+      .emitted("update:modelValue")).toBeUndefined()
+  })
+
   it("holds nothing where the record holds nothing, or nothing it knows", () => {
     for (const said of ["", "   ", undefined, "Atlantis"]) {
       const wrapper = mount(NationalitySelect, {props: {modelValue: said}, global: {stubs}})

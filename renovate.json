@@ -29,6 +29,10 @@
       "/^platform/cluster/flux/.+\\.ya?ml$/"
     ]
   },
+  "nix": {
+    "description": "The nix manager is opt-in while Renovate calls it beta. Without this, platform/flake.lock never moves.",
+    "enabled": true
+  },
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": [
@@ -36,15 +40,46 @@
     ]
   },
   "vulnerabilityAlerts": {
-    "description": "A security fix skips the cooldown, so it never merges itself: a release that has not aged gets a person instead.",
+    "description": "A security fix skips the cooldown and the Monday schedule, so it opens the moment a fix is published, and merges itself once every required check passes. This overrides the reviewed-PR rules for workflows and the cluster: an unpatched vulnerability is the bigger risk. osvVulnerabilityAlerts adds the OSV database, which also covers the Gradle and Go dependencies that GitHub's alerts miss. Transitive npm fixes come from Dependabot security updates and the weekly lock file maintenance.",
     "enabled": true,
-    "automerge": false,
+    "automerge": true,
     "labels": [
       "dependencies",
       "security"
-    ]
+    ],
+    "minimumReleaseAge": null,
+    "schedule": [],
+    "prCreation": "immediate",
+    "platformAutomerge": true
   },
+  "osvVulnerabilityAlerts": true,
   "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The golangci-lint version the imaging job installs.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yml$/"
+      ],
+      "matchStrings": [
+        "uses: golangci/golangci-lint-action@[^\\n]+\\n\\s+with:\\n\\s+version: (?<currentValue>v[^\\s]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "golangci/golangci-lint",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "The govulncheck version the imaging job runs.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/validate\\.yml$/"
+      ],
+      "matchStrings": [
+        "golang\\.org/x/vuln/cmd/govulncheck@(?<currentValue>v[^\\s]+)"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/vuln",
+      "versioningTemplate": "semver"
+    },
     {
       "customType": "regex",
       "description": "The Brevo and Discord clients publish only to GitHub Packages, which needs a registry token Renovate does not have, so a maven lookup returns no-result. Follow the source repositories' release tags instead.",
@@ -87,6 +122,31 @@
       "depNameTemplate": "fluxcd/flux2",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": "The api's buildpack builder, which no Docker manager reads in the Gradle build.",
+      "managerFilePatterns": [
+        "/^services/api/build\\.gradle\\.kts$/"
+      ],
+      "matchStrings": [
+        "\"(?<depName>paketobuildpacks/builder-noble-java-tiny):(?<currentValue>[^\"@]+)\" \\+\\s+\"@(?<currentDigest>sha256:[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "The sbomnix release the NixOS vulnerability scan runs. nixpkgs' own sbomnix fails to build, so the scan runs the upstream flake at a tag.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/nix-vulnerabilities\\.yml$/"
+      ],
+      "matchStrings": [
+        "github:tiiuae/sbomnix/(?<currentValue>v[^#\\s]+)#"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "tiiuae/sbomnix",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
@@ -118,6 +178,28 @@
         "github_actions",
         "ci"
       ]
+    },
+    {
+      "description": "The imaging service's module. A bump is tidied so go.sum moves with it, and the golang base image follows its own Dockerfile rule.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ],
+      "addLabels": [
+        "go"
+      ]
+    },
+    {
+      "description": "The go directive is the oldest Go the module builds with, and raising it is a decision, not an upgrade. The toolchain directive is the Go that CI lints, scans and builds with and stays on, so a patch release that fixes the standard library reaches govulncheck.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "golang"
+      ],
+      "enabled": false
     },
     {
       "matchManagers": [
@@ -172,6 +254,17 @@
       ]
     },
     {
+      "description": "A flake.lock bump reaches the host only when someone rebuilds it, so each gets a reviewed pull request that prompts the rebuild. The cooldown needs a release date, which a branch head does not have.",
+      "matchManagers": [
+        "nix"
+      ],
+      "automerge": false,
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "addLabels": [
+        "nix"
+      ]
+    },
+    {
       "description": "gotk-components.yaml is regenerated as a whole by the flux manager. Bumping its controller images through the kubernetes manager would leave Flux half upgraded.",
       "matchManagers": [
         "kubernetes"
@@ -213,6 +306,22 @@
       "matchPackageNames": [
         "mariadb"
       ],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": [
+        "paketobuildpacks/builder-noble-java-tiny"
+      ],
+      "addLabels": [
+        "docker"
+      ]
+    },
+    {
+      "description": "A Flux apiVersion moves with the Flux release that serves it (the flux manager regenerates gotk-components.yaml). Bumped on its own, it names a version the cluster's CRDs do not serve yet.",
+      "matchDatasources": [
+        "kubernetes-api"
+      ],
+      "matchCurrentValue": "/\\.toolkit\\.fluxcd\\.io\\//",
       "enabled": false
     }
   ]

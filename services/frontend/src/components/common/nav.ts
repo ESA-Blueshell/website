@@ -45,7 +45,6 @@ const ASSOCIATION: NavEntry[] = [
 const PARTNERS: NavEntry[] = [
   {label: "Become a partner", to: "/partners/become-a-partner"},
   {label: "El Niño", to: "/partners/el-nino"},
-  {label: "Marketing Maatwerk", to: "/partners/marketing-maatwerk"},
 ]
 
 /**
@@ -121,6 +120,7 @@ export const accountFor = (reader: NavReader): NavEntry[] => [
   {label: "Address", to: reader.addressId == null ? "/account/addresses" : `/account/addresses/${reader.addressId}`},
   {label: "Payment details", to: "/account/payment-details"},
   {label: "Declarations", to: "/account/declarations"},
+  {label: "Help", to: "/account/help"},
 ]
 
 /**

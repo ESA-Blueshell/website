@@ -27,7 +27,7 @@ a password manager open:
 scripts/migrate-vault.sh
 ```
 
-It signs you in to the old Vault through the site, as `seed-backup-credentials.sh` does, then:
+It signs you in to the old Vault through the site, as `platform/bootstrap/secrets.sh` does, then:
 
 1. **Takes stock of the old Vault.** It stops before writing anything if the old Vault has a
    mount, auth method or role that `bootstrap-auth.sh` does not make, since that would be lost.
@@ -100,9 +100,9 @@ git checkout main && git pull
 scripts/migrate-vault.sh --finish
 ```
 
-From then on no root token exists. When one is needed, three share holders make a short-lived one
-with `vault operator generate-root`, as step 7c of `platform/recovery/README.md` shows, and revoke it
-afterwards.
+From then on no root token exists, and Vault 2.0 makes none from the shares alone. Admin work
+signs in through the `admin` OIDC role and a restore through the `restore` role, as
+`platform/docs/vault-bootstrap.md` §6 says.
 
 **Rollback**, while the old release still exists: revert the switch PR. The old Vault still holds
 everything as it was at the last sync.

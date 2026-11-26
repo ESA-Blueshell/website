@@ -22,11 +22,11 @@ dependencies {
     // Spring Boot starters; just an HTTP client, JDBC, Playwright, and
     // IMAP/JSON helpers for assertions.
     testImplementation("org.springframework.security:spring-security-crypto:7.1.1")
-    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
-    testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.3")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
+    testImplementation("tools.jackson.module:jackson-module-kotlin:3.2.4")
 
     testImplementation("io.rest-assured:rest-assured:6.0.1")
-    testImplementation("com.microsoft.playwright:playwright:1.62.0")
+    testImplementation("com.microsoft.playwright:playwright:1.64.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
     testImplementation("org.assertj:assertj-core:3.27.7")
@@ -76,8 +76,12 @@ tasks.withType<Test>().configureEach {
 // are a separate CI step with their own report, so the engine is excluded here
 // to stop the same behaviour being exercised twice per pipeline.
 tasks.named<Test>("test") {
+    // A JUnit tag expression; CI narrows imaging-only runs to "system & imaging".
+    val tags = project.findProperty("systemTags") as String? ?: "system"
+    inputs.property("systemTags", tags)
     useJUnitPlatform {
-        includeTags("system")
+        includeTags.clear()
+        includeTags(tags)
         excludeEngines("cucumber")
     }
 }

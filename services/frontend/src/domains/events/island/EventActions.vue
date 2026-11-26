@@ -123,7 +123,22 @@ async function confirmDelete() {
 
 <template>
   <span class="event-actions">
-    <template v-if="manages">
+    <cut-button
+      v-if="event.signUp && !manageOnly"
+      class="event-actions__sign-up"
+      :disabled="blocked !== null || signingOut"
+      :testid="`event-signup-toggle-btn-${event.id}`"
+      :title="blocked ?? undefined"
+      :tone="isSignedUp || signing ? 'plain' : 'solid'"
+      @click="pressSignUp"
+    >
+      {{ signUpLabel }}
+    </cut-button>
+
+    <span
+      v-if="manages"
+      class="event-actions__manage"
+    >
       <button
         class="event-actions__approval"
         :class="{'event-actions__approval--on': event.approved}"
@@ -173,18 +188,7 @@ async function confirmDelete() {
           viewBox="0 0 24 24"
         ><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13" /></svg>
       </icon-button>
-    </template>
-
-    <cut-button
-      v-if="event.signUp && !manageOnly"
-      :disabled="blocked !== null || signingOut"
-      :testid="`event-signup-toggle-btn-${event.id}`"
-      :title="blocked ?? undefined"
-      :tone="isSignedUp || signing ? 'plain' : 'solid'"
-      @click="pressSignUp"
-    >
-      {{ signUpLabel }}
-    </cut-button>
+    </span>
 
     <confirm-dialog
       confirm-label="Delete"
@@ -213,6 +217,17 @@ async function confirmDelete() {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
+}
+
+/* The organiser's actions wrap as one, so a narrow row never strands an icon on a line of its own. */
+.event-actions__manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.event-actions__sign-up {
+  margin-right: 0.35rem;
 }
 
 .event-actions__approval {

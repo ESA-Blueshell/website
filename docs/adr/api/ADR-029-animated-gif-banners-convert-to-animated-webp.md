@@ -1,7 +1,12 @@
 # ADR-029: Animated GIF Banners Convert To Animated WebP
 
 ## Status
-Accepted
+Accepted, amended by
+[architecture ADR-014](../architecture/ADR-014-uploaded-images-are-decoded-in-an-isolated-service.md)
+for how frames are read and written. The imaging service decodes them in Go, replays each frame
+onto the canvas and encodes with libwebp's animation encoder, so a stored frame may again be the
+rectangle that changed. The decision itself stands: animated at every width, a still of the
+first frame where the frames will not decode, and the work queued off the startup path.
 
 ## Context
 

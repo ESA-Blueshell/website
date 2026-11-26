@@ -70,7 +70,8 @@ git commit -am "authorized-keys: rotate bs-deploy" && git push
 The flake at `platform/nix/hosts/frankfurt-contabo-1/default.nix`
 carries the full production addressing baked in: IPv4
 `157.173.115.164/24` gateway `157.173.115.1`, IPv6
-`2a02:c207:2316:2642::1/64` gateway `fe80::1` (link-local). No further
+`2a02:c207:2316:2642::1/64` (not configured until #2640: Contabo does
+not route it yet). No further
 nix edits are needed before install.
 
 ```bash
@@ -116,13 +117,20 @@ kubectl get nodes
 Merge `/tmp/k3s.yaml` into `~/.kube/config` under a named context
 (`blueshell-fra`) once you're confident.
 
-## 5. Bootstrap Flux
+## 5. Bootstrap Flux, Vault and the secrets
+
+```bash
+platform/bootstrap/cluster.sh
+```
+
+It installs Flux with a read-only deploy key, initialises and unseals Vault, runs
+the bootstrap Job, seeds every secret through `secrets.sh`, checks the VSO sync,
+revokes the root token and ends with `mail.sh`. Steps 5 and 6 below are what it
+does, for reference. [`platform/bootstrap/README.md`](../bootstrap/README.md) has
+what it needs.
 
 ```bash
 kubectl apply -k platform/cluster/flux/clusters/production/flux-system
-```
-```bash
-kubectl -n flux-system create secret generic flux-system --from-literal=username=flux --from-literal=password="$(gh auth token)"
 ```
 ```bash
 flux get kustomizations --watch
@@ -206,15 +214,33 @@ ssh old-vps 'mysqldump --single-transaction --routines --triggers blueshell' | k
 cat /path/to/blueshell.sql | kubectl -n data-system exec -i mariadb-0 -- mysql -uroot -p"$MARIADB_ROOT" blueshell
 ```
 
-User-uploaded storage:
+User-uploaded storage goes through a pod that mounts the api's storage claim, since the api
+image has no shell or `tar` (architecture ADR-015):
 
 ```bash
-ssh old-vps 'tar -C /src/website -cf - storage' | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
+kubectl -n default run storage-copy --image=busybox:1.38-musl --restart=Never --overrides='{
+  "spec": {"containers": [{"name": "storage-copy", "image": "busybox:1.38-musl", "command": ["sleep", "3600"],
+    "volumeMounts": [{"name": "storage", "mountPath": "/srv/storage"}]}],
+    "volumes": [{"name": "storage", "persistentVolumeClaim": {"claimName": "api-storage"}}]}}'
+kubectl -n default wait --for=condition=Ready pod/storage-copy --timeout=180s
+```
+
+Then stream the files in, from the old VPS or from a local copy:
+
+```bash
+ssh old-vps 'tar -C /src/website/storage -cf - .' | kubectl -n default exec -i storage-copy -- tar -C /srv/storage -xf -
 ```
 
 ```bash
-tar -C /path/to/storage-parent -cf - storage | kubectl -n default exec -i "$(kubectl -n default get pod -l app.kubernetes.io/name=api -o name | head -1)" -- tar -C /home -xf -
+tar -C /path/to/storage -cf - . | kubectl -n default exec -i storage-copy -- tar -C /srv/storage -xf -
 ```
+
+```bash
+kubectl -n default delete pod storage-copy
+```
+
+Restart the api afterwards, so its init container makes the copied files writable for it:
+`kubectl -n default rollout restart deployment/api-primary`.
 
 If the direct pipes are flaky over the uplink, relay via a scratch
 S3/B2 bucket: dump → upload → `kubectl cp` from workstation → restore.
@@ -224,7 +250,7 @@ S3/B2 bucket: dump → upload → `kubectl cp` from workstation → restore.
 Cloudflare zone `esa-blueshell.nl`:
 
 - `esa-blueshell.nl` A → `157.173.115.164`, AAAA →
-  `2a02:c207:2316:2642::1`, both proxied (orange cloud).
+  `2a02:c207:2316:2642::1` once #2640 serves IPv6, both proxied (orange cloud).
 - `*.esa-blueshell.nl` — external-dns auto-materialises records
   from every IngressRoute; no manual action needed.
 - `stalwart.esa-blueshell.nl` A → `157.173.115.164`, **grey cloud**

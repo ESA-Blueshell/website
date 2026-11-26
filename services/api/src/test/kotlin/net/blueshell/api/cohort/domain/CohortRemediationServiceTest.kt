@@ -141,8 +141,8 @@ class CohortRemediationServiceTest {
         verify { members.delete(staleStranger) }
         verify {
             jobs.runAsync(
-                CohortJobs.SyncCohortMembership,
-                CohortJobs.SyncCohortMembershipPayload(2L, 99L, SyncCohortMembershipIntent.ADD),
+                CohortJobs.AddMember,
+                CohortJobs.CohortMemberPayload(2L, 99L),
                 JobTrigger.ANOTHER_JOB,
             )
             jobs.runAsync(ContactJobs.SyncContact, ContactJobs.SyncContactPayload(3L), JobTrigger.ANOTHER_JOB)
@@ -492,7 +492,7 @@ class CohortRemediationServiceTest {
         }
         assertThat(recorded.captured.single().action).isEqualTo(DriftResolutionAction.ENFORCED_REMOVE)
         assertThat(recorded.captured.single().resolvedBy).isNull()
-        verify(exactly = 0) { jobs.runAsync(CohortJobs.SyncCohortMembership, any(), any()) }
+        verify(exactly = 0) { jobs.runAsync(CohortJobs.AddMember, any(), any()) }
     }
 
     @Test

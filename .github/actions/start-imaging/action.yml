@@ -1,0 +1,31 @@
+name: Start the imaging service
+description: Build the imaging image and run it as the cluster runs it, for a job whose api converts uploads.
+
+# Exports IMAGING_URL. main's image cache is readable from every pull request.
+
+inputs:
+  port:
+    description: Host port the service listens on.
+    required: false
+    default: '8090'
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+    - name: Build the imaging image
+      shell: bash
+      working-directory: services/imaging
+      run: |
+        docker buildx build --progress=plain --load -t blueshell-website/imaging:ci \
+          --cache-from type=gha,scope=imaging-amd64 --cache-from type=gha,scope=imaging .
+
+    - name: Start the imaging service
+      shell: bash
+      run: |
+        docker run -d --name imaging --read-only --cap-drop ALL --security-opt no-new-privileges \
+          --memory 1g --cpus 1 -p "${{ inputs.port }}:8080" blueshell-website/imaging:ci
+        for _ in $(seq 1 30); do curl -fsS "http://localhost:${{ inputs.port }}/healthz" && break; sleep 1; done
+        curl -fsS "http://localhost:${{ inputs.port }}/healthz" || { docker logs imaging; exit 1; }
+        echo "IMAGING_URL=http://localhost:${{ inputs.port }}" >> "$GITHUB_ENV"

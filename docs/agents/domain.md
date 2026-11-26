@@ -34,7 +34,7 @@ actually get resolved.
 │       ├── testing/ADR-INDEX.md       ← ADR-001…  numbered independently
 │       └── {api,frontend}/superseded/ ← replaced decisions, kept for history
 ├── platform/                          ← cluster manifests, Nix hosts and their docs
-├── services/{api,frontend,stalwart,vault}/
+├── services/{api,frontend,imaging,stalwart,vault}/
 └── tests/system/                      ← the Kotlin Playwright suite
 ```
 

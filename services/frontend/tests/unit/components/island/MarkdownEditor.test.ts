@@ -230,5 +230,34 @@ describe("the help the editor offers", () => {
       expect(view.state.doc.toString()).toBe("abc")
       wrapper.unmount()
     })
+
+    it("inserts a picked emoji or mention whole, or not at all", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 2, insert: "<:BS_Peepo:1>"}, userEvent: "input.complete"})
+      expect(view.state.doc.toString()).toBe("ab")
+      view.dispatch({changes: {from: 2, insert: "🎃"}, userEvent: "input.complete"})
+      expect(view.state.doc.toString()).toBe("ab🎃")
+      wrapper.unmount()
+    })
+
+    it("never ends a cut paste in half of a custom emoji", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 2, insert: "c<:BS_Peepo:657733730491826186>"}})
+
+      expect(view.state.doc.toString()).toBe("abc")
+      wrapper.unmount()
+    })
+
+    it("never ends a cut paste in half of an emoji", () => {
+      const {wrapper, view} = capped("ab")
+
+      view.dispatch({changes: {from: 2, insert: "cd🎃e"}})
+
+      expect(view.state.doc.toString()).toBe("abcd")
+      expect(view.state.selection.main.head).toBe(4)
+      wrapper.unmount()
+    })
   })
 })

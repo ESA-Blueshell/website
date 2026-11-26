@@ -1,0 +1,40 @@
+# email.recovery sent a different email depending on its payload's tokenPurpose (#2600). Each email
+# is now its own job, and the rows move to the one they were, so a queued email sends after the
+# deploy and the history keeps its meaning. The tokenPurpose left in a payload is read past.
+databaseChangeLog:
+  - changeSet:
+      logicalFilePath: db/changelog/changes/2026-10-26-recovery-email-jobs.yaml
+      id: recovery-email-jobs
+      author: blueshell
+      changes:
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'email.account-activation'
+              WHERE job_type = 'email.recovery' AND payload LIKE '%"tokenPurpose":"USER_ACTIVATION"%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'email.member-activation'
+              WHERE job_type = 'email.recovery' AND payload LIKE '%"tokenPurpose":"MEMBER_ACTIVATION"%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'email.password-reset'
+              WHERE job_type = 'email.recovery' AND payload LIKE '%"tokenPurpose":"PASSWORD_RESET"%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'email.email-change'
+              WHERE job_type = 'email.recovery' AND payload LIKE '%"tokenPurpose":"EMAIL_CHANGE"%'
+        - sql:
+            sql: >-
+              UPDATE job_executions SET job_type = 'email.two-factor-reenrolment'
+              WHERE job_type = 'email.recovery' AND payload LIKE '%"tokenPurpose":"TWO_FACTOR_REENROLMENT"%'
+      rollback:
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'email.recovery' WHERE job_type = 'email.account-activation'
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'email.recovery' WHERE job_type = 'email.member-activation'
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'email.recovery' WHERE job_type = 'email.password-reset'
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'email.recovery' WHERE job_type = 'email.email-change'
+        - sql:
+            sql: UPDATE job_executions SET job_type = 'email.recovery' WHERE job_type = 'email.two-factor-reenrolment'

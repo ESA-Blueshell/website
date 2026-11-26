@@ -177,6 +177,15 @@ class DiscordPostContentTest {
     }
 
     @Test
+    fun `cuts a Discord event's name and place to Discord's 100 characters`() {
+        val long = "word ".repeat(30).trim()
+        val listing = DiscordPostContent.listingOf(event.copy(title = long, location = long), site, cover = null)
+
+        assertThat(listing.name).hasSizeLessThanOrEqualTo(100).endsWith("word…")
+        assertThat(listing.location).hasSizeLessThanOrEqualTo(100).endsWith("word…")
+    }
+
+    @Test
     fun `leaves out a sign-up deadline that falls at the start`() {
         assertThat(DiscordPostContent.postOf(event.copy(signUpDeadline = event.startTime), site).text).doesNotContain("Sign up before")
     }

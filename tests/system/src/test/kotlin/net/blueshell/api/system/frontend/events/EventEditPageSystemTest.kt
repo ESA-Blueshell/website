@@ -99,6 +99,7 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
     }
 
     @Test
+    @Tag("imaging")
     fun `events page fetches banner after editing event banner`() {
         val member = TestHelper.registerActivateAndPromote("COMMITTEE")
         val committeeId = TestHelper.createCommittee(name = "Banner Edit Committee ${TestHelper.uniqueSuffix()}")
@@ -121,7 +122,7 @@ class EventEditPageSystemTest : PlaywrightTestBase() {
 
         // Open the events page in a fresh page so the banner-fetch
         // response is observable without cache interference.
-        val freshContext = context.browser().newContext()
+        val freshContext = browser.newContext()
         try {
             val freshPage = freshContext.newPage()
             val freshLoginStatus = AuthHelper.submitLogin(freshPage, frontendUrl, member.username, member.password)

@@ -4,6 +4,7 @@ import net.blueshell.api.event.api.EventBannerImage
 import net.blueshell.api.event.api.EventPostData
 import net.blueshell.api.event.api.EventPosts
 import net.blueshell.api.shared.job.JobEffect
+import net.blueshell.api.sync.api.CustomEmoji
 import net.blueshell.api.sync.api.DiscordEventListing
 import net.blueshell.api.sync.api.DiscordPost
 import net.blueshell.api.sync.api.DiscordPublisher
@@ -95,6 +96,14 @@ class DiscordEventPostsTest {
 
         override fun findDiscordEvents(line: String) =
             if (line == "More on the site: https://esa-blueshell.nl/events/42") strays["events"].orEmpty() else emptyList()
+
+        /** What Discord would not take in a Discord event's description at the moment. */
+        var leftOut: String? = null
+
+        override fun customEmoji() = emptyList<CustomEmoji>()
+
+        override fun listedAs(listing: DiscordEventListing) =
+            leftOut?.let { listing.copy(description = listing.description.replace(it, "")) } ?: listing
 
         override fun createDiscordEvent(listing: DiscordEventListing): String {
             if (refuseDiscordEvents) error("Discord refused the Discord event")
@@ -407,6 +416,19 @@ class DiscordEventPostsTest {
             .isEqualTo(JobEffect.MADE)
 
         assertThat(publisher.said).containsExactly("post events-info m1", "post events-info m2")
+    }
+
+    @Test
+    fun `relists a Discord event once Discord takes what it left out, though the event did not change`() {
+        val carving = event.copy(description = "Carve! <:spoopykat:111>")
+        publisher.leftOut = " <:spoopykat:111>"
+        posts("2026-09-26T08:00", carving).keepDiscordEvent(42)
+        posts("2026-09-27T08:00", carving).keepDiscordEvent(42)
+
+        publisher.leftOut = null
+        assertThat(posts("2026-09-28T08:00", carving).keepDiscordEvent(42).effect).isEqualTo(JobEffect.EDITED)
+
+        assertThat(publisher.said).containsExactly("list m1", "relist m1")
     }
 
     @Test

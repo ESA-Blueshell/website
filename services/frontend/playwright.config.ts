@@ -9,9 +9,9 @@ export default defineConfig({
     timeout: 5_000,
   },
   fullyParallel: true,
-  // CI runs the suite as six `--shard` slices, one job each, so a slice holds
-  // under a hundred tests rather than 567. A short slice has no long tail to
-  // hide, which is what oversubscription bought: one worker per runner vCPU is
+  // CI runs each project as its own job, `chromium` in `--shard` slices, so a
+  // job holds about a hundred tests. A short slice has no long tail to hide,
+  // which is what oversubscription bought: one worker per runner vCPU is
   // enough, and it keeps a 0.8s test at 0.8s instead of stretching it toward
   // the 5s cap.
   workers: process.env.CI ? 4 : undefined,
@@ -19,7 +19,8 @@ export default defineConfig({
   // starved assertion, so a failure is a failure. `trace` below is what makes
   // that first failure readable.
   retries: 0,
-  reporter: "list",
+  // Every CI job writes a blob that one job merges into a single HTML report.
+  reporter: process.env.CI ? [["blob"], ["list"]] : "list",
   use: {
     // retries: 0 means there is no second attempt to record, so the trace has
     // to come off the first one. Passes are discarded, leaving a green run with

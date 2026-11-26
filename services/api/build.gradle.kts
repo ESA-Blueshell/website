@@ -1,6 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.springframework.boot.gradle.tasks.run.BootRun
+import java.security.SecureRandom
+import java.util.Base64
 
 plugins {
     id("spring-conventions")
@@ -60,7 +62,7 @@ configurations.configureEach {
 // nightly spec sync in each client repository is what decides whether a bump
 // is a patch, a minor or a major.
 val brevoClientVersion = "1.1.1"
-val discordClientVersion = "1.6.0"
+val discordClientVersion = "1.9.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -105,18 +107,18 @@ dependencies {
     implementation("org.springframework.data:spring-data-jpa")
     implementation("jakarta.persistence:jakarta.persistence-api")
 
-    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.40")
+    implementation("com.googlecode.libphonenumber:libphonenumber:9.0.41")
     // BlogHtmlSanitizer's safelist. It arrived through flexmark until flexmark went; pinned where it resolved.
     implementation("org.jsoup:jsoup:1.23.2")
 
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
 
     implementation("com.fasterxml.jackson.core:jackson-annotations")
     implementation("tools.jackson.module:jackson-module-kotlin")
     // Jackson 2.x Kotlin module — required for SpringDoc/swagger-core schema
     // generation, which uses its own com.fasterxml.jackson ObjectMapper
     // independently of our tools.jackson mapper.
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.4")
 
     // Generated clients, published from ESA-Blueshell/{brevo,discord}-client.
     // They were generated in-repo under libs/clients until their specs, their
@@ -134,9 +136,9 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
-    implementation("org.commonmark:commonmark:0.30.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.30.0")
+    implementation("org.commonmark:commonmark:0.30.1")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.30.1")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.30.1")
     implementation(files("libs/snakeyaml-2.5.jar"))
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -145,9 +147,9 @@ dependencies {
     testImplementation("com.github.javafaker:javafaker:1.0.2")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-mariadb:2.0.5")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
     testImplementation("org.springframework.modulith:spring-modulith-core")
-    testImplementation("io.github.classgraph:classgraph:4.8.196")
+    testImplementation("io.github.classgraph:classgraph:4.8.199")
     testImplementation("io.mockk:mockk:1.14.11")
     // H2 in-memory database for OpenAPI spec generation (test-scoped only).
     testImplementation("com.h2database:h2:2.5.252")
@@ -190,6 +192,54 @@ tasks.named<Jar>("jar") {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveClassifier.set("boot")
+}
+
+// Architecture ADR-015.
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
+    builder.set(
+        "paketobuildpacks/builder-noble-java-tiny:0.0.218" +
+            "@sha256:cd34e9cb5f55980b902d9b1c4a354a720b407a512b80caef9e70791b4ab6dbf6",
+    )
+    imageName.set(providers.gradleProperty("apiImage").orElse("blueshell-website/api:local"))
+    providers.gradleProperty("apiJar").orNull?.let { archiveFile.set(file(it)) }
+
+    // Only for the training run; the buildpack logs them.
+    fun throwawayKey(bytes: Int) = Base64.getEncoder().encodeToString(ByteArray(bytes).also(SecureRandom()::nextBytes))
+
+    environment.putAll(
+        mapOf(
+            "BP_JVM_VERSION" to "25",
+            "BP_JVM_AOTCACHE_ENABLED" to "true",
+            "BP_SPRING_CLOUD_BINDINGS_DISABLED" to "true",
+            "TRAINING_RUN_JAVA_TOOL_OPTIONS" to
+                listOf(
+                    "-XX:MaxRAM=2g",
+                    "-XX:+UseG1GC",
+                    // CVE-2026-114938 sits in the Base64 decode intrinsic; keep it off until the
+                    // builder ships a patched JRE. Training and runtime flags must agree.
+                    "-XX:-UseBASE64Intrinsics",
+                    // Cached adapters are machine code for the build runner's CPU; on a host
+                    // without its instructions every start dies with SIGILL (#2594).
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:-AOTAdapterCaching",
+                    "-Dspring.context.exit=onRefresh",
+                    "-Dspring.profiles.active=training",
+                    "-Dstorage.location=/tmp/training-storage",
+                    "-Dapp.jwt.secret=${throwawayKey(64)}",
+                    "-Dapp.two-factor.key=${throwawayKey(32)}",
+                    "-Dauth.clients.vault.secret=${throwawayKey(24)}",
+                ).joinToString(" "),
+            // Must match the training run, or the cache is ignored.
+            "BPE_DELIM_JAVA_TOOL_OPTIONS" to " ",
+            "BPE_APPEND_JAVA_TOOL_OPTIONS" to "-XX:+UseG1GC -XX:-UseBASE64Intrinsics",
+            "BPE_DEFAULT_SPRING_PROFILES_ACTIVE" to "prod",
+            "BPE_DEFAULT_BPL_JAVA_NMT_ENABLED" to "false",
+        ),
+    )
+
+    providers.gradleProperty("buildpackCache").orNull?.let { root ->
+        buildCache { bind { source.set(root) } }
+    }
 }
 
 // Spring Boot registers `bootArchives` as a consumable configuration with

@@ -1,7 +1,9 @@
 package net.blueshell.api.discord.domain
 
+import net.blueshell.api.platform.config.JacksonConfig
 import net.blueshell.clients.discord.model.GuildFeatures
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -11,6 +13,7 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.header
 import org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import tools.jackson.databind.exc.InvalidFormatException
 import tools.jackson.databind.json.JsonMapper
 
 class DiscordClientConfigTest {
@@ -47,13 +50,21 @@ class DiscordClientConfigTest {
             .andRespond(withSuccess(guild(features = """["COMMUNITY", "TEXT_IN_VOICE_ENABLED"]"""), MediaType.APPLICATION_JSON))
         val config = DiscordClientConfig()
         val environment = MockEnvironment().withProperty("discord.botToken", "abc")
-        val api = config.discordApi(config.discordRestClient(builder, JsonMapper.builder().build(), environment, "https://discord.test"))
+        // The api's own mapper, Kotlin module and its strict null checks included: a bare one hid the failure.
+        val mapper = JacksonConfig().jsonMapper(null)
+        val api = config.discordApi(config.discordRestClient(builder, mapper, environment, "https://discord.test"))
 
         val read = api.getGuild("1", false)
 
         assertThat(read.emojis.map { it.name }).containsExactly("blueshell")
-        assertThat(read.features).containsExactly(GuildFeatures.COMMUNITY)
+        assertThat(read.features).containsExactlyInAnyOrder(GuildFeatures.COMMUNITY, GuildFeatures.UNKNOWN_DEFAULT_OPEN_API)
         discord.verify()
+    }
+
+    @Test
+    fun `leaves the api's own mapper refusing a value an enum does not know`() {
+        assertThatThrownBy { JacksonConfig().jsonMapper(null).readValue("\"NOT_A_CATEGORY\"", GameChannelCategory::class.java) }
+            .isInstanceOf(InvalidFormatException::class.java)
     }
 
     private fun guild(features: String) =

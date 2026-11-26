@@ -5,7 +5,6 @@ import net.blueshell.api.contact.api.ContactJobs
 import net.blueshell.api.contribution.domain.ContributionJobs
 import net.blueshell.api.event.domain.EventJobs
 import net.blueshell.api.file.domain.ImageJobs
-import net.blueshell.api.shared.enums.TokenPurpose
 import net.blueshell.api.shared.job.JobDefinition
 import net.blueshell.api.sync.domain.CalendarJobs
 import net.blueshell.api.sync.domain.DiscordPostJobs
@@ -24,7 +23,7 @@ class JobDefinitionsTest {
 
     private val emails =
         listOf(
-            Queued(AuthJobs.Recovery, AuthJobs.RecoveryPayload(1, "token", TokenPurpose.PASSWORD_RESET)),
+            Queued(AuthJobs.PasswordReset, AuthJobs.RecoveryPayload(1, "token")),
             Queued(
                 AuthJobs.SecurityNotification,
                 AuthJobs.SecurityNotificationPayload(1, AuthJobs.SecurityNotificationAudience.PERSON),

@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional
  * Also repairs: a width is addressed by its source's hash and its own number, so one whose bytes
  * have gone missing is written again to the address it always had, and a lost storage volume
  * fills itself back in on the next start. In the application rather than a migration, which has
- * neither the storage volume nor cwebp, and idempotent, so every start after the first does
+ * neither the storage volume nor the imaging service, and idempotent, so every start after the first does
  * nothing.
  *
- * A still is written here; an animation is queued. One frame per width is a converter run, and
+ * A still is written here; an animation is queued. One frame per width is a conversion, and
  * a banner of two hundred frames at six widths would hold the start open for as long as it took
  * to convert somebody's picture.
  */

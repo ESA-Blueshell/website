@@ -88,7 +88,7 @@ class SignupEmailCorrectionIT : UserTestSupport() {
         correct(signupToken(user), "corrected3@example.com").andExpect(status().isNoContent)
 
         assertThat(jobExecutions.findAll().map { it.jobType })
-            .contains(AuthJobs.Recovery.type)
+            .contains(AuthJobs.AccountActivation.type)
     }
 
     @Test

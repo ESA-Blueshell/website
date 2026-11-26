@@ -1,6 +1,5 @@
 package net.blueshell.api.discord.domain
 
-import com.fasterxml.jackson.annotation.Nulls
 import net.blueshell.api.shared.credentials.Credentials
 import net.blueshell.api.shared.credentials.RotatingHeader
 import net.blueshell.api.shared.credentials.RotatingSecret
@@ -48,14 +47,13 @@ class DiscordClientConfig {
     @Bean
     fun discordApi(discordRestClient: RestClient): DiscordApi = DiscordClient.using(discordRestClient)
 
-    // Discord adds values to its enums (a guild feature, a locale) without a new API version, and
-    // the generated enums refuse a value they do not know, so one would fail the whole read. In
-    // Discord's answers only, it reads as null and drops out of a list or set; the api's own
-    // requests still refuse an unknown value.
+    // Discord adds values to its enums (a guild feature, a locale) without a new API version. In
+    // Discord's answers only, one reads as the enum's unknown case; the api's own requests still
+    // refuse an unknown value. Null would not do: the Kotlin module's strict null checks refuse a
+    // null in a non-null collection.
     private fun discordMapper(jsonMapper: JsonMapper): JsonMapper =
         jsonMapper
             .rebuild()
-            .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-            .changeDefaultNullHandling { it.withContentNulls(Nulls.SKIP) }
+            .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)
             .build()
 }

@@ -19,9 +19,10 @@ spec:
     targetPort: http
   progressDeadlineSeconds: 900
   analysis:
-    interval: 30s
+    # As the api's, which it waits for at the rendezvous.
+    interval: 10s
     iterations: 4
-    threshold: 3
+    threshold: 5
     # Promotion, rollback and a held gate all reach Discord at info.
     alerts:
       - name: discord
@@ -33,10 +34,10 @@ spec:
       - name: read-only-load
         type: rollout
         url: http://flagger-loadtester.flagger-system/
-        timeout: 30s
+        timeout: 15s
         metadata:
           type: bash
-          cmd: hey -z 20s -q 3 -c 2 http://frontend-canary.default:3000/
+          cmd: hey -z 5s -q 3 -c 2 http://frontend-canary.default:3000/
 
       - name: canary-answers-http
         type: rollout
@@ -57,7 +58,12 @@ spec:
             phase=$(kubectl -n default get canary api -o jsonpath='{.status.phase}');
             want=$(kubectl -n default get deploy api -o jsonpath='{.spec.template.spec.containers[0].image}');
             have=$(kubectl -n default get deploy api-primary -o jsonpath='{.spec.template.spec.containers[0].image}');
-            echo "api=$phase canary=$want primary=$have";
+            mine=$(kubectl -n default get deploy frontend -o jsonpath='{.spec.template.spec.containers[0].image}');
+            tag() { echo "${1%%@*}" | sed 's/.*://'; };
+            theirs=$(tag "$want"); ours=$(tag "$mine");
+            echo "api=$phase canary=$want primary=$have frontend=$ours";
+            if [ "$theirs" != "$ours" ] && [ "$(printf '%s\n%s\n' "$theirs" "$ours" | sort -V | head -1)" = "$theirs" ]; then
+            echo "api is still on $theirs, older than $ours: waiting for its image"; exit 1; fi;
             case "$phase" in
             Waiting|Progressing|Failed) exit 1;;
             WaitingPromotion|Promoting|Finalising) exit 0;;

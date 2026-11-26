@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 import {flushPromises, mount} from "@vue/test-utils"
+import {reactive} from "vue"
 import MembershipForm from "@/components/form/MembershipForm.vue"
 import {MemberType} from "@/services/api"
 import {clearEveryField, saidByLabel} from "../../helpers/fields"
@@ -103,7 +104,7 @@ describe("MembershipForm", () => {
   // ── Board mode ─────────────────────────────────────────────────────────────
 
   it("board mode asks for a start date and a member type, and no acceptance", async () => {
-    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: {...makeNewMembership(), startDate: ""}}})
+    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: reactive({...makeNewMembership(), startDate: ""})}})
     await wrapper.findComponent({name: "MemberTypeSelect"}).vm.$emit("update:modelValue", "")
 
     expect(await (wrapper.vm as any).validate()).toBe(false)
@@ -265,7 +266,7 @@ describe("MembershipForm", () => {
   })
 
   it("says a board date left empty is required once it is left, where it is", async () => {
-    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: makeNewMembership()}})
+    const wrapper = mount(MembershipForm, {props: {userId: 42, modelValue: reactive(makeNewMembership())}})
 
     await clearEveryField(wrapper)
 

@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, vi} from "vitest"
 // aliased: the local mount helper below would otherwise shadow what it calls
 import {mount as mountComponent} from "@vue/test-utils"
+import {reactive} from "vue"
 import AddressForm from "@/components/form/AddressForm.vue"
 import {clearEveryField, saidByLabel} from "../../helpers/fields"
 
@@ -133,7 +134,7 @@ describe("AddressForm", () => {
   })
 
   it("says a field left empty is required once it is left", async () => {
-    const wrapper = mountComponent(AddressForm, {props: {modelValue: {...full, country: ""}}})
+    const wrapper = mountComponent(AddressForm, {props: {modelValue: reactive({...full, country: ""})}})
 
     await clearEveryField(wrapper)
 

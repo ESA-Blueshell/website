@@ -8,12 +8,14 @@ import {vi} from "vitest"
 // here. A plain function rather than a mock: mockReset is on, which strips a
 // mock's implementation before every test, and a matchMedia that returns
 // undefined is worse than none at all — it passes a typeof check and then throws
-// on the property access. Nothing needs to assert on these calls.
+// on the property access. Nothing needs to assert on these calls. A `min-width` query
+// answers from the window width, because Vuetify's breakpoints ask the browser rather than
+// compare the width themselves.
 Object.defineProperty(globalThis, "matchMedia", {
   configurable: true,
   writable: true,
   value: (query: string) => ({
-    matches: false,
+    matches: Number(/^\(min-width:\s*(\d+)px\)$/.exec(query)?.[1] ?? Infinity) <= globalThis.innerWidth,
     media: query,
     onchange: null,
     addListener: () => {},

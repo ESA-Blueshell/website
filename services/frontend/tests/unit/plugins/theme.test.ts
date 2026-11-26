@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest"
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest"
 import {chooseTheme, siteTheme, startTheme} from "@/plugins/theme"
 
 const STORED = "esa-blueshell.nl:darkMode"
@@ -11,6 +11,11 @@ const systemPrefers = (dark: boolean) => {
 }
 
 describe("the site's theme", () => {
+  // The setup file's resize reaches Vuetify's breakpoints, which ask matchMedia for the width.
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   beforeEach(() => {
     localStorage.clear()
     system.dark = false

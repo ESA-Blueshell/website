@@ -63,5 +63,19 @@ class StaleJobRecoveryTest {
         assertThat(Duration.between(threshold.captured, Instant.now()).seconds).isBetween(115L, 125L)
     }
 
+    @Test
+    fun `due rows are dispatched and counted`() {
+        every { executions.findStaleRunning(any(), any()) } returns emptyList()
+        every { executions.findStaleQueued(any(), any()) } returns listOf(execution(21))
+        every { executions.findDueScheduledRetries(any(), any()) } returns listOf(execution(22))
+        every { executor.executeAsync(any()) } returns Unit
+
+        recovery.recoverStaleJobs()
+        recovery.dispatchDueRetries()
+
+        verify { executor.executeAsync(21L) }
+        verify { executor.executeAsync(22L) }
+    }
+
     private fun execution(id: Long) = JobExecution(jobType = "test.job").apply { this.id = id }
 }

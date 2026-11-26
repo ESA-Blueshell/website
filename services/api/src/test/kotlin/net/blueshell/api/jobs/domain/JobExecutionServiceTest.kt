@@ -23,6 +23,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageRequest
 import org.springframework.web.server.ResponseStatusException
 import java.lang.reflect.Field
 import java.time.Clock
@@ -483,6 +484,17 @@ class JobExecutionServiceTest {
     private fun stubPersistence(entity: JobExecution) {
         whenever(repository.existsById(entity.id!!)).thenReturn(true)
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }
+    }
+
+    @Test
+    fun `undispatched queued rows are looked up past running twins`() {
+        val stale = JobExecution(jobType = "demo").apply { id = 31 }
+        val page = PageRequest.of(0, 5)
+        whenever(
+            repository.findUndispatchedQueuedBefore(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, now, page),
+        ).thenReturn(listOf(stale))
+
+        assertThat(service.findStaleQueued(now, page)).containsExactly(stale)
     }
 
     private fun injectEntityManager(service: JobExecutionService) {

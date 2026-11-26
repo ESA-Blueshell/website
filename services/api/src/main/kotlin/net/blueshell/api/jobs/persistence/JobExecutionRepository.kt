@@ -54,9 +54,23 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         pageable: Pageable,
     ): List<JobExecution>
 
-    fun findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
-        status: JobExecutionStatus,
-        threshold: Instant,
+    // A null dedup key matches no twin, which is right: createQueued folds only keyed jobs.
+    @Query(
+        """
+        select j from JobExecution j
+        where j.status = :queued
+          and j.nextAttemptAt is null
+          and j.queuedAt < :threshold
+          and not exists (
+              select r.id from JobExecution r
+              where r.status = :running and r.jobType = j.jobType and r.dedupKey = j.dedupKey)
+        order by j.queuedAt asc, j.id asc
+        """,
+    )
+    fun findUndispatchedQueuedBefore(
+        @Param("queued") queued: JobExecutionStatus,
+        @Param("running") running: JobExecutionStatus,
+        @Param("threshold") threshold: Instant,
         pageable: Pageable,
     ): List<JobExecution>
 

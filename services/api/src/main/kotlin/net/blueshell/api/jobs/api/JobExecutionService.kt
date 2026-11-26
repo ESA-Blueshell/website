@@ -160,7 +160,8 @@ class JobExecutionService(
     fun findStaleQueued(
         threshold: Instant,
         pageable: Pageable,
-    ): List<JobExecution> = jobExecutionRepository.findAll(JobExecutionSpecifications.undispatchedQueuedBefore(threshold), pageable).content
+    ): List<JobExecution> =
+        jobExecutionRepository.findUndispatchedQueuedBefore(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, threshold, pageable)
 
     @Transactional(readOnly = true)
     fun findDueScheduledRetries(

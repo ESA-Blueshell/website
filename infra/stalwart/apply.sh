@@ -164,9 +164,41 @@ reconcile() {
   #    the targets exist.
   reconcile_catchall "$dom"
 
+  reconcile_security
+  reconcile_inbound_throttles
+
   reconcile_stdout_tracer
 
   echo "apply: reconcile complete"
+}
+
+# Bans are permanent while authBanPeriod is unset, and every pod reaches
+# Stalwart from the pod network, so one bad bulk send could lock the api out.
+reconcile_security() {
+  printf '{"@type":"update","object":"Security","value":{"authBanPeriod":3600000}}\n' \
+    | sc apply --file /dev/stdin
+}
+
+# Exempting the pod CIDR is safe only because the mail-system NetworkPolicy
+# admits just the api and Gatus from it.
+reconcile_inbound_throttles() {
+  cidr="is_ip_in_cidr(remote_ip, '10.42.0.0/16')"
+  ids="$(sc query MtaInboundThrottle --json 2>/dev/null | jq -rs '
+    map(select((.key // {}) | to_entries | map(select(.value == true) | .key) == ["remoteIp"]))[].id')"
+  [ -n "$ids" ] || echo "apply: no remoteIp MtaInboundThrottle found; the api stays throttled" >&2
+  for id in $ids; do
+    jq -nc --arg id "$id" --arg cond "$cidr" \
+      '{"@type":"update","object":"MtaInboundThrottle",id:$id,
+        value:{match:{match:{"0":{"if":$cond,"then":"false"}},"else":"true"}}}' \
+      | sc apply --file /dev/stdin
+  done
+  jq -nc --arg cond "$cidr" \
+    '{"@type":"update","object":"MtaStageData",
+      value:{maxMessages:{match:{"0":{"if":$cond,"then":"100"}},"else":"10"}}}' \
+    | sc apply --file /dev/stdin
+  printf '{"@type":"create","object":"Action","value":{"reload":{"@type":"ReloadSettings"}}}\n' \
+    | sc apply --file /dev/stdin \
+    || echo "apply: settings reload failed; the throttle settings apply on the next pod start" >&2
 }
 
 # The domain takes one catch-all address. One target is set directly;

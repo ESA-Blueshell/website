@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  # In-cluster clients reach Stalwart without public DNS or the hairpin; the
+  # *.esa-blueshell.nl certificate still verifies.
+  mail.override: |
+    rewrite name exact mail.esa-blueshell.nl stalwart.mail-system.svc.cluster.local

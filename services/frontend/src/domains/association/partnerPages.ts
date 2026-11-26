@@ -1,5 +1,4 @@
 import elnino from "@/assets/elnino.png"
-import maatwerk from "@/assets/association/partner-marketing-maatwerk.webp"
 
 /** One line of a partner's facts: a location, or a way to reach them when it has an `href`. */
 export interface PartnerFact {
@@ -93,76 +92,6 @@ export const PARTNER_PAGES = {
       {label: "Vacancies (Dutch)", href: "https://www.elnino.tech/vacatures"},
       {label: "Get a job (English)", href: "https://www.elnino.tech/getajob"},
       {label: "WhatsApp Michael", href: "https://wa.me/31626978392"},
-    ],
-  },
-  "marketing-maatwerk": {
-    name: "Marketing Maatwerk",
-    logo: {src: maatwerk, alt: "Marketing Maatwerk logo", invertInDark: true},
-    site: "https://marketingmaatwerk.nl/",
-    facts: {
-      heading: "Contact",
-      items: [
-        {label: "Website", value: "marketingmaatwerk.nl", href: "https://marketingmaatwerk.nl/"},
-        {label: "Email", value: "info@marketingmaatwerk.nl", href: "mailto:info@marketingmaatwerk.nl"},
-        {label: "Phone", value: "+31 6 34218964", href: "tel:+31634218964"},
-        {label: "Contact form", value: "marketingmaatwerk.nl/contact", href: "https://marketingmaatwerk.nl/contact/"},
-      ],
-    },
-    sections: [
-      {
-        heading: "About Marketing Maatwerk",
-        paragraphs: [
-          "Marketing Maatwerk specializes in building and strengthening the online presence of entrepreneurs. With a "
-          + "deep passion for web technology, we translate complex digital challenges into clear, effective solutions. "
-          + "The goal is simple: ensure entrepreneurs get found online, make a professional impression, and achieve "
-          + "sustainable growth.",
-        ],
-      },
-      {
-        heading: "What Marketing Maatwerk does",
-        paragraphs: ["Our services focus on the three pillars of online success:"],
-        offers: [
-          {
-            title: "Professional Websites",
-            body: "From fully custom builds to the 'Website in 1 Day' concept: fast, user-friendly and "
-              + "conversion-focused websites.",
-            href: "https://marketingmaatwerk.nl/website-maatwerk/",
-          },
-          {
-            title: "Search Engine Optimization (SEO)",
-            body: "Technical audits, continuous optimization and clear reporting to rank for the keywords that truly "
-              + "matter.",
-            href: "https://marketingmaatwerk.nl/seo/",
-          },
-          {
-            title: "Reliable Web Hosting",
-            body: "Optimized hosting with WordPress core and plugin maintenance included for a fast, secure "
-              + "foundation.",
-            href: "https://marketingmaatwerk.nl/webhosting/",
-          },
-        ],
-      },
-      {
-        heading: "Focus on a strong foundation",
-        paragraphs: [
-          "The philosophy of Marketing Maatwerk is that true online success starts with a rock-solid technical "
-          + "foundation. Instead of quick fixes, we invest in a sustainable strategy. The approach is expert yet "
-          + "accessible: technical subjects are explained in understandable language, so the entrepreneur knows "
-          + "exactly what is happening and why it matters.",
-        ],
-      },
-      {
-        heading: "Who is Marketing Maatwerk for?",
-        paragraphs: [
-          "Marketing Maatwerk helps ambitious entrepreneurs and SMEs who understand that a professional online "
-          + "presence is essential. We often work with business owners who want to focus on their own expertise and "
-          + "confidently leave the technical aspects to a proactive specialist.",
-        ],
-      },
-    ],
-    actions: [
-      {label: "Visit website", href: "https://marketingmaatwerk.nl/"},
-      {label: "Go to contact form", href: "https://marketingmaatwerk.nl/contact/"},
     ],
   },
 } as const satisfies Record<string, PartnerContent>

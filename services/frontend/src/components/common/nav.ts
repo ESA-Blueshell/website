@@ -47,7 +47,6 @@ const ASSOCIATION: NavEntry[] = [
 const PARTNERS: NavEntry[] = [
   {label: "Become a partner", to: "/partners/become-a-partner"},
   {label: "El Niño", to: "/partners/el-nino"},
-  {label: "Marketing Maatwerk", to: "/partners/marketing-maatwerk"},
 ]
 
 /**

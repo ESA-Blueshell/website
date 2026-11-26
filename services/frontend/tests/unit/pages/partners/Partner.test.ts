@@ -7,13 +7,13 @@ import {mountInApp} from "../helpers"
 
 describe("Partner page", () => {
   it("draws the partner its route names", () => {
-    const wrapper = mountInApp(Partner, {props: {slug: "marketing-maatwerk"}})
+    const wrapper = mountInApp(Partner, {props: {slug: "el-nino"}})
 
-    expect(wrapper.getComponent(PartnerPage).props("content")).toBe(PARTNER_PAGES["marketing-maatwerk"])
+    expect(wrapper.getComponent(PartnerPage).props("content")).toBe(PARTNER_PAGES["el-nino"])
   })
 
   it("routes each partner's address to this page, with its content's slug", async () => {
-    for (const slug of ["el-nino", "marketing-maatwerk"]) {
+    for (const slug of ["el-nino"]) {
       const route = router.resolve(`/partners/${slug}`).matched[0]!
       const load = route.components!.default as () => Promise<{default: unknown}>
 

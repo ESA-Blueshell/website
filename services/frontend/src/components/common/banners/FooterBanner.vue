@@ -29,7 +29,6 @@ const COLUMNS: {title: string, links: Link[]}[] = [
     title: "Our partners",
     links: [
       {text: "El Niño", to: "/partners/el-nino"},
-      {text: "Marketing Maatwerk", to: "/partners/marketing-maatwerk"},
       {text: "Esports Team Twente", href: "https://esportsteamtwente.nl/"},
     ],
   },

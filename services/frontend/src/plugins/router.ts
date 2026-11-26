@@ -209,13 +209,6 @@ const routes: RouteRecordRaw[] = [
     meta: {title: "El Niño"},
   },
   {
-    path: "/partners/marketing-maatwerk",
-    name: "marketingmaatwerk",
-    component: () => import("@/pages/partners/Partner.vue"),
-    props: {slug: "marketing-maatwerk"},
-    meta: {title: "Marketing Maatwerk"},
-  },
-  {
     // Login / forgot-password / account-create render inside the full
     // site chrome by default: they're regular pages a logged-out user
     // navigates between. App.vue flips them to a bare layout only when

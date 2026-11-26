@@ -3,7 +3,6 @@ import {DISCORD_INVITE} from "@/components/island/socialGlyphs"
 import ett from "@/assets/ett.png"
 import ettDark from "@/assets/ettdark.png"
 import elnino from "@/assets/elnino.png"
-import maatwerk from "@/assets/association/partner-marketing-maatwerk.webp"
 import type {Partner} from "./PartnerWall.vue"
 import type {Perk} from "./PerkBand.vue"
 
@@ -20,7 +19,6 @@ export const HOME_PERKS: Perk[] = [
 /** The organisations that back the association now. */
 export const HOME_PARTNERS: Partner[] = [
   {name: "El Niño", href: "/partners/el-nino", light: elnino, dark: elnino, invertInDark: true},
-  {name: "Marketing Maatwerk", href: "/partners/marketing-maatwerk", light: maatwerk, dark: maatwerk, invertInDark: true},
   {name: "Esports Team Twente", href: "https://esportsteamtwente.nl/", light: ett, dark: ettDark},
 ]
 

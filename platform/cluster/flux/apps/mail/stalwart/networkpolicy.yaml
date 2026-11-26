@@ -1,0 +1,84 @@
+# Mail ports are hostPorts, so off-pod clients keep their public source IP
+# and only the pod CIDR has to be excluded from the ipBlock rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stalwart
+  namespace: mail-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: stalwart
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.42.0.0/16
+      ports:
+        - protocol: TCP
+          port: 25
+        - protocol: TCP
+          port: 110
+        - protocol: TCP
+          port: 143
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 993
+        - protocol: TCP
+          port: 995
+        - protocol: TCP
+          port: 4190
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: ["api", "api-primary"]
+      ports:
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 993
+    # The backup scales the Deployment and copies the PVC; it never connects to the pod.
+    # kube-router exempts kubelet probes from NetworkPolicy, so port 8080 needs no node-IP rule.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: utility-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gatus
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: utility-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gatus
+      ports:
+        - protocol: TCP
+          port: 25
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 993

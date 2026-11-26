@@ -9,6 +9,7 @@ import net.blueshell.api.jobs.api.JobExecutor
 import net.blueshell.api.jobs.persistence.JobExecution
 import org.junit.jupiter.api.Test
 import org.springframework.core.task.TaskExecutor
+import org.springframework.core.task.TaskRejectedException
 
 class EmailJobWorkerTest {
     private val executions: JobExecutionService = mockk()
@@ -46,5 +47,38 @@ class EmailJobWorkerTest {
 
         verify(exactly = 1) { executions.findDueEmailJobs(any(), any()) }
         verify(exactly = 0) { batchSession.open(any<() -> Unit>()) }
+    }
+
+    @Test
+    fun `a nudge drains, the poll nudges and a stopped worker claims nothing`() {
+        every { executions.findDueEmailJobs(any(), any()) } returns emptyList()
+
+        worker.nudge()
+        worker.poll()
+        worker.stop()
+        worker.nudge()
+
+        verify(exactly = 2) { taskExecutor.execute(any<Runnable>()) }
+    }
+
+    @Test
+    fun `a disabled poll does not drain`() {
+        val quiet = EmailJobWorker(executions, executor, batchSession, taskExecutor, pollEnabled = false)
+
+        quiet.poll()
+
+        verify(exactly = 0) { taskExecutor.execute(any<Runnable>()) }
+    }
+
+    @Test
+    fun `a failed drain and a refused submit both free the next nudge`() {
+        every { executions.findDueEmailJobs(any(), any()) } throws IllegalStateException("database down")
+        worker.nudge()
+
+        every { taskExecutor.execute(any<Runnable>()) } throws TaskRejectedException("full")
+        worker.nudge()
+        worker.nudge()
+
+        verify(exactly = 3) { taskExecutor.execute(any<Runnable>()) }
     }
 }

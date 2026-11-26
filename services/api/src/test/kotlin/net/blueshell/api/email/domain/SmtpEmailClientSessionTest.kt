@@ -8,6 +8,7 @@ import jakarta.mail.Session
 import jakarta.mail.Transport
 import jakarta.mail.internet.MimeMessage
 import net.blueshell.api.shared.job.NonRetryableJobException
+import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -65,6 +66,14 @@ class SmtpEmailClientSessionTest {
         assertThatThrownBy { send() }
             .isInstanceOf(NonRetryableJobException::class.java)
             .hasCauseInstanceOf(SMTPAddressFailedException::class.java)
+    }
+
+    @Test
+    fun `a new transport comes from the sender's mail session`() {
+        val real = JavaMailSenderImpl()
+        val plain = SmtpEmailClient(real, MockEnvironment().withProperty("spring.mail.password", "secret"), SmtpSession())
+
+        assertThat(plain.newTransport(real).isConnected).isFalse()
     }
 
     private fun send() {

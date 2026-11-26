@@ -14,7 +14,10 @@ const SAMPLE: PartnerContent = {
   site: "https://sample.example/",
   facts: {
     heading: "Contact",
-    items: [{label: "Email", value: "info@sample.example", href: "mailto:info@sample.example"}],
+    items: [
+      {label: "Website", value: "sample.example", href: "https://sample.example/"},
+      {label: "Email", value: "info@sample.example", href: "mailto:info@sample.example"},
+    ],
   },
   sections: [
     {heading: "About", paragraphs: ["What the partner is."]},
@@ -47,8 +50,9 @@ describe("PartnerPage", () => {
     expect(wrapper.find("dl a").exists()).toBe(false)
     expect(wrapper.get("dl").text()).toContain("Kuipersdijk 6C")
 
-    const mail = mountPartner(SAMPLE).get("a[href='mailto:info@sample.example']")
-    expect(mail.attributes("target")).toBeUndefined()
+    const sample = mountPartner(SAMPLE)
+    expect(sample.get("dl a[href='https://sample.example/']").attributes("target")).toBe("_blank")
+    expect(sample.get("a[href='mailto:info@sample.example']").attributes("target")).toBeUndefined()
   })
 
   it("keeps every outbound link the hand-built page had", () => {

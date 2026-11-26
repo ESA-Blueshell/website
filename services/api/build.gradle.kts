@@ -195,8 +195,8 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 // Architecture ADR-015.
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
     builder.set(
-        "paketobuildpacks/builder-noble-java-tiny:0.0.197" +
-            "@sha256:b95da27fce97b58037f0c11ae934760c50730da4c9a24976205b53638592eba9",
+        "paketobuildpacks/builder-noble-java-tiny:0.0.218" +
+            "@sha256:cd34e9cb5f55980b902d9b1c4a354a720b407a512b80caef9e70791b4ab6dbf6",
     )
     imageName.set(providers.gradleProperty("apiImage").orElse("blueshell-website/api:local"))
     providers.gradleProperty("apiJar").orNull?.let { archiveFile.set(file(it)) }

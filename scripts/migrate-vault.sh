@@ -61,7 +61,7 @@ trap cleanup EXIT
 # --- Reaching both Vaults ---------------------------------------------------------------------
 
 # Never kubectl's current context: every cluster may have a data-system/vault.
-context=${KUBE_CONTEXT:-blueshell}
+context=${KUBE_CONTEXT:-blueshell-admin}
 K=(kubectl --context "$context" -n "$NS")
 kubectl config get-contexts -o name | grep -qx "$context" ||
   die "kubectl has no context \"$context\". Name Blueshell's with KUBE_CONTEXT=<name> $0"

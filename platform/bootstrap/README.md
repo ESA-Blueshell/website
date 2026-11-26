@@ -61,7 +61,7 @@ which starts uninitialised.
 
 ## What they need
 
-`kubectl` with a context for the cluster (`blueshell`, or name it with
+`kubectl` with a context for the cluster (`blueshell-admin`, or name it with
 `KUBE_CONTEXT`; never the current context), `flux`, `gh` signed in as a
 repository admin (deploy keys), the `vault` CLI, `jq`, `curl`, `openssl`,
 `ssh-keygen`, `dig`, `nc`, `perl` and bash 4 or newer (`brew install bash`, then

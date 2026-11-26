@@ -15,7 +15,7 @@
 # bootstrap Job run with the root token, secrets.sh, the second Job run, the VSO
 # sync check, revoking the root token, then mail.sh.
 #
-# KUBE_CONTEXT names Blueshell's kubectl context (default blueshell).
+# KUBE_CONTEXT names Blueshell's kubectl context (default blueshell-admin).
 # BLUESHELL_VAULT_ADDR=http://127.0.0.1:8200 runs the Vault stages against that
 # Vault and skips every cluster stage: a dry run against a local `vault server`.
 

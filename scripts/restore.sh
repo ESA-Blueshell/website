@@ -110,7 +110,7 @@ networks:
 EOF
 dc() { docker compose -p "$PROJECT" --project-directory "$work" -f "$work/docker-compose.yml" -f "$work/stores.yml" "$@"; }
 
-context=${KUBE_CONTEXT:-blueshell}
+context=${KUBE_CONTEXT:-blueshell-admin}
 forward_pids=()
 live_token="" restored_token="" shares=()
 resume_flux=() scaled=()

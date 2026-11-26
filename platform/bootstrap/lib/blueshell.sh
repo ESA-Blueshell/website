@@ -9,7 +9,7 @@ REPO="ESA-Blueshell/website"
 
 # Never kubectl's current context: on a machine with several clusters that is
 # whichever was used last, and every cluster may have a data-system Vault.
-CONTEXT=${KUBE_CONTEXT:-blueshell}
+CONTEXT=${KUBE_CONTEXT:-blueshell-admin}
 
 DOMAIN=esa-blueshell.nl
 MAIL_HOST=mail.esa-blueshell.nl

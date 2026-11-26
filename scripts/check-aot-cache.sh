@@ -10,6 +10,10 @@ trap 'rm -f "$log"' EXIT
 
 key() { head -c "$1" /dev/urandom | base64 | tr -d '\n'; }
 
+# Since JDK 25.0.5 the JVM leaves the code region of a cache without adapters unopened and logs
+# nothing about it. Asking for adapters and stubs makes it open the region and report what is there.
+open_code_cache="-XX:+UnlockDiagnosticVMOptions -XX:+AOTAdapterCaching -XX:+AOTStubCaching"
+
 # "docker-flags|JAVA_TOOL_OPTIONS" per manifest.
 shapes=$(python3 - "$manifests/deployment.yaml" "$manifests/migrate-job.yaml" <<'PY'
 import sys, yaml
@@ -39,7 +43,7 @@ while IFS='|' read -r flags options; do
     -e APP_JWT_SECRET="$(key 64)" \
     -e APP_TWOFACTOR_KEY="$(key 32)" \
     -e AUTH_CLIENTS_VAULT_SECRET="$(key 24)" \
-    -e JAVA_TOOL_OPTIONS="$options -XX:AOTMode=on -Xlog:aot+codecache+init=info -Dspring.context.exit=onRefresh" \
+    -e JAVA_TOOL_OPTIONS="$options -XX:AOTMode=on $open_code_cache -Xlog:aot+codecache+init=info -Dspring.context.exit=onRefresh" \
     "$image" >"$log" 2>&1; then
     tail -n 40 "$log"
     echo "::error::$image did not boot from its AOT cache with $flags"

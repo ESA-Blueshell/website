@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.28.3](https://github.com/ESA-Blueshell/website/compare/v1.28.2...v1.28.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* **platform:** frontend reaches the api by its full Service name, so link previews load ([#2675](https://github.com/ESA-Blueshell/website/issues/2675)) ([#2676](https://github.com/ESA-Blueshell/website/issues/2676)) ([c2f6211](https://github.com/ESA-Blueshell/website/commit/c2f6211af37709bc272be20397ac19dad2fef557))
+
+
+### Build and Dependencies
+
+* **deps:** bump the npm_and_yarn group across 1 directory with 2 updates ([#2671](https://github.com/ESA-Blueshell/website/issues/2671)) ([ef249ee](https://github.com/ESA-Blueshell/website/commit/ef249ee13bdb1a093a26513b27a0711d8fd560a8))
+
+## [1.28.2](https://github.com/ESA-Blueshell/website/compare/v1.28.1...v1.28.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ci:** pin the date picker test's clock, build imaging on Go 1.26.11 ([#2668](https://github.com/ESA-Blueshell/website/issues/2668)) ([098ec2c](https://github.com/ESA-Blueshell/website/commit/098ec2cb504b05d2d22fd70093f87c0a79b2c7ea))
+* **deps:** update dependency com.microsoft.playwright:playwright to v1.63.0 ([#2162](https://github.com/ESA-Blueshell/website/issues/2162)) ([06542a3](https://github.com/ESA-Blueshell/website/commit/06542a3ef0de90ea89c3d28b690ec366857dfe1f))
+* **frontend:** build on nginx 1.30.7 from the nginx/nginx-unprivileged namespace ([#2672](https://github.com/ESA-Blueshell/website/issues/2672)) ([#2673](https://github.com/ESA-Blueshell/website/issues/2673)) ([b6d78dc](https://github.com/ESA-Blueshell/website/commit/b6d78dc6845dec750937553829af561ae719afa1))
+
 ## [1.28.1](https://github.com/ESA-Blueshell/website/compare/v1.28.0...v1.28.1) (2026-11-18)
 
 

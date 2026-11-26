@@ -27,7 +27,7 @@ spec:
           text: '{{- get .Secrets "discord.webhook_url" -}}'
   refreshAfter: 1h
 ---
-apiVersion: notification.toolkit.fluxcd.io/v1beta3
+apiVersion: notification.toolkit.fluxcd.io/v1
 kind: Provider
 metadata:
   name: discord
@@ -44,9 +44,9 @@ spec:
 # could not run.
 #
 # Every Kustomization, since a failure in any one of them blocks the ones
-# behind it. HelmReleases are listed per namespace because an Alert matches
+# behind it. The sources that reach GitHub have their own Alert below. HelmReleases are listed per namespace because an Alert matches
 # sources in its own namespace unless told otherwise.
-apiVersion: notification.toolkit.fluxcd.io/v1beta3
+apiVersion: notification.toolkit.fluxcd.io/v1
 kind: Alert
 metadata:
   name: failures
@@ -56,13 +56,7 @@ spec:
     name: discord
   eventSeverity: error
   eventSources:
-    - kind: GitRepository
-      name: '*'
     - kind: Kustomization
-      name: '*'
-    - kind: ImageRepository
-      name: '*'
-    - kind: ImageUpdateAutomation
       name: '*'
     - kind: HelmRelease
       name: '*'
@@ -85,3 +79,32 @@ spec:
     - kind: HelmRelease
       name: '*'
       namespace: vso-system
+---
+# The objects that fetch from GitHub and ghcr.io. A failed fetch keeps the last
+# artifact and the next try comes seconds later, so a network blip here costs
+# nothing, yet it posted on every DNS hiccup or GitHub outage. Network errors
+# are dropped; an outage that lasts is reported by the Gatus "GitHub SSH" and
+# "GitHub Container Registry" probes. A refused deploy key or a failed push
+# still arrives here.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: source-failures
+  namespace: flux-system
+spec:
+  providerRef:
+    name: discord
+  eventSeverity: error
+  eventSources:
+    - kind: GitRepository
+      name: '*'
+    - kind: ImageRepository
+      name: '*'
+    - kind: ImageUpdateAutomation
+      name: '*'
+  exclusionList:
+    - 'dial tcp'
+    - 'i/o timeout'
+    - 'connection reset by peer'
+    - 'TLS handshake timeout'
+    - 'Client\.Timeout exceeded'

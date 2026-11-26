@@ -17,12 +17,12 @@ resources:
 # reverts it. See "Rolling back under automation" in the runbook.
 images:
   - name: ghcr.io/esa-blueshell/api
-    newTag: v1.28.1 # {"$imagepolicy": "flux-system:api:tag"}
-    digest: sha256:2aa3812f8633ae49274126c973f1f07319d3098c2f46c14691e916a1c8b54323 # {"$imagepolicy": "flux-system:api:digest"}
+    newTag: v1.28.3 # {"$imagepolicy": "flux-system:api:tag"}
+    digest: sha256:e01f976bb73a243bcc301f75f96d2b1728b674ebc3144f1f1bcc0bbaa24fbc16 # {"$imagepolicy": "flux-system:api:digest"}
   - name: ghcr.io/esa-blueshell/frontend
-    newTag: v1.28.1 # {"$imagepolicy": "flux-system:frontend:tag"}
-    digest: sha256:1aac85fb2818625a681380a87d11ab6ab784e7531d1d59a3fde026628dc3f5e1 # {"$imagepolicy": "flux-system:frontend:digest"}
+    newTag: v1.28.3 # {"$imagepolicy": "flux-system:frontend:tag"}
+    digest: sha256:bc77b2b01ecdef79852344a58cbc59c2f2a04d3095160531dd8ef9f9a27b1cdd # {"$imagepolicy": "flux-system:frontend:digest"}
   # A placeholder until the first release publishes it; the scan rewrites both lines.
   - name: ghcr.io/esa-blueshell/imaging
-    newTag: v1.28.1 # {"$imagepolicy": "flux-system:imaging:tag"}
-    digest: sha256:19d3a6cae5e285ed4ebc6b6e4e5a2cbae86a394777978d7591b7fb2ae03ef460 # {"$imagepolicy": "flux-system:imaging:digest"}
+    newTag: v1.28.3 # {"$imagepolicy": "flux-system:imaging:tag"}
+    digest: sha256:0b308ca90dc4f1fdab9249c8447bcd520347deb0e9cda7d2c5eb2817cb8890a2 # {"$imagepolicy": "flux-system:imaging:digest"}

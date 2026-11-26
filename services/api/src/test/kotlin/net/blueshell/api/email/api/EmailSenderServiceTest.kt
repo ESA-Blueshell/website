@@ -5,6 +5,7 @@ import net.blueshell.api.email.domain.EmailTemplateService
 import net.blueshell.api.email.domain.EmailTransportClient
 import net.blueshell.api.email.persistence.Email
 import net.blueshell.api.shared.email.EmailContent
+import net.blueshell.api.shared.job.NonRetryableJobException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -50,5 +51,15 @@ class EmailSenderServiceTest {
 
         verify(emails).markFailed(eq(outbox), eq("MailSendException"), eq("550 <[email]> unknown"))
         assertThat(output.all).contains("Failed to send email id=5 type=welcome")
+    }
+
+    @Test
+    fun `a refused address keeps its non-retryable type for the job executor`() {
+        val refusal = NonRetryableJobException("550 refused")
+        whenever(client.send(any(), any(), any(), any(), any(), any(), any())).thenThrow(refusal)
+
+        assertThatThrownBy { sender.send(content, "welcome") }.isSameAs(refusal)
+
+        verify(emails).markFailed(eq(outbox), eq("NonRetryableJobException"), eq("550 refused"))
     }
 }

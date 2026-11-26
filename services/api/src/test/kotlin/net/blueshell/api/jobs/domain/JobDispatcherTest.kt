@@ -26,7 +26,7 @@ import tools.jackson.databind.json.JsonMapper
 class JobDispatcherTest {
     private val executions: JobExecutionService = mock()
     private val dispatcher =
-        JobDispatcher(JsonMapper.builder().build(), executions, mock(), mock(), JobQueueProperties(autoDispatch = false))
+        JobDispatcher(JsonMapper.builder().build(), executions, mock(), mock(), mock(), JobQueueProperties(autoDispatch = false))
 
     @Test
     fun `records what queued a job, and keeps it behind a running twin only where its definition asks for it`() {
@@ -49,7 +49,15 @@ class JobDispatcherTest {
     @Test
     fun `dispatches a new row and a twin pulled forward, and leaves a twin that is about to run`() {
         val executor: JobExecutor = mock()
-        val live = JobDispatcher(JsonMapper.builder().build(), executions, mock(), executor, JobQueueProperties(autoDispatch = true))
+        val live =
+            JobDispatcher(
+                JsonMapper.builder().build(),
+                executions,
+                mock(),
+                executor,
+                mock(),
+                JobQueueProperties(autoDispatch = true),
+            )
         val fresh = JobExecution(jobType = "discord.announcement").apply { id = 7 }
         val due = JobExecution(jobType = "discord.post").apply { id = 8 }
         whenever(executions.createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
@@ -71,7 +79,15 @@ class JobDispatcherTest {
     @Test
     fun `a rejected after-commit dispatch does not stop the other callbacks`() {
         val executor: JobExecutor = mock()
-        val live = JobDispatcher(JsonMapper.builder().build(), executions, mock(), executor, JobQueueProperties(autoDispatch = true))
+        val live =
+            JobDispatcher(
+                JsonMapper.builder().build(),
+                executions,
+                mock(),
+                executor,
+                mock(),
+                JobQueueProperties(autoDispatch = true),
+            )
         val first = JobExecution(jobType = "discord.announcement").apply { id = 7 }
         val second = JobExecution(jobType = "discord.post").apply { id = 8 }
         whenever(executions.createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
@@ -96,7 +112,15 @@ class JobDispatcherTest {
     @Test
     fun `a rejected direct dispatch leaves the row queued without failing the caller`() {
         val executor: JobExecutor = mock()
-        val live = JobDispatcher(JsonMapper.builder().build(), executions, mock(), executor, JobQueueProperties(autoDispatch = true))
+        val live =
+            JobDispatcher(
+                JsonMapper.builder().build(),
+                executions,
+                mock(),
+                executor,
+                mock(),
+                JobQueueProperties(autoDispatch = true),
+            )
         val fresh = JobExecution(jobType = "discord.announcement").apply { id = 9 }
         whenever(executions.createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
             .thenReturn(Enqueued(fresh, dispatch = true))
@@ -107,5 +131,28 @@ class JobDispatcherTest {
 
         assertThat(returned).isSameAs(fresh)
         verify(executor).executeAsync(9L)
+    }
+
+    @Test
+    fun `email jobs nudge the batch worker instead of the general executor`() {
+        val executor: JobExecutor = mock()
+        val worker: EmailJobWorker = mock()
+        val live =
+            JobDispatcher(
+                JsonMapper.builder().build(),
+                executions,
+                mock(),
+                executor,
+                worker,
+                JobQueueProperties(autoDispatch = true),
+            )
+        val email = JobExecution(jobType = "email.test").apply { id = 12 }
+        whenever(executions.createQueued(eq("email.test"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
+            .thenReturn(Enqueued(email, dispatch = true))
+
+        live.runAsync("email.test", mapOf("id" to 1), JobTrigger.EVENT_UPDATED, Actor.system())
+
+        verify(worker).nudge()
+        verify(executor, never()).executeAsync(any())
     }
 }

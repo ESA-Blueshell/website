@@ -135,6 +135,11 @@ app:
     idle: 14d
     rotate-after: 5m
     grace: 60s
+  email:
+    batch:
+      size: 50
+      max-messages-per-connection: 50
+      poll-interval-ms: 15000
   imaging:
     # The imaging service every uploaded picture is converted by (architecture ADR-014). The
     # default is its name on the compose network and in the cluster's namespace; a native run

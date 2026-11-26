@@ -9,6 +9,7 @@ import net.blueshell.api.jobs.persistence.JobExecution
 import net.blueshell.api.jobs.persistence.JobExecutionRepository
 import net.blueshell.api.jobs.persistence.JobExecutionSpecifications
 import net.blueshell.api.shared.enums.JobExecutionStatus
+import net.blueshell.api.shared.job.EmailJobs
 import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTrigger
@@ -173,6 +174,13 @@ class JobExecutionService(
             now,
             pageable,
         )
+
+    @Transactional(readOnly = true)
+    fun findDueEmailJobs(
+        now: Instant,
+        pageable: Pageable,
+    ): List<JobExecution> =
+        jobExecutionRepository.findDueEmailJobs(EmailJobs.PREFIX, JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, now, pageable)
 
     @Transactional
     fun resetRunningToQueued(execution: JobExecution): JobExecution {

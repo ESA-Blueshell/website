@@ -13,6 +13,7 @@ private const val COMMAND_QUEUE_CAPACITY = 1000
 // Shorter than the command queue: a backlog of calls to a third party is a
 // reason to push back, not to hold more of them.
 private const val EXTERNAL_QUEUE_CAPACITY = 200
+private const val EMAIL_SHUTDOWN_SECONDS = 8
 
 @Configuration
 @EnableAsync
@@ -25,6 +26,20 @@ class AsyncConfig {
         executor.maxPoolSize = POOL_MAX_THREADS
         executor.queueCapacity = COMMAND_QUEUE_CAPACITY
         executor.setThreadNamePrefix("Cmd-")
+        executor.initialize()
+        return executor
+    }
+
+    /** One thread for email batches: every send in a batch shares that thread's SMTP transport. */
+    @Bean
+    fun emailJobExecutor(): TaskExecutor {
+        val executor = ThreadPoolTaskExecutor()
+        executor.corePoolSize = 1
+        executor.maxPoolSize = 1
+        executor.setThreadNamePrefix("Email-")
+        // Lets the message in flight finish; EmailJobWorker stops claiming on shutdown.
+        executor.setWaitForTasksToCompleteOnShutdown(true)
+        executor.setAwaitTerminationSeconds(EMAIL_SHUTDOWN_SECONDS)
         executor.initialize()
         return executor
     }

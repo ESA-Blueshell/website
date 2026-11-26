@@ -44,7 +44,7 @@ class EmailRetryScheduleTest {
     private fun instantiate(type: KClass<*>): JobHandler {
         val constructor = requireNotNull(type.primaryConstructor)
         val args =
-            constructor.parameters.associateWith { parameter ->
+            constructor.parameters.filterNot { it.isOptional }.associateWith { parameter ->
                 val kind = parameter.type.classifier as KClass<*>
                 if (kind == String::class) "https://example.test" else mockkClass(kind, relaxed = true)
             }

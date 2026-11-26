@@ -1076,6 +1076,7 @@ export async function installApiMocks(page: Page, fixtures: Fixtures = {}) {
       return answer(route, "sendPaymentEmails", {
         remindersSent: body.userIds.length,
         incassoNotificationsSent: 0,
+        incassoNotificationsSkipped: 0,
         notWrittenTo: 0,
       })
     }

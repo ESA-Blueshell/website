@@ -2,6 +2,7 @@ package net.blueshell.api.contribution.persistence
 
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 
 @Repository
 @Suppress("FunctionName")
@@ -11,4 +12,11 @@ interface IncassoNotificationRepository : BaseRepository<IncassoNotification, Lo
 
     /** Every notification sent to this person, for any period, in no particular order. */
     fun findByUser_Id(userId: Long): List<IncassoNotification>
+
+    /** Whether this member was already told about this debit, so a repeat send need not write again. */
+    fun existsByUser_IdAndContributionPeriod_IdAndDebitDate(
+        userId: Long,
+        contributionPeriodId: Long,
+        debitDate: LocalDate,
+    ): Boolean
 }

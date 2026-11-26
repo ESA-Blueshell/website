@@ -4,6 +4,7 @@ import net.blueshell.api.auth.domain.AuthJobs.SecurityNotificationAudience
 import net.blueshell.api.auth.persistence.SecurityEventRepository
 import net.blueshell.api.email.api.EmailSenderService
 import net.blueshell.api.jobs.api.AbstractJsonJobHandler
+import net.blueshell.api.jobs.api.EMAIL_RETRY_SCHEDULE
 import net.blueshell.api.shared.job.requireExists
 import net.blueshell.api.user.api.UserService
 import org.springframework.beans.factory.annotation.Value
@@ -22,6 +23,8 @@ class SecurityNotificationEmailJob(
         objectMapper,
         AuthJobs.SecurityNotification,
     ) {
+    override val retrySchedule get() = EMAIL_RETRY_SCHEDULE
+
     override fun handlePayload(payload: AuthJobs.SecurityNotificationPayload) {
         val event = requireExists { requireNotNull(events.findWithPeopleById(payload.securityEventId)) }
         val (email, name) =

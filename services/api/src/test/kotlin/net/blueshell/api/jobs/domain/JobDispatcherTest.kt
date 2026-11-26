@@ -13,11 +13,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.core.task.TaskRejectedException
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import tools.jackson.databind.json.JsonMapper
 
 class JobDispatcherTest {
@@ -63,5 +66,46 @@ class JobDispatcherTest {
 
         verify(executor).executeAsync(7)
         verify(executor, never()).executeAsync(8)
+    }
+
+    @Test
+    fun `a rejected after-commit dispatch does not stop the other callbacks`() {
+        val executor: JobExecutor = mock()
+        val live = JobDispatcher(JsonMapper.builder().build(), executions, mock(), executor, JobQueueProperties(autoDispatch = true))
+        val first = JobExecution(jobType = "discord.announcement").apply { id = 7 }
+        val second = JobExecution(jobType = "discord.post").apply { id = 8 }
+        whenever(executions.createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
+            .thenReturn(Enqueued(first, dispatch = true))
+        whenever(executions.createQueued(eq("discord.post"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
+            .thenReturn(Enqueued(second, dispatch = true))
+        doThrow(TaskRejectedException("Executor full")).whenever(executor).executeAsync(7L)
+
+        TransactionSynchronizationManager.initSynchronization()
+        try {
+            live.runAsync(DiscordPostJobs.Announcement, DiscordPostJobs.EventPostPayload(4), JobTrigger.EVENT_UPDATED, Actor.system())
+            live.runAsync(DiscordPostJobs.CalendarPost, DiscordPostJobs.EventPostPayload(4), JobTrigger.EVENT_UPDATED, Actor.system())
+            TransactionSynchronizationManager.getSynchronizations().forEach { it.afterCommit() }
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization()
+        }
+
+        verify(executor).executeAsync(7L)
+        verify(executor).executeAsync(8L)
+    }
+
+    @Test
+    fun `a rejected direct dispatch leaves the row queued without failing the caller`() {
+        val executor: JobExecutor = mock()
+        val live = JobDispatcher(JsonMapper.builder().build(), executions, mock(), executor, JobQueueProperties(autoDispatch = true))
+        val fresh = JobExecution(jobType = "discord.announcement").apply { id = 9 }
+        whenever(executions.createQueued(eq("discord.announcement"), any(), any(), anyOrNull(), anyOrNull(), any(), any()))
+            .thenReturn(Enqueued(fresh, dispatch = true))
+        doThrow(TaskRejectedException("Executor full")).whenever(executor).executeAsync(9L)
+
+        val returned =
+            live.runAsync(DiscordPostJobs.Announcement, DiscordPostJobs.EventPostPayload(4), JobTrigger.EVENT_UPDATED, Actor.system())
+
+        assertThat(returned).isSameAs(fresh)
+        verify(executor).executeAsync(9L)
     }
 }

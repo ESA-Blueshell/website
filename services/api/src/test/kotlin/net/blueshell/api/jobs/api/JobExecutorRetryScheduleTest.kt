@@ -156,6 +156,32 @@ class JobExecutorRetryScheduleTest {
     }
 
     @Test
+    fun `a row another runner claimed is skipped without calling its handler`() {
+        var called = false
+        val handler =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome {
+                    called = true
+                    return JobOutcome.Done()
+                }
+            }
+        val execution = JobExecution(jobType = "failing", payload = "{}").apply { id = 4 }
+        whenever(executions.markRunning(any())).thenReturn(null)
+
+        JobExecutor(executions, JobHandlerRegistry(listOf(handler)), properties, SimpleMeterRegistry()).execute(execution)
+
+        assertThat(called).isFalse()
+        verify(executions, never()).markSuccess(any(), anyOrNull(), anyOrNull(), any())
+    }
+
+    @Test
     fun `a run that did its work is recorded as a success`() {
         val done =
             object : JobHandler {

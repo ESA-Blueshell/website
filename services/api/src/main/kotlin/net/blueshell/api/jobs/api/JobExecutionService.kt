@@ -161,11 +161,7 @@ class JobExecutionService(
         threshold: Instant,
         pageable: Pageable,
     ): List<JobExecution> =
-        jobExecutionRepository.findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
-            JobExecutionStatus.QUEUED,
-            threshold,
-            pageable,
-        )
+        jobExecutionRepository.findUndispatchedQueuedBefore(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, threshold, pageable)
 
     @Transactional(readOnly = true)
     fun findDueScheduledRetries(
@@ -187,9 +183,20 @@ class JobExecutionService(
     }
 
     @Transactional
-    fun markRunning(execution: JobExecution): JobExecution {
+    fun markRunning(execution: JobExecution): JobExecution? {
+        val id = execution.id ?: return null
+        val now = Instant.now()
+        val changed =
+            jobExecutionRepository.markRunningIfQueued(
+                id,
+                now,
+                JobExecutionStatus.RUNNING,
+                JobExecutionStatus.QUEUED,
+            )
+        if (changed == 0) return null
         execution.status = JobExecutionStatus.RUNNING
-        execution.startedAt = Instant.now()
+        execution.startedAt = now
+        execution.nextAttemptAt = null
         execution.effect = null
         execution.effectLink = null
         execution.report = emptyList()
@@ -205,6 +212,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.SUCCESS
         execution.finishedAt = Instant.now()
+        execution.nextAttemptAt = null
         execution.effect = effect
         execution.effectLink = link
         execution.report = counts
@@ -221,6 +229,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.SKIPPED
         execution.finishedAt = Instant.now()
+        execution.nextAttemptAt = null
         execution.skipReason = reason
         execution.errorMessage = null
         execution.errorType = null
@@ -238,6 +247,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.FAILED
         execution.finishedAt = Instant.now()
+        execution.nextAttemptAt = null
         applyErrorInfo(execution, errorType, errorReason, stackTrace, explained)
         return rewritten(execution)
     }
@@ -251,6 +261,7 @@ class JobExecutionService(
     ): JobExecution {
         execution.status = JobExecutionStatus.DEAD
         execution.finishedAt = Instant.now()
+        execution.nextAttemptAt = null
         applyErrorInfo(execution, errorType, errorReason, stackTrace)
         return rewritten(execution)
     }

@@ -56,6 +56,10 @@ class JobExecutor(
         }
 
         val current = jobExecutionService.markRunning(execution)
+        if (current == null) {
+            logger.info("Job execution {} is no longer QUEUED; skipping.", execution.id)
+            return
+        }
         val sample = Timer.start(meterRegistry)
 
         try {

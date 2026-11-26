@@ -20,8 +20,10 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageRequest
 import org.springframework.web.server.ResponseStatusException
 import java.lang.reflect.Field
 import java.time.Clock
@@ -48,6 +50,10 @@ class JobExecutionServiceTest {
             injectEntityManager(it)
             it.clock = Clock.fixed(now, ZoneOffset.UTC)
         }
+
+    init {
+        whenever(repository.markRunningIfQueued(any(), any(), any(), any())).thenReturn(1)
+    }
 
     private val systemActor = Actor.system()
     private val board = Actor.user(5, Role.BOARD)
@@ -174,16 +180,55 @@ class JobExecutionServiceTest {
     }
 
     @Test
-    fun `markRunning does not bump attempts`() {
+    fun `markRunning claims a queued row without bumping attempts or keeping its retry time`() {
         val execution =
-            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.QUEUED)
-                .apply { id = 1L }
+            JobExecution(
+                jobType = "demo",
+                attempts = 1,
+                status = JobExecutionStatus.QUEUED,
+                nextAttemptAt = now.plusSeconds(60),
+            ).apply { id = 1L }
         stubPersistence(execution)
 
-        service.markRunning(execution)
+        val claimed = service.markRunning(execution)
 
+        assertThat(claimed).isSameAs(execution)
         assertThat(execution.attempts).isEqualTo(1)
         assertThat(execution.status).isEqualTo(JobExecutionStatus.RUNNING)
+        assertThat(execution.nextAttemptAt).isNull()
+    }
+
+    @Test
+    fun `markRunning refuses a row another runner already claimed`() {
+        val execution =
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+                .apply { id = 1L }
+        whenever(repository.markRunningIfQueued(any(), any(), any(), any())).thenReturn(0)
+
+        assertThat(service.markRunning(execution)).isNull()
+        verify(repository, never()).saveAndFlush(any<JobExecution>())
+    }
+
+    @Test
+    fun `terminal outcomes clear a pending retry time`() {
+        val outcomes =
+            listOf(
+                JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 1L },
+                JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 2L },
+                JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 3L },
+                JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 4L },
+            )
+        outcomes.forEach {
+            it.nextAttemptAt = now.plusSeconds(60)
+            stubPersistence(it)
+        }
+
+        service.markSuccess(outcomes[0])
+        service.markSkipped(outcomes[1], "Not due yet.")
+        service.markFailed(outcomes[2], "SomeError", "boom")
+        service.markDead(outcomes[3], "SomeError", "boom")
+
+        assertThat(outcomes.all { it.nextAttemptAt == null }).isTrue()
     }
 
     @Test
@@ -439,6 +484,17 @@ class JobExecutionServiceTest {
     private fun stubPersistence(entity: JobExecution) {
         whenever(repository.existsById(entity.id!!)).thenReturn(true)
         whenever(repository.saveAndFlush(any<JobExecution>())).thenAnswer { it.arguments[0] }
+    }
+
+    @Test
+    fun `undispatched queued rows are looked up past running twins`() {
+        val stale = JobExecution(jobType = "demo").apply { id = 31 }
+        val page = PageRequest.of(0, 5)
+        whenever(
+            repository.findUndispatchedQueuedBefore(JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, now, page),
+        ).thenReturn(listOf(stale))
+
+        assertThat(service.findStaleQueued(now, page)).containsExactly(stale)
     }
 
     private fun injectEntityManager(service: JobExecutionService) {

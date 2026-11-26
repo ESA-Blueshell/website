@@ -9,6 +9,7 @@ data class JobQueueProperties(
     val backoffMultiplier: Double = 2.0,
     val maxBackoffMillis: Long = 14_400_000,
     val staleThresholdMinutes: Long = 30,
+    val undispatchedGraceSeconds: Long = 120,
     val staleRecoveryBatchSize: Int = 50,
     val retryCheckIntervalMs: Long = 30_000,
     val autoDispatch: Boolean = true,

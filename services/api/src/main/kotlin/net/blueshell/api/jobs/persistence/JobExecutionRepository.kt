@@ -5,6 +5,7 @@ import net.blueshell.api.shared.enums.JobExecutionStatus
 import net.blueshell.api.shared.repository.BaseRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
@@ -53,9 +54,23 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         pageable: Pageable,
     ): List<JobExecution>
 
-    fun findByStatusAndNextAttemptAtIsNullAndQueuedAtBefore(
-        status: JobExecutionStatus,
-        threshold: Instant,
+    // A null dedup key matches no twin, which is right: createQueued folds only keyed jobs.
+    @Query(
+        """
+        select j from JobExecution j
+        where j.status = :queued
+          and j.nextAttemptAt is null
+          and j.queuedAt < :threshold
+          and not exists (
+              select r.id from JobExecution r
+              where r.status = :running and r.jobType = j.jobType and r.dedupKey = j.dedupKey)
+        order by j.queuedAt asc, j.id asc
+        """,
+    )
+    fun findUndispatchedQueuedBefore(
+        @Param("queued") queued: JobExecutionStatus,
+        @Param("running") running: JobExecutionStatus,
+        @Param("threshold") threshold: Instant,
         pageable: Pageable,
     ): List<JobExecution>
 
@@ -64,4 +79,19 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         threshold: Instant,
         pageable: Pageable,
     ): List<JobExecution>
+
+    @Modifying
+    @Query(
+        """
+        update JobExecution j
+        set j.status = :status, j.startedAt = :now, j.nextAttemptAt = null
+        where j.id = :id and j.status = :queued
+        """,
+    )
+    fun markRunningIfQueued(
+        @Param("id") id: Long,
+        @Param("now") now: Instant,
+        @Param("status") status: JobExecutionStatus,
+        @Param("queued") queued: JobExecutionStatus,
+    ): Int
 }

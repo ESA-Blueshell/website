@@ -31,6 +31,10 @@ for path in sys.argv[1:]:
 PY
 )
 
+# Builder 0.0.218 leaves adapter and stub caching off by default, and then the JVM neither loads the
+# code cache nor logs about it. Switching both on makes it read the cache and report what it holds.
+probe="-XX:+UnlockDiagnosticVMOptions -XX:+AOTAdapterCaching -XX:+AOTStubCaching"
+
 while IFS='|' read -r flags options; do
   echo "Booting $image from its AOT cache with $flags and $options"
   # shellcheck disable=SC2086 # the flags are one or two, split on purpose
@@ -39,7 +43,7 @@ while IFS='|' read -r flags options; do
     -e APP_JWT_SECRET="$(key 64)" \
     -e APP_TWOFACTOR_KEY="$(key 32)" \
     -e AUTH_CLIENTS_VAULT_SECRET="$(key 24)" \
-    -e JAVA_TOOL_OPTIONS="$options -XX:AOTMode=on -Xlog:aot+codecache+init=info -Dspring.context.exit=onRefresh" \
+    -e JAVA_TOOL_OPTIONS="$options -XX:AOTMode=on $probe -Xlog:aot+codecache+init=info -Dspring.context.exit=onRefresh" \
     "$image" >"$log" 2>&1; then
     tail -n 40 "$log"
     echo "::error::$image did not boot from its AOT cache with $flags"

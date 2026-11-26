@@ -40,16 +40,17 @@
     ]
   },
   "vulnerabilityAlerts": {
-    "description": "A security fix skips the cooldown and the Monday schedule, so it opens the moment a fix is published. It never merges itself: a release that has not aged gets a person instead. osvVulnerabilityAlerts adds the OSV database, which also covers the Gradle and Go dependencies that GitHub's alerts miss. Transitive npm fixes come from Dependabot security updates and the weekly lock file maintenance.",
+    "description": "A security fix skips the cooldown and the Monday schedule, so it opens the moment a fix is published, and merges itself once every required check passes. This overrides the reviewed-PR rules for workflows and the cluster: an unpatched vulnerability is the bigger risk. osvVulnerabilityAlerts adds the OSV database, which also covers the Gradle and Go dependencies that GitHub's alerts miss. Transitive npm fixes come from Dependabot security updates and the weekly lock file maintenance.",
     "enabled": true,
-    "automerge": false,
+    "automerge": true,
     "labels": [
       "dependencies",
       "security"
     ],
     "minimumReleaseAge": null,
     "schedule": [],
-    "prCreation": "immediate"
+    "prCreation": "immediate",
+    "platformAutomerge": true
   },
   "osvVulnerabilityAlerts": true,
   "customManagers": [

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -252,6 +253,15 @@ class SmtpEmailBatchIT : ServiceTestSupport() {
 
 @TestConfiguration(proxyBeanMethods = false)
 class SmtpEmailBatchConfig {
+    // A relay host swaps InMemoryEmailClient for SmtpEmailClient, but the test profile's
+    // TestSupportController still needs the in-memory one; the real client stays the one sends use.
+    @Bean
+    fun inMemoryEmailClient(): InMemoryEmailClient = InMemoryEmailClient()
+
+    @Bean
+    @Primary
+    fun sendingEmailClient(smtp: SmtpEmailClient): EmailTransportClient = smtp
+
     @Bean
     fun smtpBatchEmailJob(
         objectMapper: ObjectMapper,

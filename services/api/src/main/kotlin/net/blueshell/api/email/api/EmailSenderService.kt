@@ -44,6 +44,12 @@ class EmailSenderService(
         emailType: String,
         jobExecutionId: Long? = null,
     ) {
+        // A replay after a successful transport must not render or write a second outbox row.
+        if (jobExecutionId != null && emailService.hasSent(jobExecutionId, emailType, emailContent.recipientEmail)) {
+            log.info("Email already sent for job execution {} type={}; skipping.", jobExecutionId, emailType)
+            return
+        }
+
         val htmlContent = renderEmailHtml(emailContent)
 
         val outbox = emailService.createPending(emailContent, emailType, jobExecutionId)
@@ -65,14 +71,14 @@ class EmailSenderService(
                 )
             log.info("Sent email id={} type={}", outbox.id, emailType)
             emailService.markSent(outbox, messageId)
-        } catch (e: NonRetryableJobException) {
-            recordFailure(outbox, emailType, e)
-            throw e
         } catch (e: Exception) {
             recordFailure(outbox, emailType, e)
-            throw IllegalStateException("Failed to send email", e)
+            throw failureToRethrow(e)
         }
     }
+
+    private fun failureToRethrow(e: Exception): RuntimeException =
+        if (e is RuntimeException && NonRetryableJobException.isNonRetryable(e)) e else IllegalStateException("Failed to send email", e)
 
     private fun recordFailure(
         outbox: Email,

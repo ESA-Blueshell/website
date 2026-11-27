@@ -43,6 +43,7 @@ class JobExecutor(
         execute(execution)
     }
 
+    @Suppress("TooGenericExceptionCaught")
     fun execute(execution: net.blueshell.api.jobs.persistence.JobExecution) {
         val handler = jobHandlerRegistry.get(execution.jobType)
         if (handler == null) {
@@ -76,6 +77,10 @@ class JobExecutor(
             }
         } catch (ex: Exception) {
             handleFailure(current, ex, sample, handler.retrySchedule)
+        } catch (ex: Error) {
+            // Retries cannot repair an Error; a VM Error must still escape the worker thread.
+            recordTerminalFailure(current, ex, sample)
+            if (ex is VirtualMachineError) throw ex
         }
     }
 
@@ -92,7 +97,7 @@ class JobExecutor(
         val stackTrace = PersonalDetails.scrub(ex.stackTraceToString())
         val explained = ex is ExplainedJobFailure
 
-        if (isNonRetryable(ex)) {
+        if (NonRetryableJobException.isNonRetryable(ex)) {
             // Non-retryable means "retrying will not change the outcome", so
             // we stop attempts here. We use FAILED rather than DEAD: DEAD is
             // reserved for jobs the queue itself cannot run (e.g. no handler
@@ -106,9 +111,7 @@ class JobExecutor(
                 errorReason,
                 ex,
             )
-            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace, explained)
-            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
-            meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
+            recordTerminalFailure(execution, ex, sample, explained)
             return
         }
 
@@ -124,9 +127,7 @@ class JobExecutor(
                 errorReason,
                 ex,
             )
-            jobExecutionService.markFailed(execution, errorType, errorReason, stackTrace, explained)
-            sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
-            meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
+            recordTerminalFailure(execution, ex, sample, explained)
             return
         }
 
@@ -150,6 +151,23 @@ class JobExecutor(
         meterRegistry.counter("job.retry.scheduled.count", "job_type", execution.jobType).increment()
     }
 
+    private fun recordTerminalFailure(
+        execution: net.blueshell.api.jobs.persistence.JobExecution,
+        ex: Throwable,
+        sample: Timer.Sample,
+        explained: Boolean = false,
+    ) {
+        jobExecutionService.markFailed(
+            execution,
+            ex::class.java.name,
+            PersonalDetails.scrub(ex.message ?: "Unknown error"),
+            PersonalDetails.scrub(ex.stackTraceToString()),
+            explained,
+        )
+        sample.stop(meterRegistry.timer("job.execution.duration", "job_type", execution.jobType, "outcome", "failed"))
+        meterRegistry.counter("job.failed.count", "job_type", execution.jobType).increment()
+    }
+
     /**
      * Exponential backoff. [attemptsSoFar] is the number of completed
      * failures (0 means "this is the first failure, use the base delay").
@@ -166,6 +184,4 @@ class JobExecutor(
         val capped = min(raw, cap.toDouble())
         return capped.toLong().coerceAtLeast(0L)
     }
-
-    private fun isNonRetryable(ex: Exception): Boolean = NonRetryableJobException.NON_RETRYABLE_EXCEPTIONS.any { it.isInstance(ex) }
 }

@@ -182,12 +182,21 @@ class JobExecutionService(
     ): List<JobExecution> =
         jobExecutionRepository.findDueEmailJobs(EmailJobs.PREFIX, JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING, now, pageable)
 
+    /** Requeues a stale row only while its start time is unchanged, so a running attempt is never reset. */
     @Transactional
-    fun resetRunningToQueued(execution: JobExecution): JobExecution {
-        execution.status = JobExecutionStatus.QUEUED
-        execution.startedAt = null
-        execution.queuedAt = Instant.now()
-        return rewritten(execution)
+    fun resetRunningToQueued(execution: JobExecution): Boolean {
+        val id = execution.id ?: return false
+        val startedAt = execution.startedAt ?: return false
+        // The row was read by a sweep and may have finished since; the update guards on what it saw.
+        val changed =
+            jobExecutionRepository.resetRunningIfStillRunning(
+                id,
+                startedAt,
+                Instant.now(),
+                JobExecutionStatus.QUEUED,
+                JobExecutionStatus.RUNNING,
+            )
+        return changed == 1
     }
 
     @Transactional

@@ -12,6 +12,12 @@ interface EmailRepository : BaseRepository<Email, Long> {
 
     fun findByMessageId(messageId: String): Email?
 
+    fun existsByJobExecutionIdAndEmailTypeAndRecipientEmailAndSentAtIsNotNull(
+        jobExecutionId: Long,
+        emailType: String,
+        recipientEmail: String,
+    ): Boolean
+
     fun findByDeliveryStatusAndSentAtBefore(
         status: EmailDeliveryStatus,
         threshold: Instant,

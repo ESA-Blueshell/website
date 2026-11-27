@@ -36,7 +36,7 @@ class IncassoNotificationEmailJob(
     override fun handlePayload(payload: ContributionJobs.IncassoNotificationPayload) {
         val notification = requireExists { notifications.findById(payload.incassoNotificationId) }
         val today = LocalDate.now(clock.withZone(AMSTERDAM))
-        if (!forced && today > notification.debitDate.minusDays(noticeDays.toLong())) {
+        if (today > notification.debitDate.minusDays(noticeDays.toLong())) {
             throw NonRetryableJobException(
                 "The pre-notification can no longer arrive the notice period before the debit date " +
                     "${notification.debitDate}.",

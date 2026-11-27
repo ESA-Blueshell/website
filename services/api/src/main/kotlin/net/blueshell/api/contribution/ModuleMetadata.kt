@@ -14,7 +14,8 @@ import org.springframework.modulith.PackageInfo
 @ApplicationModule(
     id = "contribution",
     allowedDependencies = [
-        // AbstractJsonJobHandler, which this module's job handlers extend.
+        // AbstractJsonJobHandler, which this module's job handlers extend, and JobExecutionService,
+        // which tells a bulk resend whether a pre-notification's email went out.
         "jobs :: api",
         // Contribution reminders go out through EmailSenderService.
         "email :: api",

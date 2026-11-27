@@ -9,6 +9,7 @@ import net.blueshell.api.contribution.persistence.ContributionPeriodRepository
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.ContributionRepository
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.shared.event.TrackedEventPublisher
 import net.blueshell.api.testsupport.Entities
 import org.assertj.core.api.Assertions.assertThat
@@ -21,6 +22,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.web.server.ResponseStatusException
+import tools.jackson.databind.json.JsonMapper
 import java.util.Optional
 
 /** The reads and writes the contribution services make against their repositories. */
@@ -94,7 +96,7 @@ class ContributionServicesWriteTest {
         whenever(notifications.findById(8)).thenReturn(Optional.empty())
         whenever(notifications.findById(6)).thenReturn(Optional.of(notification))
         val reminderService = ContributionReminderService(reminders, mock(), mock()).withEntityManager()
-        val notificationService = IncassoNotificationService(notifications, mock(), mock())
+        val notificationService = IncassoNotificationService(notifications, mock(), mock(), mock<JobExecutionService>(), JsonMapper())
 
         assertThat(reminderService.findById(7)).isSameAs(reminder)
         assertThat(reminderService.create(reminder)).isSameAs(reminder)

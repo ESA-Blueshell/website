@@ -148,6 +148,12 @@ class JobExecutionService(
     fun findByIdOrNull(id: Long): JobExecution? = jobExecutionRepository.findById(id).orElse(null)
 
     @Transactional(readOnly = true)
+    fun hasSucceededOrPendingWithPayload(
+        jobType: String,
+        payload: String,
+    ): Boolean = jobExecutionRepository.findByJobTypeAndPayload(jobType, payload).any { it.status in SENT_OR_PENDING }
+
+    @Transactional(readOnly = true)
     fun countAllByStatus(): Map<JobExecutionStatus, Long> =
         JobExecutionStatus.entries.associateWith { jobExecutionRepository.countByStatus(it) }
 
@@ -359,3 +365,6 @@ class JobExecutionService(
         const val ENQUEUE_LOCK_SECONDS = 10
     }
 }
+
+// A queued or running row may still deliver, so it counts as much as a success.
+private val SENT_OR_PENDING = setOf(JobExecutionStatus.SUCCESS, JobExecutionStatus.QUEUED, JobExecutionStatus.RUNNING)

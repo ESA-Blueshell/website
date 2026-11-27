@@ -4,7 +4,7 @@ name: Release
 # Commits merged since the last release, and once that release is cut,
 # publishes the release images and announces it on Discord.
 #
-# The announcement needs a `DISCORD_RELEASE_WEBHOOK` secret holding a channel
+# The announcement needs a `DISCORD_WEBHOOK` secret holding a channel
 # webhook URL. Without it the release still completes and the announcement step
 # warns and exits, so a fork or an unconfigured repo is not broken by its absence.
 
@@ -82,14 +82,14 @@ jobs:
 
       - name: Post the release notes
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
           RELEASE_NOTES: ${{ needs.version.outputs.notes }}
           RELEASE_URL: ${{ needs.version.outputs.url }}
           REPO: ${{ github.repository }}
         run: |
           if [ -z "$DISCORD_WEBHOOK_URL" ]; then
-            echo "::warning::DISCORD_RELEASE_WEBHOOK is unset; skipping the announcement."
+            echo "::warning::DISCORD_WEBHOOK is unset; skipping the announcement."
             exit 0
           fi
           python3 .github/scripts/discord_release_announce.py
@@ -113,7 +113,7 @@ jobs:
 
       - name: Delete the messages
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           MODE: released

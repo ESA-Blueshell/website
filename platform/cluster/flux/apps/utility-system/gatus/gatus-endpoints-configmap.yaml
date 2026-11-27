@@ -184,6 +184,22 @@ data:
       - "[CONNECTED] == true"
       alerts:
       - type: discord
+    - name: "Mail host in-cluster DNS"
+      group: "mail"
+      # The api sends to mail.esa-blueshell.nl; the coredns-custom rewrite
+      # (apps/core/coredns) must answer with the Stalwart Service's ClusterIP.
+      # A public answer means the api hairpins through the node again and the
+      # Stalwart NetworkPolicy refuses it.
+      url: "10.43.0.10"
+      dns:
+        query-name: "mail.esa-blueshell.nl"
+        query-type: "A"
+      interval: "120s"
+      conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == pat(10.43.*)"
+      alerts:
+      - type: discord
 
     # ---------- Upstream ----------
     # Flux pulls this repository over SSH from github.com and scans images on

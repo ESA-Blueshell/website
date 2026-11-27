@@ -5,6 +5,7 @@ import net.blueshell.api.contribution.persistence.ContributionReminder
 import net.blueshell.api.contribution.persistence.ContributionReminderRepository
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import net.blueshell.api.testsupport.Entities
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import tools.jackson.databind.json.JsonMapper
 
 /** A recorded reminder or pre-notification queues the email for the row it wrote. */
 class ContributionAsksQueueTheirEmailTest {
@@ -46,7 +48,10 @@ class ContributionAsksQueueTheirEmailTest {
         val notification = Entities.incassoNotification(id = 6)
         val repository: IncassoNotificationRepository = mock { on { saveAndFlush(notification) } doReturn notification }
 
-        val written = IncassoNotificationService(repository, mock(), jobs).withEntityManager().record(notification)
+        val written =
+            IncassoNotificationService(repository, mock(), jobs, mock<JobExecutionService>(), JsonMapper())
+                .withEntityManager()
+                .record(notification)
 
         assertThat(written).isSameAs(notification)
         verify(jobs).runAsync(ContributionJobs.IncassoNotification, ContributionJobs.IncassoNotificationPayload(6), JobTrigger.SITE_ACTION)

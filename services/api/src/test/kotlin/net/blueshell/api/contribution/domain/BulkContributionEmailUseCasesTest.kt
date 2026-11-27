@@ -122,6 +122,23 @@ class BulkContributionEmailUseCasesTest {
         }
 
         @Test
+        fun `a bulk resend writes to one whose notice failed and skips one who was delivered`() {
+            plan(
+                row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION),
+                row(2L, "Ben Debit", ContributionEmailKind.INCASSO_NOTIFICATION),
+            )
+            every { preNotifications.alreadyNotified(1L, periodId, debitDate) } returns false
+            every { preNotifications.alreadyNotified(2L, periodId, debitDate) } returns true
+
+            val result = send()
+
+            assertThat(result.incassoNotificationsSent).isEqualTo(1)
+            assertThat(result.incassoNotificationsSkipped).isEqualTo(1)
+            verify(exactly = 1) { preNotifications.record(match { written -> written.userId == 1L }) }
+            verify(exactly = 0) { preNotifications.record(match { written -> written.userId == 2L }) }
+        }
+
+        @Test
         fun `a notification for another period or debit date does not skip this one`() {
             plan(row(1L, "Ann Debit", ContributionEmailKind.INCASSO_NOTIFICATION))
             every { preNotifications.alreadyNotified(1L, periodId, debitDate.minusDays(1)) } returns true

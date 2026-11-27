@@ -13,10 +13,10 @@ interface IncassoNotificationRepository : BaseRepository<IncassoNotification, Lo
     /** Every notification sent to this person, for any period, in no particular order. */
     fun findByUser_Id(userId: Long): List<IncassoNotification>
 
-    /** Whether this member was already told about this debit, so a repeat send need not write again. */
-    fun existsByUser_IdAndContributionPeriod_IdAndDebitDate(
+    /** The notices recorded for this member and debit; whether one arrived is read from its job. */
+    fun findByUser_IdAndContributionPeriod_IdAndDebitDate(
         userId: Long,
         contributionPeriodId: Long,
         debitDate: LocalDate,
-    ): Boolean
+    ): List<IncassoNotification>
 }

@@ -5,12 +5,14 @@ import jakarta.persistence.PersistenceContext
 import net.blueshell.api.contribution.api.ContributionPeriodService
 import net.blueshell.api.contribution.persistence.IncassoNotification
 import net.blueshell.api.contribution.persistence.IncassoNotificationRepository
+import net.blueshell.api.jobs.api.JobExecutionService
 import net.blueshell.api.shared.job.JobQueue
 import net.blueshell.api.shared.job.JobTrigger
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import tools.jackson.databind.ObjectMapper
 import java.time.LocalDate
 
 /** A pre-notification is recorded before it is sent, so a send failure leaves a record. */
@@ -19,6 +21,8 @@ class IncassoNotificationService(
     private val repository: IncassoNotificationRepository,
     private val periodService: ContributionPeriodService,
     private val jobs: JobQueue,
+    private val jobExecutions: JobExecutionService,
+    private val objectMapper: ObjectMapper,
 ) {
     // Read back after each write, so the columns the database fills are on the answer.
     @PersistenceContext
@@ -43,7 +47,19 @@ class IncassoNotificationService(
         userId: Long,
         contributionPeriodId: Long,
         debitDate: LocalDate,
-    ): Boolean = repository.existsByUser_IdAndContributionPeriod_IdAndDebitDate(userId, contributionPeriodId, debitDate)
+    ): Boolean =
+        repository
+            .findByUser_IdAndContributionPeriod_IdAndDebitDate(userId, contributionPeriodId, debitDate)
+            .any(::delivered)
+
+    // Only a notice whose job ended without sending (failed, dead, skipped) leaves the debit resendable.
+    private fun delivered(notification: IncassoNotification): Boolean {
+        val payload = ContributionJobs.IncassoNotificationPayload(requireNotNull(notification.id))
+        return jobExecutions.hasSucceededOrPendingWithPayload(
+            ContributionJobs.IncassoNotification.type,
+            objectMapper.writeValueAsString(payload),
+        )
+    }
 
     /**
      * Writes the pre-notification and queues its email, in that order and in one transaction.

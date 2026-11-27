@@ -213,6 +213,39 @@ class JobExecutionServiceTest {
     }
 
     @Test
+    fun `a payload has been delivered only when one of its executions succeeded`() {
+        val payload = """{"incassoNotificationId":6}"""
+        whenever(repository.findByJobTypeAndPayload("email.incasso-notification", payload))
+            .thenReturn(
+                listOf(
+                    JobExecution(
+                        jobType = "email.incasso-notification",
+                        payload = payload,
+                        status = JobExecutionStatus.FAILED,
+                    ),
+                    JobExecution(
+                        jobType = "email.incasso-notification",
+                        payload = payload,
+                        status = JobExecutionStatus.SUCCESS,
+                    ),
+                ),
+            )
+
+        assertThat(service.hasSucceededOrPendingWithPayload("email.incasso-notification", payload)).isTrue()
+
+        val undelivered = """{"incassoNotificationId":8}"""
+        whenever(repository.findByJobTypeAndPayload("email.incasso-notification", undelivered))
+            .thenReturn(listOf(JobExecution(jobType = "email.incasso-notification", status = JobExecutionStatus.SKIPPED)))
+
+        assertThat(service.hasSucceededOrPendingWithPayload("email.incasso-notification", undelivered)).isFalse()
+        val retrying = """{"incassoNotificationId":9}"""
+        whenever(repository.findByJobTypeAndPayload("email.incasso-notification", retrying))
+            .thenReturn(listOf(JobExecution(jobType = "email.incasso-notification", status = JobExecutionStatus.QUEUED)))
+
+        assertThat(service.hasSucceededOrPendingWithPayload("email.incasso-notification", retrying)).isTrue()
+    }
+
+    @Test
     fun `markRunning claims a queued row without bumping attempts or keeping its retry time`() {
         val execution =
             JobExecution(

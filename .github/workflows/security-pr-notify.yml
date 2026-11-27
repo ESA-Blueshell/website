@@ -6,8 +6,12 @@ name: Security PR notify
 # body cites a CVE or GHSA id. The rules live in .github/scripts/security_pr_notice.sh.
 #
 # - opened: only for PRs that do not merge themselves (not Renovate's).
-# - merged: a release with the fix is available in the pending release PR.
 # - Validate failed: the PR will not merge itself.
+# - closed: its "CI failed" messages are deleted.
+# - merged: a release with the fix is available in the pending release PR.
+#   release.yml deletes that message once the release is cut.
+#
+# The release PR never gets a notice: its changelog may cite the ids it ships.
 #
 # pull_request_target and workflow_run both run the default branch's files, so
 # nothing from the PR is checked out or executed; its text reaches the script
@@ -27,17 +31,23 @@ on:
 permissions:
   contents: read
 
+# One run per branch at a time: each run rewrites the PR's notice record.
+concurrency:
+  group: security-pr-notify-${{ github.event.pull_request.head.ref || github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
 jobs:
   pull-request:
     name: Notify Discord of a security fix
     if: >-
       github.event_name == 'pull_request_target' &&
-      (github.event.action != 'closed' || github.event.pull_request.merged)
+      !startsWith(github.event.pull_request.head.ref, 'release-please--')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
+      issues: write
+      pull-requests: write
       security-events: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,7 +58,8 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          MODE: ${{ github.event.action == 'closed' && 'merged' || 'opened' }}
+          MODE: ${{ github.event.action == 'closed' && 'closed' || 'opened' }}
+          MERGED: ${{ github.event.pull_request.merged }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           TITLE: ${{ github.event.pull_request.title }}
           BODY: ${{ github.event.pull_request.body }}
@@ -62,12 +73,14 @@ jobs:
     if: >-
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.event == 'pull_request'
+      github.event.workflow_run.event == 'pull_request' &&
+      !startsWith(github.event.workflow_run.head_branch, 'release-please--')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
+      issues: write
+      pull-requests: write
       security-events: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

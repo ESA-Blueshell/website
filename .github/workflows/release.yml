@@ -93,3 +93,28 @@ jobs:
             exit 0
           fi
           python3 .github/scripts/discord_release_announce.py
+
+  clear-security-notices:
+    # Off `version`, not `publish`: once the release PR merged, its "release
+    # with security fixes available" messages are settled even if publishing fails.
+    name: Clear the security release notices
+    needs: version
+    if: needs.version.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Delete the messages
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          MODE: released
+        run: bash .github/scripts/security_pr_notice.sh

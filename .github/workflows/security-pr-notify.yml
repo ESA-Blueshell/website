@@ -17,9 +17,9 @@ name: Security PR notify
 # nothing from the PR is checked out or executed; its text reaches the script
 # only through the environment.
 #
-# Posts through the one Discord webhook every notice uses. A run started by
-# Dependabot sees only Dependabot secrets, where it is `DISCORD_WEBHOOK`; any
-# other run reads the `DISCORD_RELEASE_WEBHOOK` organisation secret.
+# Posts through the one Discord webhook every notice uses, the `DISCORD_WEBHOOK`
+# organisation secret. A run started by Dependabot sees only Dependabot secrets,
+# so the secret is set under both the Actions and the Dependabot secrets.
 
 on:
   pull_request_target:
@@ -55,7 +55,7 @@ jobs:
           persist-credentials: false
       - name: Decide and post
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           MODE: ${{ github.event.action == 'closed' && 'closed' || 'opened' }}
@@ -88,7 +88,7 @@ jobs:
           persist-credentials: false
       - name: Decide and post
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK || secrets.DISCORD_RELEASE_WEBHOOK }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}

@@ -10,6 +10,7 @@ import net.blueshell.api.file.api.FileService
 import net.blueshell.api.file.persistence.File
 import net.blueshell.api.shared.enums.FileType
 import net.blueshell.api.shared.seed.SeedOrder
+import net.blueshell.api.user.api.ServiceAccount
 import net.blueshell.api.user.api.UserService
 import net.blueshell.api.user.persistence.User
 import org.slf4j.LoggerFactory
@@ -39,6 +40,7 @@ class ShippedDevEvents(
     private val events: EventRepository,
     private val files: FileService,
     private val users: UserService,
+    private val serviceAccount: ServiceAccount,
     private val transactions: TransactionTemplate,
 ) {
     /** What a run wrote, which is nothing at all on every start after the first. */
@@ -70,7 +72,7 @@ class ShippedDevEvents(
 
     fun apply(): Applied {
         if (events.count() > 0) return Applied(0, 0, 0)
-        val owner = siteAccount() ?: return Applied(0, 0, 0)
+        val owner = serviceAccount.orNull("the dev events' art") ?: return Applied(0, 0, 0)
 
         val seeded = committeesFromSeed()
         var written = 0
@@ -161,17 +163,6 @@ class ShippedDevEvents(
         }
     }
 
-    /**
-     * The account the shipped art is credited to, which the migration that writes it puts
-     * there. Answering with null rather than throwing keeps a database without one from being
-     * the reason a start fails.
-     */
-    private fun siteAccount(): User? {
-        val account = runCatching { users.findByUsername(SITE_ACCOUNT) }.getOrNull()
-        if (account == null) log.warn("[dev-events] there is no '{}' account to credit the art to", SITE_ACCOUNT)
-        return account
-    }
-
     private companion object {
         val log = LoggerFactory.getLogger(ShippedDevEvents::class.java)
         const val NAME = "name"
@@ -186,6 +177,5 @@ class ShippedDevEvents(
         const val SIGN_UP = "sign_up"
         const val ART = "art"
         const val WEBP = "image/webp"
-        const val SITE_ACCOUNT = "system"
     }
 }

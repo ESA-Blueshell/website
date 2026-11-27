@@ -42,6 +42,11 @@ sync/api/
 discord/domain/
 ├── DiscordClientConfig.kt       # wires the published client wherever a bot token is set
 └── BotPublisher.kt              # where a bot token is set, implements sync's DiscordPublisher
+vote/domain/
+├── GameCatalogue.kt             # the domain interface, with the refusing stand-in
+├── VoteClientConfig.kt          # wires IGDB where its id and secret are set, a stand-in otherwise
+├── IgdbGameCatalogue.kt         # the IGDB client, behind ThrottledGameCatalogue
+└── OfflineGameCatalogue.kt      # the fixed list the stand-in offers where offline games are on
 ```
 
 **Email is SMTP, not Listmonk.** The Listmonk transport and its contact adapter are gone; this ADR described both until #1196. `SmtpEmailClient` generates the `Message-ID` itself so the outbox row and the MIME header carry the same value, which is what lets the bounce poller match a DSN to what it answers.
@@ -102,6 +107,7 @@ stand-in naming the same properties as its real twin.
 | `GoogleCalendarAdapter` | `MockCalendarAdapter` | `google.calendar.id`, `google.calendar.serviceAccountJson` |
 | `ImapBouncePollingService` | none: the bounce mailbox goes unread | `email.bounce.imap.host`, `.username`, `.password` |
 | the Discord beans | none: each reader copes with the bot's absence | `discord.botToken` |
+| the throttled `IgdbGameCatalogue` | `OfflineGameCatalogue` where `app.vote.offline-games` is on, else a catalogue that refuses every search | `app.vote.igdb.client-id`, `app.vote.igdb.client-secret` |
 
 `BrevoTargetStrategy`, the Brevo cohort target, needs no credentials of its own: it is written
 against `ContactListAdapter`, so it runs over Brevo or over `MockContactAdapter`. In dev and in

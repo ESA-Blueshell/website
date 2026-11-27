@@ -93,7 +93,7 @@ is not how a rotated key reaches the api.
 ## Consequences
 
 - Every secret consumer in the api needs a way to take a new value: the Brevo, Google
-  Calendar and Discord clients, the mail sender, the IMAP bounce poller, the two-factor
+  Calendar, Discord and IGDB clients, the mail sender, the IMAP bounce poller, the two-factor
   cipher, the JWT reader and the registered OIDC client.
 - The JWT reader accepts two secrets for one token lifetime after a rotation.
 - The Vault OIDC client secret lives both in Vault's OIDC config and in `secret/api`, so its
@@ -116,8 +116,8 @@ api login with the migration on the owner's (#1826). `VaultConfigImportIT` prove
 import against a real Vault with the `api` policy, and `DatabaseLoginIT` proves a rotation
 past `max_ttl` against a real MariaDB. The poll (#1823) reaches every consumer: Brevo,
 Google Calendar, the mail sender and the bounce poller (#1823), the two-factor key, the JWT
-secret and the Vault OIDC client secret (#1827), and the Discord REST client and gateway
-(#1828).
+secret and the Vault OIDC client secret (#1827), the Discord REST client and gateway
+(#1828), and the IGDB client the annual votes search with (#2652).
 
 It landed in two steps so each could merge without breaking what ran. The expand step
 changed the api and added to Vault while the api Deployment still ran the injector, so the

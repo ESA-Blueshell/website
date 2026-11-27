@@ -2,6 +2,7 @@ package net.blueshell.api.architecture
 
 import com.tngtech.archunit.base.DescribedPredicate
 import com.tngtech.archunit.core.domain.JavaClass
+import com.tngtech.archunit.core.domain.JavaMethod
 import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.lang.ArchCondition
 import com.tngtech.archunit.lang.ConditionEvents
@@ -126,6 +127,20 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
                 .because("API ADR-019: exactly one of a vendor client and its stand-in exists")
         }
 
+    /**
+     * B3: A stand-in registered by a `@Bean` method names the same credentials as a real twin
+     * registered beside it, answering the same type.
+     */
+    @Test
+    fun `stand-in beans mirror the credentials of their real twin`(): Unit =
+        arch("A @WhenCredentialsMissing @Bean method has a @WhenCredentialsSet twin of the same type with the same properties") {
+            methods()
+                .that()
+                .areAnnotatedWith(WhenCredentialsMissing::class.java)
+                .should(haveARealTwinBean())
+                .because("API ADR-019: exactly one of a vendor client and its stand-in exists")
+        }
+
     /** Matches classes that are Spring-managed beans (@Component or @Service). */
     private fun isSpringBean(): DescribedPredicate<JavaClass> =
         DescribedPredicate.describe("is a Spring bean (@Component or @Service)") { clazz ->
@@ -140,6 +155,25 @@ class PlatformConsistencyArchitectureTest : ArchJUnitTestBase(ArchitecturePackag
             ) {
                 if (!clazz.isAnnotatedWith(WhenCredentialsSet::class.java) && !clazz.isAnnotatedWith(WhenCredentialsMissing::class.java)) {
                     events.add(SimpleConditionEvent.violated(clazz, "${clazz.name} names no credentials"))
+                }
+            }
+        }
+
+    private fun haveARealTwinBean(): ArchCondition<JavaMethod> =
+        object : ArchCondition<JavaMethod>("have a real twin bean with the same credentials") {
+            override fun check(
+                method: JavaMethod,
+                events: ConditionEvents,
+            ) {
+                val wanted = method.getAnnotationOfType(WhenCredentialsMissing::class.java).properties.toSet()
+                val twin =
+                    method.owner.methods.any { real ->
+                        real.rawReturnType == method.rawReturnType &&
+                            real.isAnnotatedWith(WhenCredentialsSet::class.java) &&
+                            real.getAnnotationOfType(WhenCredentialsSet::class.java).properties.toSet() == wanted
+                    }
+                if (!twin) {
+                    events.add(SimpleConditionEvent.violated(method, "${method.fullName} has no real twin switched on $wanted"))
                 }
             }
         }

@@ -5,6 +5,7 @@ import net.blueshell.api.event.persistence.EventRepository
 import net.blueshell.api.file.api.FileService
 import net.blueshell.api.shared.enums.Role
 import net.blueshell.api.testsupport.UserTestSupport
+import net.blueshell.api.user.api.ServiceAccount
 import net.blueshell.api.user.api.UserService
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -25,7 +26,9 @@ class ShippedDevEventsIT : UserTestSupport() {
 
     @Autowired private lateinit var users: UserService
 
-    private fun loader() = ShippedDevEvents(committees, events, files, users, transactionTemplate)
+    @Autowired private lateinit var serviceAccount: ServiceAccount
+
+    private fun loader() = ShippedDevEvents(committees, events, files, users, serviceAccount, transactionTemplate)
 
     @Test
     fun `the events the seed names are written with the committees they were run by`() {

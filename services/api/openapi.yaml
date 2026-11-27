@@ -146,6 +146,30 @@ components:
       - role
       - seasonId
       type: object
+    AddVoteTrackRequest:
+      properties:
+        igdbId:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+        kind:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+        url:
+          maxLength: 512
+          minLength: 0
+          type: string
+        year:
+          format: int32
+          type: integer
+      required:
+      - igdbId
+      - kind
+      - url
+      - year
+      type: object
     AddressResponse:
       properties:
         city:
@@ -200,6 +224,65 @@ components:
       - NOW
       - NEXT_MORNING
       type: string
+    AnnualVoteResponse:
+      properties:
+        ballots:
+          format: int32
+          type: integer
+        closesAt:
+          format: date-time
+          type: string
+        kind:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+        opensAt:
+          format: date-time
+          type: string
+        picksTrack:
+          type: boolean
+        points:
+          items:
+            format: int32
+            type: integer
+          type: array
+        releasedInYear:
+          type: boolean
+        results:
+          items:
+            $ref: '#/components/schemas/VotePlacingResponse'
+          type: array
+        revealAt:
+          format: date-time
+          type: string
+        state:
+          enum:
+          - UPCOMING
+          - VOTING
+          - CLOSED
+          - REVEALED
+          type: string
+        version:
+          format: int64
+          type: integer
+        year:
+          format: int32
+          type: integer
+      required:
+      - ballots
+      - closesAt
+      - kind
+      - opensAt
+      - picksTrack
+      - points
+      - releasedInYear
+      - results
+      - revealAt
+      - state
+      - version
+      - year
+      type: object
     AnswerRequest:
       properties:
         optionSelections:
@@ -882,6 +965,55 @@ components:
       - failed
       - moved
       type: object
+    CandidateTrackResponse:
+      properties:
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
+        embedUrl:
+          type: string
+        externalId:
+          type: string
+        id:
+          format: int64
+          type: integer
+        source:
+          enum:
+          - YOUTUBE
+          - SPOTIFY
+          type: string
+        thumbnail:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
+        title:
+          type: string
+        url:
+          type: string
+      required:
+      - candidate
+      - embedUrl
+      - externalId
+      - id
+      - source
+      - title
+      - url
+      type: object
+    CastVoteBallotRequest:
+      properties:
+        picks:
+          items:
+            $ref: '#/components/schemas/VotePickRequest'
+          maxItems: 2147483647
+          minItems: 1
+          type: array
+        version:
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - picks
+      type: object
     CasualGameRequest:
       description: A game as the board adds or corrects it from the casual pages
       properties:
@@ -1022,6 +1154,26 @@ components:
       - name
       - slug
       - sortIndex
+      type: object
+    CatalogueGameResponse:
+      properties:
+        coverImageId:
+          type:
+          - string
+          - 'null'
+        firstReleaseYear:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        igdbId:
+          format: int64
+          type: integer
+        name:
+          type: string
+      required:
+      - igdbId
+      - name
       type: object
     CodeRequest:
       properties:
@@ -1704,6 +1856,33 @@ components:
       - street
       - userId
       - zipCode
+      type: object
+    CreateAnnualVoteRequest:
+      properties:
+        closesAt:
+          format: date-time
+          type: string
+        opensAt:
+          format: date-time
+          type: string
+        picks:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        revealAt:
+          format: date-time
+          type: string
+        year:
+          format: int32
+          maximum: 2100
+          minimum: 2000
+          type: integer
+      required:
+      - closesAt
+      - opensAt
+      - revealAt
+      - year
       type: object
     CreateBlogRequest:
       properties:
@@ -3117,6 +3296,8 @@ components:
       - ROSTER_ICON
       - BOARD_PHOTO
       - BOARD_PORTRAIT
+      - VOTE_COVER
+      - VOTE_THUMBNAIL
       type: string
     FirstContribution:
       properties:
@@ -3806,6 +3987,7 @@ components:
       - COHORTS_FAILED
       - VALUES_SEALED
       - VALUES_REWRAPPED
+      - VOTES_REVEALED
       type: string
     JobTrigger:
       enum:
@@ -4198,6 +4380,15 @@ components:
       - updatedAt
       - userId
       - version
+      type: object
+    MergeVoteTrackRequest:
+      properties:
+        intoId:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+      required:
+      - intoId
       type: object
     MoveTargetRequest:
       description: Where to file a target.
@@ -4642,6 +4833,40 @@ components:
       - password
       - token
       - username
+      type: object
+    RenameVoteTrackRequest:
+      properties:
+        title:
+          maxLength: 255
+          minLength: 0
+          type: string
+      required:
+      - title
+      type: object
+    RescheduleAnnualVoteRequest:
+      properties:
+        closesAt:
+          format: date-time
+          type: string
+        opensAt:
+          format: date-time
+          type: string
+        picks:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        revealAt:
+          format: date-time
+          type: string
+        version:
+          format: int64
+          type: integer
+      required:
+      - closesAt
+      - opensAt
+      - revealAt
+      - version
       type: object
     Role:
       enum:
@@ -5442,6 +5667,25 @@ components:
           type:
           - string
           - 'null'
+      type: object
+    StoreVoteCandidateRequest:
+      properties:
+        igdbId:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+        kind:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+        year:
+          format: int32
+          type: integer
+      required:
+      - igdbId
+      - kind
+      - year
       type: object
     SurveyRequest:
       properties:
@@ -6411,6 +6655,104 @@ components:
       required:
       - version
       type: object
+    VoteBallotResponse:
+      properties:
+        picks:
+          items:
+            $ref: '#/components/schemas/VotePickResponse'
+          type: array
+        renamableTrackIds:
+          items:
+            format: int64
+            type: integer
+          type: array
+        submittedAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        version:
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - picks
+      - renamableTrackIds
+      type: object
+    VoteCandidateResponse:
+      properties:
+        cover:
+          oneOf:
+          - $ref: '#/components/schemas/Image'
+          - type: 'null'
+        firstReleaseYear:
+          format: int32
+          type:
+          - integer
+          - 'null'
+        id:
+          format: int64
+          type: integer
+        igdbId:
+          format: int64
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - igdbId
+      - name
+      type: object
+    VotePickRequest:
+      properties:
+        candidateId:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+        trackId:
+          exclusiveMinimum: 0
+          format: int64
+          type:
+          - integer
+          - 'null'
+      required:
+      - candidateId
+      type: object
+    VotePickResponse:
+      properties:
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
+        track:
+          oneOf:
+          - $ref: '#/components/schemas/CandidateTrackResponse'
+          - type: 'null'
+      required:
+      - candidate
+      type: object
+    VotePlacingResponse:
+      properties:
+        candidate:
+          $ref: '#/components/schemas/VoteCandidateResponse'
+        place:
+          format: int32
+          type: integer
+        points:
+          format: int32
+          type: integer
+        track:
+          oneOf:
+          - $ref: '#/components/schemas/CandidateTrackResponse'
+          - type: 'null'
+        voters:
+          format: int32
+          type: integer
+      required:
+      - candidate
+      - place
+      - points
+      - voters
+      type: object
 info:
   title: OpenAPI definition
   version: v0
@@ -6949,6 +7291,937 @@ paths:
           description: Server error
       tags:
       - Addresses
+  /annual-votes/{kind}:
+    post:
+      operationId: createAnnualVote
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnnualVoteRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualVoteResponse'
+          description: Created
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /annual-votes/{kind}/current:
+    get:
+      operationId: currentAnnualVote
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualVoteResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /annual-votes/{kind}/years:
+    get:
+      operationId: annualVoteYears
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  format: int32
+                  type: integer
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /annual-votes/{kind}/{year}:
+    get:
+      operationId: annualVote
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: path
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualVoteResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+    put:
+      operationId: rescheduleAnnualVote
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: path
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RescheduleAnnualVoteRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnualVoteResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /annual-votes/{kind}/{year}/ballot:
+    get:
+      operationId: myVoteBallot
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: path
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteBallotResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+    put:
+      operationId: castVoteBallot
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: path
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CastVoteBallotRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteBallotResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /annual-votes/{kind}/{year}/standings:
+    get:
+      operationId: annualVoteStandings
+      parameters:
+      - in: path
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: path
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/VotePlacingResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
   /auth:
     post:
       operationId: authenticate
@@ -31104,6 +32377,912 @@ paths:
           description: Server error
       tags:
       - Health
+  /vote-candidates:
+    get:
+      operationId: searchVoteCandidates
+      parameters:
+      - in: query
+        name: query
+        required: true
+        schema:
+          maxLength: 100
+          minLength: 0
+          type: string
+      - in: query
+        name: kind
+        required: true
+        schema:
+          enum:
+          - OST_TOP_50
+          - GAME_OF_THE_YEAR
+          type: string
+      - in: query
+        name: year
+        required: true
+        schema:
+          format: int32
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CatalogueGameResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+    post:
+      operationId: storeVoteCandidate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreVoteCandidateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteCandidateResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /vote-candidates/covers/{imageId}:
+    get:
+      operationId: voteCandidateCover
+      parameters:
+      - in: path
+        name: imageId
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            image/jpeg:
+              schema:
+                format: byte
+                type: string
+            image/png:
+              schema:
+                format: byte
+                type: string
+            image/webp:
+              schema:
+                format: byte
+                type: string
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /vote-candidates/{igdbId}/tracks:
+    get:
+      operationId: voteCandidateTracks
+      parameters:
+      - in: path
+        name: igdbId
+        required: true
+        schema:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CandidateTrackResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /vote-tracks:
+    get:
+      operationId: voteSongs
+      parameters:
+      - in: query
+        name: query
+        required: false
+        schema:
+          default: ''
+          maxLength: 100
+          minLength: 0
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CandidateTrackResponse'
+                type: array
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+    post:
+      operationId: addVoteTrack
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddVoteTrackRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateTrackResponse'
+          description: Created
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /vote-tracks/{id}/merge:
+    post:
+      operationId: mergeVoteTrack
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeVoteTrackRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateTrackResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
+  /vote-tracks/{id}/title:
+    put:
+      operationId: renameVoteTrack
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          exclusiveMinimum: 0
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameVoteTrackRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateTrackResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Validation failed for request.",
+                  "instance": "/api/users",
+                  "errors": [
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "email",
+                      "message": "must be a well-formed email address",
+                      "code": "Email"
+                    },
+                    {
+                      "objectName": "createUserRequest",
+                      "field": "age",
+                      "message": "must be greater than or equal to 0",
+                      "code": "Min"
+                    }
+                  ],
+                  "traceId": "a8c0c4e5f1c24a7e"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Validation error
+        '401':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Full authentication is required to access this resource",
+                  "instance": "/api/users",
+                  "traceId": "401401401401"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Access is denied",
+                  "instance": "/api/users",
+                  "traceId": "403403403403"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Forbidden (access denied)
+        '404':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "User not found with id: 42",
+                  "instance": "/api/users/42",
+                  "traceId": "cdef1234abcd5678"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Not Found
+        '500':
+          content:
+            application/json:
+              example: |
+                {
+                  "type": "about:blank",
+                  "title": "Internal Server Error",
+                  "status": 500,
+                  "detail": "An unexpected error occurred.",
+                  "instance": "/api/users",
+                  "traceId": "ab12cd34ef56"
+                }
+              schema:
+                $ref: '#/components/schemas/ApiError'
+          description: Server error
+      tags:
+      - Annual vote
 servers:
 - description: Generated server url
   url: http://localhost:8080

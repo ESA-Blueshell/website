@@ -1,5 +1,6 @@
 import router from "./router"
 import store from "@/plugins/store"
+import {loginHref} from "@/utils/loginRedirect"
 import {discordChannel} from "@/domains/discord"
 import type {AxiosError} from "axios"
 import {isSignupTokenRejection, notifySignupTokenRejected} from "@/plugins/signupContinuation"
@@ -86,10 +87,9 @@ export function $handleNetworkError(err: unknown): void {
         // sign in.
         const redirectTarget = (currentRoute.query.redirect as string)
           || currentRoute.fullPath
-        const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
         errorMessage = "Woah there, looks like you're not logged in (anymore)."
         store.commit("setStatusSnackbarMessage", errorMessage)
-        store.commit("setStatusSnackbarAction", {label: "Login", to: loginHref})
+        store.commit("setStatusSnackbarAction", {label: "Login", to: loginHref(redirectTarget)})
         return
       }
       case 403:

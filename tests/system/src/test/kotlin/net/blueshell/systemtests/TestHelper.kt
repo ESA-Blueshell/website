@@ -794,6 +794,97 @@ object TestHelper {
         }
 
     /**
+     * An OST Top 50 vote for [year] whose reveal date passed a day ago, with one ballot from each of
+     * [voters] picking the first of [games] then the second, each with a track of its own. Answers
+     * the vote's id. Written straight to the tables, because no ballot can be cast through the api
+     * once voting has closed.
+     */
+    fun seedRevealDueVote(
+        year: Int,
+        voters: List<Long>,
+        games: List<String>,
+    ): Long =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            val now = java.time.Instant.now()
+
+            fun at(daysAgo: Long) = java.sql.Timestamp.from(now.minus(java.time.Duration.ofDays(daysAgo)))
+
+            fun inserted(
+                sql: String,
+                bind: (java.sql.PreparedStatement) -> Unit,
+            ): Long =
+                conn.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS).use { stmt ->
+                    bind(stmt)
+                    stmt.executeUpdate()
+                    stmt.generatedKeys.use { keys ->
+                        require(keys.next()) { "INSERT produced no id" }
+                        keys.getLong(1)
+                    }
+                }
+            val voteId =
+                inserted("INSERT INTO votes (kind, year, opens_at, closes_at, reveal_at, picks) VALUES ('OST_TOP_50', ?, ?, ?, ?, 5)") {
+                    it.setInt(1, year)
+                    it.setTimestamp(2, at(3))
+                    it.setTimestamp(3, at(2))
+                    it.setTimestamp(4, at(1))
+                }
+            val picks =
+                games.map { name ->
+                    val candidate =
+                        inserted("INSERT INTO vote_candidates (igdb_id, name) VALUES (?, ?)") {
+                            it.setLong(1, uniqueSuffix().takeLast(12).toLong())
+                            it.setString(2, name)
+                        }
+                    val track =
+                        inserted(
+                            "INSERT INTO vote_candidate_tracks (candidate_id, source, external_id, title, added_at) " +
+                                "VALUES (?, 'YOUTUBE', ?, ?, ?)",
+                        ) {
+                            it.setLong(1, candidate)
+                            it.setString(2, uniqueSuffix().takeLast(11).padStart(11, '0'))
+                            it.setString(3, "$name theme")
+                            it.setTimestamp(4, at(3))
+                        }
+                    candidate to track
+                }
+            voters.forEach { userId ->
+                val ballot =
+                    inserted("INSERT INTO vote_ballots (vote_id, user_id, submitted_at) VALUES (?, ?, ?)") {
+                        it.setLong(1, voteId)
+                        it.setLong(2, userId)
+                        it.setTimestamp(3, at(2))
+                    }
+                picks.forEachIndexed { index, (candidate, track) ->
+                    conn
+                        .prepareStatement("INSERT INTO vote_ballot_picks (ballot_id, position, candidate_id, track_id) VALUES (?, ?, ?, ?)")
+                        .use {
+                            it.setLong(1, ballot)
+                            it.setInt(2, index + 1)
+                            it.setLong(3, candidate)
+                            it.setLong(4, track)
+                            it.executeUpdate()
+                        }
+                }
+            }
+            voteId
+        }
+
+    /** How many rows [table] holds for the vote [voteId], through its `vote_id` column. */
+    fun voteRows(
+        table: String,
+        voteId: Long,
+    ): Int =
+        DriverManager.getConnection(dbUrl, dbUser, dbPassword).use { conn ->
+            conn.prepareStatement("SELECT COUNT(*) FROM $table WHERE vote_id = ?").use { stmt ->
+                stmt.setLong(1, voteId)
+                stmt.executeQuery().use { rs ->
+                    require(rs.next()) { "COUNT(*) answered no row" }
+                    rs.getInt(1)
+                }
+            }
+        }
+
+    /**
      * Truncate every row from `job_executions`. The api dispatches a
      * couple of background jobs as part of `POST /users` (contact
      * sync, activation email) with `app.jobs.auto-dispatch=true`, so

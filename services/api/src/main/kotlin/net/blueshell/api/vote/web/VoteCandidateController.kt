@@ -1,0 +1,101 @@
+package net.blueshell.api.vote.web
+
+import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
+import net.blueshell.api.security.BoardOnly
+import net.blueshell.api.security.MemberOnly
+import net.blueshell.api.shared.enums.Role
+import net.blueshell.api.shared.security.UserPrincipal
+import net.blueshell.api.vote.domain.VoteCandidateUseCases
+import net.blueshell.api.vote.persistence.VoteKind
+import org.springframework.http.CacheControl
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+import java.time.Duration
+
+private const val QUERY_MAX = 100
+
+// IGDB never changes the picture behind an image id, so a browser may keep a cover for a while.
+private val COVER_CACHE: CacheControl = CacheControl.maxAge(Duration.ofDays(7)).cachePrivate()
+
+/** Finding games and tracks to pick, storing them, and the board merging duplicate tracks. */
+@RestController
+@Validated
+@Tag(name = "Annual vote")
+@MemberOnly
+class VoteCandidateController(
+    private val candidates: VoteCandidateUseCases,
+) {
+    @GetMapping("/vote-candidates")
+    fun searchVoteCandidates(
+        @RequestParam @Size(max = QUERY_MAX) query: String,
+        @RequestParam kind: VoteKind,
+        @RequestParam year: Int,
+    ): List<CatalogueGameResponse> = candidates.search(query, kind, year).map { it.asResponse() }
+
+    /** A search result's cover, fetched by the api so the browser never asks IGDB. */
+    @GetMapping("/vote-candidates/covers/{imageId}", produces = [MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp"])
+    fun voteCandidateCover(
+        @PathVariable imageId: String,
+    ): ResponseEntity<ByteArray> {
+        val cover = candidates.coverPreview(imageId)
+        return ResponseEntity
+            .ok()
+            .cacheControl(COVER_CACHE)
+            .contentType(MediaType.parseMediaType(cover.mediaType))
+            .body(cover.bytes)
+    }
+
+    @PostMapping("/vote-candidates")
+    fun storeVoteCandidate(
+        @Valid @RequestBody request: StoreVoteCandidateRequest,
+    ): VoteCandidateResponse = candidates.storeCandidate(request.igdbId, request.kind, request.year).asResponse()
+
+    @GetMapping("/vote-candidates/{igdbId}/tracks")
+    fun voteCandidateTracks(
+        @PathVariable @Positive igdbId: Long,
+    ): List<CandidateTrackResponse> = candidates.tracksOf(igdbId).map { it.asResponse() }
+
+    /** Every live song whose title or game holds [query], game by game, for the board to tend. */
+    @BoardOnly
+    @GetMapping("/vote-tracks")
+    fun voteSongs(
+        @RequestParam(defaultValue = "") @Size(max = QUERY_MAX) query: String,
+    ): List<CandidateTrackResponse> = candidates.songs(query).map { it.asResponse() }
+
+    @PostMapping("/vote-tracks")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun addVoteTrack(
+        @Valid @RequestBody request: AddVoteTrackRequest,
+        @AuthenticationPrincipal principal: UserPrincipal,
+    ): CandidateTrackResponse = candidates.addTrack(request.igdbId, request.url, request.kind, request.year, principal.id).asResponse()
+
+    /** Renames a track for everybody who picked it: by the member who added it, or by the board. */
+    @PutMapping("/vote-tracks/{id}/title")
+    fun renameVoteTrack(
+        @PathVariable @Positive id: Long,
+        @Valid @RequestBody request: RenameVoteTrackRequest,
+        @AuthenticationPrincipal principal: UserPrincipal,
+    ): CandidateTrackResponse =
+        candidates.rename(id, request.title, principal.id, mayRenameAny = principal.hasAuthority(Role.BOARD)).asResponse()
+
+    @BoardOnly
+    @PostMapping("/vote-tracks/{id}/merge")
+    fun mergeVoteTrack(
+        @PathVariable @Positive id: Long,
+        @Valid @RequestBody request: MergeVoteTrackRequest,
+    ): CandidateTrackResponse = candidates.merge(id, request.intoId).asResponse()
+}

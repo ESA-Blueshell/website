@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.29.0](https://github.com/ESA-Blueshell/website/compare/v1.28.4...v1.29.0) (2026-11-27)
+
+
+### Features
+
+* **api:** email jobs batch on one thread and one SMTP connection ([#2724](https://github.com/ESA-Blueshell/website/issues/2724)) ([6732a30](https://github.com/ESA-Blueshell/website/commit/6732a3078013b94166cd1da65417f2d2dce98f37))
+* **frontend:** a Management page is built from one head, frame, panel, row and table ([#2409](https://github.com/ESA-Blueshell/website/issues/2409)) ([77a04fd](https://github.com/ESA-Blueshell/website/commit/77a04fd543263f1fecd431775b03b750b52a8300))
+* **frontend:** Management is a portal of its own, entered from the account menu ([#2411](https://github.com/ESA-Blueshell/website/issues/2411)) ([fd236d2](https://github.com/ESA-Blueshell/website/commit/fd236d2af208585e51dbebe7dbe2aa3400e5e5e5))
+* **frontend:** the shared management parts are island components with a design gallery ([#2407](https://github.com/ESA-Blueshell/website/issues/2407)) ([134abe3](https://github.com/ESA-Blueshell/website/commit/134abe31fff0b354fb6ae6494f20c348c496cd2d))
+
+
+### Bug Fixes
+
+* **api:** a retried email job never sends twice, stale and errored rows recover safely ([#2729](https://github.com/ESA-Blueshell/website/issues/2729)) ([#2736](https://github.com/ESA-Blueshell/website/issues/2736)) ([8cc1581](https://github.com/ESA-Blueshell/website/commit/8cc1581c69a6777db654a34fdc381c5f99168263))
+* **api:** bulk resend skips notified members, late pre-notices stop ([#2725](https://github.com/ESA-Blueshell/website/issues/2725)) ([60f4aa9](https://github.com/ESA-Blueshell/website/commit/60f4aa93e615c8d14550be7f4e112d01e6640078))
+* **api:** dispatch rejection keeps row queued, run once, email retries ([#2721](https://github.com/ESA-Blueshell/website/issues/2721)) ([b90933b](https://github.com/ESA-Blueshell/website/commit/b90933b37e41966c9dbeb69d8a09c76cab05df92))
+* **api:** incasso resend re-sends undelivered notices, a retry keeps the deadline ([#2730](https://github.com/ESA-Blueshell/website/issues/2730)) ([#2737](https://github.com/ESA-Blueshell/website/issues/2737)) ([155c601](https://github.com/ESA-Blueshell/website/commit/155c6019ac3bbd84df4e6076d05803377618fef8))
+* **platform:** Gatus alerts when the mail host stops resolving in-cluster ([#2732](https://github.com/ESA-Blueshell/website/issues/2732)) ([#2733](https://github.com/ESA-Blueshell/website/issues/2733)) ([03a96ba](https://github.com/ESA-Blueshell/website/commit/03a96ba6f66276fe9b9ab287abfd2ea69eb0d090))
+* **platform:** mail host resolves in-cluster, api stops search-domain lookups ([#2710](https://github.com/ESA-Blueshell/website/issues/2710)) ([#2722](https://github.com/ESA-Blueshell/website/issues/2722)) ([07a5ec0](https://github.com/ESA-Blueshell/website/commit/07a5ec004db874a28f96b5b92129d5011afc2c33))
+* **platform:** Stalwart admits only the api from pods, bans expire, api skips throttles ([#2711](https://github.com/ESA-Blueshell/website/issues/2711)) ([#2723](https://github.com/ESA-Blueshell/website/issues/2723)) ([6fc2582](https://github.com/ESA-Blueshell/website/commit/6fc2582c72928fb6e9de57af44b0c71e77f6a2c5))
+* the Management portal builds against main ([fdd8422](https://github.com/ESA-Blueshell/website/commit/fdd84227ad81794e93b6becb9ded4ef77a9cd897))
+
+
+### Refactoring
+
+* the code calls the group of people a cohort and its mirror a target ([#2414](https://github.com/ESA-Blueshell/website/issues/2414)) ([559d616](https://github.com/ESA-Blueshell/website/commit/559d61664190b420b355d4e77f6e30211c5de248))
+
 ## [1.28.4](https://github.com/ESA-Blueshell/website/compare/v1.28.3...v1.28.4) (2026-11-26)
 
 

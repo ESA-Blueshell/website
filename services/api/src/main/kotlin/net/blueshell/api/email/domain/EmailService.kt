@@ -70,6 +70,13 @@ class EmailService(
     @Transactional(readOnly = true)
     fun findByMessageId(messageId: String): Email? = repository.findByMessageId(messageId)
 
+    @Transactional(readOnly = true)
+    fun hasSent(
+        jobExecutionId: Long,
+        emailType: String,
+        recipientEmail: String,
+    ): Boolean = repository.existsByJobExecutionIdAndEmailTypeAndRecipientEmailAndSentAtIsNotNull(jobExecutionId, emailType, recipientEmail)
+
     @Transactional
     fun markSent(
         email: Email,

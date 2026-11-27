@@ -37,7 +37,8 @@ class StaleJobRecovery(
         val queuedThreshold = now.minus(properties.undispatchedGraceSeconds, ChronoUnit.SECONDS)
         val pageable = PageRequest.of(0, properties.staleRecoveryBatchSize)
 
-        val staleRunning = jobExecutionService.findStaleRunning(runningThreshold, pageable)
+        val staleRunning =
+            jobExecutionService.findStaleRunning(runningThreshold, pageable).filter { jobExecutionService.resetRunningToQueued(it) }
         for (execution in staleRunning) {
             logger.warn(
                 "Recovering stale RUNNING job execution {}. jobType={}, startedAt={}",
@@ -45,7 +46,6 @@ class StaleJobRecovery(
                 execution.jobType,
                 execution.startedAt,
             )
-            jobExecutionService.resetRunningToQueued(execution)
             if (!dispatch(execution)) break
         }
 

@@ -10,6 +10,7 @@ import net.blueshell.api.shared.job.JobCount
 import net.blueshell.api.shared.job.JobEffect
 import net.blueshell.api.shared.job.JobTally
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -118,6 +119,46 @@ class JobExecutorRetryScheduleTest {
         run(broken, attempts = 1)
 
         verify(executions).markFailed(any(), eq("java.lang.IllegalArgumentException"), eq("No such event"), any(), eq(false))
+        verify(executions, never()).markRetryScheduled(any(), any(), any(), any(), any(), any())
+    }
+
+    @Test
+    fun `an Error is recorded as a terminal failure without a retry`() {
+        val broken =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw AssertionError("bad class")
+            }
+
+        run(broken, attempts = 1)
+
+        verify(executions).markFailed(any(), eq("java.lang.AssertionError"), eq("bad class"), any(), eq(false))
+        verify(executions, never()).markRetryScheduled(any(), any(), any(), any(), any(), any())
+    }
+
+    @Test
+    fun `a VirtualMachineError is recorded before it escapes the worker`() {
+        val broken =
+            object : JobHandler {
+                override val jobType = "failing"
+                override val payloadType = String::class.java
+
+                override fun handle(
+                    payload: String?,
+                    executionId: Long?,
+                    forced: Boolean,
+                ): JobOutcome = throw OutOfMemoryError("heap")
+            }
+
+        assertThatThrownBy { run(broken, attempts = 1) }.isInstanceOf(OutOfMemoryError::class.java).hasMessage("heap")
+
+        verify(executions).markFailed(any(), eq("java.lang.OutOfMemoryError"), eq("heap"), any(), eq(false))
         verify(executions, never()).markRetryScheduled(any(), any(), any(), any(), any(), any())
     }
 

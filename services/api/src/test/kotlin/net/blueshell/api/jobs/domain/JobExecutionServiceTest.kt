@@ -18,6 +18,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -154,19 +156,50 @@ class JobExecutionServiceTest {
     }
 
     @Test
-    fun `a running execution put back in the queue is written back, and a lost one is refused`() {
+    fun `a stale row is requeued only while it still has the start time the sweep read`() {
+        val startedAt = now.minusSeconds(120)
         val execution =
-            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
+            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING, startedAt = startedAt)
                 .apply { id = 1L }
-        val lost =
-            JobExecution(jobType = "demo", attempts = 1, status = JobExecutionStatus.RUNNING)
-                .apply { id = 2L }
-        stubPersistence(execution)
+        whenever(repository.resetRunningIfStillRunning(any(), any(), any(), any(), any())).thenReturn(1)
 
-        service.resetRunningToQueued(execution)
+        assertThat(service.resetRunningToQueued(execution)).isTrue()
 
-        assertThat(execution.status).isEqualTo(JobExecutionStatus.QUEUED)
-        assertThatThrownBy { service.resetRunningToQueued(lost) }.isInstanceOf(ResponseStatusException::class.java)
+        val queuedAt = argumentCaptor<Instant>()
+        verify(repository).resetRunningIfStillRunning(
+            eq(1L),
+            eq(startedAt),
+            queuedAt.capture(),
+            eq(JobExecutionStatus.QUEUED),
+            eq(JobExecutionStatus.RUNNING),
+        )
+        assertThat(queuedAt.firstValue).isAfter(startedAt)
+        assertThat(execution.status).isEqualTo(JobExecutionStatus.RUNNING)
+        assertThat(execution.startedAt).isEqualTo(startedAt)
+        verify(repository, never()).saveAndFlush(any<JobExecution>())
+    }
+
+    @Test
+    fun `a row that changed since the sweep read it is left alone`() {
+        val execution =
+            JobExecution(
+                jobType = "demo",
+                attempts = 1,
+                status = JobExecutionStatus.RUNNING,
+                startedAt = now.minusSeconds(120),
+            ).apply { id = 2L }
+        whenever(repository.resetRunningIfStillRunning(any(), any(), any(), any(), any())).thenReturn(0)
+
+        assertThat(service.resetRunningToQueued(execution)).isFalse()
+        verify(repository, never()).saveAndFlush(any<JobExecution>())
+    }
+
+    @Test
+    fun `a snapshot without an id or start time cannot be reset`() {
+        assertThat(service.resetRunningToQueued(JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING))).isFalse()
+        assertThat(
+            service.resetRunningToQueued(JobExecution(jobType = "demo", status = JobExecutionStatus.RUNNING).apply { id = 3L }),
+        ).isFalse()
     }
 
     @Test

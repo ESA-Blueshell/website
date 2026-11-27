@@ -26,7 +26,8 @@ class StaleJobRecoveryTest {
             every { staleRecoveryBatchSize } returns 5
         }
     private val worker: EmailJobWorker = mockk(relaxUnitFun = true)
-    private val recovery = StaleJobRecovery(executions, executor, worker, properties, SimpleMeterRegistry())
+    private val meters = SimpleMeterRegistry()
+    private val recovery = StaleJobRecovery(executions, executor, worker, properties, meters)
 
     @Test
     fun `a rejected recovery dispatch stops the loop without throwing`() {
@@ -34,13 +35,31 @@ class StaleJobRecoveryTest {
         val second = execution(8)
         every { executions.findStaleRunning(any(), any()) } returns listOf(first, second)
         every { executions.findStaleQueued(any(), any()) } returns emptyList()
-        every { executions.resetRunningToQueued(any()) } answers { firstArg() }
+        every { executions.resetRunningToQueued(any()) } returns true
         every { executor.executeAsync(7L) } throws TaskRejectedException("Executor full")
 
         assertThatCode { recovery.recoverStaleJobs() }.doesNotThrowAnyException()
 
         verify(exactly = 1) { executions.resetRunningToQueued(first) }
         verify(exactly = 0) { executor.executeAsync(8L) }
+    }
+
+    @Test
+    fun `a stale row another runner reset is neither dispatched nor counted`() {
+        val first = execution(31)
+        val second = execution(32)
+        every { executions.findStaleRunning(any(), any()) } returns listOf(first, second)
+        every { executions.findStaleQueued(any(), any()) } returns emptyList()
+        every { executions.resetRunningToQueued(first) } returns false
+        every { executions.resetRunningToQueued(second) } returns true
+        every { executor.executeAsync(any()) } returns Unit
+
+        recovery.recoverStaleJobs()
+
+        verify(exactly = 1) { executions.resetRunningToQueued(first) }
+        verify(exactly = 0) { executor.executeAsync(31L) }
+        verify { executor.executeAsync(32L) }
+        assertThat(meters.find("job.recovery.count").counter()?.count()).isEqualTo(1.0)
     }
 
     @Test
@@ -96,7 +115,7 @@ class StaleJobRecoveryTest {
         val email = JobExecution(jobType = "email.signup").apply { id = 22 }
         every { executions.findStaleRunning(any(), any()) } returns listOf(email)
         every { executions.findStaleQueued(any(), any()) } returns emptyList()
-        every { executions.resetRunningToQueued(any()) } answers { firstArg() }
+        every { executions.resetRunningToQueued(any()) } returns true
 
         recovery.recoverStaleJobs()
 

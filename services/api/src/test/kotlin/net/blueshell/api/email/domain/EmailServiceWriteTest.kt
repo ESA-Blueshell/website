@@ -39,6 +39,16 @@ class EmailServiceWriteTest {
     }
 
     @Test
+    fun `a sent email is found by its job, type and recipient`() {
+        whenever(repository.existsByJobExecutionIdAndEmailTypeAndRecipientEmailAndSentAtIsNotNull(7L, "TEST", "a@b.nl"))
+            .thenReturn(true)
+
+        assertThat(service.hasSent(7L, "TEST", "a@b.nl")).isTrue()
+        assertThat(service.hasSent(8L, "TEST", "a@b.nl")).isFalse()
+        verify(repository).existsByJobExecutionIdAndEmailTypeAndRecipientEmailAndSentAtIsNotNull(7L, "TEST", "a@b.nl")
+    }
+
+    @Test
     fun `a delivery is written back, and one for an email the database lost is refused`() {
         val email = Entities.email(id = 3)
         val lost = Entities.email(id = 4)

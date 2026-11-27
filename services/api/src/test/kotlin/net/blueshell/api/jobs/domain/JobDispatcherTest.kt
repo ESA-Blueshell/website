@@ -134,6 +134,26 @@ class JobDispatcherTest {
     }
 
     @Test
+    fun `dispatching a retried email row nudges the batch worker instead of the general executor`() {
+        val executor: JobExecutor = mock()
+        val worker: EmailJobWorker = mock()
+        val live =
+            JobDispatcher(
+                JsonMapper.builder().build(),
+                executions,
+                mock(),
+                executor,
+                worker,
+                JobQueueProperties(autoDispatch = true),
+            )
+
+        live.dispatch(JobExecution(jobType = "email.signup").apply { id = 12 })
+
+        verify(worker).nudge()
+        verify(executor, never()).executeAsync(any())
+    }
+
+    @Test
     fun `email jobs nudge the batch worker instead of the general executor`() {
         val executor: JobExecutor = mock()
         val worker: EmailJobWorker = mock()

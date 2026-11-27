@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import net.blueshell.api.jobs.api.JobExecutionService
-import net.blueshell.api.jobs.api.JobExecutor
+import net.blueshell.api.jobs.domain.JobDispatcher
 import net.blueshell.api.jobs.domain.JobExecutionQuery
 import net.blueshell.api.security.AdminOnly
 import net.blueshell.api.security.BoardOnly
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
 @Tag(name = "Job Management", description = "API for managing job executions")
 class JobManagementController(
     private val jobExecutionService: JobExecutionService,
-    private val jobExecutor: JobExecutor,
+    private val jobDispatcher: JobDispatcher,
     private val views: JobExecutionViewService,
     private val jobCatalog: JobCatalogService,
     private val meterRegistry: MeterRegistry,
@@ -62,7 +62,7 @@ class JobManagementController(
             )
         }
         val requeued = jobExecutionService.retryWithSupersede(execution)
-        jobExecutor.executeAsync(requeued.id!!)
+        jobDispatcher.dispatch(requeued)
         return views.toDto(requeued)
     }
 

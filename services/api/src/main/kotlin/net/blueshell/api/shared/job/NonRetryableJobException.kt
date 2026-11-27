@@ -22,5 +22,7 @@ open class NonRetryableJobException(
                 NullPointerException::class.java,
                 ClassCastException::class.java,
             )
+
+        fun isNonRetryable(throwable: Throwable): Boolean = NON_RETRYABLE_EXCEPTIONS.any { it.isInstance(throwable) }
     }
 }

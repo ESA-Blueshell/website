@@ -115,4 +115,20 @@ interface JobExecutionRepository : BaseRepository<JobExecution, Long> {
         @Param("status") status: JobExecutionStatus,
         @Param("queued") queued: JobExecutionStatus,
     ): Int
+
+    @Modifying
+    @Query(
+        """
+        update JobExecution j
+        set j.status = :queued, j.startedAt = null, j.queuedAt = :now
+        where j.id = :id and j.status = :running and j.startedAt = :seenStartedAt
+        """,
+    )
+    fun resetRunningIfStillRunning(
+        @Param("id") id: Long,
+        @Param("seenStartedAt") seenStartedAt: Instant,
+        @Param("now") now: Instant,
+        @Param("queued") queued: JobExecutionStatus,
+        @Param("running") running: JobExecutionStatus,
+    ): Int
 }

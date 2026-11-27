@@ -85,7 +85,8 @@ class JobDispatcher(
         return enqueued.execution
     }
 
-    private fun dispatch(execution: JobExecution) {
+    /** Routes an already-queued row: email jobs go to the batch worker, all others to the executor. */
+    fun dispatch(execution: JobExecution) {
         if (EmailJobs.isEmailJob(execution.jobType)) {
             emailJobWorker.nudge()
             return

@@ -199,7 +199,7 @@ class SmtpEmailBatchIT : ServiceTestSupport() {
             val messages = page.path("messages")
             messagesCount += page.path("messages_count").asInt().takeIf { it > 0 } ?: messages.size()
             total = page.path("total").asInt()
-            messages.forEach { subjects += it.path("Subject").asText().ifBlank { it.path("subject").asText() } }
+            messages.forEach { subjects += it.path("Subject").asString().ifBlank { it.path("subject").asString() } }
             start += messages.size()
         } while (messages.size() > 0 && subjects.size < total)
         return Mailbox(messagesCount, total, subjects)
